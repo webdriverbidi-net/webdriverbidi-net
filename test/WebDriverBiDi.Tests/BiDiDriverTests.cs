@@ -2337,8 +2337,9 @@ public class BiDiDriverTests
     [Fact]
     public async Task TestRegistrationIsRejectedWhenTransportWasConnectedExternally()
     {
-        // The driver never observed StartAsync, so its start-requested flag is false; the
-        // IsStarted check (backed by Transport.IsConnected) must still refuse registration.
+        // The transport was connected directly, not through the driver's StartAsync. Registration is
+        // gated on the transport's State rather than on anything the driver records, so it must still be
+        // refused.
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
@@ -2353,11 +2354,11 @@ public class BiDiDriverTests
     [Fact]
     public async Task TestConcurrentStopDuringInFlightStartDoesNotReopenRegistration()
     {
-        // CC-2: while a StartAsync is in flight (its ConnectAsync has not yet marked the transport
-        // connected), a racing StopAsync must not clear the start-requested flag. Clearing it would
-        // wrongly re-open module and event registration for the remainder of that start, even though
-        // the driver is starting. The start barrier holds the connection's StartAsync open inside
-        // ConnectAsync, reproducing that in-flight window deterministically.
+        // While a StartAsync is in flight, the transport's State is Connecting, and registration is open
+        // only while it is Disconnected. A racing StopAsync must not return the transport to Disconnected
+        // during that window, which would wrongly re-open module and event registration for the remainder
+        // of the start. The start barrier holds the connection's StartAsync open inside ConnectAsync,
+        // reproducing that in-flight window deterministically.
         TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new()
         {
@@ -2366,13 +2367,12 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
 
-        // StartAsync sets the start-requested flag synchronously, then blocks inside ConnectAsync on
-        // the start barrier before the transport is marked connected.
+        // ConnectAsync publishes Connecting before its first await, then blocks on the start barrier
+        // before the transport is marked Connected.
         Task startTask = driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
 
-        // A concurrent stop, running while the transport is not yet connected, must leave the
-        // in-flight start's flag untouched rather than treating the not-connected transport as a
-        // completed teardown.
+        // A concurrent stop finds the transport not Connected and returns without changing its State,
+        // rather than treating a transport that is still connecting as one already torn down.
         await driver.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterModule(new TestProtocolModule(driver, 0, false)));

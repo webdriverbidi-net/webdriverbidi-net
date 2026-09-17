@@ -1660,21 +1660,32 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task TestCanShutdownWhenCleanShutdownExceedsTimeout()
+    public async Task TestStopWithZeroShutdownTimeoutWaitsForNeitherHandshakeNorReceiveLoop()
     {
+        // A zero ShutdownTimeout means no wait at all, not an unbounded one. The clock is never advanced, so the stop
+        // can return only if neither the close handshake nor the wait for the receive loop waits on it. The receive
+        // loop ignores cancellation and nothing shows it the server's answer, so either wait would otherwise last for
+        // good, and the wait for the loop is certain to give up and say so.
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
-        // With ShutdownTimeout=Zero, StopAsync returns without waiting for the receive/close loop to
-        // finish, so that background loop can still be appending log messages after StopAsync returns.
-        // Guard the list and snapshot it under the same lock before asserting, so the assertion does
-        // not enumerate the list while a background Add is mutating it.
+        TaskCompletionSource<WebSocketReceiveResult> receiveLoopBlock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource receiveHandlerEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
+        {
+            BypassStart = false,
+            BypassStop = false,
+            ShutdownTimeout = TimeSpan.Zero,
+            ReceiveHandler = (buffer, cancellationToken, callCount) =>
+            {
+                receiveHandlerEntered.TrySetResult();
+                return receiveLoopBlock.Task;
+            },
+        };
+
         object logLock = new();
         List<string> connectionLog = [];
-        await using WebSocketConnection connection = new()
-        {
-            ShutdownTimeout = TimeSpan.Zero,
-        };
         connection.OnLogMessage.AddObserver(e =>
         {
             lock (logLock)
@@ -1685,21 +1696,28 @@ public class WebSocketConnectionTests : IAsyncDisposable
             return Task.CompletedTask;
         });
 
-        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
-        string registeredConnectionId = this.WaitForServerToRegisterConnection();
-        server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
-        await connection.StopAsync(TestContext.Current.CancellationToken);
-
-        string[] logSnapshot;
-        lock (logLock)
+        try
         {
-            logSnapshot = [.. connectionLog];
-        }
+            await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+            this.WaitForServerToRegisterConnection();
+            await receiveHandlerEntered.Task.WaitAsync(SafetyBoundTimeout, TestContext.Current.CancellationToken);
 
-        // With ShutdownTimeout=Zero, the close handshake may be canceled
-        // before logging "Client state is X". At minimum we get "Closing WebSocket connection".
-        Assert.Contains("Closing WebSocket connection", logSnapshot);
-        Assert.True(logSnapshot.Length >= 1);
+            await connection.StopAsync(TestContext.Current.CancellationToken).WaitAsync(SafetyBoundTimeout, TestContext.Current.CancellationToken);
+
+            string[] logSnapshot;
+            lock (logLock)
+            {
+                logSnapshot = [.. connectionLog];
+            }
+
+            Assert.Contains("Timed out waiting for WebSocket connection receive loop to complete during shutdown", logSnapshot);
+        }
+        finally
+        {
+            // Release the receive loop so it can complete and not leak past the test.
+            receiveLoopBlock.TrySetResult(new WebSocketReceiveResult(0, WebSocketMessageType.Close, true));
+            await connection.DisposeAsync();
+        }
     }
 
     [Fact]

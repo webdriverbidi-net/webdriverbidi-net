@@ -372,7 +372,7 @@ public class WebDriverBiDiConventionTests
 
         // A floor rather than an inventory, so adding a command does not break it. It fails if the
         // reflection walk stops finding commands, which would otherwise let the check above pass by
-        // sweeping nothing at all. There are 82 today.
+        // sweeping nothing at all. There are 83 today.
         Assert.True(commandCount >= 80, $"The command sweep found only {commandCount} module commands; the walk is broken.");
         Assert.True(offenders.Count == 0, $"Every module command must end with 'TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default'. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
     }
@@ -485,7 +485,7 @@ public class WebDriverBiDiConventionTests
             }
         }
 
-        // A floor, for the same reason as the command sweep above. There are 88 today.
+        // A floor, for the same reason as the command sweep above. There are 89 today.
         Assert.True(parametersTypeCount >= 85, $"The parameters-type sweep found only {parametersTypeCount} types; the walk is broken.");
         Assert.True(offenders.Count == 0, $"Every command's MethodName must be '<module>.<command>' with the module segment naming the module that owns it. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
     }
@@ -695,7 +695,7 @@ public class WebDriverBiDiConventionTests
 
         // A floor rather than an inventory, so adding a type does not break it. It fails if the walk stops
         // reaching nested types, which would otherwise let both received-type rules pass by sweeping only the roots.
-        // There are 186 today, against 112 command results and event arguments at the roots.
+        // There are 187 today, against 115 command results and event arguments at the roots.
         Assert.True(receivedTypes.Count >= 175, $"The received-type sweep found only {receivedTypes.Count} types; the walk is broken.");
     }
 
