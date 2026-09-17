@@ -34,7 +34,10 @@ public class CreateCommandParameters : CommandParameters<CreateCommandResult>
     public CreateType CreateType { get; set; }
 
     /// <summary>
-    /// Gets or sets the ID of the browsing context to reference within the newly created context.
+    /// Gets or sets the ID of an existing top-level browsing context used as a reference for the
+    /// new context. A new tab should be placed in the same OS window, next to it, and it supplies
+    /// the user context when <see cref="UserContextId"/> is not set. A context that is not
+    /// top-level is rejected as <c>invalid argument</c>.
     /// </summary>
     [JsonPropertyName("referenceContext")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

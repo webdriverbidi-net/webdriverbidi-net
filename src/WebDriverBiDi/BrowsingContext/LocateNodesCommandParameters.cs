@@ -65,7 +65,8 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
 
     /// <summary>
     /// Gets the list of nodes within which to locate child nodes.
-    /// If empty, nodes will be located from the top-level document.
+    /// If empty, nodes are located from the active document of the browsing context
+    /// identified by <see cref="BrowsingContextId"/>.
     /// </summary>
     [JsonIgnore]
     public List<SharedReference> StartNodes { get; } = [];
