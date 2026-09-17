@@ -32,4 +32,19 @@ public class SimulateAdvertisementScanEntryTests
         Assert.NotNull(scanRecord);
         Assert.Equal(JTokenType.Object, scanRecord.Type);
     }
+
+    [Fact]
+    public void TestCanSerializeIntegerValuedRssi()
+    {
+        // An integer-valued signal strength is still written with a decimal point, as every double the
+        // library sends is.
+        SimulateAdvertisementScanEntry properties = new("08:08:08:08:08", -50, new ScanRecord());
+        string json = JsonSerializer.Serialize(properties);
+        Assert.Contains("\"rssi\":-50.0", json);
+        JObject serialized = JObject.Parse(json);
+        JToken? rssi = serialized["rssi"];
+        Assert.NotNull(rssi);
+        Assert.Equal(JTokenType.Float, rssi.Type);
+        Assert.Equal(-50.0, rssi.Value<double>());
+    }
 }

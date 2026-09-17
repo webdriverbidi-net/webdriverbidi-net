@@ -121,7 +121,7 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// </remarks>
     [JsonPropertyName("devicePixelRatio")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(SentinelNullJsonConverter<double, NegativeDoubleSentinelChecker>))]
+    [JsonConverter(typeof(SentinelNullJsonConverter<double, NegativeDoubleSentinelChecker, FixedDoubleJsonConverter>))]
     [SpecRange(0.0, double.PositiveInfinity, MinimumExclusive = true, HasSentinel = true, SentinelValue = ResetDevicePixelRatioSentinel)]
     public double? DevicePixelRatio { get; set; }
 

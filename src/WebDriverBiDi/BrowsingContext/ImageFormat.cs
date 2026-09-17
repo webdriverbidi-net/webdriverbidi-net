@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Represents the image format of a captured screenshot.
@@ -37,5 +38,6 @@ public class ImageFormat
     [JsonPropertyName("quality")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, 1.0)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Quality { get; set; }
 }

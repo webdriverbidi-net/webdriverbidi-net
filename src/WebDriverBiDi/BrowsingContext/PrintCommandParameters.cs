@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Provides parameters for the browsingContext.print command.
@@ -72,6 +73,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     [JsonPropertyName("scale")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.1, 2.0)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Scale { get; set; }
 
     /// <summary>

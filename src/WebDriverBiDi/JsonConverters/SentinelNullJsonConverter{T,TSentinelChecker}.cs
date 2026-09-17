@@ -23,6 +23,13 @@ using System.Text.Json.Serialization.Metadata;
 /// A <see cref="SentinelValueChecker{T}"/> subclass that decides whether a
 /// given value is the sentinel. Must have a parameterless constructor.
 /// </typeparam>
+/// <remarks>
+/// A value that is not the sentinel is written with the serializer's own metadata for its type, so a
+/// converter declared on the property is not consulted for it: a property can carry only one
+/// <see cref="JsonConverterAttribute"/>, and this converter occupies it. Where the value itself needs a
+/// converter, use <see cref="SentinelNullJsonConverter{T, TSentinelChecker, TValueConverter}"/>, which writes
+/// every value that is not the sentinel through the converter it names.
+/// </remarks>
 public class SentinelNullJsonConverter<T, TSentinelChecker> : JsonConverter<T>
     where TSentinelChecker : SentinelValueChecker<T>, new()
 {
@@ -65,11 +72,27 @@ public class SentinelNullJsonConverter<T, TSentinelChecker> : JsonConverter<T>
             }
             else
             {
-                // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo
-                // to remove warnings when publishing AOT compiled applications.
-                JsonTypeInfo typeInfo = options.GetTypeInfo(value.GetType());
-                JsonSerializer.Serialize(writer, value, typeInfo);
+                this.WriteValue(writer, value, options);
             }
         }
+    }
+
+    /// <summary>
+    /// Serializes a value that is not the sentinel.
+    /// </summary>
+    /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
+    /// <param name="value">The value to be serialized. It is never <see langword="null"/> and never the sentinel.</param>
+    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <remarks>
+    /// The default implementation writes the value with the serializer's metadata for its runtime type.
+    /// </remarks>
+    protected virtual void WriteValue(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+    {
+        // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo
+        // to remove warnings when publishing AOT compiled applications. The caller
+        // has already established that the value is not null, so the null-forgiving
+        // operator is appropriate.
+        JsonTypeInfo typeInfo = options.GetTypeInfo(value!.GetType());
+        JsonSerializer.Serialize(writer, value, typeInfo);
     }
 }

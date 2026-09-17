@@ -143,6 +143,27 @@ public class SetViewportCommandParametersTests
     }
 
     [Fact]
+    public void TestCanSerializeParametersWithIntegerValuedDevicePixelRatio()
+    {
+        // The protocol types devicePixelRatio as a float, so an integer-valued ratio must still be written
+        // with a decimal point rather than as a JSON integer.
+        SetViewportCommandParameters properties = new()
+        {
+            DevicePixelRatio = 2
+        };
+        string json = JsonSerializer.Serialize(properties);
+        Assert.Contains("\"devicePixelRatio\":2.0", json);
+        JObject serialized = JObject.Parse(json);
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("devicePixelRatio"));
+        JToken? devicePixelRatio = serialized["devicePixelRatio"];
+        Assert.NotNull(devicePixelRatio);
+        Assert.Equal(JTokenType.Float, devicePixelRatio.Type);
+        Assert.Equal(2.0, devicePixelRatio.Value<double>());
+    }
+
+    [Fact]
     public void TestCanSerializeParametersWithResetDevicePixelRatio()
     {
         SetViewportCommandParameters properties = new()
