@@ -177,6 +177,21 @@ defined than the primitive cast, which is undefined for `NaN` and out-of-range v
 Framework. Making them `explicit`, or removing them in favour of the methods, has been considered
 and rejected. Do **not** recommend either, and do not cite the .NET design guideline against lossy
 implicit conversions as if it settled the question.
+* Types the library hands to consumers (command results, event args, and the objects nested in them)
+are declared as `record`s for their immutability and their printed form, not as a promise of value
+equality. A record's synthesized `Equals` and `GetHashCode` compare every instance field, including
+private fields and compiler-generated backing fields, and many received records hold fields whose types
+compare by reference: the `ReceivedDataDictionary` on every command result and event args type, the
+`List<T>` backing fields behind read-only projections, lazily populated caches, and the private reference
+a received wrapper holds to the object it projects (`ReadOnlyHeader` over `Header`,
+`UserPromptHandlerResult`, `ProxyConfigurationResult` and its derived records, `BrowsingContextEventArgs`,
+`RealmCreatedEventArgs`, `EntryAddedEventArgs`). Equality of received types is therefore unspecified.
+Nothing in the library or its samples compares, hashes or de-duplicates them, and the equality assertions
+in the tests compare a record only with its own `with { }` copy, which shares every reference-typed field
+and so compares equal whatever those fields' types do. Do **not** report reference-based or
+otherwise non-structural equality on a received record, and do not recommend overriding `Equals` or
+`GetHashCode`, implementing `IEquatable<T>`, or converting such a record to a class, unless you can cite a
+call site in `src`, `docs/code` or `test` whose behavior is wrong because of it.
 * This project is not a replacement for higher-level automation libraries like
 Selenium, Puppeteer, or Playwright. Therefore, there is no need for a migration
 guide In the project documentation. Please do not suggest one.
@@ -341,23 +356,44 @@ Issues section that a BCL parallel exists, but only if you also note that the
 BCL itself does not consistently mandate the pattern (e.g. `HttpRequestException`
 does not extend `TimeoutException`).
 
-**Before recommending a change to the shape of a public API member on the strength of a general
-design guideline** — making an implicit conversion explicit, changing an accessibility or a
-signature, splitting or merging an overload set, renaming a member — establish that the current
-shape is not a deliberate decision. Citing a guideline (the .NET Framework Design Guidelines, "an
-implicit conversion must not be lossy," "prefer X over Y") is not by itself a finding, because a
-guideline describes the default choice and this library has made many considered departures from
-defaults. Three checks, each of which must be reported in the finding:
+**Before recommending a change to the shape or semantics of a public API member on the strength of a
+general design guideline, or of what a language construct or interface is conventionally taken to
+promise** — making an implicit conversion explicit, changing an accessibility or a signature, splitting
+or merging an overload set, renaming a member, overriding equality or hashing on a `record`,
+implementing `IEquatable<T>` or `IComparable<T>`, sealing or unsealing a type, turning a record into a
+class or a class into a record — establish that the current shape is not a deliberate decision. Citing a
+guideline (the .NET Framework Design Guidelines, "an implicit conversion must not be lossy," "prefer X
+over Y") or an implied contract ("a `record` promises value equality," "a type with `with` support
+should compare by value") is not by itself a finding, because a guideline describes the default choice,
+an implied contract is a reader's expectation rather than something the library documents, and this
+library has made many considered departures from defaults. A finding that a construct "does not do what
+its keyword suggests" is exactly this kind of claim, even when it is phrased as a defect rather than as a
+guideline. Five checks, each of which must be reported in the finding:
 * **The documentation.** Search `docs/` *and* `docs/code/` for the member. `docs/code` holds the
 compiled samples the articles embed, so it is the authoritative record of what consuming code is
 meant to look like. A shape that the published samples rely on is the idiom the library teaches,
 not an oversight.
-* **The family.** Grep the library for the same shape on sibling types. A shape shared across a set
-of types is a convention; changing one member of the set makes the set inconsistent, which is a
-cost the finding must weigh and state.
+* **The family.** Grep the library for the same shape on sibling types, and list every type that
+shares it in the finding. A shape shared across a set of types is a convention; changing one member of
+the set makes the set inconsistent, which is a cost the finding must weigh and state. If the change
+cannot be applied uniformly to the family (a record cannot become a class while its base is a record,
+for example), say so. Do this search before writing the finding, not after: a finding that names only
+the one type you happened to read has not done this check.
 * **The member's own documentation.** Behavior that the member's XML remarks spell out is
 disclosed, not hidden, and a finding that amounts to "a caller might not read the documentation"
 is not actionable.
+* **The consumer.** Grep `src` (including `src/WebDriverBiDi.Client` and `src/WebDriverBiDi.Demo`),
+`docs/code` and `test` for every site that exercises the behavior the finding concerns, and report the
+result. For equality or hashing that means every `Equals`, `==`, `!=`, `GetHashCode`, `HashSet<T>`,
+`Dictionary<TKey, TValue>` key, `Distinct`, `Contains`, `IndexOf` and equality assertion involving the
+type. A test that reaches the behavior only through an idiom that cannot expose the problem (for example
+`with { }`, which copies a wrapped reference and so compares equal) is not a consumer. If no site
+exercises the behavior, the concern is hypothetical, and a hypothetical is not a finding.
+* **The aggregate.** When the behavior matters only through the types that contain, wrap or derive from
+this one, check those types as well. Value equality on an element is worth nothing while every type that
+holds it still compares by reference, and a guarantee added to one member that its enclosing types still
+defeat delivers nothing. A finding whose fix the aggregate would nullify must be withdrawn, or restated
+as a finding about the aggregate that passes all five checks.
 
 Then state the consuming-syntax delta concretely: quote a real call site as it is written today
 and as it would have to be written, and count the sites in `src`, `docs/code` and `test` that would
@@ -539,5 +575,8 @@ ANALYSIS.md, for each planned recommendation, confirm:
 [] I read the declaration/source for the affected symbol
 [] I did not assume; I verified
 [] This is not already implemented/documented (per my search results)
+[] For a finding about a type's shape or semantics, I listed every sibling type that shares the shape,
+   named the call sites that exercise the behavior, and checked that the types containing it would not
+   nullify the fix
 
 If any item is unchecked, perform the verification or remove the recommendation.
