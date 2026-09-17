@@ -122,7 +122,7 @@ nothing extra, so a vendor-prefixed field can be read without a null check.
 copying both dictionaries onto the result so the extension data survives the hop. The overload taking a
 `Func<T, TEventArgs>` factory is the one to use in AOT or trimmed applications; the parameterless overload
 uses `T` itself as the event args type and throws `WebDriverBiDiException` when `TEventArgs` is anything
-else.
+else, which the [BIDI035](analyzers.md#bidi035) analyzer reports.
 
 Mark each `ObservableEvent<T>` property on your module with `[ObservableEventName("your.event")]`, naming the
 same string you passed to the `ObservableEvent<T>` constructor. The library's analyzers read that attribute

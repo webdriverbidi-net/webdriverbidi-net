@@ -331,4 +331,71 @@ public class BiDiDriver031AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a handle is discarded when the subscription is made through null-conditional receivers: the value
+    /// the statement drops is that of the whole conditional access, which is the handle or null.
+    /// </summary>
+    /// <param name="receiver">The receiver chain, with its null-conditional accesses, up to the subscription.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Theory]
+    [InlineData("driver?{|#0:.BrowsingContext.OnLoad.AddObserver(args => { })|}")]
+    [InlineData("driver?.BrowsingContext?{|#0:.OnLoad.AddObserver(args => { })|}")]
+    public async Task AddObserverThroughNullConditionalReceiver_ResultDiscarded_ReportsInfo(string receiver)
+    {
+        string testCode = $$"""
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver? driver)
+                    {
+                        {{receiver}};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver031_DiscardedObserverResultAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "AddObserver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a handle used through a null-conditional access of its own is not discarded: the statement drops
+    /// the value of the member called on the handle, not the handle.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserverResultUsedThroughNullConditionalAccess_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        driver.BrowsingContext.OnLoad.AddObserver(args => { })?.Dispose();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
+    }
 }

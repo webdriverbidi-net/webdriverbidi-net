@@ -91,6 +91,18 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         // Passing it to a library method — the command that sends it — is not configuration.
         MarkVariablesPassedOutsideLibrary(context.Node, semanticModel, trackedVariables);
 
+        // A tracked object handed on in any other way — returned to the caller, stored in a field, placed in a
+        // collection, or used to initialize another variable — may likewise be configured by code this rule
+        // cannot see: a factory method returning a bare parameters object for its caller to fill in, say.
+        // Arguments were judged above, callee by callee, so they are left out here.
+        foreach (string handedOnName in AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node, includeArguments: false))
+        {
+            if (trackedVariables.TryGetValue(handedOnName, out VariableState? handedOnState))
+            {
+                handedOnState.HasPropertyAssignment = true;
+            }
+        }
+
         // Report diagnostics for variables that were never assigned properties
         foreach (KeyValuePair<string, VariableState> kvp in trackedVariables)
         {

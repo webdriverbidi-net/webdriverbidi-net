@@ -1789,8 +1789,8 @@ public class BiDiDriver007AnalyzerTests
     [Fact]
     public async Task AddObserver_WithDelegateVariable_DoesNotReportDiagnostic()
     {
-        // The handler is stored in a local variable of type Func<T, Task>.
-        // GetHandlerBody cannot resolve it (it's not a lambda or a method ref) → returns null.
+        // The handler is a parameter of type Func<T, Task>, whose body this code cannot see, so
+        // GetHandlerBody returns null.
         string test = """
             using System;
             using System.Threading.Tasks;
@@ -3186,6 +3186,474 @@ public class BiDiDriver007AnalyzerTests
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
             .WithLocation(0)
             .WithMessage("Blocking operation 'Sleep()' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a partial method passed as a handler is analyzed through its implementation, which is the
+    /// part that has a body.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_PartialMethodGroup_WithThreadSleep_ReportsWarning()
+    {
+        string test = """
+            using System.Threading;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public partial class TestClass
+                {
+                    partial void HandleEntry(EntryAddedEventArgs args);
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(HandleEntry);
+                    }
+                }
+
+                public partial class TestClass
+                {
+                    partial void HandleEntry(EntryAddedEventArgs args)
+                    {
+                        {|#0:Thread.Sleep(1000)|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an async partial method passed as a handler with RunHandlerAsynchronously is recognized as
+    /// async through its implementation, so blocking work after its first await is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncPartialMethodGroup_WithRunHandlerAsynchronously_BlockingAfterAwait_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public partial class TestClass
+                {
+                    private partial Task HandleEntryAsync(EntryAddedEventArgs args);
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(HandleEntryAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+
+                public partial class TestClass
+                {
+                    private async partial Task HandleEntryAsync(EntryAddedEventArgs args)
+                    {
+                        await Task.Yield();
+                        Thread.Sleep(1000);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a handler held in a delegate-typed local initialized with a lambda is analyzed through that
+    /// lambda.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_DelegateLocalInitializedWithLambda_WithThreadSleep_ReportsWarning()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Action<EntryAddedEventArgs> handler = args => {|#0:Thread.Sleep(1000)|};
+                        var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a delegate-typed local that is assigned again is not resolved, because the handler it holds
+    /// when it is passed cannot be known from its initializer.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_DelegateLocalReassigned_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, bool quiet)
+                    {
+                        Action<EntryAddedEventArgs> handler = args => Thread.Sleep(1000);
+                        if (quiet)
+                        {
+                            handler = args => { };
+                        }
+
+                        var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a delegate-typed local passed by reference is not resolved, because the callee may assign it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_DelegateLocalPassedByReference_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static void Replace(ref Action<EntryAddedEventArgs> handler)
+                    {
+                        handler = args => { };
+                    }
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Action<EntryAddedEventArgs> handler = args => Thread.Sleep(1000);
+                        Replace(ref handler);
+                        var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a delegate-typed local not initialized with a lambda is not resolved.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_DelegateLocalInitializedWithMethodGroup_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, Action<EntryAddedEventArgs> supplied)
+                    {
+                        Action<EntryAddedEventArgs> handler = supplied;
+                        var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+                        var other = driver.Log.OnEntryAdded.AddObserver(supplied);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that synchronization calls given an explicit zero timeout, which return at once rather than
+    /// block, are not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_ZeroTimeoutPolls_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private readonly SemaphoreSlim semaphore = new(1, 1);
+                    private readonly ManualResetEvent resetEvent = new(false);
+                    private readonly ManualResetEventSlim slimEvent = new(false);
+                    private readonly object gate = new();
+
+                    public void TestMethod(BiDiDriver driver, Task pending, Thread worker)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args =>
+                        {
+                            if (this.semaphore.Wait(0))
+                            {
+                                this.semaphore.Release();
+                            }
+
+                            bool signaled = this.resetEvent.WaitOne(TimeSpan.Zero);
+                            bool set = this.slimEvent.Wait(millisecondsTimeout: 0);
+                            bool done = pending.Wait(0);
+                            bool joined = worker.Join(0);
+                            bool entered = Monitor.TryEnter(this.gate, 0);
+                            bool all = Task.WaitAll(new[] { pending }, 0);
+                        });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a synchronization call with a timeout other than zero is still reported, as it blocks for
+    /// up to that timeout.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_NonZeroTimeoutWait_ReportsWarning()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private readonly SemaphoreSlim semaphore = new(1, 1);
+
+                    public void TestMethod(BiDiDriver driver, int timeout, Task first, Task second)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args =>
+                        {
+                            {|#0:this.semaphore.Wait(100)|};
+                            {|#1:this.semaphore.Wait(TimeSpan.FromSeconds(1))|};
+                            {|#2:this.semaphore.Wait(timeout)|};
+                            {|#3:this.semaphore.Wait(Timeout.InfiniteTimeSpan)|};
+                            {|#4:Task.WaitAll(first, second)|};
+                            {|#5:Thread.Sleep(0)|};
+                        });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        string[] names = ["Wait()", "Wait()", "Wait()", "Wait()", "WaitAll()", "Sleep()"];
+        for (int location = 0; location < names.Length; location++)
+        {
+            testState.ExpectedDiagnostics.Add(new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .WithLocation(location)
+                .WithArguments(names[location]));
+        }
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a delegate-typed local declared without an initializer is not resolved, because the handler it
+    /// holds is given by a later assignment.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_DelegateLocalDeclaredWithoutInitializer_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Action<EntryAddedEventArgs> handler;
+                        handler = args => Thread.Sleep(1000);
+                        var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a delegate-typed foreach iteration variable is not resolved, because it holds a different handler
+    /// on each iteration.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_DelegateForEachVariable_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, List<Action<EntryAddedEventArgs>> handlers)
+                    {
+                        foreach (Action<EntryAddedEventArgs> handler in handlers)
+                        {
+                            var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a handler held in a delegate-typed local of a top-level program is analyzed through its lambda.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_DelegateLocalInTopLevelProgram_WithThreadSleep_ReportsWarning()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            BiDiDriver driver = new BiDiDriver();
+            Action<EntryAddedEventArgs> handler = args => {|#0:Thread.Sleep(1000)|};
+            var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+
+            namespace TestApp
+            {
+                public class Helper
+                {
+                    public void Rebind(Action<EntryAddedEventArgs> handler)
+                    {
+                        handler = null;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+            TestState = { OutputKind = OutputKind.ConsoleApplication },
+        };
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

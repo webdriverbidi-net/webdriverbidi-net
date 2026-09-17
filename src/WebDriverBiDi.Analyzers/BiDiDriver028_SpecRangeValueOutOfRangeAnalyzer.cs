@@ -141,34 +141,46 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // SpecRangeAttribute's only constructor is (double minimum, double maximum), so the two
-            // positional arguments are always present and always doubles.
-            minimum = (double)attribute.ConstructorArguments[0].Value!;
-            maximum = (double)attribute.ConstructorArguments[1].Value!;
+            // SpecRangeAttribute's only constructor is (double minimum, double maximum), but an analyzer also runs
+            // over code that does not compile. An application with missing or mistyped arguments ([SpecRange], or
+            // [SpecRange("low", "high")]) binds no constructor and carries no positional values, so there is no
+            // range to judge against. Reading the values it lacks would throw, which is reported as AD0001 and
+            // suppresses this rule for the whole file.
+            if (attribute.ConstructorArguments.Length != 2
+                || attribute.ConstructorArguments[0].Value is not double declaredMinimum
+                || attribute.ConstructorArguments[1].Value is not double declaredMaximum)
+            {
+                return false;
+            }
+
+            minimum = declaredMinimum;
+            maximum = declaredMaximum;
 
             // MinimumExclusive, MaximumExclusive, HasSentinel, and SentinelValue are independent
             // optional named arguments; a property may set any combination of them, so each is read
-            // with its own separate check.
+            // with its own separate check. A named argument of the wrong type, again possible only in code
+            // that does not compile, carries no value and leaves that setting at its default.
             foreach (KeyValuePair<string, TypedConstant> namedArgument in attribute.NamedArguments)
             {
-                if (namedArgument.Key == "MinimumExclusive")
+                object? namedValue = namedArgument.Value.Value;
+                if (namedArgument.Key == "MinimumExclusive" && namedValue is bool declaredMinimumExclusive)
                 {
-                    minimumExclusive = (bool)namedArgument.Value.Value!;
+                    minimumExclusive = declaredMinimumExclusive;
                 }
 
-                if (namedArgument.Key == "MaximumExclusive")
+                if (namedArgument.Key == "MaximumExclusive" && namedValue is bool declaredMaximumExclusive)
                 {
-                    maximumExclusive = (bool)namedArgument.Value.Value!;
+                    maximumExclusive = declaredMaximumExclusive;
                 }
 
-                if (namedArgument.Key == "HasSentinel")
+                if (namedArgument.Key == "HasSentinel" && namedValue is bool declaredHasSentinel)
                 {
-                    hasSentinel = (bool)namedArgument.Value.Value!;
+                    hasSentinel = declaredHasSentinel;
                 }
 
-                if (namedArgument.Key == "SentinelValue")
+                if (namedArgument.Key == "SentinelValue" && namedValue is double declaredSentinelValue)
                 {
-                    sentinelValue = (double)namedArgument.Value.Value!;
+                    sentinelValue = declaredSentinelValue;
                 }
             }
 

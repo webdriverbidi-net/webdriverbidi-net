@@ -141,12 +141,10 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
     private static StatementSyntax? FindMoveTargetStatement(MethodDeclarationSyntax method, InvocationExpressionSyntax invocation)
     {
         StatementSyntax commandStatement = invocation.FirstAncestorOrSelf<StatementSyntax>()!;
-        string? driverVariableName = GetRootIdentifierName(invocation.Expression);
+        string? driverVariableName = CodeFixHelpers.GetRootIdentifierName(invocation.Expression);
         StatementSyntax? startAsyncStatement = method.Body!.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Where(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                && ma.Name.Identifier.ValueText == "StartAsync"
-                && GetRootIdentifierName(ma) == driverVariableName)
+            .Where(inv => CodeFixHelpers.IsStartAsyncOn(inv, driverVariableName))
             .Select(inv => inv.FirstAncestorOrSelf<StatementSyntax>()!)
             .FirstOrDefault();
 
@@ -246,19 +244,5 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
         }
 
         return true;
-    }
-
-    private static string? GetRootIdentifierName(ExpressionSyntax expression)
-    {
-        // expression is always a MemberAccessExpressionSyntax when called from this provider.
-        ExpressionSyntax current = ((MemberAccessExpressionSyntax)expression).Expression;
-        while (current is MemberAccessExpressionSyntax nestedAccess)
-        {
-            current = nestedAccess.Expression;
-        }
-
-        // The receiver chain may not end in a simple identifier (for example, a driver held in
-        // a field accessed through `this`); such receivers are not fixable and yield no name.
-        return (current as IdentifierNameSyntax)?.Identifier.Text;
     }
 }

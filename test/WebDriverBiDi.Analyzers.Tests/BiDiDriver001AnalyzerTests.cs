@@ -2193,4 +2193,45 @@ public class BiDiDriver001AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer>(test);
     }
+
+    /// <summary>
+    /// Tests that a driver stopped through a method its own derived type declares is not tracked: that
+    /// method may have stopped the driver, so a registration after it cannot be judged.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterDerivedDriverStoppedThroughItsOwnMethod_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class ManagedDriver : BiDiDriver
+                {
+                    public Task ShutdownAsync() => this.StopAsync();
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        ManagedDriver driver = new ManagedDriver();
+                        await driver.StartAsync("ws://localhost:9222");
+                        await driver.ShutdownAsync();
+                        driver.RegisterModule(new CustomModule(driver));
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer>(test);
+    }
 }

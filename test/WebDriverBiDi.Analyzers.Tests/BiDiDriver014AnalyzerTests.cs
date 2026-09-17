@@ -1236,4 +1236,45 @@ public class BiDiDriver014AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(testCode, expected0);
     }
+
+    /// <summary>
+    /// Tests that a parameters object handed to code this method cannot see, other than by passing it as an argument,
+    /// is not reported: returned to a caller that configures it, stored in a field, placed in a collection, or
+    /// aliased to another variable that configures it.
+    /// </summary>
+    /// <param name="handOff">The statements that hand the object on.</param>
+    /// <param name="returnType">The method's return type.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Theory]
+    [InlineData("return parameters;", "SetTimeZoneOverrideCommandParameters")]
+    [InlineData("this.pending = parameters;", "void")]
+    [InlineData("SetTimeZoneOverrideCommandParameters[] batch = [parameters];", "void")]
+    [InlineData("SetTimeZoneOverrideCommandParameters alias = parameters; alias.TimeZone = \"UTC\";", "void")]
+    public async Task ParameterlessConstructor_HandedToOtherCodeOtherThanAsArgument_NoDiagnostic(string handOff, string returnType)
+    {
+        string test = $$"""
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private SetTimeZoneOverrideCommandParameters? pending;
+
+                    public {{returnType}} CreateParameters()
+                    {
+                        SetTimeZoneOverrideCommandParameters parameters = new();
+                        {{handOff}}
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

@@ -543,8 +543,9 @@ public class BiDiDriver005AnalyzerTests
             {
                 public class TestClass
                 {
-                    public async Task TestMethod(WebDriverBiDi.BiDiDriver driver)
+                    public async Task TestMethod()
                     {
+                        WebDriverBiDi.BiDiDriver driver = new WebDriverBiDi.BiDiDriver();
                         {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
                     }
                 }
@@ -1306,6 +1307,87 @@ public class BiDiDriver005AnalyzerTests
     /// Compiles a fake WebDriverBiDi-shaped library in memory so that its types appear as
     /// metadata-backed symbols in analyzer tests, matching the real-world package-consumer scenario.
     /// </summary>
+    /// <summary>
+    /// Tests that an observer is not reported when the driver was not created in this method and so may have been
+    /// subscribed elsewhere: a driver received as a parameter (a test fixture handing its driver to a test, say), a
+    /// local driver handed to a helper that may subscribe it, and a local driver obtained from a factory.
+    /// </summary>
+    /// <param name="driverSource">The declaration of the driver and anything done with it before the observer.</param>
+    /// <param name="parameters">The method's parameter list.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Theory]
+    [InlineData("", "BiDiDriver driver")]
+    [InlineData("BiDiDriver driver = new(); await SubscribeAllAsync(driver);", "")]
+    [InlineData("BiDiDriver driver = CreateDriver();", "")]
+    public async Task AddObserver_OnDriverThatMayBeSubscribedElsewhere_NoDiagnostic(string driverSource, string parameters)
+    {
+        string testCode = $$"""
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod({{parameters}})
+                    {
+                        {{driverSource}}
+                        using EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(e => Task.CompletedTask);
+                        await Task.CompletedTask;
+                    }
+
+                    private static Task SubscribeAllAsync(BiDiDriver driver) => Task.CompletedTask;
+
+                    private static BiDiDriver CreateDriver() => new();
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that handing the driver to a custom module's constructor does not stop the driver being judged: the
+    /// module keeps the driver to send commands through it, and subscribes nothing.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnDriverHandedToCustomModuleConstructor_ReportsWarning()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        driver.RegisterModule(new CustomModule(driver));
+                        using EventObserver<EntryAddedEventArgs> observer = {|#0:driver.Log.OnEntryAdded.AddObserver(e => Task.CompletedTask)|};
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode, expected);
+    }
+
     private static async Task<MetadataReference> CreateFakeLibMetadataReference()
     {
         const string librarySource = """
@@ -1411,7 +1493,8 @@ public class BiDiDriver005AnalyzerTests
 
     /// <summary>
     /// Tests that an observer added in an expression-bodied method (no block body) is analyzed
-    /// like one added in a block body: the arrow expression is the member's executable body.
+    /// like one added in a block body: the arrow expression is the member's executable body. An
+    /// expression body declares no locals, so the driver is created in the event access itself.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -1428,8 +1511,8 @@ public class BiDiDriver005AnalyzerTests
                 public class TestClass
                 {
                     // Expression-bodied method: method.Body will be null.
-                    public EventObserver<EntryAddedEventArgs> GetObserver(BiDiDriver driver) =>
-                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+                    public EventObserver<EntryAddedEventArgs> GetObserver() =>
+                        {|#0:new BiDiDriver().Log.OnEntryAdded.AddObserver(async (e) => { })|};
                 }
             }
             """;
@@ -2296,13 +2379,13 @@ public class BiDiDriver005AnalyzerTests
         """;
 
     /// <summary>
-    /// Tests that an event access whose member-access chain roots at <c>this</c> rather than at an
-    /// identifier (a driver held in a field, spelled the way StyleCop's SA1101 requires) is analyzed
-    /// like one rooted at a local: the driver is recognized by the type of the module's receiver.
+    /// Tests that an event reached through a driver held in a field (spelled through <c>this</c>, the way
+    /// StyleCop's SA1101 requires) is not reported when this method does not subscribe to it. A field
+    /// driver is typically subscribed where the fixture sets it up, in another method this one cannot see.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task AddObserver_OnThisRootedEventAccess_ReportsWarning()
+    public async Task AddObserver_OnThisRootedFieldDriver_NoDiagnostic()
     {
         string test = """
             using WebDriverBiDi;
@@ -2319,21 +2402,16 @@ public class BiDiDriver005AnalyzerTests
                     {
                         // The chain roots at `this`, not at an identifier.
                         using EventObserver<EntryAddedEventArgs> observer =
-                            {|#0:this.driver.Log.OnEntryAdded.AddObserver(e => Task.CompletedTask)|};
+                            this.driver.Log.OnEntryAdded.AddObserver(e => Task.CompletedTask);
                     }
                 }
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-            .WithLocation(0)
-            .WithArguments("log.entryAdded");
-
         RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
         {
             TestCode = test,
         };
-        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -2999,11 +3077,12 @@ public class BiDiDriver005AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that an event reached through a driver returned by a call (<c>GetDriver().Log.OnEntryAdded</c>) is analyzed: the driver is recognized by the type of the module's receiver.
+    /// Tests that an event reached through a driver returned by a call (<c>GetDriver().Log.OnEntryAdded</c>) is not
+    /// reported when this method does not subscribe to it: the code that creates the driver may subscribe it.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task AddObserver_OnDriverReturnedByMethod_ReportsWarning()
+    public async Task AddObserver_OnDriverReturnedByMethod_NoDiagnostic()
     {
         string testCode = """
             using System;
@@ -3018,7 +3097,7 @@ public class BiDiDriver005AnalyzerTests
                     public void Setup()
                     {
                         using EventObserver<EntryAddedEventArgs> observer =
-                            {|#0:GetDriver().Log.OnEntryAdded.AddObserver(e => Task.CompletedTask)|};
+                            GetDriver().Log.OnEntryAdded.AddObserver(e => Task.CompletedTask);
                     }
 
                     private static BiDiDriver GetDriver() => new BiDiDriver(TimeSpan.FromSeconds(30));
@@ -3026,11 +3105,7 @@ public class BiDiDriver005AnalyzerTests
             }
             """;
 
-        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-            .WithLocation(0)
-            .WithArguments("log.entryAdded");
-
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode, expected0);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode);
     }
 
     /// <summary>
@@ -3099,5 +3174,272 @@ public class BiDiDriver005AnalyzerTests
             """;
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a driver whose session module is handed to a helper is not judged: the helper may
+    /// subscribe through it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SessionModulePassedToHelper_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static Task SubscribeToLogsAsync(SessionModule session)
+                    {
+                        return session.SubscribeAsync(new SubscribeCommandParameters("log.entryAdded"));
+                    }
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:9222");
+                        await SubscribeToLogsAsync(driver.Session);
+                        driver.Log.OnEntryAdded.AddObserver(e => { });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a session module read through a null-conditional receiver and handed to a helper is
+    /// treated the same way.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SessionModuleReadThroughConditionalAccessPassedToHelper_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static Task SubscribeToLogsAsync(SessionModule? session)
+                    {
+                        return session!.SubscribeAsync(new SubscribeCommandParameters("log.entryAdded"));
+                    }
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new BiDiDriver();
+                        await SubscribeToLogsAsync(driver?.Session);
+                        driver.Log.OnEntryAdded.AddObserver(e => { });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a driver whose session module is held in a local that is then handed to a helper is not
+    /// judged.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SessionModuleAliasPassedToHelper_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static Task SubscribeToLogsAsync(SessionModule session)
+                    {
+                        return session.SubscribeAsync(new SubscribeCommandParameters("log.entryAdded"));
+                    }
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        SessionModule session = driver.Session;
+                        await SubscribeToLogsAsync(session);
+                        driver.Log.OnEntryAdded.AddObserver(e => { });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a session module held in a local that is only used in the body itself does not stop the
+    /// driver being judged.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SessionModuleAliasKeptInBody_WithoutSubscription_ReportsWarning()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        SessionModule session = driver.Session;
+                        await session.StatusAsync();
+                        {|#0:driver.Log.OnEntryAdded.AddObserver(e => { })|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that handing a module other than the session module to a helper does not stop the driver
+    /// being judged, because no other module can subscribe.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NonSessionModulePassedToHelper_WithoutSubscription_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static void Inspect(LogModule log)
+                    {
+                    }
+
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        Inspect(driver.Log);
+                        {|#0:driver.Log.OnEntryAdded.AddObserver(e => { })|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that handing on a session module read from something other than a driver variable this body declares
+    /// leaves the driver it does declare tracked.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task OtherSessionReadsPassedToHelpers_WithoutSubscription_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class DriverHolder
+                {
+                    public BiDiDriver Driver { get; } = new BiDiDriver();
+                }
+
+                public class Settings
+                {
+                    public string Session { get; set; } = string.Empty;
+                }
+
+                public class TestClass
+                {
+                    private static BiDiDriver CreateDriver() => new BiDiDriver();
+
+                    private static void Inspect(SessionModule session)
+                    {
+                    }
+
+                    private static void Inspect(string session)
+                    {
+                    }
+
+                    public void TestMethod(DriverHolder holder, Settings settings)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        Inspect(CreateDriver().Session);
+                        Inspect(holder.Driver.Session);
+                        Inspect(settings.Session);
+                        {|#0:driver.Log.OnEntryAdded.AddObserver(e => { })|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

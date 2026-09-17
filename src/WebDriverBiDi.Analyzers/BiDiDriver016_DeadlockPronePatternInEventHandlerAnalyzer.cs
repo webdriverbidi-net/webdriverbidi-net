@@ -146,52 +146,63 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
                 continue;
             }
 
-            string? containingTypeName = methodSymbol.ContainingType.Name;
-            string methodName = methodSymbol.Name;
-
-            if (containingTypeName == "Monitor" && (methodName == "Enter" || methodName == "TryEnter"))
+            // A wait given an explicit zero timeout returns at once, whether or not it acquired anything, so it cannot
+            // deadlock the handler it runs in.
+            if (GetDeadlockPronePattern(methodSymbol) is { } pattern
+                && !AnalyzerSymbolHelpers.HasZeroTimeoutArgument(context.SemanticModel, invocation, methodSymbol))
             {
-                patterns.Add((invocation, $"Monitor.{methodName}"));
-                continue;
+                patterns.Add((invocation, pattern));
             }
-
-            if (containingTypeName == "SemaphoreSlim" && methodName == "Wait")
-            {
-                patterns.Add((invocation, "SemaphoreSlim.Wait"));
-                continue;
-            }
-
-            // WaitOne is declared on WaitHandle, so a call through any of its derived types
-            // (Mutex, Semaphore, ManualResetEvent, AutoResetEvent, ...) binds to a method
-            // symbol whose containing type is WaitHandle; matching the base type name covers
-            // them all. ManualResetEventSlim and CountdownEvent are not WaitHandles and
-            // declare their own blocking Wait methods, so they are matched by name.
-            if (containingTypeName == "WaitHandle" && methodName == "WaitOne")
-            {
-                patterns.Add((invocation, "WaitHandle.WaitOne"));
-                continue;
-            }
-
-            if ((containingTypeName == "ManualResetEventSlim" || containingTypeName == "CountdownEvent") && methodName == "Wait")
-            {
-                patterns.Add((invocation, $"{containingTypeName}.{methodName}"));
-                continue;
-            }
-
-            if (containingTypeName == "SynchronizationContext" && methodName == "Send")
-            {
-                patterns.Add((invocation, "SynchronizationContext.Send"));
-                continue;
-            }
-
-            if (containingTypeName == "Task" && (methodName == "WaitAll" || methodName == "WaitAny"))
-            {
-                patterns.Add((invocation, $"Task.{methodName}"));
-                continue;
-            }
-
         }
 
         return patterns;
+    }
+
+    /// <summary>
+    /// Gets the name a synchronization method is reported under, when it is one of the deadlock-prone patterns.
+    /// </summary>
+    /// <param name="methodSymbol">The method an invocation binds to.</param>
+    /// <returns>The pattern name, or <see langword="null"/> when the method is not a deadlock-prone pattern.</returns>
+    private static string? GetDeadlockPronePattern(IMethodSymbol methodSymbol)
+    {
+        string containingTypeName = methodSymbol.ContainingType.Name;
+        string methodName = methodSymbol.Name;
+
+        if (containingTypeName == "Monitor" && (methodName == "Enter" || methodName == "TryEnter"))
+        {
+            return $"Monitor.{methodName}";
+        }
+
+        if (containingTypeName == "SemaphoreSlim" && methodName == "Wait")
+        {
+            return "SemaphoreSlim.Wait";
+        }
+
+        // WaitOne is declared on WaitHandle, so a call through any of its derived types
+        // (Mutex, Semaphore, ManualResetEvent, AutoResetEvent, ...) binds to a method
+        // symbol whose containing type is WaitHandle; matching the base type name covers
+        // them all. ManualResetEventSlim and CountdownEvent are not WaitHandles and
+        // declare their own blocking Wait methods, so they are matched by name.
+        if (containingTypeName == "WaitHandle" && methodName == "WaitOne")
+        {
+            return "WaitHandle.WaitOne";
+        }
+
+        if ((containingTypeName == "ManualResetEventSlim" || containingTypeName == "CountdownEvent") && methodName == "Wait")
+        {
+            return $"{containingTypeName}.{methodName}";
+        }
+
+        if (containingTypeName == "SynchronizationContext" && methodName == "Send")
+        {
+            return "SynchronizationContext.Send";
+        }
+
+        if (containingTypeName == "Task" && (methodName == "WaitAll" || methodName == "WaitAny"))
+        {
+            return $"Task.{methodName}";
+        }
+
+        return null;
     }
 }

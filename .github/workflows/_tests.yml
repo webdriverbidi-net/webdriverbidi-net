@@ -135,20 +135,39 @@ jobs:
           status=0
           for variant in roslyn4.8 roslyn5.9; do
             directory="test/package/extracted/analyzers/dotnet/$variant/cs"
+            # A roslyn<major.minor> folder must hold a build compiled against that Roslyn version.
+            expected_roslyn="${variant#roslyn}.0.0"
             for assembly in WebDriverBiDi.Analyzers.dll WebDriverBiDi.Analyzers.CodeFixProviders.dll; do
               if [ ! -f "$directory/$assembly" ]; then
                 echo "FAIL $variant/cs/$assembly is missing"
                 status=1
+                continue
+              fi
+
               # These assemblies are compiled by a child `dotnet build` inside the pack target, which
               # stamps them only with the version properties the pack invocation forwards to it. If
               # that forwarding breaks, they ship as 1.0.0.0 inside a package carrying the release
               # version, and nothing else would notice. The probe value comes from the pack step above
               # and is matched against the assembly's embedded metadata strings.
-              elif ! grep -a -q '9.9.9-packprobe' "$directory/$assembly"; then
+              if ! grep -a -q '9.9.9-packprobe' "$directory/$assembly"; then
                 echo "FAIL $variant/cs/$assembly is not version stamped; the pack target did not forward the version properties"
                 status=1
               else
                 echo "OK   $variant/cs/$assembly (version stamped)"
+              fi
+
+              # The same child build selects the Roslyn version from the RoslynVersion property the pack
+              # target passes per variant. If that stopped arriving, every folder would hold the default
+              # 4.8 build, and a compiler picking the newest folder would get none of the newer build's
+              # API use, with every check above still passing.
+              if ! roslyn_reference=$(dotnet run scripts/print-assembly-reference-version.cs -- "$directory/$assembly" Microsoft.CodeAnalysis); then
+                echo "FAIL $variant/cs/$assembly does not reference Microsoft.CodeAnalysis"
+                status=1
+              elif [ "$roslyn_reference" != "$expected_roslyn" ]; then
+                echo "FAIL $variant/cs/$assembly references Microsoft.CodeAnalysis $roslyn_reference, not $expected_roslyn"
+                status=1
+              else
+                echo "OK   $variant/cs/$assembly (references Microsoft.CodeAnalysis $roslyn_reference)"
               fi
             done
           done

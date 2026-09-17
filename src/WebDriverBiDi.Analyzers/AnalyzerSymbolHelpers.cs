@@ -120,9 +120,115 @@ internal static class AnalyzerSymbolHelpers
         return handler switch
         {
             AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            IdentifierNameSyntax or MemberAccessExpressionSyntax => context.SemanticModel.GetSymbolInfo(handler).Symbol is IMethodSymbol { IsAsync: true },
+            IdentifierNameSyntax or MemberAccessExpressionSyntax => context.SemanticModel.GetSymbolInfo(handler).Symbol switch
+            {
+                IMethodSymbol method => (method.PartialImplementationPart ?? method).IsAsync,
+                ILocalSymbol local => GetLambdaHeldInLocal(local)?.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword) == true,
+                _ => false,
+            },
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// Gets the lambda or anonymous method a handler expression names through a local variable, when the local is
+    /// declared with one and never given another value.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the handler expression's tree.</param>
+    /// <param name="handler">The handler expression.</param>
+    /// <returns>The anonymous function, or <see langword="null"/> when the expression does not name such a local.</returns>
+    /// <remarks>
+    /// <c>Action&lt;EntryAddedEventArgs&gt; handler = e =&gt; Thread.Sleep(1000); observable.AddObserver(handler);</c> passes
+    /// exactly the handler an inline lambda would, so the rules that inspect a handler's body read it through the local.
+    /// A local that is assigned again, or passed by reference, may hold a different delegate by the time it is passed,
+    /// and is left unresolved rather than guessed at.
+    /// </remarks>
+    internal static AnonymousFunctionExpressionSyntax? GetLambdaHeldInLocal(SemanticModel semanticModel, ExpressionSyntax handler)
+    {
+        return handler is IdentifierNameSyntax && semanticModel.GetSymbolInfo(handler).Symbol is ILocalSymbol local
+            ? GetLambdaHeldInLocal(local)
+            : null;
+    }
+
+    /// <summary>
+    /// Gets the descendant nodes of the scope a local variable is declared in, which is everywhere the local can be
+    /// mentioned.
+    /// </summary>
+    /// <param name="declarator">The local's declarator.</param>
+    /// <returns>The descendant nodes of the local's scope.</returns>
+    /// <remarks>
+    /// A local's scope is the block that declares it; for a local declared in a switch section it is the whole switch
+    /// block, and for a top-level statement it is the program's global statements. A local declared by a
+    /// <c>for</c>, <c>using</c> or <c>fixed</c> statement is searched through the block enclosing that statement,
+    /// which contains its real scope. Searching the scope rather than the whole member keeps a same-named local in a
+    /// sibling scope from being mistaken for this one.
+    /// </remarks>
+    internal static IEnumerable<SyntaxNode> GetLocalScopeDescendantNodes(VariableDeclaratorSyntax declarator)
+    {
+        // declarator → variable declaration → declaring statement → the statement's container. Every local is
+        // declared inside a statement, and every statement has a container, so the chain is always complete.
+        SyntaxNode scope = declarator.Parent!.Parent!.Parent!;
+        if (scope is SwitchSectionSyntax or GlobalStatementSyntax)
+        {
+            scope = scope.Parent!;
+        }
+
+        return scope is CompilationUnitSyntax ? GetBodyDescendantNodes(scope) : scope.DescendantNodes();
+    }
+
+    private static AnonymousFunctionExpressionSyntax? GetLambdaHeldInLocal(ILocalSymbol local)
+    {
+        if (local.DeclaringSyntaxReferences[0].GetSyntax() is not VariableDeclaratorSyntax { Initializer.Value: AnonymousFunctionExpressionSyntax anonymousFunction } declarator)
+        {
+            return null;
+        }
+
+        string name = declarator.Identifier.ValueText;
+        bool isRebound = GetLocalScopeDescendantNodes(declarator)
+            .OfType<IdentifierNameSyntax>()
+            .Any(identifier => identifier.Identifier.ValueText == name && identifier.Parent switch
+            {
+                AssignmentExpressionSyntax assignment => assignment.Left == identifier,
+                ArgumentSyntax argument => !argument.RefKindKeyword.IsKind(SyntaxKind.None),
+                _ => false,
+            });
+
+        return isRebound ? null : anonymousFunction;
+    }
+
+    /// <summary>
+    /// Determines whether a call to a synchronization method is given an explicit timeout of zero, which makes it
+    /// return at once rather than wait: <c>semaphore.Wait(0)</c>, <c>handle.WaitOne(TimeSpan.Zero)</c>.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the invocation's tree.</param>
+    /// <param name="invocation">The invocation.</param>
+    /// <param name="method">The method the invocation binds to.</param>
+    /// <returns><see langword="true"/> if the timeout argument is the constant zero or <see cref="TimeSpan.Zero"/>; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The timeout is recognized by its parameter name, <c>millisecondsTimeout</c> or <c>timeout</c>, which is what
+    /// every waiting method in the framework calls it. <c>Thread.Sleep</c> also names its parameter
+    /// <c>millisecondsTimeout</c>, but a sleep is not a poll, and the caller excludes it. An argument beyond the
+    /// method's parameter list belongs to a <c>params</c> array (<c>Task.WaitAll(first, second)</c>), which is never
+    /// a timeout.
+    /// </remarks>
+    internal static bool HasZeroTimeoutArgument(SemanticModel semanticModel, InvocationExpressionSyntax invocation, IMethodSymbol method)
+    {
+        SeparatedSyntaxList<ArgumentSyntax> arguments = invocation.ArgumentList.Arguments;
+        for (int i = 0; i < arguments.Count && i < method.Parameters.Length; i++)
+        {
+            ArgumentSyntax argument = arguments[i];
+            string parameterName = argument.NameColon is null ? method.Parameters[i].Name : argument.NameColon.Name.Identifier.ValueText;
+            if (parameterName is not ("millisecondsTimeout" or "timeout"))
+            {
+                continue;
+            }
+
+            Optional<object?> constantValue = semanticModel.GetConstantValue(argument.Expression);
+            return (constantValue.HasValue && Equals(constantValue.Value, 0))
+                || (semanticModel.GetSymbolInfo(argument.Expression).Symbol is IFieldSymbol field && field.ToDisplayString() == "System.TimeSpan.Zero");
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -240,6 +346,85 @@ internal static class AnalyzerSymbolHelpers
         return ReferenceEquals(node.SyntaxTree, context.Node.SyntaxTree)
             ? context.SemanticModel
             : context.Compilation.GetSemanticModel(node.SyntaxTree);
+    }
+
+    /// <summary>
+    /// Gets the identifier at the root of a member access chain, looking through the wrappers a receiver may
+    /// carry: <c>driver</c> for <c>driver.StartAsync</c>, <c>driver!.StartAsync</c>, <c>(driver).StartAsync</c>,
+    /// <c>((IBiDiDriverLifecycleManager)driver).StartAsync</c>, <c>driver?.StartAsync</c> and
+    /// <c>driver?.Session.StatusAsync</c>.
+    /// </summary>
+    /// <param name="expression">
+    /// The member access to resolve, typically an invocation's <see cref="InvocationExpressionSyntax.Expression"/>.
+    /// </param>
+    /// <param name="memberDepth">
+    /// When this method returns, the number of member accesses between the root identifier and the end of the chain:
+    /// 1 for <c>driver.StartAsync</c>, 2 for <c>driver.Session.StatusAsync</c>.
+    /// </param>
+    /// <returns>
+    /// The root identifier, or <see langword="null"/> when the expression is not a member access, or its chain does not
+    /// root in a simple identifier.
+    /// </returns>
+    /// <remarks>
+    /// Every wrapper names the same object as the bare identifier, so a rule that tracks a variable's state must
+    /// read <c>driver!.StartAsync()</c> as it reads <c>driver.StartAsync()</c>. A call made through a null-conditional
+    /// access happens only when the receiver is not null, which is also the only case in which a later call on it
+    /// can succeed, so it is read as happening. A member binding (<c>.StartAsync</c> in <c>driver?.StartAsync</c>)
+    /// takes its receiver from the nearest enclosing conditional access whose non-null branch contains it.
+    /// </remarks>
+    internal static IdentifierNameSyntax? GetMemberChainRoot(ExpressionSyntax expression, out int memberDepth)
+    {
+        memberDepth = 0;
+        ExpressionSyntax current = expression;
+        while (true)
+        {
+            switch (current)
+            {
+                case MemberAccessExpressionSyntax memberAccess:
+                    memberDepth++;
+                    current = memberAccess.Expression;
+                    break;
+                case MemberBindingExpressionSyntax memberBinding:
+                    memberDepth++;
+                    current = memberBinding.Ancestors()
+                        .OfType<ConditionalAccessExpressionSyntax>()
+                        .First(conditionalAccess => conditionalAccess.WhenNotNull.Span.Contains(memberBinding.Span))
+                        .Expression;
+                    break;
+                case ParenthesizedExpressionSyntax parenthesized:
+                    current = parenthesized.Expression;
+                    break;
+                case CastExpressionSyntax cast:
+                    current = cast.Expression;
+                    break;
+                case PostfixUnaryExpressionSyntax postfix:
+                    current = postfix.Operand;
+                    break;
+                case IdentifierNameSyntax identifier when memberDepth > 0:
+                    return identifier;
+                default:
+                    return null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the member binding a conditional access applies directly to its receiver: <c>.StartAsync</c> in
+    /// <c>driver?.StartAsync(url)</c> and in <c>driver?.StartAsync(url).ConfigureAwait(false)</c>.
+    /// </summary>
+    /// <param name="conditionalAccess">The conditional access.</param>
+    /// <returns>
+    /// The member binding on the conditional access's receiver, or <see langword="null"/> when the receiver is
+    /// indexed instead (<c>items?[0]</c>).
+    /// </returns>
+    /// <remarks>
+    /// The non-null branch always begins with the binding on the receiver, so the branch's first token, the
+    /// <c>.</c> of a member binding or the <c>[</c> of an element binding, identifies it. A later binding in the
+    /// branch belongs to a conditional access nested inside it.
+    /// </remarks>
+    internal static MemberBindingExpressionSyntax? GetReceiverMemberBinding(ConditionalAccessExpressionSyntax conditionalAccess)
+    {
+        return conditionalAccess.WhenNotNull.GetFirstToken().Parent as MemberBindingExpressionSyntax;
     }
 
     /// <summary>
@@ -524,8 +709,10 @@ internal static class AnalyzerSymbolHelpers
             return null;
         }
 
-        // The initializer has to read a member of a driver-typed identifier: `driver.BrowsingContext`.
-        if (declarator.Initializer.Value is not MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax driverIdentifier }
+        // The initializer has to read a member of a driver-typed identifier: `driver.BrowsingContext`, or
+        // `driver!.BrowsingContext` through a wrapped receiver.
+        if (GetMemberChainRoot(declarator.Initializer.Value, out int memberDepth) is not IdentifierNameSyntax driverIdentifier
+            || memberDepth != 1
             || !IsCommandExecutorType(semanticModel.GetTypeInfo(driverIdentifier).Type))
         {
             return null;
@@ -544,6 +731,10 @@ internal static class AnalyzerSymbolHelpers
     /// tracks a variable's state across a single member can stop tracking them.
     /// </summary>
     /// <param name="body">The member body being analyzed.</param>
+    /// <param name="includeArguments">
+    /// Whether passing a variable as an argument counts as handing it on. A rule that judges each call it is passed to
+    /// on its own terms (the command that sends it, say) passes <see langword="false"/>.
+    /// </param>
     /// <returns>The set of names whose state cannot be known from this member alone.</returns>
     /// <remarks>
     /// A variable passed to a method, returned, stored elsewhere, or used to initialize another
@@ -553,39 +744,50 @@ internal static class AnalyzerSymbolHelpers
     /// Being on the left of an assignment is not an escape: that rebinds the name rather than handing
     /// the object out, and a rule that tracks assignments handles it directly.
     /// </remarks>
-    internal static HashSet<string> FindVariablesHandedToOtherCode(SyntaxNode body)
+    internal static HashSet<string> FindVariablesHandedToOtherCode(SyntaxNode body, bool includeArguments = true)
     {
         HashSet<string> escapedNames = [];
         foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            // The mention may be wrapped (parenthesized, cast, null-forgiven, or one arm of a
-            // conditional) before it reaches the construct that hands it out.
-            SyntaxNode mention = PeelExpressionWrappers(identifier);
-            bool escapes = mention.Parent switch
-            {
-                // Returned to the caller: return observer; or yield return observer;
-                ReturnStatementSyntax or YieldStatementSyntax => true,
-
-                // Stored somewhere this member does not own: this.observer = observer;
-                AssignmentExpressionSyntax assignment => assignment.Right == mention,
-
-                // Passed to a method or constructor that may operate on it: BeginCapture(observer);
-                ArgumentSyntax => true,
-
-                // Placed in a collection expression or an initializer, or used to initialize another
-                // variable that may be operated on under its own name.
-                ExpressionElementSyntax or InitializerExpressionSyntax or EqualsValueClauseSyntax => true,
-
-                _ => false,
-            };
-
-            if (escapes)
+            if (IsHandedToOtherCode(identifier, includeArguments))
             {
                 escapedNames.Add(identifier.Identifier.ValueText);
             }
         }
 
         return escapedNames;
+    }
+
+    /// <summary>
+    /// Determines whether the value of an expression is handed to code the enclosing member cannot see:
+    /// returned, stored, passed as an argument, placed in a collection or initializer, or used to initialize
+    /// another variable.
+    /// </summary>
+    /// <param name="expression">The expression whose value is examined.</param>
+    /// <param name="includeArguments">Whether passing the value as an argument counts as handing it on.</param>
+    /// <returns><see langword="true"/> if the value is handed to other code; otherwise <see langword="false"/>.</returns>
+    internal static bool IsHandedToOtherCode(SyntaxNode expression, bool includeArguments = true)
+    {
+        // The value may be wrapped (parenthesized, cast, null-forgiven, or one arm of a conditional) before it
+        // reaches the construct that hands it out.
+        SyntaxNode mention = PeelExpressionWrappers(expression);
+        return mention.Parent switch
+        {
+            // Returned to the caller: return observer; or yield return observer;
+            ReturnStatementSyntax or YieldStatementSyntax => true,
+
+            // Stored somewhere this member does not own: this.observer = observer;
+            AssignmentExpressionSyntax assignment => assignment.Right == mention,
+
+            // Passed to a method or constructor that may operate on it: BeginCapture(observer);
+            ArgumentSyntax => includeArguments,
+
+            // Placed in a collection expression or an initializer, or used to initialize another
+            // variable that may be operated on under its own name.
+            ExpressionElementSyntax or InitializerExpressionSyntax or EqualsValueClauseSyntax => true,
+
+            _ => false,
+        };
     }
 
     /// <summary>
@@ -649,7 +851,10 @@ internal static class AnalyzerSymbolHelpers
     /// </remarks>
     internal static (string HandleTypeName, string MethodName)? GetEventSubscriptionHandle(SemanticModel semanticModel, InvocationExpressionSyntax invocation)
     {
-        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
+        // Callers ask this of every invocation that initializes a local or is assigned to one, nearly none of which
+        // name one of these methods; the syntactic check spares the semantic bind for all of them.
+        if (!CouldInvokeAnyOf(invocation, EventSubscriptionHandleMethodNames)
+            || semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
         {
             return null;
         }
@@ -708,10 +913,20 @@ internal static class AnalyzerSymbolHelpers
     private static SyntaxNode? GetMethodBodyFromSymbol(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
         ISymbol? symbol = context.SemanticModel.GetSymbolInfo(expression).Symbol;
+        if (symbol is ILocalSymbol local)
+        {
+            return GetLambdaHeldInLocal(local)?.Body;
+        }
+
         if (symbol is not IMethodSymbol methodSymbol)
         {
             return null;
         }
+
+        // A method group naming a partial method binds to its defining declaration, which has no body. The
+        // implementation part carries the body, and may be declared in another part of the type, even in another
+        // file or a source-generated one.
+        methodSymbol = methodSymbol.PartialImplementationPart ?? methodSymbol;
 
         SyntaxReference? syntaxReference = methodSymbol.DeclaringSyntaxReferences.FirstOrDefault();
         if (syntaxReference == null)
@@ -734,7 +949,14 @@ internal static class AnalyzerSymbolHelpers
         };
     }
 
-    private static bool HasTypeOrBaseOrInterface(ITypeSymbol? type, params string[] typeNames)
+    /// <summary>
+    /// Determines whether a type, one of its base types, or an interface one of them implements is a library type with
+    /// one of the given names.
+    /// </summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <param name="typeNames">The names of the library types to look for.</param>
+    /// <returns><see langword="true"/> if a library type with one of the names is found; otherwise <see langword="false"/>.</returns>
+    internal static bool HasTypeOrBaseOrInterface(ITypeSymbol? type, params string[] typeNames)
     {
         for (ITypeSymbol? current = type; current != null; current = current.BaseType)
         {

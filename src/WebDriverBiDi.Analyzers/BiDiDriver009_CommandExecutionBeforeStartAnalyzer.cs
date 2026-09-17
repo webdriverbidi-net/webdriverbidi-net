@@ -5,9 +5,11 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -66,8 +68,9 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // tracked and never reported on. Collecting the escaping names up front, rather than at the
         // point of escape, is what the Error severity of this rule demands: the helper that starts the
         // driver may be called before or after the command textually, and a wrong Error on correct
-        // code is worse than a missed report.
-        HashSet<string> escapedNames = DriverStartStateWalker.FindDriversWithUnknownStartedState(context.Node, semanticModel);
+        // code is worse than a missed report. Collecting them walks the whole body and binds its invocations,
+        // so it is deferred until the body is found to create a driver, which most bodies do not.
+        Lazy<HashSet<string>> escapedNames = new(() => DriverStartStateWalker.FindDriversWithUnknownStartedState(context.Node, semanticModel), LazyThreadSafetyMode.None);
 
         // Walk through all statements in the method
         IEnumerable<StatementSyntax> statements = AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node);
@@ -84,7 +87,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         VariableDeclarationSyntax declaration,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
-        HashSet<string> escapedNames)
+        Lazy<HashSet<string>> escapedNames)
     {
         foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
@@ -103,13 +106,8 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 continue;
             }
 
-            if (escapedNames.Contains(variable.Identifier.ValueText))
-            {
-                continue;
-            }
-
             ITypeSymbol? typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value).Type;
-            if (AnalyzerSymbolHelpers.IsCommandExecutorType(typeInfo))
+            if (AnalyzerSymbolHelpers.IsCommandExecutorType(typeInfo) && !escapedNames.Value.Contains(variable.Identifier.ValueText))
             {
                 driverStartedStatus[variable.Identifier.ValueText] = false;
             }
@@ -188,7 +186,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
-        HashSet<string> escapedNames)
+        Lazy<HashSet<string>> escapedNames)
     {
         // Walk the node's descendants in document order, checking each invocation against the
         // tracked started state. The walk does not descend into the bodies of nested functions
@@ -277,7 +275,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
-        HashSet<string> escapedNames)
+        Lazy<HashSet<string>> escapedNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
         ProcessNode(ifStatement.Condition, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
@@ -312,7 +310,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
-        HashSet<string> escapedNames)
+        Lazy<HashSet<string>> escapedNames)
     {
         Dictionary<string, bool> entryStatus = new(driverStartedStatus);
         Dictionary<string, bool> tryStatus = new(driverStartedStatus);
@@ -389,7 +387,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
-        HashSet<string> escapedNames)
+        Lazy<HashSet<string>> escapedNames)
     {
         // The condition is evaluated before either arm, and exactly one arm is evaluated after it: the shape of an
         // if statement with an else clause, forked and merged the same way: a driver counts as started after it when either arm may have started it.
@@ -413,7 +411,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
-        HashSet<string> escapedNames)
+        Lazy<HashSet<string>> escapedNames)
     {
         // The governing expression is evaluated before any arm, and the arms are mutually exclusive. Matching no arm
         // throws rather than continuing after the expression, so the arms are the only paths out; with no arms at
@@ -450,7 +448,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
-        HashSet<string> escapedNames)
+        Lazy<HashSet<string>> escapedNames)
     {
         // The left operand is always evaluated, and the right one only when the left does not settle the result
         // (&&, ||) or is null (??, ??=). The right operand is therefore walked as a path that may not run, as the
@@ -478,7 +476,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
-        HashSet<string> escapedNames)
+        Lazy<HashSet<string>> escapedNames)
     {
         // A for loop's declaration or initializers, a foreach loop's collection expression, and the loop
         // condition all run before the first test of the condition, so they are walked against the state as
@@ -522,7 +520,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
-        HashSet<string> escapedNames)
+        Lazy<HashSet<string>> escapedNames)
     {
         // The governing expression executes unconditionally, before any section.
         ProcessNode(switchStatement.Expression, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
@@ -605,36 +603,23 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
 
     private static string? GetDriverVariableNameFromInvocation(InvocationExpressionSyntax invocation, SyntaxNode body, SemanticModel semanticModel)
     {
-        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+        // A direct call on the driver (driver.ExecuteCommandAsync(...)) or a call on one of its modules
+        // (driver.BrowsingContext.NavigateAsync(...)), through whatever wrappers the receiver carries
+        // (driver!.ExecuteCommandAsync(...), driver?.BrowsingContext.NavigateAsync(...)).
+        IdentifierNameSyntax? identifier = AnalyzerSymbolHelpers.GetMemberChainRoot(invocation.Expression, out int memberDepth);
+        if (identifier is null || memberDepth > 2)
         {
-            // Direct call on driver: driver.ExecuteCommandAsync(...)
-            if (memberAccess.Expression is IdentifierNameSyntax identifier)
-            {
-                ITypeSymbol? type = semanticModel.GetTypeInfo(identifier).Type;
-                if (AnalyzerSymbolHelpers.IsCommandExecutorType(type))
-                {
-                    return identifier.Identifier.ValueText;
-                }
-
-                // Call on a module held in a local: context.GetTreeAsync(), where the local was bound
-                // to driver.BrowsingContext. The nested-member-access form below cannot match an
-                // identifier receiver, so this is the whole of that case.
-                return AnalyzerSymbolHelpers.GetDriverOfModuleAlias(identifier, body, semanticModel);
-            }
-
-            // Call on module: driver.BrowsingContext.NavigateAsync(...)
-            if (memberAccess.Expression is MemberAccessExpressionSyntax nestedMemberAccess &&
-                nestedMemberAccess.Expression is IdentifierNameSyntax nestedIdentifier)
-            {
-                ITypeSymbol? type = semanticModel.GetTypeInfo(nestedIdentifier).Type;
-                if (AnalyzerSymbolHelpers.IsCommandExecutorType(type))
-                {
-                    return nestedIdentifier.Identifier.ValueText;
-                }
-            }
+            return null;
         }
 
-        return null;
+        if (AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(identifier).Type))
+        {
+            return identifier.Identifier.ValueText;
+        }
+
+        // Call on a module held in a local: context.GetTreeAsync(), where the local was bound to
+        // driver.BrowsingContext. Only a direct call can be made on such a local.
+        return memberDepth == 1 ? AnalyzerSymbolHelpers.GetDriverOfModuleAlias(identifier, body, semanticModel) : null;
     }
 
     private static bool IsCommandMethod(IMethodSymbol method)

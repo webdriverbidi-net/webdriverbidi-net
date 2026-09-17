@@ -1768,4 +1768,97 @@ public class BiDiDriver016AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that synchronization calls given an explicit zero timeout, which return at once rather than
+    /// block, are not reported in an async handler.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AsyncEventHandler_ZeroTimeoutPolls_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private readonly SemaphoreSlim semaphore = new(1, 1);
+                    private readonly ManualResetEvent resetEvent = new(false);
+                    private readonly CountdownEvent countdown = new(1);
+                    private readonly object gate = new();
+
+                    public void TestMethod(BiDiDriver driver, Task pending)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            if (this.semaphore.Wait(TimeSpan.Zero))
+                            {
+                                this.semaphore.Release();
+                            }
+
+                            bool signaled = this.resetEvent.WaitOne(0);
+                            bool counted = this.countdown.Wait(0);
+                            bool entered = Monitor.TryEnter(this.gate, TimeSpan.Zero);
+                            int any = Task.WaitAny(new[] { pending }, 0);
+                            await Task.Yield();
+                        });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a synchronization call with a timeout other than zero is still reported in an async handler.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AsyncEventHandler_NonZeroTimeoutWait_ReportsWarning()
+    {
+        string testCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private readonly SemaphoreSlim semaphore = new(1, 1);
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            {|#0:this.semaphore.Wait(50)|};
+                            await Task.Yield();
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SemaphoreSlim.Wait");
+
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

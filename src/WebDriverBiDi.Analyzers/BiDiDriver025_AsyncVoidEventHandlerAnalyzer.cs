@@ -96,6 +96,18 @@ public class BiDiDriver025_AsyncVoidEventHandlerAnalyzer : DiagnosticAnalyzer
         {
             Diagnostic diagnostic = Diagnostic.Create(Rule, handlerArgument.Expression.GetLocation(), handlerMethod.Name);
             context.ReportDiagnostic(diagnostic);
+            return;
+        }
+
+        // A handler held in a local declared with a lambda is that lambda: `Action<T> handler = async e => ...;` binds
+        // to the Action<T> overload exactly as the inline lambda would. It is reported under the local's name, which is
+        // how it is spelled at the call. A lambda always binds to the method symbol of the delegate it converts to.
+        if (AnalyzerSymbolHelpers.GetLambdaHeldInLocal(context.SemanticModel, handlerArgument.Expression) is { } heldLambda
+            && heldLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword)
+            && ((IMethodSymbol)context.SemanticModel.GetSymbolInfo(heldLambda).Symbol!).ReturnsVoid)
+        {
+            Diagnostic diagnostic = Diagnostic.Create(Rule, handlerArgument.Expression.GetLocation(), ((IdentifierNameSyntax)handlerArgument.Expression).Identifier.ValueText);
+            context.ReportDiagnostic(diagnostic);
         }
     }
 }

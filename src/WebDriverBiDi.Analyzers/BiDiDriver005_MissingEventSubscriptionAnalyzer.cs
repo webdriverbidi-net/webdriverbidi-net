@@ -61,8 +61,9 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        // Find all AddObserver calls on module events
+        // Find all AddObserver calls on module events of a driver this body creates
         System.Collections.Generic.List<(InvocationExpressionSyntax Invocation, string EventName)> addObserverCalls = [];
+        System.Collections.Generic.HashSet<string>? escapedNames = null;
 
         // GetBodyDescendantNodes covers block bodies, expression bodies, and top-level programs alike.
         foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node).OfType<InvocationExpressionSyntax>())
@@ -87,7 +88,19 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
             }
 
             // Check if AddObserver is being called on a Module's ObservableEvent
-            if (IsModuleObservableEvent(context, memberAccess.Expression, out string? eventName))
+            if (!IsModuleObservableEvent(context, memberAccess.Expression, out string? eventName, out ExpressionSyntax? driverExpression))
+            {
+                continue;
+            }
+
+            // Only a driver this body creates, and does not hand to other code, can be judged from this body. A
+            // driver held in a field, received as a parameter, or returned by a call is typically subscribed where
+            // it is set up (a test fixture's set-up method, say), which this body cannot see; so is a local driver
+            // passed to a helper. Reporting for those would warn about a subscription that exists. A driver handed to
+            // a module's constructor (driver.RegisterModule(new CustomModule(driver))) is not handed on in that sense:
+            // the module keeps it in order to send commands through it, and subscribes nothing.
+            escapedNames ??= FindDriversThatMayBeSubscribedElsewhere(context.Node, context.SemanticModel);
+            if (IsDriverCreatedInBody(context.SemanticModel, driverExpression!, escapedNames))
             {
                 addObserverCalls.Add((invocation, eventName!));
             }
@@ -153,12 +166,104 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         return dotIndex > 0 && subscribedEvents.Contains(eventName.Substring(0, dotIndex));
     }
 
+    /// <summary>
+    /// Collects the names of driver variables whose subscriptions this body cannot see: those handed to other code,
+    /// and those whose session module is handed to other code, which can subscribe through it.
+    /// </summary>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <param name="semanticModel">The semantic model for the body.</param>
+    /// <returns>The names of the drivers that may be subscribed elsewhere.</returns>
+    /// <remarks>
+    /// Only the session module is followed. It is the module that subscribes, and every other module is handed to
+    /// other code without giving that code any way to subscribe. A session module held in a local
+    /// (<c>SessionModule session = driver.Session;</c>) escapes when that local does.
+    /// </remarks>
+    private static System.Collections.Generic.HashSet<string> FindDriversThatMayBeSubscribedElsewhere(SyntaxNode body, SemanticModel semanticModel)
+    {
+        System.Collections.Generic.HashSet<string> escapedNames = DriverStartStateWalker.FindDriversWithUnknownStartedState(body, semanticModel);
+        System.Collections.Generic.HashSet<string>? escapedLocals = null;
+        foreach (SyntaxNode node in AnalyzerSymbolHelpers.GetBodyDescendantNodes(body))
+        {
+            // The read of the module (`driver.Session`, or `.Session` in `driver?.Session`) and the expression whose
+            // value is the module: the member access itself, or the whole conditional access when the binding is its
+            // entire non-null branch. A binding with more after it (`driver?.Session.StatusAsync()`) yields some other
+            // value, and is not a read of the module that could be handed on.
+            ExpressionSyntax sessionMember;
+            ExpressionSyntax sessionRead;
+            if (node is MemberAccessExpressionSyntax memberAccess && memberAccess.Name.Identifier.ValueText == "Session")
+            {
+                sessionMember = memberAccess;
+                sessionRead = memberAccess;
+            }
+            else if (node is MemberBindingExpressionSyntax binding
+                && binding.Name.Identifier.ValueText == "Session"
+                && binding.Parent is ConditionalAccessExpressionSyntax conditionalAccess
+                && conditionalAccess.WhenNotNull == binding)
+            {
+                sessionMember = binding;
+                sessionRead = conditionalAccess;
+            }
+            else
+            {
+                continue;
+            }
+
+            if (AnalyzerSymbolHelpers.GetMemberChainRoot(sessionMember, out int memberDepth) is not { } driverIdentifier
+                || memberDepth != 1
+                || !AnalyzerSymbolHelpers.IsLibraryTypeNamed(semanticModel.GetTypeInfo(sessionMember).Type, "SessionModule"))
+            {
+                continue;
+            }
+
+            bool sessionEscapes;
+            if (AnalyzerSymbolHelpers.PeelExpressionWrappers(sessionRead).Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax alias })
+            {
+                escapedLocals ??= AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(body);
+                sessionEscapes = escapedLocals.Contains(alias.Identifier.ValueText);
+            }
+            else
+            {
+                sessionEscapes = AnalyzerSymbolHelpers.IsHandedToOtherCode(sessionRead);
+            }
+
+            if (sessionEscapes)
+            {
+                escapedNames.Add(driverIdentifier.Identifier.ValueText);
+            }
+        }
+
+        return escapedNames;
+    }
+
+    /// <summary>
+    /// Determines whether a driver expression names a driver this body creates and keeps to itself: a
+    /// <c>new BiDiDriver(...)</c> in the event access itself, or a local initialized with one that is never handed
+    /// to other code.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the body.</param>
+    /// <param name="driverExpression">The expression the module is read from.</param>
+    /// <param name="escapedNames">The names of the variables this body hands to other code.</param>
+    /// <returns><see langword="true"/> if the body creates the driver and keeps it; otherwise <see langword="false"/>.</returns>
+    private static bool IsDriverCreatedInBody(SemanticModel semanticModel, ExpressionSyntax driverExpression, System.Collections.Generic.HashSet<string> escapedNames)
+    {
+        return driverExpression switch
+        {
+            BaseObjectCreationExpressionSyntax => true,
+            IdentifierNameSyntax identifier => semanticModel.GetSymbolInfo(identifier).Symbol is ILocalSymbol local
+                && local.DeclaringSyntaxReferences[0].GetSyntax() is VariableDeclaratorSyntax { Initializer.Value: BaseObjectCreationExpressionSyntax }
+                && !escapedNames.Contains(identifier.Identifier.ValueText),
+            _ => false,
+        };
+    }
+
     private static bool IsModuleObservableEvent(
         SyntaxNodeAnalysisContext context,
         ExpressionSyntax expression,
-        out string? eventName)
+        out string? eventName,
+        out ExpressionSyntax? driverExpression)
     {
         eventName = null;
+        driverExpression = null;
 
         ITypeSymbol? typeSymbol = context.SemanticModel.GetTypeInfo(expression).Type;
 
@@ -171,7 +276,8 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         // The event must be reached through a module property of a driver: driver.Log.OnEntryAdded,
         // where Log is a module-typed property and its receiver has the driver type. The
         // driver may be spelled any way that has that type — a local, a parameter, a field reached
-        // through `this`, a property of another object, or the result of a call.
+        // through `this`, a property of another object, or the result of a call — and the caller
+        // decides which of those spellings this body can judge.
         if (expression is not MemberAccessExpressionSyntax eventAccess
             || eventAccess.Expression is not MemberAccessExpressionSyntax moduleAccess)
         {
@@ -190,6 +296,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
 
         // Extract the EventName from the ObservableEvent property
         eventName = GetEventNameFromProperty(context, expression);
+        driverExpression = moduleAccess.Expression;
         return eventName != null;
     }
 

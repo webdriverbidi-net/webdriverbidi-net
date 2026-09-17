@@ -2833,4 +2833,391 @@ public class BiDiDriver009AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a StartAsync call made through a wrapped receiver still starts the driver: the
+    /// null-forgiving operator, parentheses, a cast, and a null-conditional access all name the same
+    /// driver as a bare receiver does.
+    /// </summary>
+    /// <param name="startStatement">The statement that starts the driver.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Theory]
+    [InlineData("await driver!.StartAsync(\"ws://localhost:9222\");")]
+    [InlineData("await (driver).StartAsync(\"ws://localhost:9222\");")]
+    [InlineData("await ((IBiDiDriverLifecycleManager)driver).StartAsync(\"ws://localhost:9222\");")]
+    [InlineData("await (driver?.StartAsync(\"ws://localhost:9222\") ?? Task.CompletedTask);")]
+    public async Task CommandAfterStartThroughWrappedReceiver_NoDiagnostic(string startStatement)
+    {
+        string testCode = $$"""
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        {{startStatement}}
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a command issued before StartAsync through a wrapped receiver is reported, just as one
+    /// issued through a bare receiver is.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandBeforeStartThroughWrappedReceivers_ReportsError()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        await driver!.Session.StatusAsync();
+                        await (driver?.Session.StatusAsync() ?? Task.FromResult<WebDriverBiDi.Session.StatusCommandResult>(null!));
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult nullForgiving = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithSpan(11, 19, 11, 48)
+            .WithArguments("StatusAsync");
+        DiagnosticResult nullConditional = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithSpan(12, 27, 12, 49)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, nullForgiving, nullConditional);
+    }
+
+    /// <summary>
+    /// Tests that an extension method called on the driver through a null-conditional receiver hands the
+    /// driver to code the walk cannot see, exactly as the same call through a bare receiver does.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandAfterExtensionMethodStartThroughNullConditionalReceiver_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public static class DriverExtensions
+                {
+                    public static Task StartWithRetryAsync(this BiDiDriver driver, string url)
+                    {
+                        return driver.StartAsync(url);
+                    }
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        await (driver?.StartWithRetryAsync("ws://localhost:9222") ?? Task.CompletedTask);
+                        await driver!.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a lambda starting the driver through a wrapped receiver puts the driver's state beyond
+    /// the walk, as a lambda starting it through a bare receiver does.
+    /// </summary>
+    /// <param name="starter">The lambda that starts the driver.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Theory]
+    [InlineData("async () => await driver!.StartAsync(\"ws://localhost:1234\")")]
+    [InlineData("() => driver?.StartAsync(\"ws://localhost:1234\") ?? Task.CompletedTask")]
+    public async Task Command_WhenALambdaStartsTheDriverThroughAWrappedReceiver_NoDiagnostic(string starter)
+    {
+        string testCode = $$"""
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        Func<Task> starter = {{starter}};
+                        await starter();
+                        await driver!.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a null-conditional index elsewhere in the method, which has no member for the escape
+    /// analysis to read, neither hides the driver nor stops a command before StartAsync being reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandBeforeStart_WithNullConditionalIndexInMethod_ReportsError()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[]? urls)
+                    {
+                        BiDiDriver driver = new();
+                        string? url = urls?[0];
+                        await {|#0:driver.Session.StatusAsync()|};
+                        await driver.StartAsync(url ?? "ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a local read two members deep from the driver is not taken for an alias of one of its
+    /// modules: only a local holding <c>driver.Module</c> itself is.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallOnValueReadThroughAModule_IsNotAModuleAlias_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        ObservableEvent<EntryAddedEventArgs> entryAdded = driver.Log.OnEntryAdded;
+                        entryAdded.AddObserver(e => { });
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a local holding a module read through a wrapped receiver is still an alias of that
+    /// driver's module.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandThroughModuleAliasReadThroughWrappedReceiver_BeforeStart_ReportsError()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        SessionModule session = driver!.Session;
+                        await {|#0:session.StatusAsync()|};
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a driver started through a method its own derived type declares is not tracked: the
+    /// method may start the driver, which this rule cannot see.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DerivedDriverStartedThroughItsOwnMethod_CommandAfter_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class ConnectingDriver : BiDiDriver
+                {
+                    public Task ConnectAsync(string url) => this.StartAsync(url);
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        ConnectingDriver driver = new ConnectingDriver();
+                        await driver.ConnectAsync("ws://localhost:9222");
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a derived driver's own method called through a null-conditional receiver is likewise
+    /// treated as a possible start.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DerivedDriverStartedThroughItsOwnMethodViaConditionalAccess_CommandAfter_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class ConnectingDriver : BiDiDriver
+                {
+                    public Task ConnectAsync(string url) => this.StartAsync(url);
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        ConnectingDriver? driver = new ConnectingDriver();
+                        await (driver?.ConnectAsync("ws://localhost:9222") ?? Task.CompletedTask);
+                        await driver!.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a derived driver that overrides StartAsync is still tracked, because the override is the
+    /// library's own start: a command issued before it is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DerivedDriverOverridingStartAsync_CommandBeforeStart_ReportsError()
+    {
+        string testCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class LoggingDriver : BiDiDriver
+                {
+                    public override Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
+                    {
+                        return base.StartAsync(connectionString, cancellationToken);
+                    }
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        LoggingDriver driver = new LoggingDriver();
+                        await {|#0:driver.Session.StatusAsync()|};
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that calling a method the driver inherits from <see cref="object"/> does not stop the driver
+    /// being tracked, because such a method cannot start it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObjectMethodCalledOnDriver_CommandBeforeStart_ReportsError()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        Console.WriteLine(driver.ToString());
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
 }

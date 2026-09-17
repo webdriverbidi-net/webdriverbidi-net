@@ -772,13 +772,12 @@ public class BiDiDriver023AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that a local Func variable passed as the handler is not analyzed because the
-    /// identifier resolves to an ILocalSymbol, not an IMethodSymbol, so GetMethodBodyFromSymbol
-    /// returns null and no diagnostic is reported.
+    /// Tests that a local Func variable passed as the handler is not analyzed when it is not initialized with a
+    /// lambda, because the body of the delegate it holds cannot be found.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task AddObserver_LocalFuncVariableAsIdentifier_NoDiagnostic()
+    public async Task AddObserver_LocalFuncVariableNotInitializedWithLambda_NoDiagnostic()
     {
         string test = """
             using System;
@@ -793,13 +792,16 @@ public class BiDiDriver023AnalyzerTests
                 {
                     public void TestMethod(BiDiDriver driver)
                     {
-                        // A local variable of delegate type passed by identifier resolves to
-                        // ILocalSymbol, not IMethodSymbol, so GetMethodBodyFromSymbol returns null.
-                        Func<EntryAddedEventArgs, Task> fn = async e =>
+                        Func<EntryAddedEventArgs, Task> fn = CreateHandler(driver);
+                        var observer = driver.Log.OnEntryAdded.AddObserver(fn);
+                    }
+
+                    private static Func<EntryAddedEventArgs, Task> CreateHandler(BiDiDriver driver)
+                    {
+                        return async e =>
                         {
                             await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
                         };
-                        var observer = driver.Log.OnEntryAdded.AddObserver(fn);
                     }
                 }
             }
@@ -1731,6 +1733,95 @@ public class BiDiDriver023AnalyzerTests
         {
             TestCode = test,
         };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a partial method passed as a handler is analyzed through its implementation.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_PartialMethodGroup_WithModuleCommand_ReportsWarning()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public partial class TestClass
+                {
+                    private BiDiDriver driver = new BiDiDriver();
+
+                    private partial Task HandleEntryAsync(EntryAddedEventArgs args);
+
+                    public void TestMethod()
+                    {
+                        var observer = this.driver.Log.OnEntryAdded.AddObserver(HandleEntryAsync);
+                    }
+                }
+
+                public partial class TestClass
+                {
+                    private async partial Task HandleEntryAsync(EntryAddedEventArgs args)
+                    {
+                        await {|#0:this.driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a handler held in a delegate-typed local initialized with a lambda is analyzed through that
+    /// lambda.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_DelegateLocalInitializedWithLambda_WithModuleCommand_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Func<EntryAddedEventArgs, Task> handler = async args => await {|#0:driver.Session.StatusAsync()|};
+                        var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }

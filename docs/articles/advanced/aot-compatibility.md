@@ -41,7 +41,7 @@ Add a `[JsonSerializable]` attribute for each of **your own types**: every `Comm
 
 [!code-csharp[Source-Generated Context](../../code/core-concepts/CoreConceptsCustomModuleSamples.cs#Source-GeneratedContext)]
 
-> **Note:** Do not register the library's envelope types (`CommandResponseMessage<T>`, `EventMessage<T>`). Their members are internal to the library, so a context in your assembly cannot generate working metadata for them; the transport reads the envelopes itself and asks the serializer only for your result and event args types.
+> **Note:** Do not register the library's envelope types (`CommandResponseMessage<T>`, `EventMessage<T>`). Their members are internal to the library, so a context in your assembly cannot generate working metadata for them; the transport reads the envelopes itself and asks the serializer only for your result and event args types. The [BIDI034](analyzers.md#bidi034) analyzer reports an envelope type named in a `[JsonSerializable]` attribute.
 
 ### Step 3: Register the Context with the Driver
 
