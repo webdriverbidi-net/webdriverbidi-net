@@ -46,17 +46,19 @@ The library deserializes each value into a concrete subclass rather than a singl
 
 | JavaScript Type | Protocol `type` value | Concrete Class | `Value` Property Type |
 |----------------|-----------------------|----------------|-----------------------|
-| `Object` | `"object"` | `KeyValuePairCollectionRemoteValue` | `RemoteValueDictionary` |
-| `Map` | `"map"` | `KeyValuePairCollectionRemoteValue` | `RemoteValueDictionary` |
-| `Array` | `"array"` | `CollectionRemoteValue` | `RemoteValueList` |
-| `Set` | `"set"` | `CollectionRemoteValue` | `RemoteValueList` |
-| `NodeList` | `"nodelist"` | `CollectionRemoteValue` | `RemoteValueList` |
-| `HTMLCollection` | `"htmlcollection"` | `CollectionRemoteValue` | `RemoteValueList` |
+| `Object` | `"object"` | `KeyValuePairCollectionRemoteValue` | `RemoteValueDictionary?` |
+| `Map` | `"map"` | `KeyValuePairCollectionRemoteValue` | `RemoteValueDictionary?` |
+| `Array` | `"array"` | `CollectionRemoteValue` | `RemoteValueList?` |
+| `Set` | `"set"` | `CollectionRemoteValue` | `RemoteValueList?` |
+| `NodeList` | `"nodelist"` | `CollectionRemoteValue` | `RemoteValueList?` |
+| `HTMLCollection` | `"htmlcollection"` | `CollectionRemoteValue` | `RemoteValueList?` |
 | `Date` | `"date"` | `DateRemoteValue` | `DateTime` |
 | `RegExp` | `"regexp"` | `RegExpRemoteValue` | `RegularExpressionValue` |
-| `DOM Element` | `"node"` | `NodeRemoteValue` | `NodeProperties` |
+| `DOM Element` | `"node"` | `NodeRemoteValue` | `NodeProperties?` |
 | `Window` | `"window"` | `WindowProxyRemoteValue` | `WindowProxyProperties` |
 | `Function`, `Promise`, etc. | various | `ObjectReferenceRemoteValue` | _(none; use `Handle`)_ |
+
+The collection and node `Value` properties are nullable because the remote end omits a value's contents in two cases. A collection's `Value` is `null` when the object depth limit was reached (`SerializationOptions.MaxObjectDepth`), and a collection's or node's `Value` is `null` when the same object already appears earlier in the result: the repeat carries only an `InternalId` equal to that of the earlier, full serialization. Check for `null` before reading these properties. For a node, `NodeRemoteValue.GetNodeProperties()` returns the properties or throws `WebDriverBiDiException` when they are absent.
 
 `RemoteValueDictionary` is a read-only dictionary mapping keys to `RemoteValue` instances. Use `dict[key].As<SpecificType>().Value` to extract values. String keys are compared by value; keys that are themselves `RemoteValue` objects (JavaScript `Map` entries keyed by objects) are compared by reference, because each denotes a distinct object on the remote end even when two serialize identically — enumerate the dictionary to read those entries. `RemoteValueList` is a read-only collection of `RemoteValue` instances. Use `list[index].As<SpecificType>().Value` to extract elements.
 

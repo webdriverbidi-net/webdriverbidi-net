@@ -51,7 +51,7 @@ public class WheelScrollAction : IWheelSourceAction
     public long DeltaY { get; set; } = 0;
 
     /// <summary>
-    /// Gets or sets the duration of the move.
+    /// Gets or sets the duration of the scroll.
     /// </summary>
     /// <remarks>
     /// Valid values for this property are greater than or equal to zero, as the protocol transmits the
@@ -76,13 +76,13 @@ public class WheelScrollAction : IWheelSourceAction
     }
 
     /// <summary>
-    /// Gets or sets the origin of the move.
+    /// Gets or sets the origin of the scroll.
     /// </summary>
     [JsonIgnore]
     public Origin? Origin { get; set; }
 
     /// <summary>
-    /// Gets the duration, in milliseconds, of the move for serialization purposes.
+    /// Gets the duration, in milliseconds, of the scroll for serialization purposes.
     /// </summary>
     [JsonPropertyName("duration")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -101,7 +101,7 @@ public class WheelScrollAction : IWheelSourceAction
     }
 
     /// <summary>
-    /// Gets the serializable origin of the move.
+    /// Gets the serializable origin of the scroll.
     /// </summary>
     [JsonPropertyName("origin")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

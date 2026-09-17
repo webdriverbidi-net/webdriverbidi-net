@@ -8,7 +8,8 @@ namespace WebDriverBiDi.Log;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Represents a log entry in the browser.
+/// Represents a log entry for an uncaught JavaScript error in the browser, whose <see cref="LogEntry.Type"/>
+/// is <c>javascript</c>.
 /// </summary>
 public class JavaScriptLogEntry : LogEntry
 {

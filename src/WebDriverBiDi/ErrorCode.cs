@@ -201,7 +201,8 @@ public enum ErrorCode
     NoSuchNetworkCollector,
 
     /// <summary>
-    /// The data collected by the network data collector was not valid.
+    /// The command referenced network data that is unknown: no data of the requested type was collected for
+    /// the request, or none was collected by the specified collector.
     /// </summary>
     [StringEnumValue("no such network data")]
     NoSuchNetworkData,
@@ -320,7 +321,8 @@ public enum ErrorCode
     UnableToCaptureScreen,
 
     /// <summary>
-    /// The command was unable to close the browser window or tab successfully.
+    /// The <c>browser.close</c> command was unable to close the browser, for example because other sessions
+    /// are still active. The session that sent the command is ended regardless.
     /// </summary>
     [StringEnumValue("unable to close browser")]
     UnableToCloseBrowser,
@@ -338,7 +340,8 @@ public enum ErrorCode
     UnableToSetFileInput,
 
     /// <summary>
-    /// The command was unable to perform the requested operation on the network data.
+    /// The command requested network data that is not available, because it was not collected or has already
+    /// been evicted.
     /// </summary>
     [StringEnumValue("unavailable network data")]
     UnavailableNetworkData,

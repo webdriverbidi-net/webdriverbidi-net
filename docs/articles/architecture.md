@@ -315,7 +315,7 @@ ObservableEvent<TEventArgs>
 Your Event Handlers
 ```
 
-**Observable Event:** See `ObservableEvent<T>` in the WebDriverBiDi namespace—it provides `AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")` and a `protected NotifyObserversAsync(T eventArgs)` that only the producing side (`ObservableEventInvocable<T>`) can call.
+**Observable Event:** See `ObservableEvent<T>` in the WebDriverBiDi namespace—it provides `AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")` and a `protected NotifyObserversAsync(T notifyData)` that only the producing side (`ObservableEventInvocable<T>`) can call.
 
 **Event Observer:** See `EventObserver<T>` in the WebDriverBiDi namespace—it provides `StartCapturingTasks`, `StopCapturingTasks`, `WaitForCapturedTasksAsync`, `WaitForCapturedTasksCompleteAsync`, `GetCapturedTasks`, and `Unobserve`.
 

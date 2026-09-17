@@ -235,6 +235,8 @@ Use process memory as an outer guardrail when the two signals above are not avai
 
 ### Block Unnecessary Resources
 
+URL patterns cannot select requests by resource type or file extension, so blocking by type means intercepting every request, as in the slow case above, and letting through each one the handler does not block. Every request then waits for a round trip to your handler; weigh that against the downloads the blocking saves.
+
 [!code-csharp[Block Unnecessary Resources](../../code/advanced/PerformanceSamples.cs#BlockUnnecessaryResources)]
 
 ## Browser Context Optimization

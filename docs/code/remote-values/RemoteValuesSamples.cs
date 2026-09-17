@@ -289,7 +289,7 @@ public static class RemoteValuesSamples
             RemoteValue elementRemoteValue = success.Result;
             elementRemoteValue.TryAs(out NodeRemoteValue element);
 
-            Console.WriteLine($"Type: {element.Type}"); // "node"
+            Console.WriteLine($"Type: {element.Type}"); // Node
             Console.WriteLine($"SharedId: {element.SharedId}");
 
             // Get node properties

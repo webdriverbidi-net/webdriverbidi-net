@@ -9,7 +9,7 @@ The Speculation module provides **monitoring** of prefetch status updates from t
 The Speculation module allows you to:
 
 - Subscribe to prefetch status updates (`pending`, `ready`, `success`, `failure`)
-- Monitor when the browser prefetches or prerenders resources
+- Monitor when the browser prefetches resources
 - Observe prefetch lifecycle for testing and diagnostics
 
 ## Accessing the Module
@@ -18,7 +18,7 @@ The Speculation module allows you to:
 
 ## Prefetch Status Event
 
-The `OnPrefetchStatusUpdated` event fires when the browser updates the status of a prefetched or prerendered resource. Subscribe to it to observe prefetch lifecycle.
+The `OnPrefetchStatusUpdated` event fires when the browser updates the status of a prefetched resource. Subscribe to it to observe prefetch lifecycle.
 
 ### Subscribe to Prefetch Status Updates
 
@@ -37,7 +37,7 @@ The `OnPrefetchStatusUpdated` event fires when the browser updates the status of
 
 Each event provides:
 
-- `BrowsingContextId` – The browsing context where the prefetch occurred
+- `BrowsingContextId` – The top-level browsing context of the navigable the update concerns; for a prefetch started by a document in a frame, that is the frame's top-level browsing context, not the frame
 - `Url` – The URL that was prefetched
 - `Status` – The current `PreloadingStatus`
 

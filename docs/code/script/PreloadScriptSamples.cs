@@ -88,7 +88,7 @@ public static class PreloadScriptSamples
             if (result is EvaluateResultSuccess success &&
                 success.Result is StringRemoteValue textValue)
             {
-                string heading = textValue.Value ?? "No heading";
+                string heading = textValue.Value;
                 Console.WriteLine($"Page heading: {heading}");
             }
 

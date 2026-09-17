@@ -354,15 +354,10 @@ public static class NetworkInterceptionSamples
     public static async Task SlowDownSpecificResources(BiDiDriver driver)
     {
         #region SlowDownSpecificResources
-        // Intercept image requests
+        // URL patterns cannot match a kind of resource or a file extension, so intercept
+        // every request and pick out the images by the request's destination
         AddInterceptCommandParameters addIntercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        addIntercept.UrlPatterns.AddRange(
-        [
-            new UrlPatternString("*.jpg"),
-            new UrlPatternString("*.png"),
-            new UrlPatternString("*.gif")
-        ]);
 
         await driver.Network.AddInterceptAsync(addIntercept);
 
@@ -371,12 +366,15 @@ public static class NetworkInterceptionSamples
         {
             if (e.IsBlocked)
             {
-                Console.WriteLine($"⏱️ Delaying image request: {e.Request.Url}");
+                if (e.Request.Destination == "image")
+                {
+                    Console.WriteLine($"⏱️ Delaying image request: {e.Request.Url}");
 
-                // Simulate slow network
-                await Task.Delay(2000);
+                    // Simulate slow network
+                    await Task.Delay(2000);
+                }
 
-                // Continue request
+                // Continue every intercepted request, delayed or not
                 await driver.Network.ContinueRequestAsync(
                     new ContinueRequestCommandParameters(e.Request.RequestId));
             }

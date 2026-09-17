@@ -60,8 +60,10 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     /// </summary>
     /// <remarks>
     /// The area is the visual viewport, or the whole document, which yields a full-page screenshot.
-    /// Any <see cref="Clip"/> is interpreted relative to the chosen area, so this value applies whether
-    /// or not a clip is supplied.
+    /// The image is the part of a <see cref="Clip"/> that falls within the chosen area, so this value
+    /// applies whether or not a clip is supplied. A <see cref="BoxClipRectangle"/> is positioned relative
+    /// to the chosen area. An <see cref="ElementClipRectangle"/> is positioned at its element whatever the
+    /// origin, so with the viewport origin an element scrolled out of view leaves nothing to capture.
     /// </remarks>
     [JsonPropertyName("origin")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

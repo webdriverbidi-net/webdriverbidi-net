@@ -31,7 +31,8 @@ public sealed class SessionModule : Module
     public override string ModuleName => SessionModuleName;
 
     /// <summary>
-    /// Gets the status of the current connection.
+    /// Gets the status of the remote end: whether it is in a state in which it can create new sessions, along with any
+    /// implementation-specific information it reports.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>

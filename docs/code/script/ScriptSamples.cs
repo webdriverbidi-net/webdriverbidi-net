@@ -49,7 +49,7 @@ public class ScriptSamples
         if (result is EvaluateResultSuccess success &&
             success.Result is StringRemoteValue titleValue)
         {
-            string title = titleValue.Value ?? "No title";
+            string title = titleValue.Value;
             Console.WriteLine($"Title: {title}");
         }
         #endregion
@@ -63,12 +63,14 @@ public class ScriptSamples
         string contextId)
     {
         #region EvaluateComplexExpression
+        // The parentheses make the braces an object literal. Without them, the expression
+        // is parsed as a script whose braces open a block, which is a syntax error here.
         string expression = """
-            {
+            ({
                 title: document.title,
                 url: window.location.href,
                 elementCount: document.querySelectorAll('*').length
-            }
+            })
             """;
 
         EvaluateCommandParameters parameters = new EvaluateCommandParameters(

@@ -67,7 +67,7 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Operation | Code |
 |-----------|------|
 | Decline credential request | `await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Decline));` |
-| Respond with credential | `SetVirtualWalletBehaviorCommandParameters p = new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Respond) { Response = credentialResponse }; await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(p);` |
+| Respond with credential | `SetVirtualWalletBehaviorCommandParameters p = new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Respond) { Protocol = "openid4vp-v1-unsigned", Response = credentialResponse }; await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(p);` |
 | Leave request pending | `await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Wait));` |
 | Clear wallet behavior | `await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Clear));` |
 

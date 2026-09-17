@@ -10,6 +10,12 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Represents a URL pattern defined by individual component patterns.
 /// </summary>
+/// <remarks>
+/// Each part that is set is compared for equality with the same part of a request URL, and a part that is
+/// not set matches any value; no part accepts wildcards. The characters <c>(</c>, <c>)</c>, <c>*</c>,
+/// <c>{</c> and <c>}</c> are reserved and make the remote end reject the pattern with an invalid argument
+/// error unless each is escaped with a preceding backslash (<c>\</c>).
+/// </remarks>
 public class UrlPatternPattern : UrlPattern
 {
     /// <summary>

@@ -286,11 +286,15 @@ Error: Port 9515 already in use
 - Use a different port: `chromedriver --port=9516`
 - Find and kill the process using the port
 
-### Connection Refused
+### StartAsync Cannot Connect
 
 ```
-WebDriverBiDiException: Connection refused
+WebDriverBiDiTimeoutException: Could not connect to remote WebSocket server within 10 seconds
 ```
+
+A connection that is refused, or fails for any other reason, is retried every 500 milliseconds until the
+connection's `StartupTimeout` (10 seconds by default) runs out, so an endpoint that is not listening surfaces as this
+timeout rather than as a refusal.
 
 **Solutions:**
 - Verify the driver (or Firefox with `--remote-debugging-port`) is running

@@ -216,19 +216,27 @@ Now that you have a working WebDriverBiDi.NET application, explore these topics:
 
 ## Troubleshooting
 
-### "Connection refused" Error
+### "Could not connect to remote WebSocket server" Error
+
+`StartAsync` retries a refused or failed connection every 500 milliseconds until the startup timeout (10 seconds by
+default) runs out, then throws `WebDriverBiDiTimeoutException`. When that happens:
 
 - Ensure the driver executable (or Firefox with `--remote-debugging-port`) is running and, for a driver, that the session was created
 - Verify the URL is the session's `webSocketUrl` (or Firefox's `/session`), not a `/devtools/…` CDP URL
 - Check that no firewall is blocking the connection
 
-### "Timeout waiting for command" Error
+### "Timed out executing command" Error
+
+The command did not complete within its timeout, so it failed with `WebDriverBiDiTimeoutException`.
 
 - Increase the timeout when creating the `BiDiDriver`, or override for specific commands using the `timeoutOverride` parameter on module methods (e.g., `NavigateAsync(parameters, TimeSpan.FromSeconds(120))`)
 - Check that the browser is responsive
 - Ensure the command parameters are valid
 
-### "Module not found" Error
+### "unknown command" Error
+
+A command the browser does not implement fails with a `WebDriverBiDiCommandException` whose `ErrorCode` is
+`UnknownCommand`.
 
 - Verify that your browser supports the specific module
 - Some modules are experimental and may require specific browser flags

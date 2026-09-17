@@ -50,7 +50,7 @@ The `ClientHintsMetadata` class supports the following properties:
 
 All properties are optional. Omitted properties are not sent in the command and retain their default behavior.
 
-`Brands`, `FullVersionList` and `FormFactors` are nullable and settable rather than read-only, because the emulation branches on whether the member is present: leaving one `null` omits it, so the browser's own value is reported, while setting it to an empty list sends `[]` and overrides that value with an empty one. Every other optional list in the library is read-only and omitted while empty; see [API Design — Optional List Properties](../advanced/api-design.md#optional-list-properties).
+`Brands` and `FullVersionList` are nullable and settable rather than read-only, because the emulation branches on whether the member is present: leaving one `null` omits it, so the browser's own value is reported, while setting it to an empty list sends `[]` and overrides that value with an empty one. `FormFactors` has the same shape for parity with them, but the emulated client hints the specification defines do not yet include form factors, so the specification gives that member no effect. Every other optional list in the library is read-only and omitted while empty; see [API Design — Optional List Properties](../advanced/api-design.md#optional-list-properties).
 
 ## Resetting Client Hints
 
