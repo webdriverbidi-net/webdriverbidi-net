@@ -306,7 +306,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(OverflowBlockMediaFeatureValue))]
 [JsonSerializable(typeof(OverflowInlineMediaFeatureValue))]
 [JsonSerializable(typeof(PointerMediaFeatureValue))]
-[JsonSerializable(typeof(PrefersColorSchemeFeatureValue))]
+[JsonSerializable(typeof(PrefersColorSchemeMediaFeatureValue))]
 [JsonSerializable(typeof(PrefersContrastMediaFeatureValue))]
 [JsonSerializable(typeof(PrefersReducedDataMediaFeatureValue))]
 [JsonSerializable(typeof(PrefersReducedMotionMediaFeatureValue))]
