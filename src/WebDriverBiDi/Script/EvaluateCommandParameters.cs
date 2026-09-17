@@ -44,7 +44,9 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     public Target ScriptTarget { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether to await the completion of the evaluation of the script.
+    /// Gets or sets a value indicating whether a Promise returned by the script is awaited.
+    /// The script is always evaluated to completion; when this is <see langword="true"/> and the
+    /// result is a Promise, its settled value is returned in place of the Promise itself.
     /// </summary>
     [JsonPropertyName("awaitPromise")]
     public bool AwaitPromise { get; set; }
