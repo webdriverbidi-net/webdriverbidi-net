@@ -473,9 +473,9 @@ public class WebSocketConnection : Connection
     /// This method is <see langword="protected virtual"/> to allow test doubles to substitute the
     /// connect operation, for example to simulate a remote end that never completes the handshake.
     /// </remarks>
-    protected virtual async Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)
+    protected virtual Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)
     {
-        await this.client.ConnectAsync(websocketUri, cancellationToken).ConfigureAwait(false);
+        return this.client.ConnectAsync(websocketUri, cancellationToken);
     }
 
     /// <summary>
@@ -499,9 +499,9 @@ public class WebSocketConnection : Connection
     /// <param name="buffer">The buffer to receive the data into.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>A task representing the asynchronous operation, with a result containing the receive result.</returns>
-    protected virtual async Task<WebSocketReceiveResult> ReadWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
+    protected virtual Task<WebSocketReceiveResult> ReadWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
     {
-        return await this.client.ReceiveAsync(buffer, cancellationToken).ConfigureAwait(false);
+        return this.client.ReceiveAsync(buffer, cancellationToken);
     }
 
     /// <summary>
@@ -516,17 +516,17 @@ public class WebSocketConnection : Connection
     /// <para>
     /// <see cref="StopConnectionAsync(CancellationToken)"/> calls this method to send the frame when the socket is
     /// open, then waits, bounded by <see cref="Connection.ShutdownTimeout"/>, for the receive loop to observe the
-    /// remote end's answer. By the time this method returns, the frame has been written and the socket has recorded
-    /// that it was sent. This is the only step of the close that a derived connection can replace.
+    /// remote end's answer. By the time the returned task completes, the frame has been written and the socket has
+    /// recorded that it was sent. This is the only step of the close that a derived connection can replace.
     /// </para>
     /// <para>
     /// This method is <see langword="protected virtual"/> to allow test doubles to observe the point at which the
     /// frame has been sent, for example to act only once the handshake wait is certain to have begun.
     /// </para>
     /// </remarks>
-    protected virtual async Task SendWebSocketCloseFrameAsync(CancellationToken cancellationToken)
+    protected virtual Task SendWebSocketCloseFrameAsync(CancellationToken cancellationToken)
     {
-        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", cancellationToken).ConfigureAwait(false);
+        return this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", cancellationToken);
     }
 
     /// <summary>

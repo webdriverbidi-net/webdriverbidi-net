@@ -41,10 +41,10 @@ public abstract class Module
     {
         this.ConfigureObserverErrorReporting(observableEvent);
 
-        async Task EventInvoker(EventInfo<T> eventData)
+        Task EventInvoker(EventInfo<T> eventData)
         {
             T eventArgs = eventData.ToEventArgs<T>();
-            await observableEvent.InvokeNotifyObserversAsync(eventArgs).ConfigureAwait(false);
+            return observableEvent.InvokeNotifyObserversAsync(eventArgs);
         }
 
         this.Driver.RegisterEvent<T>(observableEvent.EventName, EventInvoker);
@@ -65,10 +65,10 @@ public abstract class Module
     {
         this.ConfigureObserverErrorReporting(observableEvent);
 
-        async Task EventInvoker(EventInfo<T> eventData)
+        Task EventInvoker(EventInfo<T> eventData)
         {
             TEventArgs eventArgs = eventData.ToEventArgs(eventArgsConverter);
-            await observableEvent.InvokeNotifyObserversAsync(eventArgs).ConfigureAwait(false);
+            return observableEvent.InvokeNotifyObserversAsync(eventArgs);
         }
 
         this.Driver.RegisterEvent<T>(observableEvent.EventName, EventInvoker);

@@ -988,9 +988,9 @@ public abstract class Connection : IAsyncDisposable
     /// </summary>
     /// <param name="message">The log message to raise in the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected async Task LogAsync(string message)
+    protected Task LogAsync(string message)
     {
-        await this.LogAsync(message, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+        return this.LogAsync(message, WebDriverBiDiLogLevel.Info);
     }
 
     /// <summary>

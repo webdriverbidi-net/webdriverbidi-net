@@ -502,12 +502,12 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     /// the session. The aggregated exceptions describe the collected errors.
     /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    public virtual async Task StopAsync(CancellationToken cancellationToken = default)
+    public virtual Task StopAsync(CancellationToken cancellationToken = default)
     {
         // Registration legality is derived entirely from the transport's State (registration re-opens
         // once teardown returns the transport to Disconnected), so the driver keeps no flag to clear
         // here and simply delegates the teardown to the transport.
-        await this.transport.DisconnectAsync(cancellationToken).ConfigureAwait(false);
+        return this.transport.DisconnectAsync(cancellationToken);
     }
 
     /// <summary>
@@ -532,10 +532,10 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandParameters"/> is null.</exception>
-    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+    public virtual Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         where T : CommandResult
     {
-        return await this.ExecuteCommandAsync<T>((CommandParameters)commandParameters, commandTimeout, cancellationToken).ConfigureAwait(false);
+        return this.ExecuteCommandAsync<T>((CommandParameters)commandParameters, commandTimeout, cancellationToken);
     }
 
     /// <summary>
@@ -1035,24 +1035,24 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
 #pragma warning restore IDE0011, SA1503
     }
 
-    private async Task OnTransportErrorEventReceivedAsync(ErrorReceivedEventArgs e)
+    private Task OnTransportErrorEventReceivedAsync(ErrorReceivedEventArgs e)
     {
-        await this.invocableErrorReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+        return this.invocableErrorReceivedObservableEvent.InvokeNotifyObserversAsync(e);
     }
 
-    private async Task OnTransportUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
+    private Task OnTransportUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
     {
-        await this.invocableUnknownMessageReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+        return this.invocableUnknownMessageReceivedObservableEvent.InvokeNotifyObserversAsync(e);
     }
 
-    private async Task OnTransportEventHandlerErrorOccurredAsync(EventHandlerErrorOccurredEventArgs e)
+    private Task OnTransportEventHandlerErrorOccurredAsync(EventHandlerErrorOccurredEventArgs e)
     {
-        await this.invocableEventHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+        return this.invocableEventHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(e);
     }
 
-    private async Task OnTransportLogMessageAsync(LogMessageEventArgs e)
+    private Task OnTransportLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+        return this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e);
     }
 
     /// <summary>

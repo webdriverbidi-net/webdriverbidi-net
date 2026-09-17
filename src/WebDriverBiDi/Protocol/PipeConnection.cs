@@ -329,9 +329,9 @@ public class PipeConnection : Connection
     /// <param name="count">The maximum number of bytes to read.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>A task representing the asynchronous operation, with a result containing the number of bytes read.</returns>
-    protected virtual async Task<int> ReadPipeDataAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
+    protected virtual Task<int> ReadPipeDataAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
     {
-        return await this.pipeFromProcess.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+        return this.pipeFromProcess.ReadAsync(buffer, offset, count, cancellationToken);
     }
 
     /// <summary>
