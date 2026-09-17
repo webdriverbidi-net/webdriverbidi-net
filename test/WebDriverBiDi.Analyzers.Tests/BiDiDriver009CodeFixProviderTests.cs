@@ -947,4 +947,86 @@ public class BiDiDriver009CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task ExecuteCommandAsync_ModuleStartAsyncBeforeDriverStartAsync_CodeFixMovesAfterDriverStart()
+    {
+        // A member reached through the driver may expose a StartAsync of its own, which is a different
+        // lifecycle and does not start the driver. The fix must move the command after the driver's own
+        // StartAsync, not after the first call that merely shares the name and roots in the driver.
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class Tracer
+                {
+                    public Task StartAsync(string name) => Task.CompletedTask;
+                }
+
+                public class TracingDriver : BiDiDriver
+                {
+                    public Tracer Tracing { get; } = new Tracer();
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        TracingDriver driver = new TracingDriver();
+                        await driver.Tracing.StartAsync("trace");
+                        await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class Tracer
+                {
+                    public Task StartAsync(string name) => Task.CompletedTask;
+                }
+
+                public class TracingDriver : BiDiDriver
+                {
+                    public Tracer Tracing { get; } = new Tracer();
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        TracingDriver driver = new TracingDriver();
+                        await driver.Tracing.StartAsync("trace");
+                        await driver.StartAsync("ws://localhost:9222");
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

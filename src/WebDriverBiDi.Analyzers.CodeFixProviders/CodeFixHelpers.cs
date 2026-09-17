@@ -393,15 +393,37 @@ internal static class CodeFixHelpers
     /// </remarks>
     internal static string? GetRootIdentifierName(ExpressionSyntax expression)
     {
+        return GetRootIdentifierName(expression, out _);
+    }
+
+    /// <summary>
+    /// Gets the identifier at the root of a member access chain, and how many member accesses separate it
+    /// from the end of the chain.
+    /// </summary>
+    /// <param name="expression">A member access chain, or the receiver of one.</param>
+    /// <param name="memberDepth">
+    /// When this method returns, the number of member accesses between the root identifier and the end of the
+    /// chain: 1 for <c>driver.StartAsync</c>, 2 for <c>driver.Session.StatusAsync</c>.
+    /// </param>
+    /// <returns>The root identifier's name, or <see langword="null"/> when the chain does not root in a simple identifier.</returns>
+    /// <remarks>
+    /// The depth mirrors the one the analyzers' own receiver walk reports, so that a fix can apply the same
+    /// "on the driver itself" test the analyzer applied.
+    /// </remarks>
+    internal static string? GetRootIdentifierName(ExpressionSyntax expression, out int memberDepth)
+    {
+        memberDepth = 0;
         ExpressionSyntax current = expression;
         while (true)
         {
             switch (current)
             {
                 case MemberAccessExpressionSyntax memberAccess:
+                    memberDepth++;
                     current = memberAccess.Expression;
                     break;
                 case MemberBindingExpressionSyntax memberBinding:
+                    memberDepth++;
                     current = memberBinding.Ancestors()
                         .OfType<ConditionalAccessExpressionSyntax>()
                         .First(conditionalAccess => conditionalAccess.WhenNotNull.Span.Contains(memberBinding.Span))
@@ -431,12 +453,16 @@ internal static class CodeFixHelpers
     /// <returns><see langword="true"/> if the invocation starts the named driver; otherwise <see langword="false"/>.</returns>
     /// <remarks>
     /// The invoked name is the last token of the invocation's expression, for a member access and a member binding
-    /// alike.
+    /// alike. The call must be on the driver itself, not on something reached through it: the lifecycle analyzers
+    /// treat only a direct call as starting the driver, because a module can expose a <c>StartAsync</c> of its own
+    /// (<c>driver.Tracing.StartAsync()</c>) that is a different lifecycle. A fix that matched the chain's root
+    /// alone would take such a call for the start and move code to the wrong statement.
     /// </remarks>
     internal static bool IsStartAsyncOn(InvocationExpressionSyntax invocation, string? driverVariableName)
     {
         return invocation.Expression.GetLastToken().ValueText == "StartAsync"
-            && GetRootIdentifierName(invocation.Expression) == driverVariableName;
+            && GetRootIdentifierName(invocation.Expression, out int memberDepth) == driverVariableName
+            && memberDepth == 1;
     }
 
     /// <summary>
