@@ -639,7 +639,7 @@ public class EmulationModuleSamples
         {
             Features = new MediaFeatures
             {
-                PrefersColorScheme = PrefersColorSchemeFeatureValue.Dark,
+                PrefersColorScheme = PrefersColorSchemeMediaFeatureValue.Dark,
                 PrefersReducedMotion = PrefersReducedMotionMediaFeatureValue.Reduce
             },
             Contexts = { contextId }
@@ -820,7 +820,7 @@ public class EmulationModuleSamples
         {
             Console.WriteLine($"\nTesting {scheme} mode");
 
-            PrefersColorSchemeFeatureValue colorScheme = scheme == "dark" ? PrefersColorSchemeFeatureValue.Dark : PrefersColorSchemeFeatureValue.Light;
+            PrefersColorSchemeMediaFeatureValue colorScheme = scheme == "dark" ? PrefersColorSchemeMediaFeatureValue.Dark : PrefersColorSchemeMediaFeatureValue.Light;
             await driver.Emulation.SetMediaFeaturesOverrideAsync(
                 new SetMediaFeaturesOverrideCommandParameters
                 {

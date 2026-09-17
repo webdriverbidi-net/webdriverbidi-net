@@ -275,11 +275,11 @@ public class MediaFeatures
 
     /// <summary>
     /// Gets or sets the value to emulate for the "prefers-color-scheme" CSS media feature.
-    /// Use <see cref="PrefersColorSchemeFeatureValue.Reset"/> to reset the emulation.
+    /// Use <see cref="PrefersColorSchemeMediaFeatureValue.Reset"/> to reset the emulation.
     /// </summary>
     [JsonPropertyName("prefers-color-scheme")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public PrefersColorSchemeFeatureValue? PrefersColorScheme { get; set; }
+    public PrefersColorSchemeMediaFeatureValue? PrefersColorScheme { get; set; }
 
     /// <summary>
     /// Gets or sets the value to emulate for the "prefers-contrast" CSS media feature.

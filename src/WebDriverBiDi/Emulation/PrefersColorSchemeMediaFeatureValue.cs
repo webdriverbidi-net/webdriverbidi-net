@@ -1,4 +1,4 @@
-// <copyright file="PrefersColorSchemeFeatureValue.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="PrefersColorSchemeMediaFeatureValue.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -11,9 +11,9 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// Provides values for the emulation of the "prefers-color-scheme" CSS media feature.
 /// </summary>
-[JsonConverter(typeof(EnumValueJsonConverter<PrefersColorSchemeFeatureValue>))]
-[StringEnumNullSentinelValue<PrefersColorSchemeFeatureValue>(Reset)]
-public enum PrefersColorSchemeFeatureValue
+[JsonConverter(typeof(EnumValueJsonConverter<PrefersColorSchemeMediaFeatureValue>))]
+[StringEnumNullSentinelValue<PrefersColorSchemeMediaFeatureValue>(Reset)]
+public enum PrefersColorSchemeMediaFeatureValue
 {
     /// <summary>
     /// The "light" value for the "prefers-color-scheme" CSS media feature.

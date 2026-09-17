@@ -669,7 +669,7 @@ public class MediaFeaturesTests
     {
         MediaFeatures features = new()
         {
-            PrefersColorScheme = PrefersColorSchemeFeatureValue.Light,
+            PrefersColorScheme = PrefersColorSchemeMediaFeatureValue.Light,
         };
 
         string json = JsonSerializer.Serialize(features);
@@ -687,7 +687,7 @@ public class MediaFeaturesTests
     {
         MediaFeatures features = new()
         {
-            PrefersColorScheme = PrefersColorSchemeFeatureValue.Reset,
+            PrefersColorScheme = PrefersColorSchemeMediaFeatureValue.Reset,
         };
 
         string json = JsonSerializer.Serialize(features);
