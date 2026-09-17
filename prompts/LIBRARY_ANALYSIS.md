@@ -89,12 +89,12 @@ exception. The rule, keyed to the WebDriver BiDi CDDL of the member being serial
   `network.provideResponse`). Steps of the form *"Let X be the "X" field if present, or an
   empty list otherwise"* mean absent ≡ empty, and the list is read-only. The current members
   of the exception are enumerated in the allow list in
-  `test/WebDriverBiDi.Tests/WebDriverBiDiConventionTests.cs`, and each carries XML remarks
-  quoting the step; re-derive membership from the specification rather than trusting either.
-  That test also enforces every rule in this bullet on every `CommandParameters` type, so a
-  declaration that violates them cannot merge — a finding about list shape must therefore
-  either show the test is wrong or show the allow list admits a member whose steps do not
-  match the signature above.
+  `test/WebDriverBiDi.Tests/Conventions/WebDriverBiDiConventionTests.cs`, and each carries
+  XML remarks quoting the step; re-derive membership from the specification rather than
+  trusting either. That test also enforces every rule in this bullet on every
+  `CommandParameters` type, so a declaration that violates them cannot merge — a finding
+  about list shape must therefore either show the test is wrong or show the allow list
+  admits a member whose steps do not match the signature above.
 
   None of these shapes is a defect, and they must not be reported as "inconsistent" with each
   other. Do not recommend adding setters, nulling a read-only list, initializing one of the six
@@ -277,6 +277,15 @@ checked. Cite specific uncovered line numbers from the resulting .info file as
 evidence. A coverage-gap finding filed without citing line numbers from an actual
 coverage run is a false positive of the same severity as a documentation gap
 filed without reading the docs tree.
+
+**Do not file missing tests for individual enum members.** Every protocol enum declares
+`[JsonConverter(typeof(EnumValueJsonConverter<TEnum>))]` on its own type, which
+`WebDriverBiDiConventionTests.TestProtocolEnumsDeclareTheirEnumValueJsonConverter` enforces, and the
+converter and `StringEnumValueConverter<T>` are covered at 100%. A member with no test asserting its
+wire string is therefore not a test gap, whether or not it carries `[StringEnumValue]`: such a test
+would only restate the literal. If you believe a member's wire string is wrong, verify it against the
+raw CDDL in the specification source and file it as a correctness defect citing that CDDL, not as
+missing test coverage.
 
 **Before flagging any code as a defect, performance concern, or improvement opportunity**,
 read the relevant implementation. Do not rely on assumptions about lock
