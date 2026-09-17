@@ -14,7 +14,11 @@ the scope of your analysis.
 After performing this analysis, make suggestions for how to make the library
 better, and where defective issues may occur. Note carefully that the code in
 the `src/WebDriverBiDi.Client` and `src/WebDriverBiDi.Demo` projects is
-provided for demonstration to users, and is not shipping production code. Make
+provided for demonstration to users, and is not shipping production code. The
+project ships three artifacts, the main `WebDriverBiDi` library, the
+`WebDriverBiDi.Analyzers` package, and the `WebDriverBiDi.Logging` library, and
+each is scored and reported separately (see [Output](#output)). The main library
+is the product; the other two support it, and their findings are secondary. Make
 suggestions and a plan for addressing the issues you find, but do not make any
 actual changes to the source code. Pay special attention to the public-facing
 API design, and make suggestions for improvements there. Please also pay
@@ -504,17 +508,50 @@ Code coverage is generated using the `--coverlet` command line argument, **not**
 
 ## Output
 
+### Shippable artifacts
+
+The analysis covers three shippable artifacts, and every finding belongs to exactly one of them:
+
+| Artifact | Source | Tests | Documentation |
+|---|---|---|---|
+| **Main library** | `src/WebDriverBiDi` | `test/WebDriverBiDi.Tests`, and the integration, compatibility, AOT, netstandard, named-pipe and benchmark projects that exercise it | `docs/` and `docs/code/`, except the pages listed for the other two artifacts; `src/WebDriverBiDi/README.md` |
+| **Analyzers** | `src/WebDriverBiDi.Analyzers` and `src/WebDriverBiDi.Analyzers.CodeFixProviders` | `test/WebDriverBiDi.Analyzers.Tests` | `docs/articles/advanced/analyzers.md`; `src/WebDriverBiDi.Analyzers/README.md` |
+| **Logging library** | `src/WebDriverBiDi.Logging` | `test/WebDriverBiDi.Logging.Tests` | `docs/articles/advanced/webdriverbidi-logging.md`; `src/WebDriverBiDi.Logging/README.md`; the sections of other pages whose subject is the logging package |
+
+Assign a finding to an artifact by what its fix changes, not by where you noticed it:
+* A defect in an artifact's source, its XML documentation, its tests, or its documentation belongs to that artifact.
+  A wrong statement about the library's runtime behavior on the analyzer page is an analyzer finding, because the
+  analyzer page is what changes; a wrong code sample on a main library page is a main library finding, even if an
+  analyzer would have caught it.
+* A CI or packaging step belongs to the artifact the step builds, packs or verifies. A step that serves all three
+  (the solution build, for example) belongs to the main library.
+* When one defect needs changes in two artifacts (a main library API change that an analyzer must follow, for
+  example), file it once, under the artifact where the defect is, and deduct it there only. Name the dependent change
+  in the finding, and add a one-line cross-reference, with no deduction, to the other artifact's section.
+* Proposed new analyzers are recorded in the analyzer section and are never deducted, whichever artifact's design
+  prompted them.
+
+Analyze the main library first and in full. The analyzer and logging analyses must not displace effort from it:
+a main library finding missed because time went to the analyzers is a worse outcome than an analyzer finding missed.
+
 ### Scoring
 
-As the output of your analysis, present a scorecard for the production
-readiness of the library. You should provide scores in the form of a numeric
-score on a scale of 0-100 for the following categories:
+As the output of your analysis, present a scorecard for the production readiness of **each** of the three
+artifacts. Give each artifact a numeric score on a scale of 0-100 for each of the following categories:
 * Code quality
 * API design
 * Concurrency and thread-safety
 * Performance
 * Documentation
 * Testing
+
+Read each category in terms of the artifact it scores. For the analyzers, API design is the rule surface a consumer
+meets (diagnostic IDs, severities, messages, help links, code fixes, and `.editorconfig` configuration);
+concurrency is the analyzers' correctness under Roslyn's concurrent execution; and performance is the cost they add
+to a consumer's IDE and build. For the logging library, API design is its registration and configuration surface.
+
+Do not combine the three scorecards into an overall score, and do not weight one artifact's scores by another's.
+A combined number lets findings in one artifact hide or dilute findings in another.
 
 Scores for individual categories should be accompanied by concrete suggestions
 for how to raise them, if any exist. Apply rigorous thought to the suggestions
@@ -524,20 +561,20 @@ project's stated design constraints preclude all recommendations or because no
 verified gaps exist — that is a positive signal, not a neutral one.
 
 **Scores are derived from the Action Plan, not assigned independently.** Assign
-scores last, after the Action Plan is finalized. A category's score equals 100
-minus the deductions from that category's verified Action Plan entries. If the
-Action Plan contains no entries for a category, that category's score is 100.
+scores last, after the Action Plan is finalized. An artifact's score in a category equals 100
+minus the deductions from the verified Action Plan entries filed under that artifact and category. If the
+Action Plan contains no entries for an artifact's category, that score is 100.
 
 **A category with zero verified, actionable improvements must receive a score of 100.**
 The range 90–99 is only available when at least one verified improvement
-exists for that category but its severity is minor. Do not deduct points to
+exists for that artifact's category but its severity is minor. Do not deduct points to
 "leave room" for suggestions that the constraints forbid you from making; phantom
 deductions for precluded suggestions are treated as false positives with the same
 severity as recommending changes for things already present.
 
 **Before assigning any score below 100**, write out the specific actionable
 recommendation that justifies the deduction and confirm it appears in the Action
-Plan. If you cannot write that sentence, the score is 100. A category score below
+Plan under the same artifact. If you cannot write that sentence, the score is 100. A category score below
 100 with no corresponding Action Plan entry is a scoring error of the same
 severity as a false positive finding.
 
@@ -546,6 +583,28 @@ a category is aesthetic (file length, method length, naming-taste disagreements,
 "this could be cleaner"), record the observation in the Non-Issues section rather
 than deducting against the score. Deductions must be tied to concrete, actionable
 recommendations that survive the structural-refactoring bar above.
+
+### Report structure
+
+Write the report in this order, so that a reader meets the main library's findings before anything else:
+1. **Scorecards.** One table per artifact, in the order main library, logging library, analyzers, each giving the
+   six category scores with a one-line basis. No combined table or overall score.
+2. **What the project is and how it works.** A summary of the three artifacts, the main library first and in the
+   most depth.
+3. **Main library.** Its verified findings by category, then its Action Plan.
+4. **Logging library.** Its verified findings by category, then its Action Plan.
+5. **Analyzers.** Its verified findings by category, then its Action Plan, then the proposed new analyzers.
+6. **Non-issues and observations**, grouped by artifact in the same order.
+7. **Verification log** (the commands run and their results) and the **limitations** of the analysis.
+
+Prefix each finding's ID with its artifact, so that an ID is unambiguous wherever it is quoted: `LIB-` for the
+main library, `LOG-` for the logging library, and `ANA-` for the analyzers, followed by the category and a number
+(`LIB-CQ-1`, `ANA-PERF-1`, `LOG-DOC-2`). An artifact or category with no findings says so in one sentence rather
+than being omitted.
+
+Keep each analyzer finding in proportion to its importance. State the defect, a reproduction, the fix and the
+evidence; do not reproduce the analyzer's implementation or restate its documented behavior at length. Where
+several analyzer defects share a cause or a fix, file them as one numbered finding.
 
 ### Action plan verification
 
@@ -563,6 +622,7 @@ mutable, or missing a feature, without reading its declaration first. A
 recommendation made without reading the declaration is a false positive.
 
 For each action item in the action plan, include:
+- **Artifact:** [main library, logging library, or analyzers, per the ownership rules above]
 - **Recommendation:** [what to do]
 - **Evidence:** [file path and line range, or grep output, showing current state]
 - **Verification:** [one-sentence confirmation that you read the declaration before recommending]
@@ -578,5 +638,7 @@ ANALYSIS.md, for each planned recommendation, confirm:
 [] For a finding about a type's shape or semantics, I listed every sibling type that shares the shape,
    named the call sites that exercise the behavior, and checked that the types containing it would not
    nullify the fix
+[] I filed the finding under exactly one artifact, by what its fix changes, and deducted it from that
+   artifact's scorecard only
 
 If any item is unchecked, perform the verification or remove the recommendation.
