@@ -350,7 +350,7 @@ WebDriverBiDi.NET uses `System.Text.Json` for JSON serialization.
 The library includes specialized converters for WebDriver BiDi types:
 
 - `CommandJsonConverter`: Serializes command parameters
-- `SentinelNullJsonConverter<T, TSentinelChecker>`: Serializes types where a specific, "sentinel" value yields a `null` value in the serialized JSON
+- `SentinelNullJsonConverter<T, TSentinelChecker>`: Serializes types where a specific, "sentinel" value yields a `null` value in the serialized JSON. `SentinelNullJsonConverter<T, TSentinelChecker, TValueConverter>` does the same for a property whose values need a converter of their own, writing every value that is not the sentinel through `TValueConverter`
 - `DiscriminatedUnionJsonConverter<T>`: Deserializes received types modelled as discriminated unions, such as `EvaluateResult`, `RealmInfo`, `LogEntry` and `DownloadEndEventArgs`
 - `BigIntegerJsonConverter`: Deserializes BigInteger values
 - `NumberJsonConverter`: Deserializes JavaScript numeric values

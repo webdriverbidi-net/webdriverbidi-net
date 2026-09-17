@@ -80,9 +80,68 @@ public class SentinelNullJsonConverterTests
     }
 
     [Fact]
+    public void TestSerializingWithoutValueConverterUsesTypeMetadataForValue()
+    {
+        // The two-argument converter writes a value that is not the sentinel with the serializer's own
+        // metadata, so an integer-valued double is written as a JSON integer.
+        TestClass instance = new()
+        {
+            DoubleProperty = 2,
+        };
+        string json = JsonSerializer.Serialize(instance);
+        Assert.Equal("""{"double":2}""", json);
+    }
+
+    [Fact]
+    public void TestCanSerializeWithValueConverterProperty()
+    {
+        TestClass instance = new()
+        {
+            FixedDoubleProperty = 2,
+        };
+        string json = JsonSerializer.Serialize(instance);
+        Assert.Equal("""{"fixedDouble":2.0}""", json);
+        JObject serialized = JObject.Parse(json);
+        JToken? doubleToken = serialized["fixedDouble"];
+        Assert.NotNull(doubleToken);
+        Assert.Equal(JTokenType.Float, doubleToken.Type);
+        Assert.Equal(2.0, doubleToken.Value<double>());
+    }
+
+    [Fact]
+    public void TestCanSerializeWithValueConverterNullProperty()
+    {
+        TestClass instance = new()
+        {
+            FixedDoubleProperty = -1,
+        };
+        string json = JsonSerializer.Serialize(instance);
+        Assert.Equal("""{"fixedDouble":null}""", json);
+    }
+
+    [Fact]
+    public void TestSerializingWithValueConverterPropagatesValueConverterFailure()
+    {
+        // The value converter, not the serializer's default handling, writes the value, so its own
+        // rejection of a value JSON cannot represent is what surfaces.
+        TestClass instance = new()
+        {
+            FixedDoubleProperty = double.PositiveInfinity,
+        };
+        Assert.Throws<JsonException>(() => JsonSerializer.Serialize(instance));
+    }
+
+    [Fact]
     public void TestCannotDeserialize()
     {
         string json = """{ "double": 3 }""";
+        Assert.ThrowsAny<NotSupportedException>(() => JsonSerializer.Deserialize<TestClass>(json));
+    }
+
+    [Fact]
+    public void TestCannotDeserializeWithValueConverter()
+    {
+        string json = """{ "fixedDouble": 3 }""";
         Assert.ThrowsAny<NotSupportedException>(() => JsonSerializer.Deserialize<TestClass>(json));
     }
 
@@ -111,5 +170,10 @@ public class SentinelNullJsonConverterTests
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("double")]
         public double? DoubleProperty { get; set; }
+
+        [JsonConverter(typeof(SentinelNullJsonConverter<double, NegativeDoubleSentinelChecker, FixedDoubleJsonConverter>))]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("fixedDouble")]
+        public double? FixedDoubleProperty { get; set; }
     }
 }

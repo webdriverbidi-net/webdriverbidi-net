@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Emulation;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// A data class representing a set of geolocation coordinates.
@@ -41,6 +42,7 @@ public class GeolocationCoordinates
     /// </remarks>
     [JsonPropertyName("latitude")]
     [SpecRange(-90.0, 90.0)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double Latitude { get; set; }
 
     /// <summary>
@@ -55,6 +57,7 @@ public class GeolocationCoordinates
     /// </remarks>
     [JsonPropertyName("longitude")]
     [SpecRange(-180.0, 180.0)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double Longitude { get; set; }
 
     /// <summary>
@@ -68,6 +71,7 @@ public class GeolocationCoordinates
     [JsonPropertyName("accuracy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, double.PositiveInfinity)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Accuracy { get; set; }
 
     /// <summary>
@@ -75,6 +79,7 @@ public class GeolocationCoordinates
     /// </summary>
     [JsonPropertyName("altitude")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Altitude { get; set; }
 
     /// <summary>
@@ -90,6 +95,7 @@ public class GeolocationCoordinates
     [JsonPropertyName("altitudeAccuracy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, double.PositiveInfinity)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? AltitudeAccuracy { get; set; }
 
     /// <summary>
@@ -105,6 +111,7 @@ public class GeolocationCoordinates
     [JsonPropertyName("heading")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, 360.0, MaximumExclusive = true)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Heading { get; set; }
 
     /// <summary>
@@ -118,5 +125,6 @@ public class GeolocationCoordinates
     [JsonPropertyName("speed")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, double.PositiveInfinity)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Speed { get; set; }
 }

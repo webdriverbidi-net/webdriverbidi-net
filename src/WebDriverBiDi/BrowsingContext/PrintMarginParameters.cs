@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Parameters of margins for printing.
@@ -30,6 +31,7 @@ public class PrintMarginParameters
     [JsonPropertyName("left")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, double.PositiveInfinity)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Left { get; set; }
 
     /// <summary>
@@ -43,6 +45,7 @@ public class PrintMarginParameters
     [JsonPropertyName("right")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, double.PositiveInfinity)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Right { get; set; }
 
     /// <summary>
@@ -56,6 +59,7 @@ public class PrintMarginParameters
     [JsonPropertyName("top")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, double.PositiveInfinity)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Top { get; set; }
 
     /// <summary>
@@ -69,5 +73,6 @@ public class PrintMarginParameters
     [JsonPropertyName("bottom")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, double.PositiveInfinity)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Bottom { get; set; }
 }

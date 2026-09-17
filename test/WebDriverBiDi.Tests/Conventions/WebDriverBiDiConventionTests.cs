@@ -34,6 +34,11 @@ using Module = WebDriverBiDi.Module;
 /// The wire name of each member is data the converter reads, and a test per value would only restate it; that
 /// name is checked by reviewing it against the specification.
 /// </para>
+/// <para>
+/// The serialization rule for floating-point values: every <see cref="double"/> that can be written into a command
+/// payload is written through <see cref="JsonConverters.FixedDoubleJsonConverter"/>, so that an integer-valued
+/// double keeps a decimal point on the wire and reads as a JSON float rather than a JSON integer.
+/// </para>
 /// </remarks>
 public class WebDriverBiDiConventionTests
 {
@@ -909,6 +914,53 @@ public class WebDriverBiDiConventionTests
     }
 
     [Fact]
+    public void TestSentDoublePropertiesAreWrittenWithFixedDoubleJsonConverter()
+    {
+        // System.Text.Json writes an integer-valued double without a decimal point, so 1.0 goes on the wire as
+        // the JSON integer 1. FixedDoubleJsonConverter keeps the decimal point, and each property must declare it
+        // itself: a converter on the property is the only way to reach the value, and nothing else fails when the
+        // attribute is missing. A property that also needs sentinel handling cannot declare both converters, so the
+        // three-argument SentinelNullJsonConverter naming FixedDoubleJsonConverter as its value converter satisfies
+        // the rule as well.
+        List<string> offenders = [];
+        HashSet<string> found = [];
+        foreach (PropertyInfo property in GetSerializedDoubleProperties(GetSentTypes()))
+        {
+            string key = Key(property);
+            found.Add(key);
+            Type? converterType = property.GetCustomAttribute<JsonConverterAttribute>()?.ConverterType;
+            if (!WritesThroughFixedDoubleJsonConverter(converterType))
+            {
+                string declared = converterType is null ? "no [JsonConverter]" : $"[JsonConverter(typeof({converterType.Name}))]";
+                offenders.Add($"{key} ({declared})");
+            }
+        }
+
+        // The sweep walks a type graph, so a mistake in the walk would silently guard nothing and this test would
+        // pass vacuously. Assert that it still reaches a representative of each shape it is responsible for: a
+        // property on a parameters root, one on an object nested inside a parameters type, one declared on a base
+        // class reached only through its derived types, one on a type an extension module nests, and one written
+        // through the sentinel converter.
+        string[] expected =
+        [
+            "WebDriverBiDi.BrowsingContext.PrintCommandParameters.Scale",
+            "WebDriverBiDi.BrowsingContext.PrintMarginParameters.Left",
+            "WebDriverBiDi.Input.PointerAction.Pressure",
+            "WebDriverBiDi.Emulation.GeolocationCoordinates.Latitude",
+            "WebDriverBiDi.Bluetooth.SimulateAdvertisementScanEntry.Rssi",
+            "WebDriverBiDi.BrowsingContext.SetViewportCommandParameters.DevicePixelRatio",
+        ];
+        foreach (string member in expected)
+        {
+            Assert.Contains(member, found);
+        }
+
+        // A floor rather than an inventory, so adding a property does not break it. There are 27 today.
+        Assert.True(found.Count >= 25, $"The double-property sweep found only {found.Count} properties; the walk is broken.");
+        Assert.True(offenders.Count == 0, $"Every double property written into a command payload must declare [JsonConverter(typeof(FixedDoubleJsonConverter))], or SentinelNullJsonConverter<double, TSentinelChecker, FixedDoubleJsonConverter> where it also needs a sentinel. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
+    }
+
+    [Fact]
     public void TestSpecRangeAttributesAreWellFormed()
     {
         List<PropertyInfo> rangedProperties = GetSpecRangeProperties().ToList();
@@ -946,6 +998,72 @@ public class WebDriverBiDiConventionTests
         }
 
         Assert.True(offenders.Count == 0, $"[SpecRange] attributes must declare a valid range with the minimum no greater than the maximum, and any sentinel must fall outside that range. Offenders: {string.Join(", ", offenders)}");
+    }
+
+    /// <summary>
+    /// Gets every <see cref="double"/> or nullable <see cref="double"/> property that the serializer writes, declared on
+    /// any of the given types or on any of their base types in the library.
+    /// </summary>
+    /// <param name="types">The types whose properties to examine.</param>
+    /// <returns>The serialized double properties, each reported once, by the type that declares it.</returns>
+    /// <remarks>
+    /// Base types are walked because the rule examines the properties a type declares, and a property declared on a
+    /// base class that no member is typed as (such as <c>PointerAction</c>, whose pressure and angle members every
+    /// pointer action inherits) would otherwise never be examined.
+    /// </remarks>
+    private static IEnumerable<PropertyInfo> GetSerializedDoubleProperties(IEnumerable<Type> types)
+    {
+        const BindingFlags MemberFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+        Assembly assembly = typeof(CommandParameters).Assembly;
+        HashSet<Type> visited = [];
+        foreach (Type type in types)
+        {
+            for (Type? current = type; current is not null && current.Assembly == assembly && visited.Add(current); current = current.BaseType)
+            {
+                foreach (PropertyInfo property in current.GetProperties(MemberFlags))
+                {
+                    Type propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                    if (propertyType == typeof(double) && IsSerialized(property))
+                    {
+                        yield return property;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Determines whether the serializer writes a property: a public property that is not always ignored, or a
+    /// non-public one that opts in with <see cref="JsonIncludeAttribute"/>.
+    /// </summary>
+    /// <param name="property">The property to examine.</param>
+    /// <returns><see langword="true"/> if the property is written; otherwise, <see langword="false"/>.</returns>
+    private static bool IsSerialized(PropertyInfo property)
+    {
+        if (property.GetCustomAttribute<JsonIgnoreAttribute>() is { Condition: JsonIgnoreCondition.Always })
+        {
+            return false;
+        }
+
+        return property.GetMethod is { IsPublic: true } || property.GetCustomAttribute<JsonIncludeAttribute>() is not null;
+    }
+
+    /// <summary>
+    /// Determines whether a converter declared on a double property writes the property's values through
+    /// <see cref="JsonConverters.FixedDoubleJsonConverter"/>.
+    /// </summary>
+    /// <param name="converterType">The declared converter type, or <see langword="null"/> if none is declared.</param>
+    /// <returns><see langword="true"/> if values are written through the fixed-double converter; otherwise, <see langword="false"/>.</returns>
+    private static bool WritesThroughFixedDoubleJsonConverter(Type? converterType)
+    {
+        if (converterType == typeof(JsonConverters.FixedDoubleJsonConverter))
+        {
+            return true;
+        }
+
+        return converterType is { IsGenericType: true }
+            && converterType.GetGenericTypeDefinition() == typeof(JsonConverters.SentinelNullJsonConverter<,,>)
+            && converterType.GetGenericArguments()[2] == typeof(JsonConverters.FixedDoubleJsonConverter);
     }
 
     private static IEnumerable<PropertyInfo> GetSpecRangeProperties()

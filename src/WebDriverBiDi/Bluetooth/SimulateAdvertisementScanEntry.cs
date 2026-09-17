@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Provides the data for a single simulated Bluetooth advertisement: the peripheral that sent it, the
@@ -41,6 +42,7 @@ public class SimulateAdvertisementScanEntry
     /// Gets or sets the received signal strength indicator (RSSI) of the simulated Bluetooth device, in dBm.
     /// </summary>
     [JsonPropertyName("rssi")]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double Rssi { get; set; }
 
     /// <summary>
