@@ -225,6 +225,8 @@ In addition to the `Connection`-level observable events above, the transport exp
 
 Each call to `ConnectAsync` installs a fresh queue whose depth begins at zero, and every message is counted against the queue it was written to. The value therefore reports only the current connection's backlog, even when a reconnect gave up waiting for the previous connection's reader and that reader is still draining what remains of its own queue. Reading it before `ConnectAsync` has ever been called, or after `DisconnectAsync`, returns the depth of the remaining (possibly drained) queue rather than throwing.
 
+A transport begins observing its connection as soon as it is constructed, so a connection that is already open when the transport adopts it can deliver messages before the first `ConnectAsync`. Those messages belong to no session the transport established, and replaying them into the new session would match a buffered command response against an identifier that session is about to hand out again, because connecting resets the command counter. `ConnectAsync` therefore discards them, and logs a warning naming how many were discarded rather than dropping them silently; disposing a transport that never connected discards them the same way. A depth reported before the first `ConnectAsync` is the count of such messages, and it returns to zero once they are discarded. Messages already held by a running reader are never discarded this way, so a reconnect leaves a still-draining previous reader to finish its own queue.
+
 [!code-csharp[Transport IncomingQueueDepth Diagnostic](../../code/advanced/ConnectionManagementSamples.cs#TransportIncomingQueueDepthDiagnostic)]
 
 ### PendingCommandCount

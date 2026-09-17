@@ -1623,6 +1623,114 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestConnectDiscardsMessagesReceivedBeforeConnecting()
+    {
+        // An adopted connection can deliver before the first connect. Those messages belong to no session,
+        // so the connect must discard them, return their pooled buffers, leave no phantom depth, and say
+        // how many were lost rather than losing them silently.
+        List<LogMessageEventArgs> logs = [];
+        bool eventReceived = false;
+        bool unknownMessageReceived = false;
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logs)
+            {
+                logs.Add(e);
+            }
+        });
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            eventReceived = true;
+            return Task.CompletedTask;
+        });
+        transport.OnUnknownMessageReceived.AddObserver(e =>
+        {
+            unknownMessageReceived = true;
+            return Task.CompletedTask;
+        });
+
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+        Assert.Equal(1, transport.IncomingQueueDepth);
+        Assert.False(owner.IsDisposed);
+
+        // The discard happens before the new session's reader starts, so the assertions below are settled.
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        Assert.True(owner.IsDisposed, "The pre-connect message's pooled buffer was not returned by the connect.");
+        Assert.Equal(0, transport.IncomingQueueDepth);
+        Assert.False(eventReceived, "A message received before the transport connected was dispatched into the new session.");
+        Assert.False(unknownMessageReceived);
+        lock (logs)
+        {
+            Assert.Contains(logs, log => log.Message.Contains("Discarded 1 message(s) that arrived before the transport connected") && log.Level == WebDriverBiDiLogLevel.Warn);
+        }
+
+        await transport.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TestDisposeDiscardsMessagesReceivedBeforeConnecting()
+    {
+        // Nothing ever reads a never-connected transport's queue, so only disposal returns its buffers.
+        List<LogMessageEventArgs> logs = [];
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logs)
+            {
+                logs.Add(e);
+            }
+        });
+
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+        Assert.Equal(1, transport.IncomingQueueDepth);
+
+        await transport.DisposeAsync();
+
+        Assert.True(owner.IsDisposed, "The pre-connect message's pooled buffer was not returned by disposal.");
+        Assert.Equal(0, transport.IncomingQueueDepth);
+        lock (logs)
+        {
+            Assert.Contains(logs, log => log.Message.Contains("Discarded 1 message(s) that arrived before the transport connected and were still buffered at disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
+        }
+    }
+
+    [Fact]
+    public async Task TestReconnectDiscardsNothingAndReportsNoLoss()
+    {
+        // The connect path's drain must not accuse an ordinary reconnect of losing messages: the previous
+        // queue has a reader, so it is skipped entirely and nothing is reported.
+        List<LogMessageEventArgs> logs = [];
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logs)
+            {
+                logs.Add(e);
+            }
+        });
+
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        await connection.RaiseDataReceivedEventAsync("""{"type":"event","method":"protocol.event","params":{}}""");
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, transport.IncomingQueueDepth);
+        lock (logs)
+        {
+            Assert.DoesNotContain(logs, log => log.Message.Contains("Discarded"));
+        }
+
+        await transport.DisposeAsync();
+    }
+
+    [Fact]
     public async Task TestConnectionLostAfterConnectionStartReturnsFailsTheAttempt()
     {
         // The loss is raised from the "connection opened" log message, which Connection.StartAsync

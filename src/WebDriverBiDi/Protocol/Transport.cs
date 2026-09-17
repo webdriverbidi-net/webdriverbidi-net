@@ -627,6 +627,19 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // message processing task.
             await this.WaitForMessageProcessingCompletionAsync(this.ShutdownTimeout, "Timed out waiting for message processing of the previous connection to complete before reconnecting").ConfigureAwait(false);
 
+            // An adopted connection can deliver before the first connect. Those messages belong to no
+            // session, and the counter reset above would make a buffered response collide with a
+            // reused identifier, so discard them, draining to return their pooled buffers. Only a
+            // queue no reader ever ran over is drained; a reader the wait above gave up on owns its own.
+            if (!this.incomingMessageQueue.HasReader)
+            {
+                int discardedMessageCount = this.incomingMessageQueue.Drain();
+                if (discardedMessageCount > 0)
+                {
+                    await this.LogAsync($"Discarded {discardedMessageCount} message(s) that arrived before the transport connected; they belong to no session and were not dispatched", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+                }
+            }
+
             this.incomingMessageQueue = new IncomingMessageQueue();
             Interlocked.Exchange(ref this.disconnectOwnedSignal, new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously));
 
@@ -682,8 +695,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             if (connectionLost is not null)
             {
                 // The reader is never started for this attempt, so anything the remote end managed to
-                // push into the queue would otherwise be abandoned holding its pooled buffer.
-                this.incomingMessageQueue.Drain();
+                // push into the queue would otherwise be abandoned holding its pooled buffer. The
+                // exception below already tells the caller no session was established.
+                _ = this.incomingMessageQueue.Drain();
                 throw new WebDriverBiDiConnectionException("The connection was lost while the session was being established; the remote end closed it, or the connection reported an error, before the transport finished connecting.", connectionLost);
             }
 
@@ -691,6 +705,10 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // shouldn't be an issue, as we are using a Channel for processing the data, which
             // should buffer the data until the first read. If the underlying data structure
             // changes, this logic may need to be refactored.
+            //
+            // Marked before the loop is scheduled, so a later connect cannot mistake this queue for
+            // one nothing will read and drain it out from under this reader.
+            this.incomingMessageQueue.MarkReaderStarted();
             this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync(), CancellationToken.None);
 
             // Defence-in-depth: ReadIncomingMessagesAsync catches per-message exceptions in
@@ -1319,6 +1337,19 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         this.connectionErrorObserver.Dispose();
         this.connectionRemoteDisconnectObserver.Dispose();
         this.connectionLogMessageObserver.Dispose();
+
+        // A transport disposed without ever connecting still holds its original queue, which nothing
+        // ever reads, so draining here is what returns the pooled buffers of anything an adopted
+        // connection delivered into it. A queue with a reader is left to it, as in ConnectAsync.
+        if (!this.incomingMessageQueue.HasReader)
+        {
+            int discardedMessageCount = this.incomingMessageQueue.Drain();
+            if (discardedMessageCount > 0)
+            {
+                await this.LogAsync($"Discarded {discardedMessageCount} message(s) that arrived before the transport connected and were still buffered at disposal", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+            }
+        }
+
         await this.Connection.DisposeAsync().ConfigureAwait(false);
         this.connectDisconnectSemaphore.Dispose();
     }
@@ -2253,6 +2284,28 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         public int Depth => Interlocked.CompareExchange(ref this.depth, 0, 0);
 
         /// <summary>
+        /// Gets a value indicating whether a reader has been started over this queue.
+        /// </summary>
+        /// <remarks>
+        /// Set as a connect attempt starts its processing loop and never cleared, because a queue is
+        /// never reused across sessions. A reader still working through its queue owns those messages
+        /// even after the transport has moved on, so only a queue no reader ever ran over is drained.
+        /// </remarks>
+        public bool HasReader { get; private set; }
+
+        /// <summary>
+        /// Records that a reader has been started over this queue.
+        /// </summary>
+        /// <remarks>
+        /// Called on the connecting thread before the loop is scheduled, so that the connect installing
+        /// the next queue cannot observe this one as unread merely because its reader has not yet run.
+        /// </remarks>
+        public void MarkReaderStarted()
+        {
+            this.HasReader = true;
+        }
+
+        /// <summary>
         /// Increments the queue depth.
         /// </summary>
         public void IncrementDepth()
@@ -2271,24 +2324,29 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         /// <summary>
         /// Closes this queue to further writes and disposes everything still buffered in it.
         /// </summary>
+        /// <returns>The number of buffered messages that were discarded.</returns>
         /// <remarks>
-        /// Used when a queue is abandoned without a reader ever having run over it, which is what a
-        /// failed connect attempt leaves behind. Each buffered <see cref="IncomingMessage"/> owns a
-        /// pooled buffer that only its disposal returns, and <see cref="DecrementDepth"/> is paired with
-        /// each read so that <see cref="Depth"/>, and through it
-        /// <see cref="IncomingQueueDepth"/>, does not go on reporting messages that no longer exist.
-        /// Completing the writer first means a late arrival from a receive loop that has not yet
-        /// unwound fails its write and is disposed by the producer, rather than being added to a queue
-        /// that nothing will drain again.
+        /// Used when a queue is abandoned without a reader ever having run over it: what a failed
+        /// connect attempt leaves behind, and what an adopted connection leaves behind when it delivers
+        /// before the first connect. Each buffered <see cref="IncomingMessage"/> owns a pooled buffer
+        /// that only its disposal returns, and <see cref="DecrementDepth"/> is paired with each read so
+        /// that <see cref="Depth"/>, and through it <see cref="IncomingQueueDepth"/>, does not go on
+        /// reporting messages that no longer exist. Completing the writer first means a late arrival
+        /// from a receive loop that has not yet unwound fails its write and is disposed by the producer,
+        /// rather than being added to a queue that nothing will drain again.
         /// </remarks>
-        public void Drain()
+        public int Drain()
         {
+            int discardedMessageCount = 0;
             this.MessageChannel.Writer.TryComplete();
             while (this.MessageChannel.Reader.TryRead(out IncomingMessage? bufferedMessage))
             {
                 this.DecrementDepth();
                 bufferedMessage.Dispose();
+                discardedMessageCount++;
             }
+
+            return discardedMessageCount;
         }
     }
 }
