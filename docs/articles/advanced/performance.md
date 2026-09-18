@@ -169,7 +169,7 @@ WebDriverBiDi.NET exposes two built-in signals for detecting message-processing 
 
 [!code-csharp[Queue Depth Monitoring](../../code/advanced/PerformanceSamples.cs#QueueDepthMonitoring)]
 
-The property is safe to read concurrently with message production and consumption. Each call to `ConnectAsync` installs a fresh queue whose depth begins at zero, so the value always reports the current connection's backlog alone; reading it before the first connect returns `0`, and reading it after a disconnect returns the depth of the remaining (normally fully drained) queue rather than throwing.
+The property is safe to read concurrently with message production and consumption. Each call to `ConnectAsync` installs a fresh queue whose depth begins at zero, so the value always reports the current connection's backlog alone; reading it before the first connect returns the count of any messages an already-open, adopted connection delivered ahead of `ConnectAsync` (normally `0`; `ConnectAsync` discards them with a warning, as [Connection Management](connection-management.md#incomingqueuedepth) describes), and reading it after a disconnect returns the depth of the remaining (normally fully drained) queue rather than throwing.
 
 #### In-Flight Async Handler Tasks (AsyncHandlerTaskCount EventSource event)
 

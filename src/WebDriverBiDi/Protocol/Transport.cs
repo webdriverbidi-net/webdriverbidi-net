@@ -755,6 +755,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// or more errors were collected during the session. The aggregated exceptions describe the collected
     /// errors. They are thrown at most once per session, by whichever disconnect claims them.
     /// </exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the connection is not obtained within <see cref="ConnectionLockTimeout"/>.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
@@ -770,6 +771,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
     /// <exception cref="WebDriverBiDiSerializationException">Thrown if the command parameters cannot be serialized to JSON, including when an extension-data entry on the command or on any object inside its parameters uses a property name that object already serializes.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is not connected to a remote end.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the connection is not obtained within <see cref="ConnectionLockTimeout"/>.</exception>
     /// <exception cref="ArgumentNullException">Thrown when the command parameters are null.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task<Command> SendCommandAsync(CommandParameters commandData, CancellationToken cancellationToken = default)
@@ -921,9 +923,13 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="resolver"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the transport has been disposed.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown if the transport is already connected to a remote end.
     /// </exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the connection is not obtained within <see cref="ConnectionLockTimeout"/>.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public virtual async Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver, CancellationToken cancellationToken = default)
     {
