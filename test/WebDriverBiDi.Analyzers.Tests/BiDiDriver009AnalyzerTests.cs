@@ -3247,4 +3247,103 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task CommandGuardedByIsStarted_NoDiagnostic()
+    {
+        // Inside the arm where driver.IsStarted holds, the driver is started, so the command is safe.
+        // This is the same reading BIDI001, BIDI002, BIDI003 and BIDI024 already give the guard.
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        if (driver.IsStarted)
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandInElseOfIsStartedGuard_ReportsError()
+    {
+        // The else arm is where the driver is known not to be started, so the command is reported there.
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        if (driver.IsStarted)
+                        {
+                            await Task.Yield();
+                        }
+                        else
+                        {
+                            await {|#0:driver.Session.StatusAsync()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task CommandGuardedByNegatedIsStarted_ReportsError()
+    {
+        // Negating the test reverses which arm has the started driver, so the command under
+        // !driver.IsStarted runs on a driver that is known not to be started.
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        if (!driver.IsStarted)
+                        {
+                            await {|#0:driver.Session.StatusAsync()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
 }

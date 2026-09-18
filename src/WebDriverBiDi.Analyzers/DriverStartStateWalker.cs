@@ -453,7 +453,7 @@ internal sealed class DriverStartStateWalker
     /// unrecognized keeps the walk conservative, which for these Error-severity rules means carrying
     /// the pre-branch state in rather than inventing one.
     /// </remarks>
-    private static bool TryGetStartedStateTest(ExpressionSyntax condition, Dictionary<string, bool> driverStartedStatus, out string driverVariableName, out bool startedWhenConditionHolds)
+    internal static bool TryGetStartedStateTest(ExpressionSyntax condition, Dictionary<string, bool> driverStartedStatus, out string driverVariableName, out bool startedWhenConditionHolds)
     {
         driverVariableName = string.Empty;
         startedWhenConditionHolds = true;

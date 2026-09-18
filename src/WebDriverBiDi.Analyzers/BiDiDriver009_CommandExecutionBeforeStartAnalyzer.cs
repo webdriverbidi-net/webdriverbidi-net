@@ -285,9 +285,19 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // the other. An else-if chain arrives here as an else clause whose statement is itself
         // an if statement, which ProcessNode routes back into this method.
         Dictionary<string, bool> thenBranchStatus = new(driverStartedStatus);
+        Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
+
+        // A condition that tests IsStarted settles the driver's state inside each arm, as it does for
+        // the walker-based lifecycle rules. Without this, a command written under the guard that makes
+        // it safe -- `if (driver.IsStarted) { await driver.Session.StatusAsync(); }` -- is reported.
+        if (DriverStartStateWalker.TryGetStartedStateTest(ifStatement.Condition, driverStartedStatus, out string guardedDriverName, out bool startedWhenConditionHolds))
+        {
+            thenBranchStatus[guardedDriverName] = startedWhenConditionHolds;
+            elseBranchStatus[guardedDriverName] = !startedWhenConditionHolds;
+        }
+
         ProcessNode(ifStatement.Statement, context, reportDiagnostics, semanticModel, thenBranchStatus, escapedNames);
 
-        Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
         if (ifStatement.Else is not null)
         {
             ProcessNode(ifStatement.Else.Statement, context, reportDiagnostics, semanticModel, elseBranchStatus, escapedNames);
