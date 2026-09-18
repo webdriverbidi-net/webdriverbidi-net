@@ -240,9 +240,11 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
     private static string FormatRange(double minimum, double maximum, bool minimumExclusive, bool maximumExclusive)
     {
         // Exclusive bounds render in interval notation with a parenthesis on that side: [0, 360) for
-        // the specification's CDDL range 0.0...360.0, and (1, ∞] for a member declared js-uint .gt 1.
+        // the specification's CDDL range 0.0...360.0, and (1, ∞) for a member declared js-uint .gt 1.
+        // Infinity is never attained, so an infinite upper bound closes with a parenthesis whatever the
+        // attribute declared; writing it as ∞] would name a value the range cannot contain.
         string openingDelimiter = minimumExclusive ? "(" : "[";
-        string closingDelimiter = maximumExclusive ? ")" : "]";
+        string closingDelimiter = maximumExclusive || double.IsPositiveInfinity(maximum) ? ")" : "]";
         return $"{openingDelimiter}{FormatBound(minimum)}, {FormatBound(maximum)}{closingDelimiter}";
     }
 

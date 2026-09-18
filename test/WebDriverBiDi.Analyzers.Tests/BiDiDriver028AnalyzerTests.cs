@@ -199,7 +199,7 @@ public class BiDiDriver028AnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("-5", "MaxDomDepth", "[0, ∞]");
+            .WithArguments("-5", "MaxDomDepth", "[0, ∞)");
 
         await VerifyDiagnosticsAsync(testCode, expected);
     }
@@ -227,7 +227,7 @@ public class BiDiDriver028AnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("-1", "Left", "[0, ∞]");
+            .WithArguments("-1", "Left", "[0, ∞)");
 
         await VerifyDiagnosticsAsync(testCode, expected);
     }
@@ -304,13 +304,13 @@ public class BiDiDriver028AnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("0", "DevicePixelRatio", "(0, ∞]");
+            .WithArguments("0", "DevicePixelRatio", "(0, ∞)");
 
         DiagnosticResult negativeExpected = new DiagnosticResult(
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(1)
-            .WithArguments("-2", "DevicePixelRatio", "(0, ∞]");
+            .WithArguments("-2", "DevicePixelRatio", "(0, ∞)");
 
         await VerifyDiagnosticsAsync(testCode, zeroExpected, negativeExpected);
     }
@@ -377,13 +377,13 @@ public class BiDiDriver028AnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("-2", "Color", "[0, ∞]");
+            .WithArguments("-2", "Color", "[0, ∞)");
 
         DiagnosticResult segmentsExpected = new DiagnosticResult(
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(1)
-            .WithArguments("-3", "VerticalViewportSegments", "[0, ∞]");
+            .WithArguments("-3", "VerticalViewportSegments", "[0, ∞)");
 
         await VerifyDiagnosticsAsync(testCode, colorExpected, segmentsExpected);
     }
@@ -413,7 +413,7 @@ public class BiDiDriver028AnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("0", "MaxWidth", "[1, \u221E]");
+            .WithArguments("0", "MaxWidth", "[1, \u221E)");
 
         await VerifyDiagnosticsAsync(testCode, expected);
     }
