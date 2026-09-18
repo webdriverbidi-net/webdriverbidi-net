@@ -8,16 +8,19 @@ namespace WebDriverBiDi.Analyzers;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 /// <summary>
-/// Analyzer that warns when code writes values into an <c>AdditionalData</c> dictionary
-/// on a <see cref="WebDriverBiDi.CommandParameters"/> or other BiDi outbound object,
-/// because <c>Dictionary&lt;string, object?&gt;</c> values are serialized via reflection
-/// and are not compatible with native AOT or IL trimming.
+/// Analyzer that warns when code writes values into one of the library's extension-data
+/// dictionaries -- any property marked <c>[JsonExtensionData]</c>, which is
+/// <c>AdditionalData</c> on a <see cref="WebDriverBiDi.CommandParameters"/> or other outbound
+/// object, <c>CapabilityRequest.AdditionalCapabilities</c>, and
+/// <c>Command.AdditionalCommandProperties</c> -- because <c>Dictionary&lt;string, object?&gt;</c>
+/// values are serialized via reflection and are not compatible with native AOT or IL trimming.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
@@ -29,11 +32,11 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
 
     private const string Category = "Reliability";
 
-    private static readonly LocalizableString Title = "AdditionalData mutation is not AOT-safe";
+    private static readonly LocalizableString Title = "Extension data mutation is not AOT-safe";
 
-    private static readonly LocalizableString MessageFormat = "Writing to '{0}.AdditionalData' uses reflection-based JSON serialization that is not compatible with native AOT or IL trimming. Ensure every value's runtime type is registered via BiDiDriver.RegisterTypeInfoResolverAsync, or avoid publishing with PublishAot=true.";
+    private static readonly LocalizableString MessageFormat = "Writing to '{0}.{1}' uses reflection-based JSON serialization that is not compatible with native AOT or IL trimming. Ensure every value's runtime type is registered via BiDiDriver.RegisterTypeInfoResolverAsync, or avoid publishing with PublishAot=true.";
 
-    private static readonly LocalizableString Description = "Dictionary<string, object?> values stored in AdditionalData are serialized using reflection-based JsonSerializer overloads that are not compatible with native AOT or trimmed assemblies. If you are targeting AOT, register a JsonTypeInfoResolver for every value type you add via BiDiDriver.RegisterTypeInfoResolverAsync before sending the command.";
+    private static readonly LocalizableString Description = "Dictionary<string, object?> values stored in one of the library's [JsonExtensionData] dictionaries are serialized using reflection-based JsonSerializer overloads that are not compatible with native AOT or trimmed assemblies. If you are targeting AOT, register a JsonTypeInfoResolver for every value type you add via BiDiDriver.RegisterTypeInfoResolverAsync before sending the command.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -44,6 +47,21 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: Description,
         helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi022");
+
+    /// <summary>
+    /// The names the library's <c>[JsonExtensionData]</c> properties are declared under.
+    /// </summary>
+    /// <remarks>
+    /// A purely syntactic filter, so that a receiver can be rejected without binding it; the attribute
+    /// still decides whether a property matches. `ExtensionDataPropertyNamesCoverTheLibrary` in the
+    /// analyzer convention tests fails if the library ever declares one under a name not listed here.
+    /// </remarks>
+    private static readonly HashSet<string> ExtensionDataPropertyNames = new(StringComparer.Ordinal)
+    {
+        "AdditionalData",
+        "AdditionalCapabilities",
+        "AdditionalCommandProperties",
+    };
 
     // Methods on Dictionary<TKey, TValue> that add new values (and therefore introduce
     // potentially non-AOT-safe objects that will be serialized later).
@@ -62,14 +80,20 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        // Covers dict[key] = value.
-        context.RegisterSyntaxNodeAction(AnalyzeAssignment, SyntaxKind.SimpleAssignmentExpression);
+        context.RegisterCompilationStartAction(compilationStart =>
+        {
+            // A symbol absent from the compilation is null here, and then simply matches no attribute.
+            INamedTypeSymbol? extensionDataAttribute = compilationStart.Compilation.GetTypeByMetadataName("System.Text.Json.Serialization.JsonExtensionDataAttribute");
 
-        // Covers dict.Add(...) / dict.TryAdd(...) etc.
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+            // Covers dict[key] = value.
+            compilationStart.RegisterSyntaxNodeAction(nodeContext => AnalyzeAssignment(nodeContext, extensionDataAttribute), SyntaxKind.SimpleAssignmentExpression);
+
+            // Covers dict.Add(...) / dict.TryAdd(...) etc.
+            compilationStart.RegisterSyntaxNodeAction(nodeContext => AnalyzeInvocation(nodeContext, extensionDataAttribute), SyntaxKind.InvocationExpression);
+        });
     }
 
-    private static bool IsAdditionalDataProperty(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
+    private static IPropertySymbol? GetExtensionDataProperty(SyntaxNodeAnalysisContext context, ExpressionSyntax expression, INamedTypeSymbol? extensionDataAttribute)
     {
         // A property reference is written as a member access, a member binding, or a bare name once its
         // wrappers are peeled, and a member name cannot be aliased, so the written name settles the
@@ -87,25 +111,27 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
         }
 
         if (receiver is not (MemberAccessExpressionSyntax or MemberBindingExpressionSyntax or IdentifierNameSyntax)
-            || receiver.GetLastToken().ValueText != "AdditionalData")
+            || !ExtensionDataPropertyNames.Contains(receiver.GetLastToken().ValueText))
         {
-            return false;
+            return null;
         }
 
         ISymbol? symbol = context.SemanticModel.GetSymbolInfo(expression).Symbol;
         if (symbol is not IPropertySymbol property)
         {
-            return false;
+            return null;
         }
 
-        // Require the declaring type to be a WebDriverBiDi type so a user's own type with an
-        // AdditionalData property of the same shape is not matched.
-        if (!AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(property.ContainingType))
+        // Require the declaring type to be a WebDriverBiDi type carrying [JsonExtensionData], so that a
+        // user's own dictionary of the same shape and name is not matched, and so that every dictionary
+        // the library serializes by reflection is -- not only the ones named AdditionalData.
+        if (!AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(property.ContainingType)
+            || !property.GetAttributes().Any(attribute => SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, extensionDataAttribute)))
         {
-            return false;
+            return null;
         }
 
-        return property.Type is INamedTypeSymbol returnType && IsDictionaryStringObject(returnType);
+        return property.Type is INamedTypeSymbol returnType && IsDictionaryStringObject(returnType) ? property : null;
     }
 
     private static bool IsDictionaryStringObject(INamedTypeSymbol type)
@@ -134,7 +160,7 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
     }
 
     // Returns the static type name of the receiver object (i.e. the thing before `.AdditionalData`).
-    // `additionalDataExpr` is expected to be a MemberAccessExpressionSyntax whose Name is "AdditionalData".
+    // `additionalDataExpr` is expected to be a MemberAccessExpressionSyntax naming the dictionary property.
     private static string ReceiverTypeName(SyntaxNodeAnalysisContext context, ExpressionSyntax additionalDataExpr)
     {
         if (additionalDataExpr is MemberAccessExpressionSyntax memberAccess)
@@ -144,21 +170,21 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
 
         // Fallback for unqualified or parenthesized access (e.g. `AdditionalData[key]` inside the
         // declaring type, or `(cmd.AdditionalData)[key]`). Every caller has already run
-        // IsAdditionalDataProperty on this expression, so it binds to a property symbol here.
+        // GetExtensionDataProperty on this expression, so it binds to a property symbol here.
         IPropertySymbol property = (IPropertySymbol)context.SemanticModel.GetSymbolInfo(additionalDataExpr).Symbol!;
         return property.ContainingType.Name;
     }
 
-    private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context, INamedTypeSymbol? extensionDataAttribute)
     {
         AssignmentExpressionSyntax assignment = (AssignmentExpressionSyntax)context.Node;
 
         // The statement form: someExpr.AdditionalData[key] = value
         if (assignment.Left is ElementAccessExpressionSyntax elementAccess)
         {
-            if (IsAdditionalDataProperty(context, elementAccess.Expression))
+            if (GetExtensionDataProperty(context, elementAccess.Expression, extensionDataAttribute) is { } indexedProperty)
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.GetLocation(), ReceiverTypeName(context, elementAccess.Expression)));
+                context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.GetLocation(), ReceiverTypeName(context, elementAccess.Expression), indexedProperty.Name));
             }
 
             return;
@@ -174,13 +200,13 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
         // rather than an element access, so they fall through the test above without a report.
         if (assignment.Left is IdentifierNameSyntax
             && assignment.Right is InitializerExpressionSyntax elements
-            && IsAdditionalDataProperty(context, assignment.Left))
+            && GetExtensionDataProperty(context, assignment.Left, extensionDataAttribute) is { } initializedProperty)
         {
             // An assignment whose value is an initializer only parses inside an object initializer.
             string typeName = InitializedTypeName(context, (InitializerExpressionSyntax)assignment.Parent!);
             foreach (ExpressionSyntax element in elements.Expressions)
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, element.GetLocation(), typeName));
+                context.ReportDiagnostic(Diagnostic.Create(Rule, element.GetLocation(), typeName, initializedProperty.Name));
             }
         }
     }
@@ -198,7 +224,7 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
         return context.SemanticModel.GetTypeInfo(initialized).Type!.Name;
     }
 
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context, INamedTypeSymbol? extensionDataAttribute)
     {
         InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -208,12 +234,12 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!IsAdditionalDataProperty(context, memberAccess.Expression))
+        if (GetExtensionDataProperty(context, memberAccess.Expression, extensionDataAttribute) is not { } property)
         {
             return;
         }
 
         string typeName = ReceiverTypeName(context, memberAccess.Expression);
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), typeName));
+        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), typeName, property.Name));
     }
 }
