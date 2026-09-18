@@ -176,6 +176,10 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
                 // of the variable.
                 TrackObserverDeclarations(declaration, context.SemanticModel, capturingState, untrackableNames);
             }
+            else if (descendant is AssignmentExpressionSyntax assignment)
+            {
+                TrackObserverReassignment(assignment, capturingState);
+            }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
                 CheckInvocation(invocation, context, reportDiagnostics, capturingState);
@@ -354,6 +358,28 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
     private static IEnumerable<SyntaxNode> GetForLoopPreamble(ForStatementSyntax forStatement)
     {
         return forStatement.ChildNodes().Where(child => child != forStatement.Statement && !forStatement.Incrementors.Contains(child));
+    }
+
+    private static void TrackObserverReassignment(AssignmentExpressionSyntax assignment, Dictionary<string, bool> capturingState)
+    {
+        if (assignment.Left is not IdentifierNameSyntax target || !capturingState.ContainsKey(target.Identifier.ValueText))
+        {
+            return;
+        }
+
+        // Rebinding the variable makes it name a different observer, so the session the old one had no
+        // longer belongs to the name. A plain assignment from AddObserver binds it to a freshly created
+        // observer, which certainly has no session, so a wait on it before a start is reported. Any other
+        // rebinding — from a method that may have opened a session, or a ??= that may not rebind at all —
+        // leaves the session unknown, and this rule reports only certain misuse, so the observer counts as
+        // capturing from then on.
+        capturingState[target.Identifier.ValueText] = !IsFreshObserver(assignment);
+    }
+
+    private static bool IsFreshObserver(AssignmentExpressionSyntax assignment)
+    {
+        return assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+            && AnalyzerSymbolHelpers.PeelExpressionWrappers(assignment.Right) is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddObserver" } };
     }
 
     private static void CheckInvocation(

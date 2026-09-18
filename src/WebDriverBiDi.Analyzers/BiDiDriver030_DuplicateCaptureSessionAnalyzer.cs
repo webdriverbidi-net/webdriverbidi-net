@@ -160,6 +160,10 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
             {
                 TrackObserverDeclarations(declaration, context.SemanticModel, capturingState, untrackableNames);
             }
+            else if (descendant is AssignmentExpressionSyntax assignment)
+            {
+                TrackObserverReassignment(assignment, capturingState);
+            }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
                 CheckInvocation(invocation, context, reportDiagnostics, capturingState);
@@ -330,6 +334,18 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         foreach (string observerName in capturingState.Keys.ToList())
         {
             capturingState[observerName] = capturingState[observerName] && sectionStates.All(sectionState => sectionState[observerName]);
+        }
+    }
+
+    private static void TrackObserverReassignment(AssignmentExpressionSyntax assignment, Dictionary<string, bool> capturingState)
+    {
+        // Rebinding the variable makes it name a different observer, so the session the old one had no
+        // longer belongs to the name. The new observer's session is unknown unless it is created here, and
+        // unknown is enough: a start after the assignment is no longer certain to be a duplicate, and this
+        // rule reports only certain misuse.
+        if (assignment.Left is IdentifierNameSyntax target && capturingState.ContainsKey(target.Identifier.ValueText))
+        {
+            capturingState[target.Identifier.ValueText] = false;
         }
     }
 

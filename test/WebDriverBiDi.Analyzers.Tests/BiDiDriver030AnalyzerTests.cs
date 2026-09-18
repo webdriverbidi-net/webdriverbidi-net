@@ -1035,4 +1035,70 @@ public class BiDiDriver030AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task StartAfterReassigningObserver_ReportsNothing()
+    {
+        // The assignment binds the name to a different observer, which has no session of its own, so the
+        // start after it is not a duplicate; before this case was handled the rule reported it.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AssignmentToOtherVariable_DoesNotResetSession()
+    {
+        // Only an assignment to the tracked observer variable itself replaces the observer.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        int count = 0;
+                        observer.StartCapturingTasks();
+                        count = 1;
+                        {|#0:observer.StartCapturingTasks()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver030_DuplicateCaptureSessionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
+    }
 }
