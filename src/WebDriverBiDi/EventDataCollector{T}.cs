@@ -58,7 +58,7 @@ public sealed class EventDataCollector<T> : IDisposable, IAsyncDisposable
     /// <param name="observableEvent">The <see cref="ObservableEvent{T}"/> on which to collect data.</param>
     /// <param name="filter">An optional function that filters the event data captured by this collector.</param>
     /// <param name="description">The optional description of this observer.</param>
-    public EventDataCollector(ObservableEvent<T> observableEvent, Func<T, bool>? filter = null, string description = "")
+    internal EventDataCollector(ObservableEvent<T> observableEvent, Func<T, bool>? filter = null, string description = "")
     {
         this.filter = filter;
         this.channel = Channel.CreateUnbounded<T>(new UnboundedChannelOptions
