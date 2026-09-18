@@ -2268,4 +2268,43 @@ public class BiDiDriver015AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a driver reached through another object is not matched, which is the receiver shape the
+    /// reference names as unmatched. The rule resolves the receiver from the identifier it roots in, and
+    /// that identifier has to be a local, a parameter, or a member reached through <c>this.</c>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StringLiteral_OnDriverReachedThroughAnotherObject_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class Fixture
+                {
+                    public BiDiDriver Driver { get; } = new BiDiDriver();
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(Fixture fixture)
+                    {
+                        await fixture.Driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

@@ -2234,4 +2234,62 @@ public class BiDiDriver001AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer>(test);
     }
+
+    /// <summary>
+    /// Tests the walker paths the reference describes but this rule's own tests never reached: a start in
+    /// the right operand of <c>??</c> or <c>??=</c>, which may not run, and a hand-off through a cast,
+    /// which stops tracking altogether.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandOffAndShortCircuitForms_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url)
+                    {
+            // The right operand of ?? may not run, so the start it holds is not certain on every path.
+            BiDiDriver coalesced = new();
+            Task? pendingCoalesce = null;
+            await (pendingCoalesce ?? coalesced.StartAsync(url));
+            coalesced.RegisterModule(new CustomModule(coalesced));
+
+            // ??= carries the same uncertainty in its compound form.
+            BiDiDriver assigned = new();
+            Task? pendingAssign = null;
+            pendingAssign ??= assigned.StartAsync(url);
+            await pendingAssign;
+            assigned.RegisterModule(new CustomModule(assigned));
+
+            // A cast hand-off stops tracking entirely, so even a certain start leaves nothing reported.
+            BiDiDriver handedOff = new();
+            await handedOff.StartAsync(url);
+            await StartHelperAsync((IBiDiDriverLifecycleManager)handedOff);
+            handedOff.RegisterModule(new CustomModule(handedOff));
+                    }
+
+                    private static Task StartHelperAsync(IBiDiDriverLifecycleManager manager) => Task.CompletedTask;
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

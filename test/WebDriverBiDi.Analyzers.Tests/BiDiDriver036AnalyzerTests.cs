@@ -108,6 +108,7 @@ public class BiDiDriver036AnalyzerTests
                     {
                         BiDiDriver valid = new();
                         await valid.StartAsync("ws://localhost:9222/session");
+                        await valid.StartAsync("wss://localhost:9222/session");
                         await valid.StartAsync("WSS://localhost:9222/session");
                         await valid.StartAsync(url);
                         await valid.StartAsync(cancellationToken: default, connectionString: url);

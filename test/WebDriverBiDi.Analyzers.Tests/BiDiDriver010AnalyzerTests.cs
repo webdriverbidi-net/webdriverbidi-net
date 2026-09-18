@@ -2005,4 +2005,32 @@ public class BiDiDriver010AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected0);
     }
+
+    /// <summary>
+    /// Tests that assigning the task to a discard is treated as consuming it, which is the exemption the
+    /// reference describes for a call whose task is assigned.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task LifecycleCallAssignedToDiscard_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        _ = driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
 }
