@@ -203,6 +203,19 @@ guide In the project documentation. Please do not suggest one.
 issues you find in your analysis. Verify if any of your design issues are
 covered by those analyzers, and if any new analyzers would help users avoid
 what you consider design deficiencies.
+* A proposed analyzer must cover a shape the library repeats, not the commands of
+a single protocol module. Do not propose a rule that can only fire in code using
+one module: the argument pairing required by one command's parameters, a
+constraint between two properties of one module's payload type, or a scoping
+requirement that one module's commands impose. Such a rule is out of scope for
+this project however real the underlying constraint is, and the constraint
+belongs in the parameter type's documentation instead. A rule is in scope when
+what it checks recurs across the library: a lifecycle or threading contract, a
+serialization, AOT or trimming hazard, a rule that applies to a member family
+whose members must agree, or widening an existing rule so that it recognizes
+every member of the family it already partly covers. Before proposing one, name
+the rule's reach: if the honest answer is "code that uses module X," do not
+propose it.
 * The CI coverage enforcement threshold in `_tests.yml` is set to 95% as an
 intentional development affordance, allowing PRs to land before achieving
 100% coverage on new code. The project's target of 100% coverage is a goal
@@ -529,7 +542,8 @@ Assign a finding to an artifact by what its fix changes, not by where you notice
   example), file it once, under the artifact where the defect is, and deduct it there only. Name the dependent change
   in the finding, and add a one-line cross-reference, with no deduction, to the other artifact's section.
 * Proposed new analyzers are recorded in the analyzer section and are never deducted, whichever artifact's design
-  prompted them.
+  prompted them. Record only proposals that meet the reach requirement above; a module-specific rule is not a
+  proposal to record, and the absence of one is not a finding.
 
 Analyze the main library first and in full. The analyzer and logging analyses must not displace effort from it:
 a main library finding missed because time went to the analyzers is a worse outcome than an analyzer finding missed.
