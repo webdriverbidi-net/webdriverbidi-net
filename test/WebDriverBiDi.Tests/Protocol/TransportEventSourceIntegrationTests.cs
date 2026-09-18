@@ -600,4 +600,76 @@ public class TransportEventSourceIntegrationTests
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task TestMessageStatisticsExcludeMessagesProcessedByPreviousSessionReader()
+    {
+        // A reconnect that gives up waiting for a stuck handler leaves the previous session's reader
+        // still draining the previous session's queue. The messages it processes after the reconnect
+        // belong to the previous session, so the new session's statistics do not count them.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource firstHandlerBlockedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseFirstHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource staleEventsProcessedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int eventCount = 0;
+
+        using TestEventListener listener = new();
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        await using TestTransport transport = new(connection, timeProvider)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            int currentCount = Interlocked.Increment(ref eventCount);
+            if (currentCount == 1)
+            {
+                firstHandlerBlockedTaskCompletionSource.TrySetResult();
+                releaseFirstHandlerTaskCompletionSource.Task.GetAwaiter().GetResult();
+            }
+            else if (currentCount == 3)
+            {
+                staleEventsProcessedTaskCompletionSource.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
+
+        string eventJson = """{ "type": "event", "method": "protocol.event", "params": { "paramName": "paramValue" } }""";
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+
+        // The reader blocks in the handler for the first event, leaving two more unread on the first
+        // session's queue, and the reconnect gives up waiting for it.
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        await firstHandlerBlockedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        Task reconnectTask = transport.ConnectAsync("ws://localhost", cancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), cancellationToken);
+        await reconnectTask;
+
+        // The new session sends one command and receives its response.
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationToken);
+        await connection.RaiseDataReceivedEventAsync($$"""{ "type": "success", "id": {{command.CommandId}}, "result": { "value": "response value" } }""");
+        Assert.True(await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), cancellationToken));
+
+        // Releasing the handler lets the previous session's reader process all three events.
+        releaseFirstHandlerTaskCompletionSource.SetResult();
+        await staleEventsProcessedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        listener.ClearEvents();
+        await transport.DisconnectAsync(cancellationToken);
+
+        EventWrittenEventArgs statisticsEvent = Assert.Single(listener.GetEventsForEventName("MessageStatistics"));
+        ReadOnlyCollection<object?>? payload = statisticsEvent.Payload;
+        Assert.NotNull(payload);
+        Assert.Equal(1L, payload[0]);
+        Assert.Equal(1L, payload[1]);
+        Assert.Equal(0L, payload[2]);
+        Assert.Equal(0L, payload[3]);
+    }
 }

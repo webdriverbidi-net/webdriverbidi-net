@@ -107,7 +107,7 @@ with these events, or to tell two connections apart in a process that runs more 
 | `TransportStopped` | 18 | Info | Transport message processing stopped | `reason` |
 | `PendingCommandCount` | 16 | Verbose | Current pending command count | `pendingCount` |
 | `AsyncHandlerTaskCount` | 23 | Verbose | Number of in-flight asynchronous event handler tasks (see [Performance](performance.md#in-flight-async-handler-tasks-asynchandlertaskcount-eventsource-event)) | `inFlightCount` |
-| `MessageStatistics` | 21 | Verbose | Message statistics snapshot | `messagesSent`, `messagesReceived`, `eventsReceived`, `errorsReceived` |
+| `MessageStatistics` | 21 | Verbose | Message statistics for a session, raised when the session ends; `messagesSent` counts commands and `messagesReceived` command responses | `messagesSent`, `messagesReceived`, `eventsReceived`, `errorsReceived` |
 
 ### Module & Extensibility
 

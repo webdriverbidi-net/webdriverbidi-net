@@ -271,7 +271,7 @@ public class TestTransport : Transport
         return new TestIncomingMessage(owner, length, throwOnDeserialization);
     }
 
-    protected override async Task ProcessMessageAsync(IncomingMessage packet)
+    protected override async Task ProcessMessageAsync(IncomingMessage packet, PendingCommandCollection pendingCommands)
     {
         if (this.MessageProcessingGate is not null)
         {
@@ -281,7 +281,7 @@ public class TestTransport : Transport
             await this.MessageProcessingGate().ConfigureAwait(false);
         }
 
-        await base.ProcessMessageAsync(packet).ConfigureAwait(false);
+        await base.ProcessMessageAsync(packet, pendingCommands).ConfigureAwait(false);
     }
 
     protected override async Task DisconnectAsync(bool throwCollectedExceptions, CancellationToken cancellationToken = default)

@@ -81,7 +81,10 @@ a slow navigation that times out and then completes does not terminate the sessi
 Only a response whose command ID was never issued, or whose command has been forgotten because a full window of
 further commands was canceled after it, is treated as an unknown message or unexpected error. The window
 counts cancellations, so a command can be forgotten even when the late responses for the commands canceled
-after it have already arrived.
+after it have already arrived. The commands remembered are those of the current session, so a response to a
+command of an earlier session that the connection delivers only after the transport has reconnected is also
+treated as an unknown message or unexpected error; command IDs are never reused, so it cannot be mistaken
+for the response to a command of the new session.
 
 Each remembered entry is a `CanceledCommandInfo`, carrying the command's `CommandId` and `CommandName`, the
 `ResponseType` the answer would have been deserialized to, the `TimeSinceCancellation`, and a `Reason` of type
@@ -196,6 +199,13 @@ the resulting `AggregateException`, logs it at `Warn` level through `OnLogMessag
 Always call `await driver.StopAsync()` inside a `try` block and observe the `AggregateException` there, as the sample above
 does; the [BIDI012](analyzers.md#available-analyzers) analyzer reports a warning when a `Collect` behavior is configured
 in a method that disposes the driver without stopping it first.
+
+**Errors belong to the session they arose in.** An error that arises while the transport processes a message received
+in one session, including a fault in a handler run for that message, even one run asynchronously that faults much
+later, is collected by that session alone. If the transport has reconnected by the time the error arises, that session
+has ended: its collected errors can no longer be thrown by stopping it, and it can no longer be terminated. The error is
+therefore not collected by the new session, under `Collect` or `Terminate`; it is logged at `Warn` level through
+`OnLogMessage` instead, so it cannot fail or terminate a session it has nothing to do with.
 
 ### Terminate Mode
 
