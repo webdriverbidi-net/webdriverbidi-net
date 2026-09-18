@@ -73,6 +73,7 @@ public class BiDiDriver033AnalyzerTests
     [InlineData("SetTimeZoneOverrideCommandParameters parameters = new() { AdditionalData = { { {|#0:\"timezone\"|}, null } } };", "timezone", "SetTimeZoneOverrideCommandParameters")]
     [InlineData("SetCookieCommandParameters parameters = new(new PartialCookie(\"name\", BytesValue.FromString(\"value\"), \"example.com\")) { Cookie = { AdditionalData = { [{|#0:\"domain\"|}] = \"other.example.com\" } } };", "domain", "PartialCookie")]
     [InlineData("DirectProxyConfiguration proxy = new(); proxy.AdditionalData[{|#0:\"proxyType\"|}] = \"manual\";", "proxyType", "DirectProxyConfiguration")]
+    [InlineData("CapabilityRequest capabilities = new(); capabilities.AdditionalCapabilities[{|#0:\"browserName\"|}] = \"chrome\";", "browserName", "CapabilityRequest")]
     [InlineData("Command command = new(1, new CustomParameters()); command.AdditionalCommandProperties[{|#0:\"params\"|}] = null;", "params", "Command")]
     [InlineData("CustomParameters custom = new(); custom.AdditionalData[{|#0:\"PlainName\"|}] = 1;", "PlainName", "CustomParameters")]
     [InlineData("CustomParameters custom = new(); custom.AdditionalData[{|#0:\"included\"|}] = 1;", "included", "CustomParameters")]

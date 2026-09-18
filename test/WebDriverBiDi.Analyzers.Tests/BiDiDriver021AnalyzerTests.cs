@@ -628,4 +628,41 @@ public class BiDiDriver021AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a read inside a local function counts as reading the session, as a read inside a lambda
+    /// does. The reference names both, but only the lambda form was exercised.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartCapturing_ReadInsideLocalFunction_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        await DrainAsync();
+
+                        async Task DrainAsync()
+                        {
+                            await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
+    }
 }
