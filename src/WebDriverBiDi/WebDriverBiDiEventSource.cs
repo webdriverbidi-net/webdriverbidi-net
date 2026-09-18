@@ -338,10 +338,15 @@ public sealed class WebDriverBiDiEventSource : EventSource
     /// <summary>
     /// Logs detailed message processing statistics.
     /// </summary>
-    /// <param name="messagesSent">Total number of messages sent.</param>
-    /// <param name="messagesReceived">Total number of messages received.</param>
-    /// <param name="eventsReceived">Total number of events received.</param>
-    /// <param name="errorsReceived">Total number of errors received.</param>
+    /// <param name="messagesSent">Number of commands sent during the session.</param>
+    /// <param name="messagesReceived">Number of command responses received during the session.</param>
+    /// <param name="eventsReceived">Number of events received during the session.</param>
+    /// <param name="errorsReceived">Number of error responses received during the session.</param>
+    /// <remarks>
+    /// Raised when a session of the transport ends, by disconnection or by loss of the connection, with the
+    /// counts for that session alone. A message counts only once it has been processed, so a message still
+    /// waiting to be processed when the snapshot is taken is not included.
+    /// </remarks>
     [Event(21, Level = EventLevel.Verbose, Message = "Stats: sent={0}, received={1}, events={2}, errors={3}")]
     public void MessageStatistics(long messagesSent, long messagesReceived, long eventsReceived, long errorsReceived)
     {

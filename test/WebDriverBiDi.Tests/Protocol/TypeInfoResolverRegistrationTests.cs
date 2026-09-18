@@ -90,7 +90,9 @@ public class TypeInfoResolverRegistrationTests
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(async e =>
         {
-            await connection.RaiseDataReceivedEventAsync("""{"type":"success","id":1,"result":{"output":"HELLO"}}""");
+            // Answer the command just sent; command IDs continue across the reconnect.
+            long commandId = JObject.Parse(connection.DataSent ?? "").Value<long>("id");
+            await connection.RaiseDataReceivedEventAsync("""{"type":"success","id":""" + commandId + ""","result":{"output":"HELLO"}}""");
         });
 
         Transport transport = new(connection);

@@ -239,7 +239,7 @@ Pass your custom transport to `BiDiDriver` via the constructor overload that acc
 | `PendingCommands` | `protected` settable. The pending-command collection. Assign one built with a different `MaxTrackedCanceledCommands` before the first connect to change the size of the window of recent cancellations within which canceled commands are remembered; a reconnect preserves that capacity |
 | `TimeProvider` | `protected` settable. The clock the transport's `ShutdownTimeout` waits and its commands' timeouts are measured on. Substitute one to drive those waits with virtual time in a test |
 | `UnhandledErrors` | `protected`, read-only. The `UnhandledErrorCollection` the transport records failures in under its `TransportErrorBehavior` settings; see [Pending commands and unhandled errors](#pending-commands-and-unhandled-errors) |
-| `LastCommandId` / `GetNextCommandId` | `protected`. The ID of the most recently created command, and the method that issues the next one. An override of `CreateCommand` that builds its own `Command` should take its ID from `GetNextCommandId`, or call the base implementation, so that IDs stay unique |
+| `LastCommandId` / `GetNextCommandId` | `protected`. The ID of the most recently created command, and the method that issues the next one. An override of `CreateCommand` that builds its own `Command` should take its ID from `GetNextCommandId`, or call the base implementation, so that IDs stay unique. IDs are unique for the lifetime of the transport and are not reset when it reconnects |
 
 ### Working with the `Command` you were handed
 

@@ -1939,9 +1939,11 @@ public class TransportTests
         Assert.Equivalent(expected, dataValue);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
 
+        // Command IDs continue across the reconnect rather than restarting.
         await transport.ConnectAsync("ws://example.com:5678", TestContext.Current.CancellationToken);
         _ = await transport.SendCommandAsync(command, TestContext.Current.CancellationToken);
 
+        expected["id"] = 2;
         dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();
         Assert.Equivalent(expected, dataValue);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
@@ -5178,6 +5180,253 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestPreviousSessionReaderDoesNotCompleteNewSessionCommand()
+    {
+        // A reconnect that gives up waiting for a stuck handler leaves the previous session's reader
+        // still draining the previous session's queue. A response on that queue is resolved against
+        // the previous session's pending commands, never the new session's, even when it carries the
+        // ID of a command the new session has sent.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource firstHandlerBlockedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseFirstHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<string> unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            firstHandlerBlockedTaskCompletionSource.TrySetResult();
+            releaseFirstHandlerTaskCompletionSource.Task.GetAwaiter().GetResult();
+            return Task.CompletedTask;
+        });
+        transport.OnUnknownMessageReceived.AddObserver(e =>
+        {
+            unknownMessageTaskCompletionSource.TrySetResult(e.Message);
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+
+        // The reader blocks in the handler for an event, so the response that follows it is left
+        // unread on the first session's queue. It carries ID 1, which the first session never issued
+        // and the second session is about to.
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "event", "method": "protocol.event", "params": { "paramName": "paramValue" } }""");
+        await firstHandlerBlockedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        string staleResponse = """{ "type": "success", "id": 1, "result": { "value": "previous session" } }""";
+        await connection.RaiseDataReceivedEventAsync(staleResponse);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        Task reconnectTask = transport.ConnectAsync("ws://localhost", cancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), cancellationToken);
+        await reconnectTask;
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationToken);
+        Assert.Equal(1, command.CommandId);
+
+        // Releasing the handler lets the previous session's reader process the stale response. It
+        // matches nothing in the previous session, so it is reported as an unknown message, and the
+        // new session's command is left pending.
+        releaseFirstHandlerTaskCompletionSource.SetResult();
+        string unknownMessage = await unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        Assert.Equal(staleResponse, unknownMessage);
+        Assert.False(command.TryGetResult(out _));
+        Assert.Null(command.ThrownException);
+        Assert.False(command.IsCanceled);
+        Assert.Equal(1, transport.PendingCommandCount);
+
+        await transport.DisconnectAsync(cancellationToken);
+    }
+
+    [Fact]
+    public async Task TestLateResponseFromPreviousSessionIsNotMatchedToNewSessionCommand()
+    {
+        // A connection that survives a reconnect, such as a pipe, can deliver a response to a command of
+        // the previous session after the new session has started, and the new session's reader reads
+        // it. Command IDs are not reused across sessions, so it cannot match a new session's command.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource<string> unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        transport.OnUnknownMessageReceived.AddObserver(e =>
+        {
+            unknownMessageTaskCompletionSource.TrySetResult(e.Message);
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+        Command previousSessionCommand = await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationToken);
+        await transport.DisconnectAsync(cancellationToken);
+
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationToken);
+        Assert.NotEqual(previousSessionCommand.CommandId, command.CommandId);
+
+        string lateResponse = $$"""{ "type": "success", "id": {{previousSessionCommand.CommandId}}, "result": { "value": "previous session" } }""";
+        await connection.RaiseDataReceivedEventAsync(lateResponse);
+
+        string unknownMessage = await unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        Assert.Equal(lateResponse, unknownMessage);
+        Assert.False(command.TryGetResult(out _));
+        Assert.Null(command.ThrownException);
+        Assert.False(command.IsCanceled);
+        Assert.Equal(1, transport.PendingCommandCount);
+
+        await transport.DisconnectAsync(cancellationToken);
+    }
+
+    [Fact]
+    public async Task TestErrorFromPreviousSessionReaderIsNotCollectedByNewSession()
+    {
+        // An error the previous session's reader gives rise to after a reconnect belongs to the
+        // previous session, which has ended. It is logged rather than collected, so it cannot
+        // terminate the new session.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource firstHandlerBlockedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseFirstHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<string> discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+            UnknownMessageBehavior = TransportErrorBehavior.Terminate,
+            LogLevel = WebDriverBiDiLogLevel.Warn,
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            firstHandlerBlockedTaskCompletionSource.TrySetResult();
+            releaseFirstHandlerTaskCompletionSource.Task.GetAwaiter().GetResult();
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.StartsWith("Discarded UnknownMessage error", StringComparison.Ordinal))
+            {
+                discardedTaskCompletionSource.TrySetResult(e.Message);
+            }
+        });
+
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+
+        // The reader blocks in the handler for an event, leaving an unknown message unread on the
+        // first session's queue, and the reconnect gives up waiting for it.
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "event", "method": "protocol.event", "params": { "paramName": "paramValue" } }""");
+        await firstHandlerBlockedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "unknown" }""");
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        Task reconnectTask = transport.ConnectAsync("ws://localhost", cancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), cancellationToken);
+        await reconnectTask;
+
+        // Releasing the handler lets the previous session's reader process the unknown message, which
+        // would terminate the session under Terminate. It is discarded instead.
+        releaseFirstHandlerTaskCompletionSource.SetResult();
+        string discardedMessage = await discardedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        Assert.Contains("Received unknown message from protocol connection", discardedMessage);
+
+        // The new session was not terminated: a command is sent normally.
+        _ = await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationToken);
+        Assert.Equal(1, transport.PendingCommandCount);
+        Assert.Equal(TransportState.Connected, transport.State);
+
+        await transport.DisconnectAsync(cancellationToken);
+    }
+
+    [Fact]
+    public async Task TestAsynchronousHandlerFaultFromPreviousSessionIsNotCollectedByNewSession()
+    {
+        // A handler run asynchronously can fault long after the reader started it, even after a
+        // reconnect. The fault belongs to the session whose reader started the handler, so it is logged
+        // rather than collected by the new session.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<string> discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+            LogLevel = WebDriverBiDiLogLevel.Warn,
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(
+            async e =>
+            {
+                handlerStartedTaskCompletionSource.TrySetResult();
+                await releaseHandlerTaskCompletionSource.Task;
+                throw new WebDriverBiDiException("previous session handler failure");
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.StartsWith("Discarded EventHandlerException error", StringComparison.Ordinal))
+            {
+                discardedTaskCompletionSource.TrySetResult(e.Message);
+            }
+        });
+
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "event", "method": "protocol.event", "params": { "paramName": "paramValue" } }""");
+        await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        await transport.DisconnectAsync(cancellationToken);
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+
+        releaseHandlerTaskCompletionSource.SetResult();
+        string discardedMessage = await discardedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        Assert.Contains("previous session handler failure", discardedMessage);
+
+        // Nothing was collected for the new session, so stopping it does not throw.
+        await transport.DisconnectAsync(cancellationToken);
+    }
+
+    [Fact]
+    public async Task TestErrorRaisedForTransportFromAnotherTransportsReaderIsCollected()
+    {
+        // The session a flow belongs to is tracked per transport. A handler run by one transport's
+        // reader that gives rise to an error in a second transport does not carry a session of the
+        // second transport, so the error is collected by the second transport's current session.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TestWebSocketConnection otherConnection = new();
+        await using TestTransport otherTransport = new(otherConnection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+        };
+        // Only the message raised from the first transport's reader fails, so the connection's own log
+        // messages, raised outside any reader, cannot supply the collected error this test looks for.
+        Action<LogMessageEventArgs> throwingHandler = e =>
+        {
+            if (e.Message == "other connection log message")
+            {
+                throw new WebDriverBiDiException("other transport observer failure");
+            }
+        };
+        otherConnection.OnLogMessage.AddObserver(throwingHandler, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        await otherTransport.ConnectAsync("ws://localhost", cancellationToken);
+
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(async e => await otherConnection.RaiseLogMessageEventAsync("other connection log message", WebDriverBiDiLogLevel.Warn));
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "event", "method": "protocol.event", "params": { "paramName": "paramValue" } }""");
+        Assert.True(await otherTransport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Collect));
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(
+            async () => await otherTransport.DisconnectAsync(cancellationToken));
+        Assert.Contains(exception.InnerExceptions, inner => inner.Message.Contains("other transport observer failure"));
+        await transport.DisconnectAsync(cancellationToken);
+    }
+
+    [Fact]
     public async Task TestDataReceivedAfterRemoteDisconnectIsDisposedAndNotQueued()
     {
         // A remote disconnect completes the incoming message queue, so data delivered by the
@@ -5624,11 +5873,10 @@ public class TransportTests
     [Fact]
     public async Task TestSendCommandAfterRejectedReconnectRaceDoesNotCollideOnCommandId()
     {
-        // Regression test for the consequence of registering a stale command: ConnectAsync resets
-        // the command counter, so a command carried over from the previous session occupies an ID
-        // the new session will issue again. The victim is then the later, unrelated command, which
-        // fails with "Could not add command with id 1, as id already exists". Rejecting the stale
-        // command keeps the new session's first ID free.
+        // A command raced by a reconnect is rejected rather than registered with the new session, so
+        // the new session holds only its own commands. Command IDs are unique for the life of the
+        // transport, so even a stale command that was registered could not occupy an ID the new
+        // session issues; the pending count is what shows the stale command was kept out.
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
@@ -5657,15 +5905,13 @@ public class TransportTests
             racedCommandRejected = true;
         }
 
-        // The raced command drew ID 1 from the previous session, and the reconnect reset the
-        // counter, so the new session numbers this command 1 as well. Without the identity check
-        // the raced command already occupies that ID, and this unrelated command is the one that
-        // fails, with "Could not add command with id 1, as id already exists".
+        // The raced command drew ID 1 in the previous session; the reconnect does not reset the
+        // counter, so this command is numbered 2.
         transport.BeforeAcquireLockCallback = null;
         Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
 
         Assert.True(racedCommandRejected);
-        Assert.Equal(1, command.CommandId);
+        Assert.Equal(2, command.CommandId);
         Assert.Equal(1, transport.PendingCommandCount);
     }
 

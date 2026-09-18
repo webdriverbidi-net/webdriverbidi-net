@@ -118,6 +118,18 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     // blocks while holding it.
     private readonly object connectionStateLock = new();
 
+    // Serializes attributing an error to a session with replacing the session, so that an error is
+    // collected by the session it arose in, or discarded because that session has ended, but never
+    // collected by a session it does not belong to. See CaptureSessionErrorAsync.
+    private readonly object sessionErrorLock = new();
+
+    // The ID of the session whose reader is running in the current asynchronous flow. The reader
+    // sets it, and it flows to everything the reader runs or starts, including handlers run
+    // asynchronously and the reporting of their faults, however late. It is null in a flow no
+    // reader started. It is an instance member, so a flow started by another transport's reader
+    // carries no value for this one.
+    private readonly AsyncLocal<string?> readerSessionId = new();
+
     private readonly EventObserver<ConnectionDataReceivedEventArgs> connectionDataReceivedObserver;
     private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
     private readonly EventObserver<ConnectionDisconnectedEventArgs> connectionRemoteDisconnectObserver;
@@ -134,7 +146,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         MaxDepth = MaxJsonDepth,
     };
 
-    private IncomingMessageQueue incomingMessageQueue = new();
+    private TransportSession session;
 
     private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
@@ -166,10 +178,6 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private TimeSpan connectionLockTimeout = TimeSpan.FromSeconds(60);
 
     // Message/event sent/received statistics
-    private long commandMessagesSent = 0;
-    private long commandResponseMessagesReceived = 0;
-    private long eventMessagesReceived = 0;
-    private long errorMessagesReceived = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Transport"/> class.
@@ -198,6 +206,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         }
 
         this.Connection = connection;
+        this.session = new TransportSession(this.PendingCommands);
 
         // Cache the JsonTypeInfo for JSON serialized or deserialized classes for perf reasons.
         this.commandJsonTypeInfo = (JsonTypeInfo<Command>)this.options.GetTypeInfo(typeof(Command));
@@ -447,7 +456,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// the caller observes it.
     /// </para>
     /// </remarks>
-    public virtual int IncomingQueueDepth => this.incomingMessageQueue.Depth;
+    public virtual int IncomingQueueDepth => this.session.Depth;
 
     /// <summary>
     /// Gets the number of commands that have been sent to the remote end and are
@@ -625,11 +634,11 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, connectionString);
             await this.LogAsync("Transport connecting", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
-            // SendCommandAsync requires that the pending commands collection be
-            // replaced whenever the nextCommandId is reset, to prevent potentially
-            // adding commands with colliding IDs to the collection. Every path for
-            // disconnection closes the collection, marking it as not accepting
-            // commands, so we must replace it here.
+            // Every path for disconnection closes the pending commands collection,
+            // marking it as not accepting commands, so each session needs a new one.
+            // The previous session's collection is not discarded outright: that
+            // session's queue carries it, so a reader still draining that queue
+            // resolves the responses on it against the commands of its own session.
             if (!this.PendingCommands.IsAcceptingCommands)
             {
                 uint maxTrackedCanceledCommands = this.PendingCommands.MaxTrackedCanceledCommands;
@@ -644,40 +653,37 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             await this.WaitForMessageProcessingCompletionAsync(this.ShutdownTimeout, "Timed out waiting for message processing of the previous connection to complete before reconnecting").ConfigureAwait(false);
 
             // An adopted connection can deliver before the first connect. Those messages belong to no
-            // session, and the counter reset above would make a buffered response collide with a
-            // reused identifier, so discard them, draining to return their pooled buffers. Only a
-            // queue no reader ever ran over is drained; a reader the wait above gave up on owns its own.
-            if (!this.incomingMessageQueue.HasReader)
+            // session, so discard them, draining to return their pooled buffers. Only a queue no
+            // reader ever ran over is drained; a reader the wait above gave up on owns its own.
+            if (!this.session.HasReader)
             {
-                int discardedMessageCount = this.incomingMessageQueue.Drain();
+                int discardedMessageCount = this.session.Drain();
                 if (discardedMessageCount > 0)
                 {
                     await this.LogAsync($"Discarded {discardedMessageCount} message(s) that arrived before the transport connected; they belong to no session and were not dispatched", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
                 }
             }
 
-            this.incomingMessageQueue = new IncomingMessageQueue();
+            // Replacing the session and clearing what the previous one collected happen together,
+            // under the lock that attributes errors to sessions, so an error from the previous
+            // session is either collected before the clear or discarded as belonging to an ended
+            // session, and never lands in this one.
+            lock (this.sessionErrorLock)
+            {
+                this.session = new TransportSession(this.PendingCommands);
+                this.ResetCollectedErrors();
+
+                // Reset the termination reason to its default so a reason carried over from a prior
+                // Terminate-triggered session is not reported by a subsequent normal shutdown.
+                this.TerminationReason = NormalShutdownReason;
+            }
+
             Interlocked.Exchange(ref this.disconnectOwnedSignal, new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously));
 
             // Discard any loss recorded against a previous attempt, so that this attempt is judged
             // only by what happens to its own connection. This must precede Connection.StartAsync
             // below, because a loss reported from the moment that call begins belongs to this attempt.
             Interlocked.Exchange(ref this.connectionLostWhileConnecting, null);
-
-            this.ResetCollectedErrors();
-
-            // Reset the termination reason to its default so a reason carried over from a prior
-            // Terminate-triggered session is not reported by a subsequent normal shutdown.
-            this.TerminationReason = NormalShutdownReason;
-
-            // Reset the command counter for each connection.
-            Interlocked.Exchange(ref this.nextCommandId, 0);
-
-            // Reset the message send/receive statistics for this session.
-            Interlocked.Exchange(ref this.commandMessagesSent, 0);
-            Interlocked.Exchange(ref this.commandResponseMessagesReceived, 0);
-            Interlocked.Exchange(ref this.eventMessagesReceived, 0);
-            Interlocked.Exchange(ref this.errorMessagesReceived, 0);
 
             if (!this.Connection.IsActive)
             {
@@ -713,7 +719,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 // The reader is never started for this attempt, so anything the remote end managed to
                 // push into the queue would otherwise be abandoned holding its pooled buffer. The
                 // exception below already tells the caller no session was established.
-                _ = this.incomingMessageQueue.Drain();
+                _ = this.session.Drain();
                 throw new WebDriverBiDiConnectionException("The connection was lost while the session was being established; the remote end closed it, or the connection reported an error, before the transport finished connecting.", connectionLost);
             }
 
@@ -722,9 +728,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // should buffer the data until the first read. If the underlying data structure
             // changes, this logic may need to be refactored.
             //
-            // Marked before the loop is scheduled, so a later connect cannot mistake this queue for
-            // one nothing will read and drain it out from under this reader.
-            this.incomingMessageQueue.MarkReaderStarted();
+            // Marked before the loop is scheduled, so a later connect cannot mistake this session's
+            // queue for one nothing will read and drain it out from under this reader.
+            this.session.MarkReaderStarted();
             this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync(), CancellationToken.None);
 
             // Defence-in-depth: ReadIncomingMessagesAsync catches per-message exceptions in
@@ -883,7 +889,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
 
                 await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
 
-                Interlocked.Increment(ref this.commandMessagesSent);
+                // Counted under the connection lock, after the check above that the session was not
+                // replaced, so the count goes to the session the command was sent in.
+                this.session.IncrementCommandSentCount();
                 WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
 
                 return command;
@@ -1060,10 +1068,10 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             }
         }
 
-        this.CaptureUnhandledError(UnhandledErrorKind.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
+        await this.CaptureSessionErrorAsync(UnhandledErrorKind.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName)).ConfigureAwait(false);
         if (errorObserverException is not null)
         {
-            this.CaptureUnhandledError(UnhandledErrorKind.EventHandlerException, errorObserverException, this.GetEventHandlerTerminalReason(EventHandlerErrorOccurredEventName));
+            await this.CaptureSessionErrorAsync(UnhandledErrorKind.EventHandlerException, errorObserverException, this.GetEventHandlerTerminalReason(EventHandlerErrorOccurredEventName)).ConfigureAwait(false);
         }
     }
 
@@ -1133,6 +1141,12 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// Increments the command ID for the command to be sent.
     /// </summary>
     /// <returns>The command ID for the command to be sent.</returns>
+    /// <remarks>
+    /// Command IDs are unique for the lifetime of the transport; they are not reset when the transport
+    /// reconnects. A response still in flight from a previous session, such as one delivered late over
+    /// a connection that survives the reconnect, therefore cannot be mistaken for the response to a
+    /// command of the current session.
+    /// </remarks>
     protected long GetNextCommandId()
     {
         return Interlocked.Increment(ref this.nextCommandId);
@@ -1235,9 +1249,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 // must be awaited separately. TryComplete is used rather than Complete
                 // because the queue may already have been completed by a remote disconnect
                 // or connection error that raced with this call.
-                this.incomingMessageQueue.MessageChannel.Writer.TryComplete();
-                Task messageQueueReaderCompleteTask = await Task.WhenAny(this.incomingMessageQueue.MessageChannel.Reader.Completion, timeoutTask).ConfigureAwait(false);
-                if (messageQueueReaderCompleteTask != this.incomingMessageQueue.MessageChannel.Reader.Completion)
+                this.session.MessageChannel.Writer.TryComplete();
+                Task messageQueueReaderCompleteTask = await Task.WhenAny(this.session.MessageChannel.Reader.Completion, timeoutTask).ConfigureAwait(false);
+                if (messageQueueReaderCompleteTask != this.session.MessageChannel.Reader.Completion)
                 {
                     shutdownTimedOut = true;
                     await this.LogAsync("Timed out waiting for message writer to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
@@ -1261,7 +1275,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                     timeoutCancelTokenSource.Cancel();
                 }
 
-                WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(Interlocked.Read(ref this.commandMessagesSent), Interlocked.Read(ref this.commandResponseMessagesReceived), Interlocked.Read(ref this.eventMessagesReceived), Interlocked.Read(ref this.errorMessagesReceived));
+                this.session.RaiseMessageStatisticsEvent();
                 WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
                 WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
                 await this.LogAsync("Transport disconnected", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
@@ -1275,7 +1289,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 // implementation). Both of these statements are no-ops if the try block completed
                 // successfully, allowing a subsequent ConnectAsync to not wait for the full shutdown
                 // timeout before reconnecting.
-                this.incomingMessageQueue.MessageChannel.Writer.TryComplete();
+                this.session.MessageChannel.Writer.TryComplete();
                 this.PendingCommands.Clear();
             }
         }
@@ -1363,9 +1377,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         // A transport disposed without ever connecting still holds its original queue, which nothing
         // ever reads, so draining here is what returns the pooled buffers of anything an adopted
         // connection delivered into it. A queue with a reader is left to it, as in ConnectAsync.
-        if (!this.incomingMessageQueue.HasReader)
+        if (!this.session.HasReader)
         {
-            int discardedMessageCount = this.incomingMessageQueue.Drain();
+            int discardedMessageCount = this.session.Drain();
             if (discardedMessageCount > 0)
             {
                 await this.LogAsync($"Discarded {discardedMessageCount} message(s) that arrived before the transport connected and were still buffered at disposal", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
@@ -1447,14 +1461,21 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// <returns>A task representing the asynchronous message-processing loop.</returns>
     protected virtual async Task ReadIncomingMessagesAsync()
     {
-        // Capture the queue this reader is bound to, and read and count against that capture for
-        // the life of the loop. Reading the field directly in the code below would address the
-        // wrong queue in the reconnect-after-disconnect scenario: a reconnect that gives up
-        // waiting for this loop replaces the field while the loop is still draining the queue it
-        // started on, so a depth adjustment made against the field would be applied to the new
-        // connection's queue for a message that was never on it.
-        IncomingMessageQueue queue = this.incomingMessageQueue;
-        ChannelReader<IncomingMessage> reader = queue.MessageChannel.Reader;
+        // Capture the session this reader is bound to, and read, count, and resolve responses
+        // against that capture for the life of the loop. Reading the field directly in the code
+        // below would address the wrong session in the reconnect-after-disconnect scenario: a
+        // reconnect that gives up waiting for this loop replaces it while the loop is still draining
+        // the queue it started on, so a depth adjustment or a message count would be applied to the
+        // new session for a message that was never on its connection, and a response would be
+        // matched against the new session's pending commands and complete one of them with the
+        // previous session's result.
+        TransportSession session = this.session;
+        ChannelReader<IncomingMessage> reader = session.MessageChannel.Reader;
+
+        // Mark everything this loop runs or starts as belonging to its session, so that an error it
+        // gives rise to, even one surfacing after a reconnect, is attributed to this session. The
+        // value is scoped to this method's flow, and is restored when the method returns.
+        this.readerSessionId.Value = session.Id;
 
         // In theory, we could accomplish this with an `await foreach` using
         // IAsyncEnumerable, but this would require additional dependencies,
@@ -1465,15 +1486,19 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         {
             while (reader.TryRead(out IncomingMessage? packet))
             {
-                queue.DecrementDepth();
+                session.DecrementDepth();
                 try
                 {
-                    await this.ProcessMessageAsync(packet).ConfigureAwait(false);
+                    await this.ProcessMessageAsync(packet, session.PendingCommands).ConfigureAwait(false);
+
+                    // The message is disposed by now, but its kind was determined while it was
+                    // processed and is retained, so it can still be read.
+                    session.IncrementMessageReceivedCount(packet.MessageKind);
                 }
                 catch (Exception ex)
                 {
                     await this.LogAsync($"Unexpected error in message processing loop: {ex.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-                    this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, "Unexpected error in message processing loop");
+                    await this.CaptureSessionErrorAsync(UnhandledErrorKind.ProtocolError, ex, "Unexpected error in message processing loop").ConfigureAwait(false);
                 }
             }
         }
@@ -1483,13 +1508,18 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// Processes a single incoming message read from the connection.
     /// </summary>
     /// <param name="packet">The incoming message to process.</param>
+    /// <param name="pendingCommands">
+    /// The pending commands of the session on whose connection the message was received, against which a
+    /// response in the message is resolved. After a reconnect, this is not the collection in
+    /// <see cref="PendingCommands"/> for a message the previous session's reader is still processing.
+    /// </param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     /// <remarks>
     /// This method is <see langword="protected virtual"/> to allow test doubles to observe or delay the
     /// processing of individual messages (for example to create a backlog of pending messages while the
     /// transport disconnects).
     /// </remarks>
-    protected virtual async Task ProcessMessageAsync(IncomingMessage packet)
+    protected virtual async Task ProcessMessageAsync(IncomingMessage packet, PendingCommandCollection pendingCommands)
     {
         bool isProcessed = false;
         using (packet)
@@ -1515,18 +1545,15 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             }
             else if (packet.MessageKind == IncomingMessageKind.CommandResponse)
             {
-                isProcessed = await this.ProcessCommandResponseMessageAsync(packet).ConfigureAwait(false);
-                Interlocked.Increment(ref this.commandResponseMessagesReceived);
+                isProcessed = await this.ProcessCommandResponseMessageAsync(packet, pendingCommands).ConfigureAwait(false);
             }
             else if (packet.MessageKind == IncomingMessageKind.ErrorResponse)
             {
-                isProcessed = await this.ProcessErrorMessageAsync(packet).ConfigureAwait(false);
-                Interlocked.Increment(ref this.errorMessagesReceived);
+                isProcessed = await this.ProcessErrorMessageAsync(packet, pendingCommands).ConfigureAwait(false);
             }
             else if (packet.MessageKind == IncomingMessageKind.Event)
             {
                 isProcessed = await this.ProcessEventMessageAsync(packet).ConfigureAwait(false);
-                Interlocked.Increment(ref this.eventMessagesReceived);
             }
 
             if (!isProcessed)
@@ -1534,7 +1561,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 string message = packet.MessageText;
                 WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(packet.MessageKind, packet.MessageLength);
                 await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message)).ConfigureAwait(false);
-                this.CaptureUnhandledError(UnhandledErrorKind.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
+                await this.CaptureSessionErrorAsync(UnhandledErrorKind.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection").ConfigureAwait(false);
             }
         }
     }
@@ -1789,17 +1816,17 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         // connection's receive loop can outlive that (see PipeConnection.StopAsync), so a
         // late message must be disposed here to return its pooled buffer rather than being
         // dropped on the floor.
-        // Capture the queue once, so that the write and the count it produces cannot address
-        // different queues if a reconnect replaces the field between them.
-        IncomingMessageQueue queue = this.incomingMessageQueue;
+        // Capture the session once, so that the write and the count it produces cannot address
+        // different sessions if a reconnect replaces the field between them.
+        TransportSession session = this.session;
         IncomingMessage message = this.CreateIncomingMessage(e.BufferOwner, e.DataLength);
-        if (!queue.MessageChannel.Writer.TryWrite(message))
+        if (!session.MessageChannel.Writer.TryWrite(message))
         {
             message.Dispose();
             return Task.CompletedTask;
         }
 
-        queue.IncrementDepth();
+        session.IncrementDepth();
         return Task.CompletedTask;
     }
 
@@ -1916,10 +1943,10 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // reader may itself need that lock (e.g., to send a command, which will
             // fail because the transport is now disconnected). ConnectAsync waits for
             // the reader to finish before starting a new session.
-            this.incomingMessageQueue.MessageChannel.Writer.TryComplete();
+            this.session.MessageChannel.Writer.TryComplete();
 
             // Log appropriate statistics and information.
-            WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(Interlocked.Read(ref this.commandMessagesSent), Interlocked.Read(ref this.commandResponseMessagesReceived), Interlocked.Read(ref this.eventMessagesReceived), Interlocked.Read(ref this.errorMessagesReceived));
+            this.session.RaiseMessageStatisticsEvent();
             await this.LogAsync(logMessage, logLevel).ConfigureAwait(false);
         }
         finally
@@ -1968,11 +1995,11 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, exception, "Message processing loop faulted");
     }
 
-    private async Task<bool> ProcessCommandResponseMessageAsync(IncomingMessage packet)
+    private async Task<bool> ProcessCommandResponseMessageAsync(IncomingMessage packet, PendingCommandCollection pendingCommands)
     {
         if (packet.TryGetCommandId(out long responseId))
         {
-            if (this.PendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
+            if (pendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
             {
                 // Stop timing and log completion
                 executedCommand.StopTiming();
@@ -2002,7 +2029,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 return true;
             }
 
-            if (this.PendingCommands.TryRemoveCanceledCommand(responseId, out CanceledCommandInfo? canceledCommand))
+            if (pendingCommands.TryRemoveCanceledCommand(responseId, out CanceledCommandInfo? canceledCommand))
             {
                 // The local end stopped waiting for this command (timeout, cancellation, or
                 // shutdown), but the remote end answered anyway. This is not a protocol anomaly,
@@ -2016,7 +2043,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         return false;
     }
 
-    private async Task<bool> ProcessErrorMessageAsync(IncomingMessage packet)
+    private async Task<bool> ProcessErrorMessageAsync(IncomingMessage packet, PendingCommandCollection pendingCommands)
     {
         try
         {
@@ -2026,7 +2053,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             if (packet.TryGetErrorResponse(this.errorResponseJsonTypeInfo, out ErrorResponseMessage? errorMessage))
             {
                 ErrorResult result = errorMessage.GetErrorResponseData();
-                if (errorMessage.CommandId.HasValue && this.PendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command? executedCommand))
+                if (errorMessage.CommandId.HasValue && pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command? executedCommand))
                 {
                     // Stop timing and log error
                     executedCommand.StopTiming();
@@ -2038,7 +2065,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
 
                     executedCommand.SetResult(result);
                 }
-                else if (errorMessage.CommandId.HasValue && this.PendingCommands.TryRemoveCanceledCommand(errorMessage.CommandId.Value, out CanceledCommandInfo? canceledCommand))
+                else if (errorMessage.CommandId.HasValue && pendingCommands.TryRemoveCanceledCommand(errorMessage.CommandId.Value, out CanceledCommandInfo? canceledCommand))
                 {
                     // An error response for a command the local end stopped waiting for; see
                     // the equivalent branch in ProcessCommandResponseMessageAsync.
@@ -2048,7 +2075,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 {
                     string commandIdDescription = errorMessage.CommandId.HasValue ? $"for unknown command ID {errorMessage.CommandId.Value}" : "with no command ID";
                     await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result)).ConfigureAwait(false);
-                    this.CaptureUnhandledError(UnhandledErrorKind.UnexpectedError, new WebDriverBiDiProtocolException($"Received {result.ErrorCode} ('{result.ErrorType}') error {commandIdDescription}: {result.ErrorMessage}", result), $"Received error {commandIdDescription}");
+                    await this.CaptureSessionErrorAsync(UnhandledErrorKind.UnexpectedError, new WebDriverBiDiProtocolException($"Received {result.ErrorCode} ('{result.ErrorType}') error {commandIdDescription}: {result.ErrorMessage}", result), $"Received error {commandIdDescription}").ConfigureAwait(false);
                 }
             }
 
@@ -2064,7 +2091,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // the caller does not have to wait for the full command timeout. Note that
             // the invalid error payload is deliberately not routed to the transport
             // unhandled error pipeline.
-            if (packet.TryGetCommandId(out long commandId) && this.PendingCommands.RemovePendingCommand(commandId, out Command? executedCommand))
+            if (packet.TryGetCommandId(out long commandId) && pendingCommands.RemovePendingCommand(commandId, out Command? executedCommand))
             {
                 executedCommand.StopTiming();
                 WebDriverBiDiEventSource.RaiseEvent.CommandError(commandId, executedCommand.CommandName, ErrorCode.UnsetErrorCode, "invalid error json", "Error response contained incorrect JSON for a protocol error");
@@ -2073,7 +2100,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             }
 
             await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in protocol error response: {messageString}");
+            await this.CaptureSessionErrorAsync(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in protocol error response: {messageString}").ConfigureAwait(false);
             WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
 
             // The message was recognized as an error response, and its malformed payload has
@@ -2119,13 +2146,48 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         {
             string messageString = packet.MessageText;
             await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in event message: {messageString}");
+            await this.CaptureSessionErrorAsync(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in event message: {messageString}").ConfigureAwait(false);
             WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
 
             // The message was recognized as a registered event; its malformed payload has
             // been captured as a protocol error above, so the message is handled and must
             // not additionally be reported as an unknown message by the caller.
             return true;
+        }
+    }
+
+    /// <summary>
+    /// Captures an unhandled error for the session it arose in, or discards it, with a warning, if that
+    /// session has ended.
+    /// </summary>
+    /// <param name="errorType">The <see cref="UnhandledErrorKind"/> describing the type of error.</param>
+    /// <param name="ex">The exception thrown for the error.</param>
+    /// <param name="terminalReason">The reason for terminating the session, if the error is a terminal error.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// An error that arises while a session's reader processes a message, or in a handler the reader ran
+    /// or started, belongs to that session, and is identified by the session ID the reader placed in the
+    /// asynchronous flow. Once a reconnect has replaced that session, its errors can no longer be thrown
+    /// by stopping it or terminate it, and collecting them would attribute them to a session they do not
+    /// belong to, so they are logged instead. An error arising in no reader's flow, such as the failure
+    /// of an observer of the connection's own events, is attributed to the current session.
+    /// </remarks>
+    private async Task CaptureSessionErrorAsync(UnhandledErrorKind errorType, Exception ex, string terminalReason)
+    {
+        string? originSessionId = this.readerSessionId.Value;
+        bool isCaptured;
+        lock (this.sessionErrorLock)
+        {
+            isCaptured = originSessionId is null || originSessionId == this.session.Id;
+            if (isCaptured)
+            {
+                this.CaptureUnhandledError(errorType, ex, terminalReason);
+            }
+        }
+
+        if (!isCaptured)
+        {
+            await this.LogAsync($"Discarded {errorType} error from session {originSessionId}, which has ended; it is not collected by the current session: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
         }
     }
 
@@ -2254,12 +2316,28 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         await this.ReportEventObserverErrorAsync(errorInfo, notifyObservers).ConfigureAwait(false);
     }
 
-    private sealed class IncomingMessageQueue
+    /// <summary>
+    /// The state of one session of the transport: the queue of messages received on its connection,
+    /// its pending commands, and its message statistics.
+    /// </summary>
+    /// <remarks>
+    /// Each call to <see cref="ConnectAsync"/> installs a new session rather than resetting shared state,
+    /// and the reader and the producer of incoming messages each capture the session they operate on. A
+    /// reader still draining a previous session after a reconnect therefore resolves, counts, and reports
+    /// against that session alone, and nothing it does is attributed to the new one.
+    /// </remarks>
+    private sealed class TransportSession
     {
         private int depth = 0;
+        private long commandMessagesSent = 0;
+        private long commandResponseMessagesReceived = 0;
+        private long eventMessagesReceived = 0;
+        private long errorMessagesReceived = 0;
 
-        public IncomingMessageQueue()
+        public TransportSession(PendingCommandCollection pendingCommands)
         {
+            this.PendingCommands = pendingCommands;
+
             // We are using an unbounded channel by design. This decision was
             // carefully considered, as the rate of incoming messages is unlikely
             // to cause memory issues by exceeding the rate of processing. Should
@@ -2274,9 +2352,26 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         }
 
         /// <summary>
-        /// Gets the channel that received incoming messages.
+        /// Gets the unique ID of this session.
+        /// </summary>
+        public string Id { get; } = Guid.NewGuid().ToString();
+
+        /// <summary>
+        /// Gets the channel that queues the messages received on this session's connection.
         /// </summary>
         public Channel<IncomingMessage> MessageChannel { get; }
+
+        /// <summary>
+        /// Gets the pending commands of this session.
+        /// </summary>
+        /// <remarks>
+        /// A response is resolved against the commands of the session on whose connection it arrived,
+        /// so a reader still draining this session after a reconnect cannot complete a command of the new
+        /// session. The collection remains usable for that purpose after the session ends: closing it
+        /// stops only the addition of commands, and disposing it releases only the lock that guards
+        /// addition.
+        /// </remarks>
+        public PendingCommandCollection PendingCommands { get; }
 
         /// <summary>
         /// Gets the current count of the unread received incoming messages.
@@ -2291,11 +2386,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         /// Writer.TryWrite, decremented after a successful Reader.TryRead.
         /// </para>
         /// <para>
-        /// The count belongs to this queue alone, which is what keeps it accurate across a
-        /// reconnect. A connect installs a new queue rather than resetting a shared counter, and
-        /// both the producer and the reader capture the queue they are operating on, so a write
-        /// and the increment it produces cannot address different queues, and a reader still
-        /// draining a previous connection's queue cannot decrement the current one. The value is
+        /// The count belongs to this session alone, which is what keeps it accurate across a
+        /// reconnect: a write and the increment it produces cannot address different sessions, and
+        /// a reader still draining a previous session cannot decrement the current one. The value is
         /// therefore never negative and carries no transient over-count.
         /// </para>
         /// <para>
@@ -2306,21 +2399,21 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         public int Depth => Interlocked.CompareExchange(ref this.depth, 0, 0);
 
         /// <summary>
-        /// Gets a value indicating whether a reader has been started over this queue.
+        /// Gets a value indicating whether a reader has been started over this session's queue.
         /// </summary>
         /// <remarks>
-        /// Set as a connect attempt starts its processing loop and never cleared, because a queue is
-        /// never reused across sessions. A reader still working through its queue owns those messages
-        /// even after the transport has moved on, so only a queue no reader ever ran over is drained.
+        /// Set as a connect attempt starts its processing loop and never cleared, because a session is
+        /// never reused. A reader still working through its queue owns those messages even after the
+        /// transport has moved on, so only a queue no reader ever ran over is drained.
         /// </remarks>
         public bool HasReader { get; private set; }
 
         /// <summary>
-        /// Records that a reader has been started over this queue.
+        /// Records that a reader has been started over this session's queue.
         /// </summary>
         /// <remarks>
         /// Called on the connecting thread before the loop is scheduled, so that the connect installing
-        /// the next queue cannot observe this one as unread merely because its reader has not yet run.
+        /// the next session cannot observe this one as unread merely because its reader has not yet run.
         /// </remarks>
         public void MarkReaderStarted()
         {
@@ -2344,11 +2437,11 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         }
 
         /// <summary>
-        /// Closes this queue to further writes and disposes everything still buffered in it.
+        /// Closes this session's queue to further writes and disposes everything still buffered in it.
         /// </summary>
         /// <returns>The number of buffered messages that were discarded.</returns>
         /// <remarks>
-        /// Used when a queue is abandoned without a reader ever having run over it: what a failed
+        /// Used when a session is abandoned without a reader ever having run over its queue: what a failed
         /// connect attempt leaves behind, and what an adopted connection leaves behind when it delivers
         /// before the first connect. Each buffered <see cref="IncomingMessage"/> owns a pooled buffer
         /// that only its disposal returns, and <see cref="DecrementDepth"/> is paired with each read so
@@ -2369,6 +2462,46 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             }
 
             return discardedMessageCount;
+        }
+
+        /// <summary>
+        /// Increments the count of commands sent in this session.
+        /// </summary>
+        public void IncrementCommandSentCount()
+        {
+            Interlocked.Increment(ref this.commandMessagesSent);
+        }
+
+        /// <summary>
+        /// Increments the count of messages received on this session's connection, by its kind.
+        /// </summary>
+        /// <param name="messageKind">The kind of the message received.</param>
+        /// <remarks>
+        /// Only command responses, error responses, and events are counted; the statistics have no
+        /// count for other kinds of message.
+        /// </remarks>
+        public void IncrementMessageReceivedCount(IncomingMessageKind messageKind)
+        {
+            switch (messageKind)
+            {
+                case IncomingMessageKind.CommandResponse:
+                    Interlocked.Increment(ref this.commandResponseMessagesReceived);
+                    break;
+                case IncomingMessageKind.ErrorResponse:
+                    Interlocked.Increment(ref this.errorMessagesReceived);
+                    break;
+                case IncomingMessageKind.Event:
+                    Interlocked.Increment(ref this.eventMessagesReceived);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Raises the <c>MessageStatistics</c> event with this session's counts.
+        /// </summary>
+        public void RaiseMessageStatisticsEvent()
+        {
+            WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(Interlocked.Read(ref this.commandMessagesSent), Interlocked.Read(ref this.commandResponseMessagesReceived), Interlocked.Read(ref this.eventMessagesReceived), Interlocked.Read(ref this.errorMessagesReceived));
         }
     }
 }
