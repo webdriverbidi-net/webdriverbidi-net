@@ -879,6 +879,11 @@ public class ScriptSamples
 
         TaskCompletionSource<bool> conditionMet = new TaskCompletionSource<bool>();
 
+        // The channel delivers through the script.message event, which must be subscribed
+        // once per session; without this the observer below never runs.
+        await driver.Session.SubscribeAsync(
+            new SubscribeCommandParameters(driver.Script.OnMessage.EventName));
+
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
             if (e.ChannelId == "conditionChannel")

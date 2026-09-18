@@ -501,6 +501,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     /// for any error category and one or more errors were collected during
     /// the session. The aggregated exceptions describe the collected errors.
     /// </exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the transport's connection is not obtained within <see cref="ITransportConfiguration.ConnectionLockTimeout"/>.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual Task StopAsync(CancellationToken cancellationToken = default)
     {
@@ -757,6 +758,8 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     /// <exception cref="ArgumentNullException">Thrown when the resolver argument is <see langword="null"/>.</exception>
     /// <exception cref="ObjectDisposedException">Thrown if the driver has been disposed.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the driver has already been started.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the transport's connection is not obtained within <see cref="ITransportConfiguration.ConnectionLockTimeout"/>.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();

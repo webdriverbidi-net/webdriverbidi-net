@@ -650,6 +650,11 @@ public static class EventObserverSamples
         TaskCompletionSource<RemoteValue> elementFound =
             new TaskCompletionSource<RemoteValue>();
 
+        // The channel delivers through the script.message event, which must be subscribed
+        // once per session; without this the observer below never runs.
+        await driver.Session.SubscribeAsync(
+            new SubscribeCommandParameters(driver.Script.OnMessage.EventName));
+
         driver.Script.OnMessage.AddObserver((e) =>
         {
             if (e.ChannelId == "elementWatcher")
@@ -740,7 +745,7 @@ public static class EventObserverSamples
             LogLevel level = e.Level;          // Error, Warn, Info, Debug
             string text = e.Text;              // Log message
             DateTime timestamp = e.Timestamp;
-            string? source = e.Source.RealmId; // JavaScript source location
+            string? source = e.Source.RealmId; // Realm the entry came from
             List<string> stackLines = new List<string>();
             foreach (StackFrame frame in e.StackTrace.CallFrames)
             {

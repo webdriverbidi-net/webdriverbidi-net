@@ -38,5 +38,8 @@ public interface IBiDiDriverLifecycleManager : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="AggregateException">Thrown when errors were collected during the session under <see cref="Protocol.TransportErrorBehavior.Collect"/>.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the transport's connection is not obtained within <see cref="Protocol.ITransportConfiguration.ConnectionLockTimeout"/>.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     Task StopAsync(CancellationToken cancellationToken = default);
 }

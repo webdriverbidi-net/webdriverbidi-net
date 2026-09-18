@@ -47,10 +47,13 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// <para>
     /// This is one of the few list properties on a <see cref="CommandParameters"/> type that is nullable and
     /// settable, because the protocol gives a present-but-empty array its own meaning. In the remote end steps
-    /// for <c>network.provideResponse</c>, when the command contains "cookies" the response's header list is
-    /// rebuilt without its existing <c>Set-Cookie</c> headers and one <c>Set-Cookie</c> header is appended per
-    /// supplied cookie, so sending <c>[]</c> replaces the response cookies with none, while omitting the field
-    /// keeps the original cookies.
+    /// for <c>network.provideResponse</c>, when the command contains "cookies" one <c>Set-Cookie</c> header is
+    /// appended per supplied cookie to a header list that depends on whether the command also contains
+    /// "headers": when it does not, the response's existing header list is rebuilt without its
+    /// <c>Set-Cookie</c> headers first, so sending <c>[]</c> alone replaces the response cookies with none;
+    /// when it does, the supplied <see cref="Headers"/> are kept as sent, including any <c>Set-Cookie</c>
+    /// entries among them, and the cookies are appended to them. Omitting the field keeps the original
+    /// cookies.
     /// </para>
     /// <para>
     /// When <see langword="null"/>, the property is not included in the command; when an empty list, an

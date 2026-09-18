@@ -37,5 +37,10 @@ public interface IBiDiDriverConfiguration
     /// <param name="resolver">The type info resolver to add.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="resolver"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown if the driver has been disposed.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the driver has already been started.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the transport's connection is not obtained within <see cref="Protocol.ITransportConfiguration.ConnectionLockTimeout"/>.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver, CancellationToken cancellationToken = default);
 }
