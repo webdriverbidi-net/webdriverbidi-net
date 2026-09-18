@@ -411,10 +411,11 @@ public class AnalyzerConventionTests
     }
 
     /// <summary>
-    /// Tests that BIDI022's syntactic name filter names every extension-data property the library declares.
+    /// Tests that the syntactic name filter BIDI022 and BIDI033 share names every extension-data property the
+    /// library declares.
     /// </summary>
     /// <remarks>
-    /// The rule decides what to report from the <c>[JsonExtensionData]</c> attribute, but rejects a receiver
+    /// Both rules decide what to report from the <c>[JsonExtensionData]</c> attribute, but reject a receiver
     /// by written name first so that most are dismissed without a bind. A dictionary added to the library
     /// under a name the filter does not list would be skipped before the attribute was ever consulted, and
     /// the cost would be a silently missing warning rather than a failing test anywhere else.
@@ -441,9 +442,9 @@ public class AnalyzerConventionTests
             AnalyzerTestHelpers.FindRepositoryRoot(),
             "src",
             "WebDriverBiDi.Analyzers",
-            "BiDiDriver022_AdditionalDataMutationAnalyzer.cs"));
+            "AnalyzerSymbolHelpers.cs"));
         Match filter = Regex.Match(analyzerSource, @"ExtensionDataPropertyNames = new\(StringComparer\.Ordinal\)\s*\{(?<names>[^}]*)\}");
-        Assert.True(filter.Success, "Could not find the ExtensionDataPropertyNames initializer in the BIDI022 source.");
+        Assert.True(filter.Success, "Could not find the ExtensionDataPropertyNames initializer in AnalyzerSymbolHelpers.");
 
         HashSet<string> filteredNames = Regex.Matches(filter.Groups["names"].Value, "\"(?<name>[^\"]+)\"")
             .Select(match => match.Groups["name"].Value)
@@ -455,6 +456,6 @@ public class AnalyzerConventionTests
 
         Assert.True(
             unlisted.Count == 0,
-            $"BIDI022 would skip these [JsonExtensionData] properties before binding them: {string.Join(", ", unlisted)}. Add them to ExtensionDataPropertyNames.");
+            $"BIDI022 and BIDI033 would skip these [JsonExtensionData] properties before binding them: {string.Join(", ", unlisted)}. Add them to AnalyzerSymbolHelpers.ExtensionDataPropertyNames.");
     }
 }

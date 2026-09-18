@@ -146,10 +146,14 @@ public class BiDiDriver033_ExtensionDataShadowsPropertyAnalyzer : DiagnosticAnal
     /// <returns><see langword="true"/> if the expression is a library property marked with <c>[JsonExtensionData]</c>; otherwise <see langword="false"/>.</returns>
     /// <remarks>
     /// Every such dictionary the library lets a caller write to is checked for this collision when its owner is sent.
+    /// The receiver is rejected by its written name before it is bound, as BIDI022 rejects it: every
+    /// <c>x.y[k] = v</c> and <c>x.y.Add(...)</c> in a compilation reaches this method, and nearly all of them name
+    /// something other than one of the library's extension-data properties.
     /// </remarks>
     private static bool IsLibraryExtensionData(SemanticModel semanticModel, ExpressionSyntax expression, JsonAttributes attributes)
     {
-        return semanticModel.GetSymbolInfo(expression).Symbol is IPropertySymbol property
+        return AnalyzerSymbolHelpers.ExtensionDataPropertyNames.Contains(expression.GetLastToken().ValueText)
+            && semanticModel.GetSymbolInfo(expression).Symbol is IPropertySymbol property
             && AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(property.ContainingType)
             && GetAttribute(property, attributes.ExtensionData) is not null;
     }

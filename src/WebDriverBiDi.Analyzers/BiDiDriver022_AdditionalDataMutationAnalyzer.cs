@@ -48,21 +48,6 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
         description: Description,
         helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi022");
 
-    /// <summary>
-    /// The names the library's <c>[JsonExtensionData]</c> properties are declared under.
-    /// </summary>
-    /// <remarks>
-    /// A purely syntactic filter, so that a receiver can be rejected without binding it; the attribute
-    /// still decides whether a property matches. `ExtensionDataPropertyNamesCoverTheLibrary` in the
-    /// analyzer convention tests fails if the library ever declares one under a name not listed here.
-    /// </remarks>
-    private static readonly HashSet<string> ExtensionDataPropertyNames = new(StringComparer.Ordinal)
-    {
-        "AdditionalData",
-        "AdditionalCapabilities",
-        "AdditionalCommandProperties",
-    };
-
     // Methods on Dictionary<TKey, TValue> that add new values (and therefore introduce
     // potentially non-AOT-safe objects that will be serialized later).
     private static readonly HashSet<string> ValueAddingMethodNames = new(StringComparer.Ordinal)
@@ -111,7 +96,7 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
         }
 
         if (receiver is not (MemberAccessExpressionSyntax or MemberBindingExpressionSyntax or IdentifierNameSyntax)
-            || !ExtensionDataPropertyNames.Contains(receiver.GetLastToken().ValueText))
+            || !AnalyzerSymbolHelpers.ExtensionDataPropertyNames.Contains(receiver.GetLastToken().ValueText))
         {
             return null;
         }

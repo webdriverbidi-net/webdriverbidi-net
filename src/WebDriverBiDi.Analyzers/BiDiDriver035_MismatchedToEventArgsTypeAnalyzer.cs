@@ -42,6 +42,10 @@ public class BiDiDriver035_MismatchedToEventArgsTypeAnalyzer : DiagnosticAnalyze
         description: Description,
         helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi035");
 
+    // Hoisted so the filter below, which runs for every argument-less invocation in the compilation, does not
+    // allocate the array each time.
+    private static readonly string[] ToEventArgsMethodName = ["ToEventArgs"];
+
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -60,7 +64,7 @@ public class BiDiDriver035_MismatchedToEventArgsTypeAnalyzer : DiagnosticAnalyze
 
         // Only a call with no arguments can bind to the overload that throws; a cheap filter before the bind.
         if (invocation.ArgumentList.Arguments.Count != 0
-            || !AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, ["ToEventArgs"]))
+            || !AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, ToEventArgsMethodName))
         {
             return;
         }
