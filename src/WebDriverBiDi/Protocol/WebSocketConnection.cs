@@ -61,9 +61,16 @@ public class WebSocketConnection : Connection
     private Uri? websocketUri;
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
-    // Set by StopConnectionAsync before the close handshake begins, and read by the receive loop, which
-    // runs on its own task.
-    private int isLocalCloseInitiatedFlag = 0;
+    // Which end's close this session is ending with, as a WebSocketCloseInitiator value. It is held as an int
+    // because Interlocked.CompareExchange accepts an enum only from .NET 9, and this library targets earlier
+    // frameworks. It is claimed at most once per session, by StopConnectionAsync before it begins the close
+    // handshake or by the receive loop, which runs on its own task, before it answers a Close frame from the
+    // remote end.
+    private int closeInitiator = (int)WebSocketCloseInitiator.None;
+
+    // Completed once the Close frame of a close this end initiated has been sent, or has failed to send, so
+    // that the receive loop can tell when the socket has finished recording the send. Replaced for each session.
+    private TaskCompletionSource<int> localCloseFrameSentSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebSocketConnection" /> class.
@@ -95,18 +102,15 @@ public class WebSocketConnection : Connection
     private bool IsClientInOpenState => this.client.State == WebSocketState.Open || this.client.State == WebSocketState.CloseSent || this.client.State == WebSocketState.CloseReceived;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the close now in progress was initiated by this end.
+    /// Gets a value indicating whether the close now in progress was initiated by this end.
     /// </summary>
     /// <remarks>
     /// A local close is completed by the remote end answering the close handshake, which ends the receive
     /// loop the same way a remote-initiated close does. The receive loop cannot tell the two apart from the
-    /// socket state alone, so <see cref="StopConnectionAsync(CancellationToken)"/> records which case it is.
+    /// socket state alone, so <see cref="StopConnectionAsync(CancellationToken)"/> records which case it is
+    /// by claiming the close ownership before it begins the handshake.
     /// </remarks>
-    private bool IsLocalCloseInitiated
-    {
-        get => Interlocked.CompareExchange(ref this.isLocalCloseInitiatedFlag, 0, 0) == 1;
-        set => Interlocked.Exchange(ref this.isLocalCloseInitiatedFlag, value ? 1 : 0);
-    }
+    private bool IsLocalCloseInitiated => Interlocked.CompareExchange(ref this.closeInitiator, (int)WebSocketCloseInitiator.None, (int)WebSocketCloseInitiator.None) == (int)WebSocketCloseInitiator.Local;
 
     /// <summary>
     /// Resolves the connection string into the URI of the WebSocket server to connect to.
@@ -163,8 +167,8 @@ public class WebSocketConnection : Connection
         this.client.Dispose();
         this.client = this.CreateClientWebSocket();
 
-        // A previous session may have ended with a local close; this session has not.
-        this.IsLocalCloseInitiated = false;
+        // A previous session may have ended with a close that either end claimed; this session has not.
+        this.ResetCloseOwnership();
 
         bool connected = false;
         bool startupTimedOut = false;
@@ -251,19 +255,16 @@ public class WebSocketConnection : Connection
     /// </remarks>
     protected override async Task StopConnectionAsync(CancellationToken cancellationToken)
     {
-        if (this.client.State != WebSocketState.Open)
+        if (this.client.State != WebSocketState.Open || !this.TryClaimCloseOwnership(WebSocketCloseInitiator.Local))
         {
-            // The socket is no longer open, so this call starts no close handshake. The receive loop may still
-            // be unwinding from a close the remote end began; leaving the flag clear lets it report that
-            // disconnection even though it finishes while this method runs.
+            // The socket is no longer open, or the receive loop has already claimed the close in order to answer
+            // a Close frame from the remote end, so this call starts no close handshake.
             await this.LogAsync($"Client state is {this.client.State}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         }
         else
         {
-            // This end is starting the handshake, so the close that ends the receive loop is ours. Record it
-            // before the handshake begins: CloseClientWebSocketAsync awaits the receive loop, so the loop can
-            // reach its graceful-exit check while this method is still running.
-            this.IsLocalCloseInitiated = true;
+            // This end is starting the handshake, so the close that ends the receive loop is ours. Claim it
+            // before the handshake begins, as CloseClientWebSocketAsync awaits the receive loop.
             await this.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
         }
     }
@@ -303,13 +304,32 @@ public class WebSocketConnection : Connection
                 // If the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
                 if (!connectionCancellationToken.IsCancellationRequested)
                 {
-                    // The server is notifying us that the connection will close, and we did
-                    // not initiate the close; send acknowledgement
+                    // The server is notifying us that the connection will close. If this end did not
+                    // initiate the close, send acknowledgement.
+                    //
+                    // Whether this end initiated the close is decided by the claim and never by the socket's
+                    // state. The socket records that a Close frame was sent only once the send has returned, so
+                    // the remote end's answer to a close this end started can be read here while the socket
+                    // still reports CloseReceived. Acknowledging on the strength of that state sends a second
+                    // Close frame, concurrently with the first, to a remote end that has finished with the
+                    // connection; when the first send then completes the handshake and disposes the socket's
+                    // stream, the second fails, and a clean local close is reported as a connection error.
                     remoteCloseFrameReceived = receiveResult.MessageType == WebSocketMessageType.Close;
-                    if (remoteCloseFrameReceived && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
+                    if (remoteCloseFrameReceived)
                     {
-                        await this.LogAsync($"Acknowledging Close frame received from server (client state: {this.client.State})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
-                        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", connectionCancellationToken).ConfigureAwait(false);
+                        if (this.TryClaimCloseOwnership(WebSocketCloseInitiator.Remote))
+                        {
+                            // If this end did not initiate the close, send an acknowledgement of the close.
+                            await this.LogAsync($"Acknowledging Close frame received from server (client state: {this.client.State})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                            await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", connectionCancellationToken).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            // The close is initiated by this end, and the frame just read is the remote
+                            // end's answer. Let the send of this end's Close frame finish before ending the loop.
+                            await this.LogAsync("Close frame received from server responding to close initiated by this end", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                            await this.localCloseFrameSentSignal.Task.ConfigureAwait(false);
+                        }
                     }
 
                     // The message received from the WebSocket contains text or binary data
@@ -517,7 +537,10 @@ public class WebSocketConnection : Connection
     /// <see cref="StopConnectionAsync(CancellationToken)"/> calls this method to send the frame when the socket is
     /// open, then waits, bounded by <see cref="Connection.ShutdownTimeout"/>, for the receive loop to observe the
     /// remote end's answer. By the time the returned task completes, the frame has been written and the socket has
-    /// recorded that it was sent. This is the only step of the close that a derived connection can replace.
+    /// recorded that it was sent. The receive loop, for its part, does not end on the remote end's answer until the
+    /// returned task has completed, so that it ends with the socket in the same state however quickly the answer
+    /// arrives. This is the only step of the close that a derived connection can replace, and it is the only Close
+    /// frame this end sends: the receive loop acknowledges a Close frame only when the remote end began the close.
     /// </para>
     /// <para>
     /// This method is <see langword="protected virtual"/> to allow test doubles to observe the point at which the
@@ -543,8 +566,17 @@ public class WebSocketConnection : Connection
         using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
         try
         {
-            // After this, the socket state will change to CloseSent
-            await this.SendWebSocketCloseFrameAsync(linkedTokenSource.Token).ConfigureAwait(false);
+            try
+            {
+                // After this, the socket state will change to CloseSent
+                await this.SendWebSocketCloseFrameAsync(linkedTokenSource.Token).ConfigureAwait(false);
+            }
+            finally
+            {
+                // The receive loop waits for this once it has read the remote end's answer, and this method
+                // waits for the receive loop next, so the signal is raised however the send ended.
+                this.localCloseFrameSentSignal.TrySetResult(0);
+            }
 
             // Wait for the receive loop to process the server's close response, which will transition the
             // socket to the Closed state. If the server does not respond within the shutdown timeout,
@@ -565,5 +597,27 @@ public class WebSocketConnection : Connection
         {
             // An OperationCanceledException is normal upon task/token cancellation, so disregard it
         }
+    }
+
+    /// <summary>
+    /// Attempts to claim ownership of this session's close for the specified end.
+    /// </summary>
+    /// <param name="initiator">The end claiming the close.</param>
+    /// <returns><see langword="true"/> if the close was unclaimed and now belongs to the specified end; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The end that claims the close is the only one that sends this end's Close frame:
+    /// <see cref="StopConnectionAsync(CancellationToken)"/> to begin the handshake, or the receive loop to answer
+    /// the remote end's. The two run on different tasks, and a close from each end can cross on the wire, so the
+    /// claim is atomic rather than inferred from the socket's state.
+    /// </remarks>
+    private bool TryClaimCloseOwnership(WebSocketCloseInitiator initiator)
+    {
+        return Interlocked.CompareExchange(ref this.closeInitiator, (int)initiator, (int)WebSocketCloseInitiator.None) == (int)WebSocketCloseInitiator.None;
+    }
+
+    private void ResetCloseOwnership()
+    {
+        Interlocked.Exchange(ref this.closeInitiator, (int)WebSocketCloseInitiator.None);
+        Interlocked.Exchange(ref this.localCloseFrameSentSignal, new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously));
     }
 }
