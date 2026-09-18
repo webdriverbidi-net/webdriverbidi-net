@@ -341,9 +341,17 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
             }
 
             // Cheap syntactic pre-filter before the expensive semantic bind: skip any invocation
-            // whose member name is not the one this pass cares about. The bound symbol's name is
-            // therefore already known, so only its containing type needs checking below.
-            if (memberAccess.Name.Identifier.ValueText != "SubscribeAsync")
+            // whose member name is not one this pass cares about. A subscription is sent either as
+            // Session.SubscribeAsync(parameters) or, at the driver level, as
+            // ExecuteCommandAsync(parameters) with the same SubscribeCommandParameters; the remote end
+            // sees the same command either way, so both spellings count.
+            string memberName = memberAccess.Name.Identifier.ValueText;
+            if (memberName != "SubscribeAsync" && memberName != "ExecuteCommandAsync")
+            {
+                continue;
+            }
+
+            if (invocation.ArgumentList.Arguments.Count == 0)
             {
                 continue;
             }
@@ -354,38 +362,61 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // Check if this is Session.SubscribeAsync
-            if (IsSessionModule(methodSymbol.ContainingType))
+            ExpressionSyntax firstArg = invocation.ArgumentList.Arguments[0].Expression;
+            if (!IsSubscription(context, memberName, methodSymbol, firstArg))
             {
-                // Extract event names from the SubscribeCommandParameters argument
-                if (invocation.ArgumentList.Arguments.Count > 0)
-                {
-                    ExpressionSyntax firstArg = invocation.ArgumentList.Arguments[0].Expression;
-                    if (firstArg is not BaseObjectCreationExpressionSyntax objectCreation)
-                    {
-                        // The subscription parameters are not created inline; they are held
-                        // in a variable (and possibly built up before the call), so the set
-                        // of subscribed event names cannot be determined from this call
-                        // site. Treat the whole set as unknowable so the caller suppresses
-                        // its warnings: a warning about missing code must prefer a false
-                        // negative over a false positive.
-                        return false;
-                    }
-
-                    if (!ExtractEventNamesFromSubscribeParameters(context, objectCreation, subscribedEvents))
-                    {
-                        // At least one subscribed event name could not be determined, so the
-                        // subscription set is incomplete. Reporting from an incomplete set would
-                        // warn about an event that is in fact subscribed.
-                        return false;
-                    }
-
-                    amendableEventsArgument ??= GetAmendableEventsArgument(objectCreation);
-                }
+                continue;
             }
+
+            // Extract event names from the SubscribeCommandParameters argument
+            if (firstArg is not BaseObjectCreationExpressionSyntax objectCreation)
+            {
+                // The subscription parameters are not created inline; they are held
+                // in a variable (and possibly built up before the call), so the set
+                // of subscribed event names cannot be determined from this call
+                // site. Treat the whole set as unknowable so the caller suppresses
+                // its warnings: a warning about missing code must prefer a false
+                // negative over a false positive.
+                return false;
+            }
+
+            if (!ExtractEventNamesFromSubscribeParameters(context, objectCreation, subscribedEvents))
+            {
+                // At least one subscribed event name could not be determined, so the
+                // subscription set is incomplete. Reporting from an incomplete set would
+                // warn about an event that is in fact subscribed.
+                return false;
+            }
+
+            amendableEventsArgument ??= GetAmendableEventsArgument(objectCreation);
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Determines whether an invocation sends a subscription: <c>Session.SubscribeAsync</c>, whose
+    /// argument can only be subscription parameters, or the driver's <c>ExecuteCommandAsync</c> given a
+    /// <c>SubscribeCommandParameters</c> argument.
+    /// </summary>
+    /// <param name="context">The analysis context.</param>
+    /// <param name="memberName">The invoked member's name, already known to be one of the two.</param>
+    /// <param name="methodSymbol">The bound method.</param>
+    /// <param name="firstArg">The invocation's first argument.</param>
+    /// <returns><see langword="true"/> if the invocation sends a subscription; otherwise <see langword="false"/>.</returns>
+    private static bool IsSubscription(SyntaxNodeAnalysisContext context, string memberName, IMethodSymbol methodSymbol, ExpressionSyntax firstArg)
+    {
+        if (memberName == "SubscribeAsync")
+        {
+            return IsSessionModule(methodSymbol.ContainingType);
+        }
+
+        // ExecuteCommandAsync sends whatever parameters it is given, so only the argument's type says
+        // whether this call is a subscription. The library's own type is required, as for the session
+        // module, so a user's type of the same name is not mistaken for it.
+        return AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType)
+            && context.SemanticModel.GetTypeInfo(firstArg).Type is INamedTypeSymbol { Name: "SubscribeCommandParameters" } parametersType
+            && AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(parametersType);
     }
 
     /// <summary>

@@ -3442,4 +3442,199 @@ public class BiDiDriver005AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task AddObserver_WithSubscriptionSentThroughExecuteCommandAsync_NoDiagnostic()
+    {
+        // ExecuteCommandAsync given SubscribeCommandParameters sends the same session.subscribe command that
+        // Session.SubscribeAsync does, so the event is subscribed and nothing is reported.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.ExecuteCommandAsync(new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName));
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AddObserver_WithSubscriptionVariableSentThroughExecuteCommandAsync_NoDiagnostic()
+    {
+        // The parameters are held in a variable, so the subscribed set is unknowable here, exactly as it is
+        // for Session.SubscribeAsync given a variable.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        SubscribeCommandParameters subscribe = new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
+                        await driver.ExecuteCommandAsync(subscribe);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AddObserver_WithOtherCommandSentThroughExecuteCommandAsync_ReportsWarning()
+    {
+        // ExecuteCommandAsync given any other command is not a subscription, so the observer is still reported.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AddObserver_WithUserSubscribeParametersTypeSentThroughExecuteCommandAsync_ReportsWarning()
+    {
+        // A user's own type named SubscribeCommandParameters is not the library's, so sending it is not a
+        // subscription the rule recognizes.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class SubscribeCommandParameters : CommandParameters<EmptyResult>
+                {
+                    public override string MethodName => "custom.subscribe";
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+                        await driver.ExecuteCommandAsync(new SubscribeCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AddObserver_WithExecuteCommandAsyncOnUnrelatedType_ReportsWarning()
+    {
+        // A method named ExecuteCommandAsync on a type that is not the driver sends nothing to the remote end.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class Sender
+                {
+                    public Task ExecuteCommandAsync(CommandParameters parameters) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        Sender sender = new Sender();
+                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+                        await sender.ExecuteCommandAsync(new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }
