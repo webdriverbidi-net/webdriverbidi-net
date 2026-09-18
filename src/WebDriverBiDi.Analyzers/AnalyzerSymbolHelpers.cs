@@ -836,6 +836,23 @@ internal static class AnalyzerSymbolHelpers
     internal static readonly string[] EventSubscriptionHandleMethodNames = ["AddObserver", "AddDataCollector", "Subscribe"];
 
     /// <summary>
+    /// The names the library's <c>[JsonExtensionData]</c> properties are declared under.
+    /// </summary>
+    /// <remarks>
+    /// A purely syntactic filter shared by BIDI022 and BIDI033, so that a receiver can be rejected without
+    /// binding it; the attribute still decides whether a property matches. A member name cannot be aliased,
+    /// so the written name settles the question for nearly every receiver in a file.
+    /// <c>ExtensionDataPropertyNamesCoverTheLibrary</c> in the analyzer convention tests fails if the library
+    /// ever declares such a property under a name not listed here.
+    /// </remarks>
+    internal static readonly HashSet<string> ExtensionDataPropertyNames = new(StringComparer.Ordinal)
+    {
+        "AdditionalData",
+        "AdditionalCapabilities",
+        "AdditionalCommandProperties",
+    };
+
+    /// <summary>
     /// Gets the name of the disposable handle type an invocation returns, for the three calls that
     /// hand one back.
     /// </summary>
