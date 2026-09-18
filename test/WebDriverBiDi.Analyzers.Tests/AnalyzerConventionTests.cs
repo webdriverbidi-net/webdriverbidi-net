@@ -409,4 +409,52 @@ public class AnalyzerConventionTests
             }
         }
     }
+
+    /// <summary>
+    /// Tests that BIDI022's syntactic name filter names every extension-data property the library declares.
+    /// </summary>
+    /// <remarks>
+    /// The rule decides what to report from the <c>[JsonExtensionData]</c> attribute, but rejects a receiver
+    /// by written name first so that most are dismissed without a bind. A dictionary added to the library
+    /// under a name the filter does not list would be skipped before the attribute was ever consulted, and
+    /// the cost would be a silently missing warning rather than a failing test anywhere else.
+    /// </remarks>
+    [Fact]
+    public void ExtensionDataPropertyNamesCoverTheLibrary()
+    {
+        System.Reflection.Assembly library = typeof(BiDiDriver).Assembly;
+        List<string> declaredNames = library.GetTypes()
+            .SelectMany(type => type.GetProperties(System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.DeclaredOnly))
+            .Where(property => property.GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonExtensionDataAttribute), inherit: false).Length > 0)
+            .Select(property => property.Name)
+            .Distinct()
+            .OrderBy(name => name, System.StringComparer.Ordinal)
+            .ToList();
+
+        Assert.NotEmpty(declaredNames);
+
+        // Read the filter from the analyzer source, as the other conventions here do, rather than widening
+        // the analyzer's surface to expose it to this test.
+        string analyzerSource = File.ReadAllText(Path.Combine(
+            AnalyzerTestHelpers.FindRepositoryRoot(),
+            "src",
+            "WebDriverBiDi.Analyzers",
+            "BiDiDriver022_AdditionalDataMutationAnalyzer.cs"));
+        Match filter = Regex.Match(analyzerSource, @"ExtensionDataPropertyNames = new\(StringComparer\.Ordinal\)\s*\{(?<names>[^}]*)\}");
+        Assert.True(filter.Success, "Could not find the ExtensionDataPropertyNames initializer in the BIDI022 source.");
+
+        HashSet<string> filteredNames = Regex.Matches(filter.Groups["names"].Value, "\"(?<name>[^\"]+)\"")
+            .Select(match => match.Groups["name"].Value)
+            .ToHashSet(System.StringComparer.Ordinal);
+
+        List<string> unlisted = declaredNames
+            .Where(name => !filteredNames.Contains(name))
+            .ToList();
+
+        Assert.True(
+            unlisted.Count == 0,
+            $"BIDI022 would skip these [JsonExtensionData] properties before binding them: {string.Join(", ", unlisted)}. Add them to ExtensionDataPropertyNames.");
+    }
 }

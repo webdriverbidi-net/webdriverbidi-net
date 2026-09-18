@@ -41,7 +41,7 @@ public class BiDiDriver022AnalyzerTests
             BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("GetTreeCommandParameters");
+            .WithArguments("GetTreeCommandParameters", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
@@ -69,7 +69,7 @@ public class BiDiDriver022AnalyzerTests
             BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("GetTreeCommandParameters");
+            .WithArguments("GetTreeCommandParameters", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
@@ -97,7 +97,7 @@ public class BiDiDriver022AnalyzerTests
             BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("GetTreeCommandParameters");
+            .WithArguments("GetTreeCommandParameters", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
@@ -128,7 +128,7 @@ public class BiDiDriver022AnalyzerTests
             BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("PartialCookie");
+            .WithArguments("PartialCookie", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
@@ -163,7 +163,7 @@ public class BiDiDriver022AnalyzerTests
             BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("GetTreeCommandParameters");
+            .WithArguments("GetTreeCommandParameters", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
@@ -421,7 +421,7 @@ public class BiDiDriver022AnalyzerTests
             BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("CommandParameters");
+            .WithArguments("CommandParameters", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
@@ -435,17 +435,20 @@ public class BiDiDriver022AnalyzerTests
     [Fact]
     public async Task AdditionalData_PropertyWithArrayReturnType_DoesNotReportDiagnostic()
     {
-        // A WebDriverBiDi type with an "AdditionalData" property returning a plain array type (not a
-        // named generic type). Mutating it reaches IsAdditionalDataProperty, which hits the
-        // "property.Type is not INamedTypeSymbol" guard and returns false, so nothing is reported.
+        // A WebDriverBiDi type whose "AdditionalData" property carries [JsonExtensionData] but returns a
+        // plain array rather than Dictionary<string, object?>. It passes the name filter, the namespace
+        // test and the attribute test, and is rejected only by the dictionary-shape guard, which is what
+        // keeps the rule from reporting a dictionary shape it cannot reason about.
         string testCode = """
             using System.Collections.Generic;
+            using System.Text.Json.Serialization;
 
             namespace WebDriverBiDi
             {
                 public abstract class CommandParameters
                 {
                     // AdditionalData returning an array — not an INamedTypeSymbol path
+                    [JsonExtensionData]
                     public string[] AdditionalData { get; } = new string[4];
                 }
 
@@ -737,11 +740,11 @@ public class BiDiDriver022AnalyzerTests
 
         DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("GetTreeCommandParameters");
+            .WithArguments("GetTreeCommandParameters", "AdditionalData");
 
         DiagnosticResult expected1 = new DiagnosticResult(BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(1)
-            .WithArguments("GetTreeCommandParameters");
+            .WithArguments("GetTreeCommandParameters", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected0, expected1);
     }
@@ -773,7 +776,7 @@ public class BiDiDriver022AnalyzerTests
 
         DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("GetTreeCommandParameters");
+            .WithArguments("GetTreeCommandParameters", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected0);
     }
@@ -809,7 +812,7 @@ public class BiDiDriver022AnalyzerTests
 
         DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("PartialCookie");
+            .WithArguments("PartialCookie", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected0);
     }
@@ -870,7 +873,7 @@ public class BiDiDriver022AnalyzerTests
             BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("CommandParameters");
+            .WithArguments("CommandParameters", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
@@ -930,7 +933,7 @@ public class BiDiDriver022AnalyzerTests
             BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("CommandParameters");
+            .WithArguments("CommandParameters", "AdditionalData");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
@@ -955,6 +958,117 @@ public class BiDiDriver022AnalyzerTests
                     public void TestMethod()
                     {
                         this.GetData()["ext"] = "value";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that <c>CapabilityRequest.AdditionalCapabilities</c> is reported. It carries
+    /// <c>[JsonExtensionData]</c> and so shares the reflection-serialization hazard, but the rule
+    /// previously keyed on the name <c>AdditionalData</c> and left it alone.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task IndexerAssignment_OnAdditionalCapabilities_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        CapabilityRequest capabilities = new CapabilityRequest();
+                        {|#0:capabilities.AdditionalCapabilities["vendor:option"] = "value"|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("CapabilityRequest", "AdditionalCapabilities");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that <c>Command.AdditionalCommandProperties</c> is reported, through the <c>Add</c> form.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddMethod_OnAdditionalCommandProperties_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi.Protocol;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        Command command = new Command(1, new StatusCommandParameters());
+                        {|#0:command.AdditionalCommandProperties.Add("vendor:option", "value")|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Command", "AdditionalCommandProperties");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that an extension-data property whose type is a named generic other than
+    /// <c>Dictionary&lt;string, object?&gt;</c> is not reported. The dictionary-shape guard is what
+    /// decides this, and only a named type reaches it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExtensionData_PropertyWithOtherDictionaryValueType_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+            using System.Text.Json.Serialization;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters
+                {
+                    [JsonExtensionData]
+                    public Dictionary<string, string> AdditionalData { get; } = new Dictionary<string, string>();
+                }
+
+                public class GetTreeCommandParameters : CommandParameters
+                {
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GetTreeCommandParameters cmd = new GetTreeCommandParameters();
+                        cmd.AdditionalData["ext"] = "value";
                     }
                 }
             }
