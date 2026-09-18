@@ -171,6 +171,28 @@ public class DiscriminatedUnionJsonConverterTests
         Assert.Contains("must have a [DiscriminatedTypeProperty] or [DiscriminatedTypePresence] attribute", Assert.ThrowsAny<InvalidOperationException>(() => JsonSerializer.Deserialize<MissingDiscriminatorAttribute>(json)).Message);
     }
 
+    [Fact]
+    public void TestDeserializingTypeWithDerivedTypeNotDerivingFromBaseTypeThrows()
+    {
+        string json = """
+                      {
+                        "type": "unrelated"
+                      }
+                      """;
+        Assert.Contains("must derive from", Assert.ThrowsAny<InvalidOperationException>(() => JsonSerializer.Deserialize<UnrelatedDerivedType>(json)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingTypeWithUnmatchedValueTypeNotDerivingFromBaseTypeThrows()
+    {
+        string json = """
+                      {
+                        "type": "anything"
+                      }
+                      """;
+        Assert.Contains("must derive from", Assert.ThrowsAny<InvalidOperationException>(() => JsonSerializer.Deserialize<UnrelatedUnmatchedValueType>(json)).Message);
+    }
+
     [JsonConverter(typeof(DiscriminatedUnionJsonConverter<ParentTypeWithChildTypes>))]
     [DiscriminatedTypeProperty("type")]
     [DiscriminatedDerivedType(typeof(DerivedTypeA), "typeA")]
@@ -359,6 +381,27 @@ public class DiscriminatedUnionJsonConverterTests
         [JsonPropertyName("propertyB")]
         [JsonInclude]
         public int PropertyB { get; init; }
+    }
+
+    [JsonConverter(typeof(DiscriminatedUnionJsonConverter<UnrelatedDerivedType>))]
+    [DiscriminatedTypeProperty("type")]
+    [DiscriminatedDerivedType(typeof(DerivedTypeA), "unrelated")]
+    private record UnrelatedDerivedType
+    {
+        [JsonConstructor]
+        public UnrelatedDerivedType()
+        {
+        }
+    }
+
+    [JsonConverter(typeof(DiscriminatedUnionJsonConverter<UnrelatedUnmatchedValueType>))]
+    [DiscriminatedTypeProperty("type", UnmatchedValueType = typeof(DerivedTypeA))]
+    private record UnrelatedUnmatchedValueType
+    {
+        [JsonConstructor]
+        public UnrelatedUnmatchedValueType()
+        {
+        }
     }
 
     [JsonConverter(typeof(DiscriminatedUnionJsonConverter<MissingDiscriminatorAttribute>))]

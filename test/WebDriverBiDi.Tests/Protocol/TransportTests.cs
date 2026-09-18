@@ -1,15 +1,20 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Newtonsoft.Json.Linq;
 using PinchHitter;
 using TestUtilities;
+using WebDriverBiDi.Script;
 using Xunit.Sdk;
 
 public class TransportTests
 {
+    // Mirrors the transport's internal MaxJsonDepth constant.
+    private const int MaxJsonDepth = 512;
+
     // The 5-second bound below is a deadlock detector, not a timing assumption;
     // a correct implementation completes effectively immediately.
     private static readonly TimeSpan DeadlockDetectionTimeout = TimeSpan.FromSeconds(5);
@@ -5778,6 +5783,198 @@ public class TransportTests
         // The event still fires for observability; only the unhandled-error collection is skipped.
         await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Theory]
+    [InlineData("array")]
+    [InlineData("object")]
+    [InlineData("node")]
+    [InlineData("shadowRoot")]
+    public async Task TestResponseNestedToTheLimitIsRead(string shape)
+    {
+        int levels = MaximumLevels(shape);
+        Command command = await SendEvaluateAndReceiveAsync(CreateNestedRemoteValue(shape, levels, isMalformed: false));
+
+        Assert.True(command.TryGetResult(out CommandResult? result), $"Command failed: {command.ThrownException}");
+        EvaluateResultSuccess success = Assert.IsType<EvaluateResultSuccess>(result);
+        Assert.Equal(levels, CountNestingLevels(success.Result));
+    }
+
+    [Theory]
+    [InlineData("array")]
+    [InlineData("object")]
+    [InlineData("node")]
+    [InlineData("shadowRoot")]
+    public async Task TestResponseNestedBeyondTheLimitFailsTheCommand(string shape)
+    {
+        // The response is still recognized as the command's response, so the command fails at once rather
+        // than waiting for a response that was discarded as an unknown message.
+        Command command = await SendEvaluateAndReceiveAsync(CreateNestedRemoteValue(shape, MaximumLevels(shape) + 1, isMalformed: false));
+
+        WebDriverBiDiSerializationException exception = Assert.IsType<WebDriverBiDiSerializationException>(command.ThrownException);
+        JsonException innerException = Assert.IsType<JsonException>(exception.InnerException, exactMatch: false);
+        Assert.Contains($"maximum configured depth of {MaxJsonDepth}", innerException.Message);
+    }
+
+    [Theory]
+    [InlineData("array")]
+    [InlineData("object")]
+    [InlineData("node")]
+    [InlineData("shadowRoot")]
+    public async Task TestMalformedResponseNestedToTheLimitReportsTheMalformedValue(string shape)
+    {
+        Command command = await SendEvaluateAndReceiveAsync(CreateNestedRemoteValue(shape, MaximumLevels(shape), isMalformed: true));
+
+        WebDriverBiDiSerializationException exception = Assert.IsType<WebDriverBiDiSerializationException>(command.ThrownException);
+        JsonException innerException = Assert.IsType<JsonException>(exception.InnerException, exactMatch: false);
+        Assert.Contains("'bogus'", innerException.Message);
+    }
+
+    [Fact]
+    public async Task TestCommandParametersNestedWithinTheLimitAreSent()
+    {
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        // The writer starts no object or array at the maximum depth itself, so the deepest value it writes is
+        // one level shallower than the deepest the reader accepts. Each nested array uses two levels.
+        CallFunctionCommandParameters parameters = new("() => {}", new ContextTarget("context"), true);
+        parameters.Arguments.Add(CreateNestedLocalValue((MaxJsonDepth - 6) / 2));
+        Command command = await transport.SendCommandAsync(parameters, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(command);
+    }
+
+    [Fact]
+    public async Task TestCommandParametersNestedBeyondTheLimitFailToSerialize()
+    {
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        CallFunctionCommandParameters parameters = new("() => {}", new ContextTarget("context"), true);
+        parameters.Arguments.Add(CreateNestedLocalValue(MaxJsonDepth / 2));
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(() => transport.SendCommandAsync(parameters, TestContext.Current.CancellationToken));
+
+        JsonException innerException = Assert.IsType<JsonException>(exception.InnerException, exactMatch: false);
+        Assert.Contains($"maximum allowed depth of {MaxJsonDepth}", innerException.Message);
+    }
+
+    private static async Task<Command> SendEvaluateAndReceiveAsync(string remoteValueJson)
+    {
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        Command command = await transport.SendCommandAsync(new EvaluateCommandParameters("expression", new ContextTarget("context"), true), TestContext.Current.CancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync(CreateEvaluateResponse(command.CommandId, remoteValueJson));
+
+        Assert.True(await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken), "Command did not complete");
+        return command;
+    }
+
+    private static string CreateEvaluateResponse(long commandId, string remoteValueJson)
+    {
+        return $$"""{ "type": "success", "id": {{commandId}}, "result": { "type": "success", "realm": "realm", "result": """ + remoteValueJson + " } }";
+    }
+
+    /// <summary>
+    /// Gets the largest number of levels of the given shape whose evaluate response is nested no more deeply
+    /// than the maximum JSON depth.
+    /// </summary>
+    private static int MaximumLevels(string shape)
+    {
+        int levels = 1;
+        while (MeasureJsonDepth(CreateEvaluateResponse(1, CreateNestedRemoteValue(shape, levels + 1, isMalformed: false))) <= MaxJsonDepth)
+        {
+            levels++;
+        }
+
+        return levels;
+    }
+
+    private static int MeasureJsonDepth(string json)
+    {
+        // None of the strings in the generated JSON contain brackets or braces.
+        int depth = 0;
+        int maximumDepth = 0;
+        foreach (char character in json)
+        {
+            if (character is '{' or '[')
+            {
+                maximumDepth = Math.Max(maximumDepth, ++depth);
+            }
+            else if (character is '}' or ']')
+            {
+                depth--;
+            }
+        }
+
+        return maximumDepth;
+    }
+
+    private static string CreateNestedRemoteValue(string shape, int levels, bool isMalformed)
+    {
+        // A level is one remote value containing the next; the innermost value is the last level, and is
+        // malformed when requested.
+        string node = """{ "type": "node", "sharedId": "id", "value": { "nodeType": 1, "childNodeCount": 0""";
+        (string open, string close, string leaf, string malformedLeaf) = shape switch
+        {
+            "array" => ("""{ "type": "array", "value": [ """, " ] }", """{ "type": "null" }""", """{ "type": "bogus" }"""),
+            "object" => ("""{ "type": "object", "value": [ [ "key", """, " ] ] }", """{ "type": "null" }""", """{ "type": "bogus" }"""),
+            "node" => (node + """, "children": [ """, " ] } }", node + " } }", node + """, "mode": "bogus" } }"""),
+            _ => (node + """, "shadowRoot": """, " } }", node + " } }", node + """, "mode": "bogus" } }"""),
+        };
+
+        StringBuilder builder = new();
+        for (int i = 1; i < levels; i++)
+        {
+            builder.Append(open);
+        }
+
+        builder.Append(isMalformed ? malformedLeaf : leaf);
+        for (int i = 1; i < levels; i++)
+        {
+            builder.Append(close);
+        }
+
+        return builder.ToString();
+    }
+
+    private static int CountNestingLevels(RemoteValue value)
+    {
+        int levels = 1;
+        while (true)
+        {
+            RemoteValue? next = value switch
+            {
+                CollectionRemoteValue { Value.Count: > 0 } array => array.Value[0],
+                KeyValuePairCollectionRemoteValue { Value.Count: > 0 } obj => obj.Value.Values.First(),
+                NodeRemoteValue { Value.Children.Count: > 0 } node => node.Value.Children[0],
+                NodeRemoteValue { Value.ShadowRoot: not null } node => node.Value.ShadowRoot,
+                _ => null,
+            };
+
+            if (next is null)
+            {
+                return levels;
+            }
+
+            value = next;
+            levels++;
+        }
+    }
+
+    private static LocalValue CreateNestedLocalValue(int levels)
+    {
+        LocalValue value = LocalValue.Null;
+        for (int i = 0; i < levels; i++)
+        {
+            value = LocalValue.Array([value]);
+        }
+
+        return value;
     }
 
     private sealed class NonGenericCommandParameters : CommandParameters

@@ -8,6 +8,7 @@ namespace WebDriverBiDi.JsonConverters;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using WebDriverBiDi.Internal;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -28,9 +29,9 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
     {
         // Walk the reader directly rather than materializing the subtree into a fresh
         // JsonDocument: the incoming payload is already backed by a parsed document, and
-        // re-parsing here would copy each nested map's subtree once per nesting level.
-        // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
-        // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
+        // re-parsing here would copy each nested map's subtree once per nesting level. Keys and
+        // values are read through the RemoteValue converter rather than by re-entering the
+        // serializer; see JsonConverterUtilities.ReadNestedValue for why.
         JsonTypeInfo<RemoteValue> typeInfo = (JsonTypeInfo<RemoteValue>)options.GetTypeInfo(typeof(RemoteValue));
         if (reader.TokenType != JsonTokenType.StartArray)
         {
@@ -57,7 +58,7 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
                 throw new JsonException($"RemoteValue array element for dictionary must be an array with exactly two elements");
             }
 
-            object pairKey = ProcessMapKey(ref reader, typeInfo);
+            object pairKey = ProcessMapKey(ref reader, typeInfo, options);
 
             reader.Read();
             if (reader.TokenType == JsonTokenType.EndArray)
@@ -72,7 +73,7 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
 
             // We can use the null-forgiving operator because the token is the start of an
             // object, so the deserialization cannot yield a JSON null.
-            RemoteValue pairValue = JsonSerializer.Deserialize(ref reader, typeInfo)!;
+            RemoteValue pairValue = JsonConverterUtilities.ReadNestedValue(ref reader, typeInfo, options)!;
 
             reader.Read();
             if (reader.TokenType != JsonTokenType.EndArray)
@@ -99,7 +100,7 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
         throw new NotSupportedException("RemoteValueDictionaryJsonConverter does not support serialization; RemoteValueDictionary is an inbound-only type.");
     }
 
-    private static object ProcessMapKey(ref Utf8JsonReader reader, JsonTypeInfo<RemoteValue> typeInfo)
+    private static object ProcessMapKey(ref Utf8JsonReader reader, JsonTypeInfo<RemoteValue> typeInfo, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.String)
         {
@@ -112,9 +113,7 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
         {
             // We can use the null-forgiving operator because the token is the start of an
             // object, so the deserialization cannot yield a JSON null.
-            // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
-            // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
-            return JsonSerializer.Deserialize(ref reader, typeInfo)!;
+            return JsonConverterUtilities.ReadNestedValue(ref reader, typeInfo, options)!;
         }
 
         throw new JsonException($"RemoteValue array element for dictionary must have a first element (key) that is either a string or an object");

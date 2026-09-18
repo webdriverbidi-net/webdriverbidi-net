@@ -72,6 +72,21 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// </summary>
     public const string LoggerComponentName = "Transport";
 
+    /// <summary>
+    /// The maximum depth of JSON nesting that command parameters, command responses, and events may have.
+    /// </summary>
+    /// <remarks>
+    /// The protocol nests values within values to any depth (a <c>script.RemoteValue</c> uses three levels of
+    /// JSON for each level of a nested object, map, or DOM tree, and two for each level of a nested array), and
+    /// reading or writing such a value recurses once per level. This limit keeps that recursion within a 1 MB
+    /// thread stack, the default on Windows and smaller than the default elsewhere, with ample margin: on such
+    /// a stack, reading nested arrays, the most stack-intensive shape, exhausts the stack only beyond 900 levels
+    /// of JSON, and writing any shape only beyond 2,000. Should a thread's stack prove smaller still, reading a
+    /// value fails cleanly rather than overflowing the stack; see
+    /// <see cref="JsonConverterUtilities.ReadNestedValue"/>.
+    /// </remarks>
+    internal const int MaxJsonDepth = 512;
+
     private const string EventReceivedEventName = "transport.eventReceived";
     private const string UnexpectedErrorReceivedEventName = "transport.unexpectedErrorReceived";
     private const string UnknownMessageReceivedEventName = "transport.unknownMessageReceived";
@@ -116,6 +131,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     {
         TypeInfoResolver = ExtensionDataNameGuard.AddTo(CreateTypeInfoResolver()),
         RespectNullableAnnotations = true,
+        MaxDepth = MaxJsonDepth,
     };
 
     private IncomingMessageQueue incomingMessageQueue = new();

@@ -69,6 +69,20 @@ internal sealed class DynamicallyAccessedMembersAttribute : Attribute
     public DynamicallyAccessedMemberTypes MemberTypes { get; }
 }
 
+[AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Field | AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
+internal sealed class DynamicDependencyAttribute : Attribute
+{
+    public DynamicDependencyAttribute(DynamicallyAccessedMemberTypes memberTypes, Type type)
+    {
+        this.MemberTypes = memberTypes;
+        this.Type = type;
+    }
+
+    public DynamicallyAccessedMemberTypes MemberTypes { get; }
+
+    public Type? Type { get; }
+}
+
 [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
 internal sealed class UnconditionalSuppressMessageAttribute : Attribute
 {

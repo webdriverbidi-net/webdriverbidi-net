@@ -8,6 +8,7 @@ namespace WebDriverBiDi.JsonConverters;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Converts a JSON array to and from a <see cref="List{T}"/>, rejecting a JSON <see langword="null"/>
@@ -63,8 +64,6 @@ public class NonNullElementListJsonConverter<T> : JsonConverter<List<T>>
             throw new JsonException($"JSON value for a list of {typeof(T).Name} must be an array, but the token was {reader.TokenType}");
         }
 
-        // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a JsonTypeInfo
-        // to remove warnings when publishing AOT compiled applications.
         JsonTypeInfo<T> elementTypeInfo = (JsonTypeInfo<T>)options.GetTypeInfo(typeof(T));
         List<T> elements = [];
         reader.Read();
@@ -78,8 +77,9 @@ public class NonNullElementListJsonConverter<T> : JsonConverter<List<T>>
             // The element is not a JSON null, and no type in this library configures its converter to
             // return null for a non-null token (see DiscriminatorPropertyMissingValueBehavior.ReturnNull,
             // which nothing applies), so the deserialized element cannot be null. The null-forgiving
-            // operator is therefore appropriate here.
-            elements.Add(JsonSerializer.Deserialize(ref reader, elementTypeInfo)!);
+            // operator is therefore appropriate here. The element is read through its converter rather
+            // than by re-entering the serializer; see JsonConverterUtilities.ReadNestedValue for why.
+            elements.Add(JsonConverterUtilities.ReadNestedValue(ref reader, elementTypeInfo, options)!);
             reader.Read();
         }
 

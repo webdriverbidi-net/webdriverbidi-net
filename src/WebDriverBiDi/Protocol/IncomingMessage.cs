@@ -16,6 +16,12 @@ using System.Text.Json.Serialization.Metadata;
 /// </summary>
 public class IncomingMessage : IDisposable
 {
+    // Parsing a document does not recurse, so it is safe at any depth, and is left unlimited. A message whose
+    // payload is nested more deeply than the transport allows is therefore still recognized for what it is,
+    // and fails when its payload is deserialized: a command response fails its command at once, rather than
+    // being discarded as an unknown message and leaving its command to time out.
+    private static readonly JsonDocumentOptions DocumentOptions = new() { MaxDepth = int.MaxValue };
+
     private readonly IMemoryOwner<byte> memoryOwner;
     private readonly Func<JsonDocument, JsonDocument?>? documentTransformer;
     private JsonDocument? document;
@@ -128,7 +134,7 @@ public class IncomingMessage : IDisposable
     {
         if (this.document is null && this.messagePacketType != IncomingMessageKind.Filtered)
         {
-            JsonDocument doc = JsonDocument.Parse(this.memoryOwner.Memory.Slice(0, this.MessageLength));
+            JsonDocument doc = JsonDocument.Parse(this.memoryOwner.Memory.Slice(0, this.MessageLength), DocumentOptions);
             if (this.documentTransformer is null)
             {
                 this.document = doc;

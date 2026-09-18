@@ -8,6 +8,7 @@ namespace WebDriverBiDi.JsonConverters;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Converts a JSON object to and from a <see cref="Dictionary{TKey, TValue}"/> keyed by
@@ -50,8 +51,6 @@ public class NonNullValueDictionaryJsonConverter<TValue> : JsonConverter<Diction
             throw new JsonException($"JSON value for a dictionary of {typeof(TValue).Name} must be an object, but the token was {reader.TokenType}");
         }
 
-        // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a JsonTypeInfo
-        // to remove warnings when publishing AOT compiled applications.
         JsonTypeInfo<TValue> valueTypeInfo = (JsonTypeInfo<TValue>)options.GetTypeInfo(typeof(TValue));
         Dictionary<string, TValue> values = [];
         reader.Read();
@@ -66,8 +65,9 @@ public class NonNullValueDictionaryJsonConverter<TValue> : JsonConverter<Diction
             }
 
             // As for the list converter, a non-null token cannot deserialize to null for any type in
-            // this library, so the null-forgiving operator is appropriate here.
-            values[propertyName] = JsonSerializer.Deserialize(ref reader, valueTypeInfo)!;
+            // this library, so the null-forgiving operator is appropriate here, and the value is read
+            // through its converter rather than by re-entering the serializer.
+            values[propertyName] = JsonConverterUtilities.ReadNestedValue(ref reader, valueTypeInfo, options)!;
             reader.Read();
         }
 

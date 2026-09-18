@@ -110,6 +110,7 @@ public record NodeProperties
     [JsonPropertyName("shadowRoot")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
+    [JsonConverter(typeof(NestedValueJsonConverter<NodeRemoteValue>))]
     public NodeRemoteValue? ShadowRoot { get; internal set; }
 
     /// <summary>
