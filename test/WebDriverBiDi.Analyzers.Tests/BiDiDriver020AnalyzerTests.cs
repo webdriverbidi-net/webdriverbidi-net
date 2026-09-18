@@ -1488,4 +1488,47 @@ public class BiDiDriver020AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
+
+    [Fact]
+    public async Task TopLevelProgram_SameNameUsedInsideLaterClass_StillReportsError()
+    {
+        // A top-level program's compilation unit holds the types the file declares as well as the
+        // program's own statements. The escape scan is scoped to the global statements, so a same-named
+        // identifier handed on inside a class declared later in the file is not the program's local
+        // observer escaping, and does not stop the local being tracked.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            BiDiDriver driver = new();
+            EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+            Task[] tasks = await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
+
+            public class Helper
+            {
+                public static void Store(object observer) => Keep(observer);
+
+                private static void Keep(object value)
+                {
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
+
+        RealAssemblyAnalyzerTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+            TestState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

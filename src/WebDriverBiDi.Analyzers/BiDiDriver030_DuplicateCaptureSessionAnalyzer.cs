@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -71,8 +72,14 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         // session on, may have a session this walk cannot see, so it is never tracked and never
         // reported on. The names are collected up front because the other code may run before or
         // after the StartCapturingTasks textually.
-        HashSet<string> untrackableNames = AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node);
-        untrackableNames.UnionWith(AnalyzerSymbolHelpers.FindVariablesChangedInsideNestedFunctions(context.Node, CaptureSessionMethodNames));
+        // Deferred, because both walks cover the whole body and only an observer declaration ever asks
+        // for the result. A member that declares none never pays for them.
+        Lazy<HashSet<string>> untrackableNames = new(() =>
+        {
+            HashSet<string> names = AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node);
+            names.UnionWith(AnalyzerSymbolHelpers.FindVariablesChangedInsideNestedFunctions(context.Node, CaptureSessionMethodNames));
+            return names;
+        });
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
@@ -84,17 +91,19 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         VariableDeclarationSyntax declaration,
         SemanticModel semanticModel,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
-            if (untrackableNames.Contains(variable.Identifier.ValueText))
+            // The type test comes first so that the escape walks are forced only by a declaration that
+            // is actually an observer, rather than by any local the member happens to declare.
+            ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
+            if (!AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
             {
                 continue;
             }
 
-            ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
-            if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
+            if (!untrackableNames.Value.Contains(variable.Identifier.ValueText))
             {
                 capturingState[variable.Identifier.ValueText] = false;
             }
@@ -106,7 +115,7 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // Walk the node's descendants in document order, checking each invocation against the tracked
         // capturing state. The walk does not descend into the bodies of nested functions: their code
@@ -163,7 +172,7 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
         ProcessNode(ifStatement.Condition, context, reportDiagnostics, capturingState, untrackableNames);
@@ -192,7 +201,7 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         Dictionary<string, bool> tryState = new(capturingState);
         ProcessNode(tryStatement.Block, context, reportDiagnostics, tryState, untrackableNames);
@@ -253,7 +262,7 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // A for loop's declaration or initializers, a foreach loop's collection expression, and the
         // loop condition all run before the first test of the condition, so they are walked against the
@@ -297,7 +306,7 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // The governing expression executes unconditionally, before any section.
         ProcessNode(switchStatement.Expression, context, reportDiagnostics, capturingState, untrackableNames);

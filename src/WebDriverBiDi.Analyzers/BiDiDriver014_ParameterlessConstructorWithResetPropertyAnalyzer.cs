@@ -85,21 +85,26 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
             }
         }
 
-        // A tracked object handed to a method outside the library may be configured by that method
-        // (Configure(parameters) before the command is sent), which this rule cannot see; the
-        // Warning severity prefers a missed report to accusing code that does configure the object.
-        // Passing it to a library method — the command that sends it — is not configuration.
-        MarkVariablesPassedOutsideLibrary(context.Node, semanticModel, trackedVariables);
-
-        // A tracked object handed on in any other way — returned to the caller, stored in a field, placed in a
-        // collection, or used to initialize another variable — may likewise be configured by code this rule
-        // cannot see: a factory method returning a bare parameters object for its caller to fill in, say.
-        // Arguments were judged above, callee by callee, so they are left out here.
-        foreach (string handedOnName in AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node, includeArguments: false))
+        // Both walks below only ever mark a variable that is already tracked, so a member that declares
+        // no parameters object -- nearly every member in a consumer's codebase -- skips them entirely.
+        if (trackedVariables.Count > 0)
         {
-            if (trackedVariables.TryGetValue(handedOnName, out VariableState? handedOnState))
+            // A tracked object handed to a method outside the library may be configured by that method
+            // (Configure(parameters) before the command is sent), which this rule cannot see; the
+            // Warning severity prefers a missed report to accusing code that does configure the object.
+            // Passing it to a library method — the command that sends it — is not configuration.
+            MarkVariablesPassedOutsideLibrary(context.Node, semanticModel, trackedVariables);
+
+            // A tracked object handed on in any other way — returned to the caller, stored in a field, placed in a
+            // collection, or used to initialize another variable — may likewise be configured by code this rule
+            // cannot see: a factory method returning a bare parameters object for its caller to fill in, say.
+            // Arguments were judged above, callee by callee, so they are left out here.
+            foreach (string handedOnName in AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node, includeArguments: false))
             {
-                handedOnState.HasPropertyAssignment = true;
+                if (trackedVariables.TryGetValue(handedOnName, out VariableState? handedOnState))
+                {
+                    handedOnState.HasPropertyAssignment = true;
+                }
             }
         }
 

@@ -60,14 +60,13 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
     // Minimally-qualified display names of the collection types whose nullable form this rule
     // flags. Both the short and namespace-qualified spellings are accepted so the lookup is
     // independent of how the symbol display format renders the type.
+    // Compared against INamedTypeSymbol.Name, which carries no type arguments and no namespace, so
+    // that matching costs no formatted display string.
     private static readonly HashSet<string> CollectionTypeNames = new(StringComparer.Ordinal)
     {
-        "List<T>",
-        "System.Collections.Generic.List<T>",
-        "IList<T>",
-        "System.Collections.Generic.IList<T>",
-        "ICollection<T>",
-        "System.Collections.Generic.ICollection<T>",
+        "List",
+        "IList",
+        "ICollection",
     };
 
     /// <inheritdoc/>
@@ -169,9 +168,7 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         // Check for List<T>, IList<T>, ICollection<T>
         if (effectiveType is INamedTypeSymbol namedTypeSymbol)
         {
-            string typeName = namedTypeSymbol.OriginalDefinition.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-
-            if (CollectionTypeNames.Contains(typeName) && namedTypeSymbol.TypeArguments.Length == 1)
+            if (CollectionTypeNames.Contains(namedTypeSymbol.OriginalDefinition.Name) && namedTypeSymbol.TypeArguments.Length == 1)
             {
                 return (IsNullableType(namedTypeSymbol), namedTypeSymbol.TypeArguments[0]);
             }

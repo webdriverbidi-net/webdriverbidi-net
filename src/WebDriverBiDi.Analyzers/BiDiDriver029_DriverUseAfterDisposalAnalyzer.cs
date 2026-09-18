@@ -104,7 +104,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
     private static HashSet<string> FindUntrackableVariableNames(SyntaxNode body, SemanticModel semanticModel)
     {
         HashSet<string> untrackableNames = [];
-        foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
+        foreach (IdentifierNameSyntax identifier in AnalyzerSymbolHelpers.GetBodyDescendantNodes(body).OfType<IdentifierNameSyntax>())
         {
             if (IsPassedByReference(identifier, semanticModel) || IsDisposedOrReboundInsideNestedFunction(identifier, body))
             {
@@ -592,14 +592,17 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // A late-bound (dynamic) invocation resolves to no symbol at all, so there is nothing to classify.
-        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol methodSymbol)
+        // Resolve the receiver before binding the invocation. The receiver walk starts from syntax and
+        // gives up on anything that is not a one- or two-deep chain rooted in an identifier, so most of
+        // the invocations in a file never reach a bind at all; binding first paid for every one of them.
+        string? driverVariableName = GetDriverVariableName(invocation, context.Node, semanticModel, out bool isDirectDriverCall);
+        if (driverVariableName is null || !driverDisposedStatus.ContainsKey(driverVariableName))
         {
             return;
         }
 
-        string? driverVariableName = GetDriverVariableName(invocation, context.Node, semanticModel, out bool isDirectDriverCall);
-        if (driverVariableName is null || !driverDisposedStatus.ContainsKey(driverVariableName))
+        // A late-bound (dynamic) invocation resolves to no symbol at all, so there is nothing to classify.
+        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol methodSymbol)
         {
             return;
         }

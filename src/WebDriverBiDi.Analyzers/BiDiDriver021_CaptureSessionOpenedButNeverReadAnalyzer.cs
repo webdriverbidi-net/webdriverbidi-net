@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -75,8 +76,9 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
 
         // An observer this member hands to other code may be read by that code, which this rule
         // cannot see, so it is never tracked and never reported on. A nested function needs no such
-        // treatment here: a read inside one is recorded as deferred below.
-        HashSet<string> escapedNames = AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node);
+        // treatment here: a read inside one is recorded as deferred below. The walk covers the whole
+        // body and only an observer declaration asks for its result, so it is deferred until one does.
+        Lazy<HashSet<string>> escapedNames = new(() => AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node));
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
@@ -90,13 +92,11 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
                 {
                     foreach (VariableDeclaratorSyntax variable in declaration.Variables)
                     {
-                        if (escapedNames.Contains(variable.Identifier.ValueText))
-                        {
-                            continue;
-                        }
-
+                        // The type test comes first so that the escape walk is forced only by a
+                        // declaration that is actually an observer.
                         ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
-                        if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
+                        if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver")
+                            && !escapedNames.Value.Contains(variable.Identifier.ValueText))
                         {
                             pendingStartCapturingTasks[variable.Identifier.ValueText] = null;
                             hasRead[variable.Identifier.ValueText] = false;

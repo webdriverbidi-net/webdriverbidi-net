@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -70,8 +71,14 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         // up front, rather than at the point of escape, is what the Error severity of this rule
         // demands: the other code may run before or after the wait textually, and a wrong Error on
         // correct code is worse than a missed report.
-        HashSet<string> untrackableNames = AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node);
-        untrackableNames.UnionWith(AnalyzerSymbolHelpers.FindVariablesChangedInsideNestedFunctions(context.Node, CaptureSessionMethodNames));
+        // Deferred, because both walks cover the whole body and only an observer declaration ever asks
+        // for the result. A member that declares none never pays for them.
+        Lazy<HashSet<string>> untrackableNames = new(() =>
+        {
+            HashSet<string> names = AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node);
+            names.UnionWith(AnalyzerSymbolHelpers.FindVariablesChangedInsideNestedFunctions(context.Node, CaptureSessionMethodNames));
+            return names;
+        });
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
@@ -85,27 +92,30 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         VariableDeclarationSyntax declaration,
         SemanticModel semanticModel,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
-            if (untrackableNames.Contains(variable.Identifier.ValueText))
-            {
-                continue;
-            }
-
             // Track only an observer this walk can reason about from its first statement: one the
             // declaration itself obtains from AddObserver. An observer handed over by something the
             // walk cannot see into -- a factory or helper that may already have opened a capture
             // session -- would otherwise start out recorded as not capturing, and its first
             // WaitForCapturedTasksAsync would be reported although the session is open. The handle
             // this returns is already known to be an EventObserver, so the local's own type needs no
-            // separate test.
-            if (variable.Initializer?.Value is InvocationExpressionSyntax initializer
-                && AnalyzerSymbolHelpers.GetEventSubscriptionHandle(semanticModel, initializer) is { MethodName: "AddObserver" })
+            // separate test. This shape test comes first so that the escape walks are forced only by
+            // a declaration that is actually an observer.
+            if (variable.Initializer?.Value is not InvocationExpressionSyntax initializer
+                || AnalyzerSymbolHelpers.GetEventSubscriptionHandle(semanticModel, initializer) is not { MethodName: "AddObserver" })
             {
-                capturingState[variable.Identifier.ValueText] = false;
+                continue;
             }
+
+            if (untrackableNames.Value.Contains(variable.Identifier.ValueText))
+            {
+                continue;
+            }
+
+            capturingState[variable.Identifier.ValueText] = false;
         }
     }
 
@@ -114,7 +124,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // Walk the node's descendants in document order, checking each invocation against the
         // tracked capturing state. The walk does not descend into the bodies of nested
@@ -178,7 +188,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
         ProcessNode(ifStatement.Condition, context, reportDiagnostics, capturingState, untrackableNames);
@@ -212,7 +222,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // The governing expression executes unconditionally, before any section.
         ProcessNode(switchStatement.Expression, context, reportDiagnostics, capturingState, untrackableNames);
@@ -246,7 +256,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         Dictionary<string, bool> tryState = new(capturingState);
         ProcessNode(tryStatement.Block, context, reportDiagnostics, tryState, untrackableNames);
@@ -309,7 +319,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // A for loop's declaration or initializers, a foreach loop's collection expression, and the loop
         // condition all run before the first test of the condition, so they are walked against the state as it
