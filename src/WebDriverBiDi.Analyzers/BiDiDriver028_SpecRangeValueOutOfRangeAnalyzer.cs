@@ -82,6 +82,15 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
     {
         AssignmentExpressionSyntax assignment = (AssignmentExpressionSyntax)context.Node;
 
+        // A ranged property is always written by name, as `x.Prop = ...` or as `Prop = ...` inside an
+        // object initializer. Rejecting every other left side by shape keeps the bind below off the
+        // great majority of the assignments in a file. An indexer would bind to a property symbol too,
+        // but the range attribute is only ever applied to a named property.
+        if (assignment.Left is not (MemberAccessExpressionSyntax or IdentifierNameSyntax))
+        {
+            return;
+        }
+
         // The left side must bind to a property; constructor-parameter arguments and fields are out of
         // scope.
         if (context.SemanticModel.GetSymbolInfo(assignment.Left).Symbol is not IPropertySymbol property)

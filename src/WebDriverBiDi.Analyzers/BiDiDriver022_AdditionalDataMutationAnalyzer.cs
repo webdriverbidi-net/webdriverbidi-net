@@ -71,13 +71,29 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
 
     private static bool IsAdditionalDataProperty(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
-        ISymbol? symbol = context.SemanticModel.GetSymbolInfo(expression).Symbol;
-        if (symbol is not IPropertySymbol property)
+        // A property reference is written as a member access, a member binding, or a bare name once its
+        // wrappers are peeled, and a member name cannot be aliased, so the written name settles the
+        // question without a bind. Nearly every receiver in a file is rejected here, and anything that
+        // is not one of those shapes cannot bind to a property either.
+        // Only the wrappers a bind sees through are peeled: parentheses and the null-forgiving operator.
+        // A cast is not peeled, because binding one yields a conversion rather than the property, so a
+        // cast receiver is rejected here exactly as it was rejected by the bind before.
+        ExpressionSyntax receiver = expression;
+        while (receiver is ParenthesizedExpressionSyntax or PostfixUnaryExpressionSyntax)
+        {
+            receiver = receiver is ParenthesizedExpressionSyntax parenthesized
+                ? parenthesized.Expression
+                : ((PostfixUnaryExpressionSyntax)receiver).Operand;
+        }
+
+        if (receiver is not (MemberAccessExpressionSyntax or MemberBindingExpressionSyntax or IdentifierNameSyntax)
+            || receiver.GetLastToken().ValueText != "AdditionalData")
         {
             return false;
         }
 
-        if (property.Name != "AdditionalData")
+        ISymbol? symbol = context.SemanticModel.GetSymbolInfo(expression).Symbol;
+        if (symbol is not IPropertySymbol property)
         {
             return false;
         }

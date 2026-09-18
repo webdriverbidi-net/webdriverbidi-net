@@ -841,4 +841,125 @@ public class BiDiDriver022AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a null-forgiving receiver is still recognized, so peeling that wrapper matches what
+    /// binding the receiver would have resolved to.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task IndexerAssignment_ViaNullForgivingReceiver_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var cmd = new GetTreeCommandParameters();
+                        {|#0:cmd.AdditionalData!["ext"] = "value"|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("CommandParameters");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a local variable that merely shares the name is not reported: the name test is a
+    /// cheap filter, and what the receiver actually binds to still decides.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task IndexerAssignment_OnLocalNamedAdditionalData_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        Dictionary<string, object?> AdditionalData = new Dictionary<string, object?>();
+                        AdditionalData["ext"] = "value";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a null-conditional receiver, whose member is written as a member binding, is
+    /// recognized.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task IndexerAssignment_ViaConditionalAccessReceiver_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GetTreeCommandParameters? cmd = new GetTreeCommandParameters();
+                        cmd?{|#0:.AdditionalData["ext"] = "value"|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("CommandParameters");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a receiver that names no member at all, such as the result of a call, is rejected
+    /// without binding it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task IndexerAssignment_OnCallResult_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private Dictionary<string, object?> GetData() => new Dictionary<string, object?>();
+
+                    public void TestMethod()
+                    {
+                        this.GetData()["ext"] = "value";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
 }

@@ -747,7 +747,7 @@ internal static class AnalyzerSymbolHelpers
     internal static HashSet<string> FindVariablesHandedToOtherCode(SyntaxNode body, bool includeArguments = true)
     {
         HashSet<string> escapedNames = [];
-        foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
+        foreach (IdentifierNameSyntax identifier in GetBodyDescendantNodes(body).OfType<IdentifierNameSyntax>())
         {
             if (IsHandedToOtherCode(identifier, includeArguments))
             {
@@ -806,7 +806,7 @@ internal static class AnalyzerSymbolHelpers
     internal static HashSet<string> FindVariablesChangedInsideNestedFunctions(SyntaxNode body, string[] methodNames)
     {
         HashSet<string> changedNames = [];
-        foreach (InvocationExpressionSyntax invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        foreach (InvocationExpressionSyntax invocation in GetBodyDescendantNodes(body).OfType<InvocationExpressionSyntax>())
         {
             if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
                 memberAccess.Expression is not IdentifierNameSyntax receiver ||

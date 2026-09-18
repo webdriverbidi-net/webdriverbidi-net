@@ -754,4 +754,29 @@ public class BiDiDriver028AnalyzerTests
 
         await VerifyDiagnosticsAsync(testCode, expected);
     }
+
+    [Fact]
+    public async Task IndexerAssignment_IsNotJudged_NoDiagnostic()
+    {
+        // The rule judges assignments to named properties. An element access on the left is rejected on
+        // shape, before any symbol is bound, because a range is only ever declared on a named property.
+        string testCode = """
+            using System.Collections.Generic;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        Dictionary<string, int> values = new Dictionary<string, int>();
+                        values["key"] = -1;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer>(testCode);
+    }
 }

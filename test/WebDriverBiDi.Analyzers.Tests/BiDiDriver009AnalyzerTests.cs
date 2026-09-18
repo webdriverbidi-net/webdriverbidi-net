@@ -3220,4 +3220,31 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
     }
+
+    [Fact]
+    public async Task DynamicArgumentOnTrackedDriver_BindsToNoSymbol_NoDiagnostic()
+    {
+        // A call with a dynamic argument is late-bound, so it resolves to no method symbol at all.
+        // The receiver still roots in a tracked driver, so the call reaches the bind and must be
+        // abandoned there rather than judged.
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        dynamic parameters = null!;
+                        BiDiDriver driver = new();
+                        await driver.ExecuteCommandAsync(parameters);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

@@ -563,6 +563,15 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             return;
         }
 
+        // Resolve the receiver before binding the invocation. The receiver walk starts from syntax and
+        // gives up on anything that is not a one- or two-deep chain rooted in an identifier, so most of
+        // the invocations in a file never reach a bind at all; binding first paid for every one of them.
+        string? driverVariableName = GetDriverVariableNameFromInvocation(invocation, context.Node, semanticModel);
+        if (driverVariableName == null || !driverStartedStatus.ContainsKey(driverVariableName))
+        {
+            return;
+        }
+
         IMethodSymbol? methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
         if (methodSymbol == null)
         {
@@ -570,13 +579,6 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         }
 
         string methodName = methodSymbol.Name;
-
-        // Get the driver variable name if this is a method call on a driver or module
-        string? driverVariableName = GetDriverVariableNameFromInvocation(invocation, context.Node, semanticModel);
-        if (driverVariableName == null || !driverStartedStatus.ContainsKey(driverVariableName))
-        {
-            return;
-        }
 
         // If this is StartAsync, mark the driver as started
         if (methodName == "StartAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
