@@ -56,6 +56,8 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI035** | Error | The parameterless `EventInfo<T>.ToEventArgs<TEventArgs>()` is called with a `TEventArgs` other than `T`, including a base or derived type, which always throws `WebDriverBiDiException`. A type parameter on either side is not judged |
 | **BIDI036** | Warning | A constant connection string that is not an absolute `ws://` or `wss://` URL is passed to `StartAsync` on a `BiDiDriver` constructed in the same method without a `Transport` (or constructed in the call itself), so the default WebSocket connection rejects it with `ArgumentException`. A driver of a derived type, one given a transport, or a local that is reassigned or passed by reference is not judged |
 
+The numbering has three gaps, because three rules were removed: BIDI018 in 0.0.48, and BIDI011 and BIDI019 in 0.0.51. None of the three is reported by the current package. The Removed Rules section of `AnalyzerReleases.Shipped.md`, in the analyzer project in the repository, records what each of them checked.
+
 ## Code Fixes
 
 Many analyzers provide automatic code fixes. In Visual Studio or VS Code, use the lightbulb or quick-action menu on the diagnostic to apply the suggested fix.
@@ -333,6 +335,7 @@ using EventObserver<EntryAddedEventArgs> observer =
 ```
 
 This is reported at `Info` rather than as a warning because a subscription meant to last as long as the driver is a legitimate design, and one added that way never needs removing. An explicit discard (`_ = driver.Log.OnEntryAdded.AddObserver(...)`) records that intent and is never reported. A `Subscribe` call is recognised by its receiver rather than its return type, because `IObservable<T>` declares the method as returning `IDisposable`; only an observable over this library's event arguments is matched.
+
 ### BIDI032
 
 **Warning.** An observer is added to `Connection.OnDataReceived` on a connection that the same method wraps in a `Transport`. That event hands its observer ownership of a pooled buffer instead of broadcasting a copy, so it admits one observer, and the transport claims it when it is constructed. See [Connection Management — Inspecting Protocol Traffic](connection-management.md#inspecting-protocol-traffic).
