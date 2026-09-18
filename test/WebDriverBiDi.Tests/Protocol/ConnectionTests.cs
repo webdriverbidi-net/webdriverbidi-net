@@ -162,6 +162,46 @@ public class ConnectionTests
     }
 
     [Fact]
+    public async Task TestStopAfterDisposeDoesNothing()
+    {
+        // The base class disposes its cancellation source with the connection, and the stop sequence cancels
+        // that source unconditionally; the public StopAsync must therefore refuse to run the sequence on a
+        // disposed connection rather than let the cancel throw ObjectDisposedException.
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+        TestReportingConnection connection = new();
+        List<string> logMessages = [];
+        connection.OnLogMessage.AddObserver(e => logMessages.Add(e.Message));
+        await connection.StartAsync(ConnectionString, testCancellationToken);
+        await connection.DisposeAsync();
+        int stopCallsByDisposal = connection.StopConnectionCallCount;
+        logMessages.Clear();
+
+        await connection.StopAsync(testCancellationToken);
+
+        // The transport-specific stop ran once, for the disposal, and not again for the stop.
+        Assert.Equal(1, stopCallsByDisposal);
+        Assert.Equal(1, connection.StopConnectionCallCount);
+        Assert.Empty(logMessages);
+        Assert.False(connection.IsActive);
+    }
+
+    [Fact]
+    public async Task TestStopOfNeverStartedDisposedConnectionDoesNothing()
+    {
+        // A connection disposed without ever being started was never stopped by the disposal either, so the
+        // guard, not the disposal's own stop, is what keeps this from throwing.
+        TestReportingConnection connection = new();
+        List<string> logMessages = [];
+        connection.OnLogMessage.AddObserver(e => logMessages.Add(e.Message));
+        await connection.DisposeAsync();
+
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, connection.StopConnectionCallCount);
+        Assert.Empty(logMessages);
+    }
+
+    [Fact]
     public async Task TestDeliveringPooledMemoryPassesOwnershipToTheObserverAndLogsTheMessage()
     {
         await using TestReportingConnection connection = new()

@@ -495,27 +495,25 @@ public abstract class Connection : IAsyncDisposable
     /// continues running in the background until its read unblocks on its own, and
     /// <see cref="StartAsync"/> refuses to begin a new session while it does.
     /// </para>
+    /// <para>
+    /// A disposed connection has already been stopped by <see cref="DisposeAsync"/> and can never be started
+    /// again, so stopping it does nothing: this method returns at once, raises no log message, and does not
+    /// throw, just as <see cref="BiDiDriver.StopAsync"/> and <see cref="Transport.DisconnectAsync(CancellationToken)"/>
+    /// do not throw <see cref="ObjectDisposedException"/> for a disposed instance. Only <see cref="StartAsync"/>
+    /// rejects a disposed connection.
+    /// </para>
     /// </remarks>
-    public async Task StopAsync(CancellationToken cancellationToken = default)
+    public Task StopAsync(CancellationToken cancellationToken = default)
     {
-        await this.LogAsync($"Closing {this.ConnectionKind} connection").ConfigureAwait(false);
-        try
+        // The cancellation source is disposed with the connection, so the cancel below would throw
+        // ObjectDisposedException on a disposed connection. DisposeAsync records the disposal before it
+        // stops the connection, so it calls the core directly rather than through this guard.
+        if (this.IsDisposed)
         {
-            await this.StopConnectionAsync(cancellationToken).ConfigureAwait(false);
-        }
-        finally
-        {
-            // Whether or not the transport-specific shutdown closed the connection cleanly -- and
-            // whether or not it failed outright -- cancel the connection so that the receive loop and
-            // any in-flight send stop, then wait for the loop. A stop that reports a failure still
-            // leaves the connection canceled and able to be started again, rather than leaving a
-            // receive loop running against a connection its owner believes is finished with.
-            this.CancelConnection();
-            await this.WaitForReceiveTaskCompletionAsync($"Timed out waiting for {this.ConnectionKind} connection receive loop to complete during shutdown").ConfigureAwait(false);
-            this.ConnectionString = string.Empty;
+            return Task.CompletedTask;
         }
 
-        await this.LogAsync($"{this.ConnectionKind} connection closed").ConfigureAwait(false);
+        return this.CloseConnectionAsync(cancellationToken);
     }
 
     /// <summary>
@@ -612,7 +610,9 @@ public abstract class Connection : IAsyncDisposable
                     // without stopping it would skip the shutdown the transport defines.
                     if (this.IsConnectionOpen)
                     {
-                        await this.StopAsync().ConfigureAwait(false);
+                        // The disposal has already been recorded above, so the public StopAsync, which
+                        // does nothing on a disposed connection, cannot be used here.
+                        await this.CloseConnectionAsync(CancellationToken.None).ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)
@@ -1080,6 +1080,38 @@ public abstract class Connection : IAsyncDisposable
             CancellationToken.None,
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
+    }
+
+    /// <summary>
+    /// Performs the shutdown sequence that <see cref="StopAsync"/> describes, without the disposal guard.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// <see cref="DisposeAsync"/> marks the connection disposed before it stops an open connection, and the
+    /// cancellation source is still alive at that point, so it stops through this method rather than through
+    /// <see cref="StopAsync"/>, whose guard would otherwise turn the disposal's own stop into a no-op.
+    /// </remarks>
+    private async Task CloseConnectionAsync(CancellationToken cancellationToken)
+    {
+        await this.LogAsync($"Closing {this.ConnectionKind} connection").ConfigureAwait(false);
+        try
+        {
+            await this.StopConnectionAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            // Whether or not the transport-specific shutdown closed the connection cleanly -- and
+            // whether or not it failed outright -- cancel the connection so that the receive loop and
+            // any in-flight send stop, then wait for the loop. A stop that reports a failure still
+            // leaves the connection canceled and able to be started again, rather than leaving a
+            // receive loop running against a connection its owner believes is finished with.
+            this.CancelConnection();
+            await this.WaitForReceiveTaskCompletionAsync($"Timed out waiting for {this.ConnectionKind} connection receive loop to complete during shutdown").ConfigureAwait(false);
+            this.ConnectionString = string.Empty;
+        }
+
+        await this.LogAsync($"{this.ConnectionKind} connection closed").ConfigureAwait(false);
     }
 
     /// <summary>

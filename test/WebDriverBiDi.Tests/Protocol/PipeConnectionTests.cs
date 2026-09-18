@@ -908,6 +908,27 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestStopAfterDisposeDoesNothing()
+    {
+        using TestPipeServer testPipeServer = new();
+        PipeConnection connection = new(testPipeServer);
+        List<string> logMessages = [];
+        connection.OnLogMessage.AddObserver(e => logMessages.Add(e.Message));
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.DisposeAsync();
+        testPipeServer.Stop();
+        logMessages.Clear();
+
+        // Disposal has already stopped the connection and disposed its cancellation source, so a stop
+        // after it neither throws (the source's Cancel would) nor raises the "Closing" log message.
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Empty(logMessages);
+        Assert.False(connection.IsActive);
+    }
+
+    [Fact]
     public async Task TestStartAfterServerProcessExitThrows()
     {
         using TestPipeServer testPipeServer = new();
