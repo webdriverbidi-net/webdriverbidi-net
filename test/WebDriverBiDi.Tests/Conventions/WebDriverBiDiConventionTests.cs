@@ -106,6 +106,7 @@ public class WebDriverBiDiConventionTests
         "WebDriverBiDi.Protocol.TransportErrorBehavior",
         "WebDriverBiDi.Protocol.TransportState",
         "WebDriverBiDi.Protocol.UnhandledErrorKind",
+        "WebDriverBiDi.Protocol.WebSocketCloseInitiator",
         "WebDriverBiDi.WebDriverBiDiLogLevel",
     ];
 

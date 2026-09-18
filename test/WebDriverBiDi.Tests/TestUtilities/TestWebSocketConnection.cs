@@ -1,6 +1,7 @@
 namespace WebDriverBiDi.TestUtilities;
 
 using System.Buffers;
+using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using WebDriverBiDi.Protocol;
@@ -74,6 +75,20 @@ public class TestWebSocketConnection : WebSocketConnection
     /// to simulate a remote end that never completes the handshake.
     /// </summary>
     public Func<Uri, CancellationToken, Task>? ConnectWebSocketOverride { get; set; }
+
+    /// <summary>
+    /// Gets or sets a delegate that wraps the network stream the socket connects over, so a test can stand
+    /// between the socket and the wire, for example with a <see cref="HeldWriteStream"/>. The socket, its
+    /// handshake and the remote end all remain real.
+    /// </summary>
+    public Func<Stream, Stream>? NetworkStreamWrapper { get; set; }
+
+    /// <summary>
+    /// Gets or sets a delegate called with each result the real socket's receive returns, before the receive
+    /// loop sees it. By then the socket has finished processing the frame, so a test can inspect the socket, or
+    /// act, at exactly the point the loop is about to. It is not called for a <see cref="ReceiveHandler"/> result.
+    /// </summary>
+    public Action<WebSocketReceiveResult>? ReceiveCompletedObserver { get; set; }
 
     public bool Disposed => this.IsDisposed;
 
@@ -237,6 +252,39 @@ public class TestWebSocketConnection : WebSocketConnection
             return;
         }
 
+        if (this.NetworkStreamWrapper is not null)
+        {
+            // Connect the socket created for this session exactly as the base class does, except over a
+            // transport stream the test has wrapped.
+            Func<Stream, Stream> wrapper = this.NetworkStreamWrapper;
+            ClientWebSocket socket;
+            lock (this.CreatedClientWebSockets)
+            {
+                socket = this.CreatedClientWebSockets[^1];
+            }
+
+            using SocketsHttpHandler handler = new()
+            {
+                ConnectCallback = async (context, token) =>
+                {
+                    Socket transportSocket = new(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
+                    try
+                    {
+                        await transportSocket.ConnectAsync(context.DnsEndPoint, token).ConfigureAwait(false);
+                        return wrapper(new NetworkStream(transportSocket, ownsSocket: true));
+                    }
+                    catch
+                    {
+                        transportSocket.Dispose();
+                        throw;
+                    }
+                },
+            };
+            using HttpMessageInvoker invoker = new(handler);
+            await socket.ConnectAsync(websocketUri, invoker, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         await base.ConnectWebSocketAsync(websocketUri, cancellationToken).ConfigureAwait(false);
     }
 
@@ -283,7 +331,9 @@ public class TestWebSocketConnection : WebSocketConnection
             return await this.ReceiveHandler(buffer, cancellationToken, currentCall);
         }
 
-        return await base.ReadWebSocketDataAsync(buffer, cancellationToken);
+        WebSocketReceiveResult result = await base.ReadWebSocketDataAsync(buffer, cancellationToken);
+        this.ReceiveCompletedObserver?.Invoke(result);
+        return result;
     }
 
     /// <summary>

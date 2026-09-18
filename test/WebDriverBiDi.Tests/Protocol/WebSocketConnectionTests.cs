@@ -1037,16 +1037,25 @@ public class WebSocketConnectionTests : IAsyncDisposable
         ];
 
         List<string> connectionLog = [];
+        Exception? connectionError = null;
         await using WebSocketConnection connection = new();
         connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
         });
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            connectionError = e.Exception;
+        });
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection();
         await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // Checked first so that a failure names its cause: the log comparison below truncates the error's
+        // message, and says nothing of where in the close the error was raised.
+        Assert.True(connectionError is null, $"The connection reported an error during a clean local close: {connectionError}");
         Assert.Equal(expectedLogEntries, connectionLog);
     }
 
@@ -2606,6 +2615,161 @@ public class WebSocketConnectionTests : IAsyncDisposable
         {
             Assert.DoesNotContain(logs, message => message.StartsWith("Acknowledging Close frame", StringComparison.Ordinal));
             Assert.Contains("Ending processing loop in state CloseSent", logs);
+        }
+
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TestLocalCloseAnsweredBeforeCloseFrameSendReturnsIsNotAcknowledged()
+    {
+        // The socket records that it has sent a Close frame only once the send has returned. If the thread
+        // sending this end's Close frame is preempted after the bytes have left, the remote end's answer is read
+        // while the socket still reports CloseReceived, which is also what it reports when the remote end starts
+        // a close. The receive loop must not take that state for a remote close and acknowledge it: that sends a
+        // second Close frame concurrently with the first, and when the first completes the handshake and
+        // disposes the socket's stream, the second fails and a clean local close is reported as a connection
+        // error. This failed intermittently in CI before the loop stopped deciding by the socket's state.
+        //
+        // The order is fixed rather than raced. The write of this end's Close frame is held after its bytes have
+        // left, so the real remote end answers while the real socket has not yet recorded the send. The write is
+        // released only once the receive loop has decided what to do with the answer, which it announces with a
+        // log message either way, so the decision is always made against CloseReceived. Keep-alive is disabled
+        // so that the held write can only be the Close frame.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        HeldWriteStream? transportStream = null;
+        WebSocketState? stateWhenAnswerDelivered = null;
+        int remoteDisconnectedCount = 0;
+        Exception? connectionError = null;
+        List<string> logs = [];
+        List<ClientWebSocket> sockets = [];
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+            LogLevel = WebDriverBiDiLogLevel.Debug,
+            ConfigureClientWebSocket = socket =>
+            {
+                socket.Options.KeepAliveInterval = Timeout.InfiniteTimeSpan;
+                sockets.Add(socket);
+            },
+            NetworkStreamWrapper = stream => transportStream = new HeldWriteStream(stream),
+            ReceiveCompletedObserver = result =>
+            {
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    stateWhenAnswerDelivered = sockets[^1].State;
+                }
+            },
+        };
+        connection.OnRemoteDisconnected.AddObserver(e => Interlocked.Increment(ref remoteDisconnectedCount));
+        connection.OnConnectionError.AddObserver(e => connectionError = e.Exception);
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            lock (logs)
+            {
+                logs.Add(e.Message);
+            }
+
+            if (e.Message.StartsWith("Close frame received from server responding to close initiated by this end", StringComparison.Ordinal) || e.Message.StartsWith("Acknowledging Close frame", StringComparison.Ordinal))
+            {
+                transportStream!.ReleaseHeldWrite();
+            }
+        });
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection();
+        Assert.NotNull(transportStream);
+        transportStream.HoldNextWrite();
+        await connection.StopAsync(TestContext.Current.CancellationToken).WaitAsync(SafetyBoundTimeout, TestContext.Current.CancellationToken);
+
+        // The precondition the test depends on: the answer reached the loop before the socket recorded the send.
+        Assert.True(transportStream.HeldWriteSent.IsCompleted, "The Close frame write was never held.");
+        Assert.Equal(WebSocketState.CloseReceived, stateWhenAnswerDelivered);
+
+        Assert.True(connectionError is null, $"The connection reported an error during a clean local close: {connectionError}");
+        Assert.Equal(0, Interlocked.CompareExchange(ref remoteDisconnectedCount, 0, 0));
+        lock (logs)
+        {
+            Assert.DoesNotContain(logs, message => message.StartsWith("Acknowledging Close frame", StringComparison.Ordinal));
+
+            // The loop ends only once the send has been recorded, so it ends Closed exactly as it does when the
+            // send returns before the answer arrives.
+            Assert.Contains("Ending processing loop in state Closed", logs);
+            Assert.Contains("Client state is Closed", logs);
+        }
+
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TestStopWhileReceiveLoopIsAnsweringRemoteCloseSendsNoSecondCloseFrame()
+    {
+        // The closes of the two ends can cross: the receive loop has read the remote end's Close frame and is
+        // about to answer it when a stop finds the socket still Open. Whichever claims the close first sends this
+        // end's one Close frame. Here the loop has, so the stop must not begin a handshake of its own, which the
+        // socket would refuse once the loop's answer had gone out, failing the stop with a WebSocketException.
+        //
+        // The order is fixed rather than raced. The loop is handed a Close result while the real socket is Open,
+        // and is held in its acknowledgement log message, after it has claimed the close and before it sends
+        // anything. The stop runs while it is held there, and the loop is let go only by the stop canceling the
+        // connection, which it does after its close step has returned.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        TaskCompletionSource closeFrameSent = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource acknowledgementReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource acknowledgementReleased = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Exception? connectionError = null;
+        List<string> logs = [];
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
+        {
+            BypassStart = false,
+            BypassStop = false,
+            LogLevel = WebDriverBiDiLogLevel.Debug,
+            CloseFrameSentSignal = closeFrameSent,
+            ReceiveHandler = async (buffer, cancellationToken, callCount) =>
+            {
+                if (callCount == 1)
+                {
+                    return new WebSocketReceiveResult(0, WebSocketMessageType.Close, true);
+                }
+
+                // Reached only if the Close frame failed to end the loop; the stop's cancellation then ends it.
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                throw new OperationCanceledException(cancellationToken);
+            },
+        };
+        connection.OnConnectionError.AddObserver(e => connectionError = e.Exception);
+        connection.OnLogMessage.AddObserver(async e =>
+        {
+            lock (logs)
+            {
+                logs.Add(e.Message);
+            }
+
+            if (e.Message.StartsWith("Acknowledging Close frame", StringComparison.Ordinal))
+            {
+                acknowledgementReached.TrySetResult();
+                await acknowledgementReleased.Task;
+            }
+        });
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        await acknowledgementReached.Task.WaitAsync(SafetyBoundTimeout, TestContext.Current.CancellationToken);
+        using CancellationTokenRegistration releaseOnCancel = connection.ObservedConnectionCancellationToken.Register(() => acknowledgementReleased.TrySetResult());
+        await connection.StopAsync(TestContext.Current.CancellationToken).WaitAsync(SafetyBoundTimeout, TestContext.Current.CancellationToken);
+
+        Assert.False(closeFrameSent.Task.IsCompleted, "The stop began a close handshake although the receive loop had claimed the close.");
+        Assert.True(connectionError is null, $"The connection reported an error: {connectionError}");
+        lock (logs)
+        {
+            // The precondition the test depends on: the stop found the socket Open, and still started no handshake.
+            Assert.Contains("Client state is Open", logs);
         }
 
         await connection.DisposeAsync();
