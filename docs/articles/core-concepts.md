@@ -321,7 +321,7 @@ For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also 
 | `IBiDiDriverConfiguration` | Pre-start extensibility hooks | Registering custom modules and additional JSON type resolvers before `StartAsync()` |
 | `IBiDiDriverEvents` | Driver observability | Subscribing to top-level driver events |
 | `IEventObserverErrorReporter` | Observer failure reporting | Implemented by a custom `IBiDiModuleHost` to receive the failures of asynchronous observers of its modules' events; `BiDiDriver` already implements it |
-| `ITransportConfiguration` | Tunable transport settings | Adjusting the log level, the transport error behaviors, and the shutdown and connection-lock timeouts, via `BiDiDriver.TransportConfiguration` |
+| `ITransportConfiguration` | Tunable transport settings | Adjusting the log level, the transport error behaviors, the shutdown and connection-lock timeouts, and how many canceled commands are remembered, via `BiDiDriver.TransportConfiguration` |
 | `ITransportDiagnostics` | Observable transport state | Polling lifecycle state, incoming queue depth and pending command count, via `BiDiDriver.TransportDiagnostics` |
 
 The hierarchy is intentionally split by capability rather than by end-user workflow:

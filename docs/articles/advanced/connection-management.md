@@ -131,6 +131,10 @@ The default is deliberately longer than the longest legitimate hold, so that low
 
 Handling a lost connection waits for the access as well, and it is the one waiter with no caller to report a failure to, because it runs on the connection's receive loop. If that wait is abandoned — a lowered bound elapsing while a command send still holds the access — the loss is not applied to the session: the transport stays connected, its in-flight commands end at their own command timeouts rather than failing at once, and a `Warn` message naming the cause is raised on `OnLogMessage`. Call `StopAsync()` to tear the session down. Applying the loss without the access is the alternative, and a worse one: each step of that teardown is thread-safe on its own, but performing them outside the access could interleave with a reconnect and close the pending-command collection of a session the loss has nothing to do with.
 
+### Canceled Command Tracking
+
+`MaxTrackedCanceledCommands`, reached through `BiDiDriver.TransportConfiguration` (default: 1,024), sets how many of the most recent command cancellations the transport remembers. A command that times out or is canceled may still be answered by the browser; a response for a remembered command is discarded quietly, while a response for one that has been forgotten, because that many further commands were canceled after it, is treated as an unknown message or an unexpected error (see [Error Handling](error-handling.md#transport-error-behavior-configuration)). Raise it if a session cancels many commands whose responses may arrive long afterwards, particularly under `TransportErrorBehavior.Terminate`; `0` disables the tracking. Canceled commands are remembered per session, so a change takes effect when the transport next connects.
+
 ### Buffer Size
 
 Connection buffer size is fixed at 1 MB (2²⁰ bytes):

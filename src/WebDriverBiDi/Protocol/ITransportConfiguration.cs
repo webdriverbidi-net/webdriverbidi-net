@@ -165,4 +165,25 @@ public interface ITransportConfiguration
     /// the maximum timer duration supported by the runtime.
     /// </exception>
     TimeSpan ConnectionLockTimeout { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of most recent command cancellations within which a canceled command is
+    /// remembered, so that a response arriving for it later is recognized and discarded. The default is
+    /// <see cref="PendingCommandCollection.DefaultMaxTrackedCanceledCommands"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A command that times out, or is canceled, may still be answered by the remote end. A response for a
+    /// command still remembered is discarded quietly; a response for one that has been forgotten, because
+    /// this many further commands were canceled after it, is treated as an unknown message or an unexpected
+    /// error, as <see cref="UnknownMessageBehavior"/> and <see cref="UnexpectedErrorBehavior"/> direct.
+    /// Raise the value if a session cancels many commands whose responses may arrive long afterwards. A value
+    /// of zero disables the tracking.
+    /// </para>
+    /// <para>
+    /// Canceled commands are remembered per session, so the value takes effect for the session started by
+    /// the next connect, and does not change the session in progress.
+    /// </para>
+    /// </remarks>
+    uint MaxTrackedCanceledCommands { get; set; }
 }

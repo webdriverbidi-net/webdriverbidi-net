@@ -39,9 +39,9 @@ public class TestTransport : Transport
     public string TestPendingCommandCollectionId => this.PendingCommands.Id;
 
     /// <summary>
-    /// Gets the number of canceled commands the current pending command collection remembers, so that a
-    /// test can assert that a capacity configured through <see cref="UseCanceledCommandTrackerCapacity"/>
-    /// survives the replacement of the collection on reconnect.
+    /// Gets the number of canceled commands the current session's pending command collection remembers, so
+    /// that a test can assert which value of <see cref="Transport.MaxTrackedCanceledCommands"/> the session
+    /// was created with.
     /// </summary>
     public uint TestMaxTrackedCanceledCommands => this.PendingCommands.MaxTrackedCanceledCommands;
 
@@ -154,16 +154,6 @@ public class TestTransport : Transport
         }
 
         return await base.SendCommandAsync(commandParameters, cancellationToken);
-    }
-
-    /// <summary>
-    /// Replaces the pending command collection with one that remembers at most the specified number
-    /// of canceled commands. Must be called before <see cref="Transport.ConnectAsync"/>.
-    /// </summary>
-    /// <param name="maxTrackedCanceledCommands">The maximum number of canceled commands to remember.</param>
-    public void UseCanceledCommandTrackerCapacity(uint maxTrackedCanceledCommands)
-    {
-        this.PendingCommands = new PendingCommandCollection(maxTrackedCanceledCommands);
     }
 
     public Connection GetConnection()
