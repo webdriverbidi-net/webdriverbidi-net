@@ -160,6 +160,7 @@ public class GenericLogEntryTests
         Assert.NotNull(entry);
         Assert.Equal(timestamp, entry.EpochTimestamp);
         Assert.Equal(DateTime.MaxValue, entry.Timestamp);
+        Assert.Equal(DateTimeKind.Utc, entry.Timestamp.Kind);
     }
 
     [Fact]

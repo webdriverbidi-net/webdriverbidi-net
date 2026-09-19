@@ -886,6 +886,7 @@ public class CookieTests
         Assert.NotNull(cookie);
         Assert.Equal(expiry, cookie.EpochExpires);
         Assert.Equal(DateTime.MaxValue, cookie.Expires);
+        Assert.Equal(DateTimeKind.Utc, cookie.Expires?.Kind);
     }
 
     [Fact]

@@ -8,6 +8,7 @@ namespace WebDriverBiDi.JsonConverters;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// A converter to read DateTime values serialized in the ECMAScript
@@ -22,8 +23,9 @@ using System.Text.Json.Serialization;
 /// <see cref="DateTime"/>, whose range is years 0001-9999, so a structurally valid
 /// date string for an instant before that range deserializes as
 /// <see cref="DateTime.MinValue"/> and one for an instant after it as
-/// <see cref="DateTime.MaxValue"/>, consistent with how the library clamps
-/// out-of-range protocol timestamps elsewhere. A structurally invalid date string is
+/// <see cref="DateTime.MaxValue"/>, each with a <see cref="DateTime.Kind"/> of
+/// <see cref="DateTimeKind.Utc"/> like every in-range value, consistent with how the
+/// library clamps out-of-range protocol timestamps elsewhere. A structurally invalid date string is
 /// still rejected with a <see cref="JsonException"/>.
 /// </remarks>
 public class ExpandedYearDateTimeJsonConverter : JsonConverter<DateTime>
@@ -52,7 +54,7 @@ public class ExpandedYearDateTimeJsonConverter : JsonConverter<DateTime>
     /// <returns>
     /// The deserialized DateTime value. Instants before the range of <see cref="DateTime"/>
     /// are clamped to <see cref="DateTime.MinValue"/>, and instants after it to
-    /// <see cref="DateTime.MaxValue"/>.
+    /// <see cref="DateTime.MaxValue"/>, each with a <see cref="DateTime.Kind"/> of <see cref="DateTimeKind.Utc"/>.
     /// </returns>
     /// <exception cref="JsonException">Thrown when the JSON token is not a string, or the string is not a structurally valid date.</exception>
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -93,7 +95,7 @@ public class ExpandedYearDateTimeJsonConverter : JsonConverter<DateTime>
                 // representable range of DateTime, so clamp it. A negative year, and
                 // year zero, precede DateTime.MinValue; years beyond 9999 exceed
                 // DateTime.MaxValue.
-                return dateString[0] == '-' || year == 0 ? DateTime.MinValue : DateTime.MaxValue;
+                return dateString[0] == '-' || year == 0 ? DateTimeUtilities.MinValueUtc : DateTimeUtilities.MaxValueUtc;
             }
         }
         else if (dateString.StartsWith("0000-", StringComparison.Ordinal)
@@ -101,7 +103,7 @@ public class ExpandedYearDateTimeJsonConverter : JsonConverter<DateTime>
         {
             // Date.prototype.toISOString() writes year zero itself in the plain
             // four-digit form "0000", which precedes the range of DateTime; clamp.
-            return DateTime.MinValue;
+            return DateTimeUtilities.MinValueUtc;
         }
 
         throw new JsonException($"Cannot parse invalid value '{dateString}' for date");

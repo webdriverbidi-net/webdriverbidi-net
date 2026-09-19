@@ -28,6 +28,7 @@ public class ExpandedYearDateTimeJsonConverterTests
     {
         DateTime result = JsonSerializer.Deserialize<DateTime>("\"+275760-09-13T00:00:00.000Z\"", ConverterOptions);
         Assert.Equal(DateTime.MaxValue, result);
+        Assert.Equal(DateTimeKind.Utc, result.Kind);
     }
 
     [Fact]
@@ -35,6 +36,7 @@ public class ExpandedYearDateTimeJsonConverterTests
     {
         DateTime result = JsonSerializer.Deserialize<DateTime>("\"-271821-04-20T00:00:00.000Z\"", ConverterOptions);
         Assert.Equal(DateTime.MinValue, result);
+        Assert.Equal(DateTimeKind.Utc, result.Kind);
     }
 
     [Fact]
@@ -42,6 +44,7 @@ public class ExpandedYearDateTimeJsonConverterTests
     {
         DateTime result = JsonSerializer.Deserialize<DateTime>("\"+000000-01-01T00:00:00.000Z\"", ConverterOptions);
         Assert.Equal(DateTime.MinValue, result);
+        Assert.Equal(DateTimeKind.Utc, result.Kind);
     }
 
     [Fact]
@@ -49,6 +52,7 @@ public class ExpandedYearDateTimeJsonConverterTests
     {
         DateTime result = JsonSerializer.Deserialize<DateTime>("\"0000-01-01T00:00:00.000Z\"", ConverterOptions);
         Assert.Equal(DateTime.MinValue, result);
+        Assert.Equal(DateTimeKind.Utc, result.Kind);
     }
 
     [Fact]
@@ -58,6 +62,7 @@ public class ExpandedYearDateTimeJsonConverterTests
         // February 29 of year zero is a real Date.prototype.toISOString() output.
         DateTime result = JsonSerializer.Deserialize<DateTime>("\"0000-02-29T00:00:00.000Z\"", ConverterOptions);
         Assert.Equal(DateTime.MinValue, result);
+        Assert.Equal(DateTimeKind.Utc, result.Kind);
     }
 
     [Fact]

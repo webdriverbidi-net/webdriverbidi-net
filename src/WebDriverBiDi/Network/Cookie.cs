@@ -57,7 +57,8 @@ public record Cookie
 
     /// <summary>
     /// Gets the expiration time of the cookie. An <see cref="EpochExpires"/> value too large to be
-    /// represented by a <see cref="DateTime"/> is clamped to <see cref="DateTime.MaxValue"/>.
+    /// represented by a <see cref="DateTime"/> is clamped to <see cref="DateTime.MaxValue"/>. The value's
+    /// <see cref="DateTime.Kind"/> is always <see cref="DateTimeKind.Utc"/>, including when it is clamped.
     /// </summary>
     [JsonIgnore]
     public DateTime? Expires { get; internal set; }
