@@ -1149,21 +1149,60 @@ public class PipeConnectionTests
     }
 
     [Fact]
-    public async Task TestReceiveDataRaisesErrorEventOnDataReceivedObserverException()
+    public async Task TestDataReceivedObserverFailureDoesNotEndTheReceiveLoop()
     {
-        // An exception from the observer of OnDataReceived is rethrown by the event into the
-        // receive loop. Were it not caught there, the loop would end without notice: the pipe
-        // would remain open while no further message was ever delivered, which a caller awaiting
-        // a command response cannot distinguish from a remote end that has simply gone quiet.
-        static Task ThrowOnDataReceived(ConnectionDataReceivedEventArgs e) => throw new InvalidOperationException("observer failure");
+        // A failing observer of OnDataReceived is reported through the connection's observer-error reporter
+        // rather than thrown into the receive loop, so the loop goes on delivering later messages, and no
+        // connection error is raised.
+        int remainingFailures = 1;
+        TaskCompletionSource<string> secondMessageReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int connectionErrorCount = 0;
+        using TestPipeServer testPipeServer = new();
+        testPipeServer.Responses.Add("first");
+        testPipeServer.Responses.Add("second");
 
+        await using PipeConnection connection = new(testPipeServer);
+        connection.OnDataReceived.AddObserver(e =>
+        {
+            if (Interlocked.Exchange(ref remainingFailures, 0) == 1)
+            {
+                throw new InvalidOperationException("observer failure");
+            }
+
+            secondMessageReceived.TrySetResult(Encoding.UTF8.GetString(e.Data.Span));
+        });
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            Interlocked.Increment(ref connectionErrorCount);
+            return Task.CompletedTask;
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello again"), TestContext.Current.CancellationToken);
+
+        Assert.Equal("second", await secondMessageReceived.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        Assert.True(connection.IsActive);
+        Assert.Equal(0, connectionErrorCount);
+        testPipeServer.Stop();
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestUnexpectedFailureInsideTheReceiveLoopRaisesErrorEvent()
+    {
+        // A failure inside the receive loop other than a pipe failure, here from a derived connection's read, is
+        // captured there. Were it not, the loop would end without notice: the pipe would remain open while no
+        // further message was ever delivered, which a caller awaiting a command response cannot distinguish
+        // from a remote end that has simply gone quiet.
         ConnectionErrorEventArgs? receivedErrorArgs = null;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestPipeServer testPipeServer = new();
-        testPipeServer.Responses.Add("Acknowledged!");
-
-        await using PipeConnection connection = new(testPipeServer);
-        connection.OnDataReceived.AddObserver(ThrowOnDataReceived);
+        TestPipeConnection connection = new(testPipeServer)
+        {
+            ReadHandler = (buffer, offset, count, callNumber) => throw new InvalidOperationException("read failure"),
+        };
         connection.OnConnectionError.AddObserver(e =>
         {
             receivedErrorArgs = e;
@@ -1173,20 +1212,18 @@ public class PipeConnectionTests
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
-        await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), TestContext.Current.CancellationToken);
-
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // The receive loop has exited, so the connection must report inactive even though
-        // the server process is still running.
+        // The receive loop has exited, so the connection must report inactive even though the server process
+        // is still running.
         Assert.False(connection.IsActive);
         testPipeServer.Stop();
         await connection.StopAsync(TestContext.Current.CancellationToken);
+        await connection.DisposeAsync();
 
         Assert.NotNull(receivedErrorArgs);
-        Assert.Equal("observer failure", Assert.IsType<InvalidOperationException>(receivedErrorArgs.Exception).Message);
+        Assert.Equal("read failure", Assert.IsType<InvalidOperationException>(receivedErrorArgs.Exception).Message);
     }
-
 
     [Fact]
     public async Task TestPipesDisposedPropertySetterBothBranches()

@@ -132,10 +132,17 @@ public abstract class Connection : IAsyncDisposable
     /// <see cref="StartAsync"/>, it would be the default token, which can never be canceled, and
     /// the cancellation <see cref="StopAsync"/> performs on a connection that was never started
     /// would be requested on a source nothing is watching.
+    /// <para>
+    /// The connection starts with a reporter for failures of observers of its events that records each
+    /// failure as the <see cref="WebDriverBiDiEventSource.EventHandlerError"/> event; see
+    /// <see cref="SetObserverErrorReporter"/>. A failing observer therefore never fails a connection
+    /// operation, even for a connection used without a <see cref="Transport"/>.
+    /// </para>
     /// </remarks>
     protected Connection()
     {
         this.ConnectionCancellationToken = this.connectionCancellationTokenSource.Token;
+        this.SetObserverErrorReporter(RecordObserverError);
     }
 
     /// <summary>
@@ -656,15 +663,18 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
-    /// Installs the reporter used to surface failures of observers of this connection's events
-    /// that occur after the observer's handler has already returned to the caller.
+    /// Installs the reporter used to surface failures of observers of this connection's events.
     /// </summary>
     /// <param name="reporter">The reporter callback.</param>
     /// <remarks>
     /// <para>
-    /// A failure of that kind cannot propagate to a caller, because the handler has already
-    /// returned. Without a reporter it is observed (so it never surfaces as a
-    /// <see cref="TaskScheduler.UnobservedTaskException"/>) but is otherwise discarded.
+    /// Every failure of an observer of this connection's events is reported through the reporter,
+    /// rather than propagating into the connection operation that raised the event: a synchronously-run
+    /// observer's failure as it happens, and an asynchronously-run observer's failure after its handler has
+    /// returned. The connection starts with a reporter that only records the failure as the
+    /// <see cref="WebDriverBiDiEventSource.EventHandlerError"/> event, because a connection on its own has
+    /// no error pipeline to route it to, so that a failing log observer, for example, cannot keep
+    /// <see cref="StopAsync"/> from canceling the connection or <see cref="DisposeAsync"/> from releasing it.
     /// <see cref="Transport"/> calls this so that such a failure is instead routed through the
     /// same unhandled-error pipeline as a failure in an observer of a transport, driver, or
     /// module event, and is therefore governed by
@@ -678,6 +688,8 @@ public abstract class Connection : IAsyncDisposable
     /// </remarks>
     internal void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
     {
+        // Every reporter is applied to all four events alike, so a failure is reported the same way whichever
+        // connection event the failing observer was added to.
         this.dataReceivedObservableEvent.InvokeSetObserverErrorReporter(reporter);
         this.connectionErrorObservableEvent.InvokeSetObserverErrorReporter(reporter);
         this.remoteDisconnectedObservableEvent.InvokeSetObserverErrorReporter(reporter);
@@ -920,22 +932,9 @@ public abstract class Connection : IAsyncDisposable
             return;
         }
 
-        try
-        {
-            await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageOwner.Memory, messageLength).ConfigureAwait(false);
-        }
-        catch
-        {
-            // A log observer that throws propagates its failure to here, and the notification below
-            // will not run, so nothing downstream can return this block to the pool, and ownership has
-            // already left the accumulator. Return the block to the pool here, then let the failure
-            // travel on unchanged, to the receive loop's own handling, which ends the loop with a
-            // connection error. The notification is deliberately outside this block; once it has
-            // been entered, ownership belongs to the observer.
-            messageOwner.Dispose();
-            throw;
-        }
-
+        // A failing log observer is reported through this connection's observer-error reporter rather than
+        // thrown, so logging the message cannot prevent its delivery.
+        await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageOwner.Memory, messageLength).ConfigureAwait(false);
         await this.dataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageOwner, messageLength)).ConfigureAwait(false);
     }
 
@@ -1019,6 +1018,12 @@ public abstract class Connection : IAsyncDisposable
         }
 
         await this.logMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+    }
+
+    private static Task RecordObserverError(EventObserverErrorInfo errorInfo)
+    {
+        WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
+        return Task.CompletedTask;
     }
 
     /// <summary>

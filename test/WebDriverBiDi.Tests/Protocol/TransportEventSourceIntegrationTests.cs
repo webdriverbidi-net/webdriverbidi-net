@@ -672,4 +672,29 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal(0L, payload[2]);
         Assert.Equal(0L, payload[3]);
     }
+
+    [Fact]
+    public async Task TestStandaloneConnectionRecordsObserverFailureAsEventHandlerError()
+    {
+        // A connection used without a transport has no error pipeline, so its default reporter records a failing
+        // observer as the EventHandlerError event.
+        using TestEventListener listener = new();
+        await using TestReportingConnection connection = new();
+        connection.OnLogMessage.AddObserver(e => throw new InvalidOperationException("standalone observer failure"));
+        listener.ClearEvents();
+
+        await connection.StartAsync("custom://remote", TestContext.Current.CancellationToken);
+
+        // Starting logs more than one message, and each failure is recorded.
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("EventHandlerError");
+        Assert.NotEmpty(events);
+        Assert.All(events, handlerError =>
+        {
+            ReadOnlyCollection<object?>? payload = handlerError.Payload;
+            Assert.NotNull(payload);
+            Assert.Equal("connection.logMessage", payload[0]);
+            Assert.Equal("standalone observer failure", payload[1]);
+        });
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+    }
 }
