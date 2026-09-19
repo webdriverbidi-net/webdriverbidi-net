@@ -236,7 +236,7 @@ Pass your custom transport to `BiDiDriver` via the constructor overload that acc
 | `ReadIncomingMessagesAsync` | `protected virtual`. The loop that drains the incoming message queue. Override only to replace the dispatch strategy wholesale |
 | `CaptureUnhandledError` | `protected virtual`. The single point every non-command failure passes through, identified by its `UnhandledErrorKind`, before `TransportErrorBehavior` is applied. Override to observe failures without changing the behavior |
 | `AcquireConnectionLockAsync` / `ReleaseConnectionLock` | `protected virtual`. Take and release the exclusive access that connecting, disconnecting, sending and registering a resolver each hold. Override to instrument contention |
-| `PendingCommands` | `protected` settable. The pending-command collection. Assign one built with a different `MaxTrackedCanceledCommands` before the first connect to change the size of the window of recent cancellations within which canceled commands are remembered; a reconnect preserves that capacity |
+| `PendingCommands` | `protected`, read-only. The current session's pending-command collection. Each session has its own, created when the transport connects, so the collection changes on reconnect. The size of the window of recent cancellations within which it remembers canceled commands is set by the public `MaxTrackedCanceledCommands` setting |
 | `TimeProvider` | `protected` settable. The clock the transport's `ShutdownTimeout` waits and its commands' timeouts are measured on. Substitute one to drive those waits with virtual time in a test |
 | `UnhandledErrors` | `protected`, read-only. The `UnhandledErrorCollection` the transport records failures in under its `TransportErrorBehavior` settings; see [Pending commands and unhandled errors](#pending-commands-and-unhandled-errors) |
 | `LastCommandId` / `GetNextCommandId` | `protected`. The ID of the most recently created command, and the method that issues the next one. An override of `CreateCommand` that builds its own `Command` should take its ID from `GetNextCommandId`, or call the base implementation, so that IDs stay unique. IDs are unique for the lifetime of the transport and are not reset when it reconnects |
@@ -268,8 +268,9 @@ late response. `CloseAsync` stops the collection accepting commands. `Clear` and
 `InvalidOperationException` unless `CloseAsync` has run first. `Clear` cancels the commands still pending and
 remembers each one with `CommandCancellationReason.ConnectionClosed`, while `FailAllPendingCommands` faults each
 with its own exception from the factory you pass. `TrackedCanceledCommandCount` reports how many canceled commands
-are remembered; how long they are remembered is set by `MaxTrackedCanceledCommands`, which defaults to
-`PendingCommandCollection.DefaultMaxTrackedCanceledCommands` (1,024), as the class remarks describe.
+are remembered; how long they are remembered is set by `Transport.MaxTrackedCanceledCommands` (reached through
+`BiDiDriver.TransportConfiguration`), which defaults to `PendingCommandCollection.DefaultMaxTrackedCanceledCommands`
+(1,024), as the class remarks describe.
 
 `UnhandledErrors` is an `UnhandledErrorCollection`. It holds the four `TransportErrorBehavior` settings that the
 transport's properties of the same names forward to. `AddUnhandledError(kind, exception)` records an

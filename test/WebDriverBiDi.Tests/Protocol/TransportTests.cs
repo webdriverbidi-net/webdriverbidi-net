@@ -3087,7 +3087,7 @@ public class TransportTests
         await disconnectTask;
 
         Assert.Contains(logs,
-            log => log.Message.Contains("Timed out waiting for message writer to complete during shutdown")
+            log => log.Message.Contains("Timed out waiting for the message queue to empty during shutdown")
                    && log.Level == WebDriverBiDiLogLevel.Warn);
         Assert.Contains(logs,
             log => log.Message.Contains("Timed out waiting for message processing to complete during shutdown")
@@ -5022,6 +5022,44 @@ public class TransportTests
     }
 
     [Fact]
+    public void TestMaxTrackedCanceledCommandsDefaultValue()
+    {
+        Transport transport = new(new TestWebSocketConnection());
+        Assert.Equal(PendingCommandCollection.DefaultMaxTrackedCanceledCommands, transport.MaxTrackedCanceledCommands);
+    }
+
+    [Fact]
+    public async Task TestMaxTrackedCanceledCommandsIsReachableThroughDriverConfiguration()
+    {
+        TestTransport transport = new(new TestWebSocketConnection());
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), transport);
+
+        driver.TransportConfiguration.MaxTrackedCanceledCommands = 7;
+
+        Assert.Equal(7u, transport.MaxTrackedCanceledCommands);
+        Assert.Equal(7u, driver.TransportConfiguration.MaxTrackedCanceledCommands);
+    }
+
+    [Fact]
+    public async Task TestMaxTrackedCanceledCommandsTakesEffectAtNextConnect()
+    {
+        // Canceled commands are remembered per session, so a change made while connected leaves the
+        // session in progress as it is, and applies to the session the next connect starts.
+        TestWebSocketConnection connection = new();
+        await using TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        Assert.Equal(PendingCommandCollection.DefaultMaxTrackedCanceledCommands, transport.TestMaxTrackedCanceledCommands);
+
+        transport.MaxTrackedCanceledCommands = 3;
+        Assert.Equal(PendingCommandCollection.DefaultMaxTrackedCanceledCommands, transport.TestMaxTrackedCanceledCommands);
+
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        Assert.Equal(3u, transport.TestMaxTrackedCanceledCommands);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestLateResponseForForgottenCanceledCommandIsUnknownMessage()
     {
         // With a tracker capacity of one, canceling a second command forgets the first, so a
@@ -5030,8 +5068,10 @@ public class TransportTests
         TaskCompletionSource unknownTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         string? unknownMessage = null;
         TestWebSocketConnection connection = new();
-        await using TestTransport transport = new(connection);
-        transport.UseCanceledCommandTrackerCapacity(1);
+        await using TestTransport transport = new(connection)
+        {
+            MaxTrackedCanceledCommands = 1,
+        };
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             unknownMessage = e.Message;
@@ -5059,16 +5099,17 @@ public class TransportTests
     [Fact]
     public async Task TestReconnectPreservesCanceledCommandTrackerCapacity()
     {
-        // ConnectAsync replaces the pending command collection on every reconnect, because the
-        // previous one was closed by the disconnect. The replacement must carry over the tracker
-        // capacity a derived transport configured, rather than reverting to the default; a
-        // capacity of one is observable because canceling a second command then forgets the
-        // first, whose late response is reported as an unknown message rather than discarded.
+        // Every session has its own pending command collection, created by ConnectAsync. Each one
+        // must be created with the configured tracker capacity, rather than the default; a capacity
+        // of one is observable because canceling a second command then forgets the first, whose
+        // late response is reported as an unknown message rather than discarded.
         TaskCompletionSource unknownTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         string? unknownMessage = null;
         TestWebSocketConnection connection = new();
-        await using TestTransport transport = new(connection);
-        transport.UseCanceledCommandTrackerCapacity(1);
+        await using TestTransport transport = new(connection)
+        {
+            MaxTrackedCanceledCommands = 1,
+        };
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             unknownMessage = e.Message;
@@ -5316,6 +5357,70 @@ public class TransportTests
         // is untouched by it.
         Assert.Equal(0, transport.IncomingQueueDepth);
 
+        await transport.DisconnectAsync(cancellationToken);
+    }
+
+    [Fact]
+    public async Task TestReconnectAfterFailedReconnectWaitsForPreviousReaderAgain()
+    {
+        // A reconnect that gives up waiting for a stuck reader and then fails to connect installs a session
+        // that never starts a reader of its own. The earlier reader is still running, so the next reconnect
+        // must wait for it again rather than treat the failed session as having nothing to wait for.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        const string ReconnectWaitWarning = "Timed out waiting for message processing of the previous connection to complete before reconnecting";
+        TaskCompletionSource handlerBlockedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        List<string> warnings = [];
+
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+            LogLevel = WebDriverBiDiLogLevel.Warn,
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            handlerBlockedTaskCompletionSource.TrySetResult();
+            releaseHandlerTaskCompletionSource.Task.GetAwaiter().GetResult();
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Level == WebDriverBiDiLogLevel.Warn)
+            {
+                lock (warnings)
+                {
+                    warnings.Add(e.Message);
+                }
+            }
+        });
+
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "event", "method": "protocol.event", "params": { "paramName": "paramValue" } }""");
+        await handlerBlockedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // The first reconnect waits for the stuck reader, gives up, and then fails to connect.
+        connection.BypassStart = false;
+        connection.ConnectWebSocketOverride = (uri, token) => Task.FromException(new WebDriverBiDiConnectionException("Simulated connect failure"));
+        Task failedReconnectTask = transport.ConnectAsync("ws://localhost", cancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(failedReconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), cancellationToken);
+        await Assert.ThrowsAnyAsync<Exception>(() => failedReconnectTask);
+
+        // The next reconnect waits for the same reader again, and gives up again.
+        connection.BypassStart = true;
+        connection.ConnectWebSocketOverride = null;
+        Task reconnectTask = transport.ConnectAsync("ws://localhost", cancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), cancellationToken);
+        await reconnectTask;
+        lock (warnings)
+        {
+            Assert.Equal(2, warnings.Count(warning => warning == ReconnectWaitWarning));
+        }
+
+        releaseHandlerTaskCompletionSource.SetResult();
         await transport.DisconnectAsync(cancellationToken);
     }
 
