@@ -171,10 +171,17 @@ public class PendingCommandCollection : IDisposable
     /// outcome stands. Whether the command was remembered for late-response recognition depends only
     /// on whether it was still pending, and can be observed via <see cref="TrackedCanceledCommandCount"/>.
     /// </returns>
+    /// <remarks>
+    /// Only this command instance is removed and remembered. A different command pending in this collection
+    /// under the same ID, which a transport that issues its own IDs could produce, is left untouched.
+    /// </remarks>
     public virtual bool CancelPendingCommand(Command command, CommandCancellationReason reason)
     {
         bool canceled = command.Cancel();
-        if (this.pendingCommands.TryRemove(command.CommandId, out _))
+
+        // Remove the entry only if it holds this instance: removal through the collection interface compares
+        // the value as well as the key.
+        if (((ICollection<KeyValuePair<long, Command>>)this.pendingCommands).Remove(new KeyValuePair<long, Command>(command.CommandId, command)))
         {
             this.TrackCanceledCommand(command, reason);
         }
