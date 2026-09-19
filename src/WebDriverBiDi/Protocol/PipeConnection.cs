@@ -272,9 +272,11 @@ public class PipeConnection : Connection
     /// receives only the cancellation, so the corruption would surface as unrelated failures.
     /// </para>
     /// <para>
-    /// Cancellation is therefore honored up to the point the first byte is written, and not after it: the
-    /// flush that follows the write uses <see cref="CancellationToken.None"/>, because by then the bytes
-    /// are already committed to the stream.
+    /// The only cancellation that reaches this method is the stopping of the connection; a caller's
+    /// cancellation is honored only before the send begins (see <see cref="Connection.SendDataAsync"/>).
+    /// Even stopping the connection is honored only up to the point the first byte is written, and not after
+    /// it: the flush that follows the write uses <see cref="CancellationToken.None"/>, because by then the
+    /// bytes are already committed to the stream.
     /// </para>
     /// </remarks>
     protected virtual async Task WritePipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)

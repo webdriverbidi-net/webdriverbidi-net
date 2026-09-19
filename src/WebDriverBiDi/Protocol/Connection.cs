@@ -524,7 +524,16 @@ public abstract class Connection : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the connection is not active.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the connection for sending times out.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled before the data begins to be sent.</exception>
+    /// <remarks>
+    /// <paramref name="cancellationToken"/> is honored while this method waits for exclusive access to the
+    /// connection, and up to the moment the data begins to be sent, but not after. Once the first byte may have
+    /// been written, the send runs to completion, and only stopping the connection interrupts it. A message is
+    /// the unit the remote end reads, so abandoning one part-way cannot leave the connection usable: a WebSocket
+    /// is aborted when a send is canceled, and a pipe would be left holding an unterminated message that
+    /// misframes every message after it. Honoring the caller's cancellation during the send would therefore end
+    /// the session for every other command using the connection, not just the caller's own.
+    /// </remarks>
     public virtual async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
         if (!this.IsActive)
@@ -557,25 +566,16 @@ public abstract class Connection : IAsyncDisposable
                 throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection was closed before the send could be completed");
             }
 
-            CancellationToken effectiveCancellationToken = this.ConnectionCancellationToken;
-            CancellationTokenSource? linkedTokenSource = null;
+            // The caller's cancellation is honored up to this point and no further; see the remarks. The
+            // send itself is interrupted only by stopping the connection, which ends the session anyway.
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                if (cancellationToken != CancellationToken.None)
-                {
-                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, effectiveCancellationToken);
-                    effectiveCancellationToken = linkedTokenSource.Token;
-                }
-
-                await this.SendConnectionDataAsync(data, effectiveCancellationToken).ConfigureAwait(false);
+                await this.SendConnectionDataAsync(data, this.ConnectionCancellationToken).ConfigureAwait(false);
             }
             catch (ObjectDisposedException ex)
             {
                 throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
-            }
-            finally
-            {
-                linkedTokenSource?.Dispose();
             }
         }
         finally
@@ -741,7 +741,10 @@ public abstract class Connection : IAsyncDisposable
     /// Asynchronously sends data to the underlying mechanism of this connection.
     /// </summary>
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that is canceled only when the connection is stopped. The cancellation token of the
+    /// caller of <see cref="SendDataAsync"/> is deliberately not passed through; see the remarks on that method.
+    /// </param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when an exception is encountered sending data to the remote end of the connection.</exception>
     protected abstract Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default);

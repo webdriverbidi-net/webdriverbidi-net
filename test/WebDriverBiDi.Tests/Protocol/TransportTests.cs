@@ -4234,11 +4234,12 @@ public class TransportTests
     }
 
     /// <summary>
-    /// The caller's token reaches the socket write through the connection's real send path, so a caller who
-    /// gives up on a command cancels the write in progress, and the command is rolled back.
+    /// The caller's token does not reach the socket write through the connection's real send path, so a caller
+    /// who gives up on a command once its write has begun leaves the write to complete, and the session, with
+    /// every other command using it, survives. The command is sent and awaits its response like any other.
     /// </summary>
     [Fact]
-    public async Task TestSendCommandCallerCancellationCancelsWriteInProgress()
+    public async Task TestSendCommandCallerCancellationDoesNotCancelWriteInProgress()
     {
         CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
 
@@ -4263,17 +4264,19 @@ public class TransportTests
         CancellationToken writeToken = await writeEntered.Task.WaitAsync(DeadlockDetectionTimeout, testCancellationToken);
         try
         {
-            Assert.False(writeToken.IsCancellationRequested);
             callerTokenSource.Cancel();
-            Assert.True(writeToken.IsCancellationRequested, "Canceling the caller's token did not cancel the write in progress.");
+            Assert.False(writeToken.IsCancellationRequested, "Canceling the caller's token canceled the write in progress.");
         }
         finally
         {
             releaseWrite.TrySetResult();
         }
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sendTask);
-        Assert.Equal(0, transport.TestPendingCommandCount);
+        Command command = await sendTask;
+        Assert.Equal(1, transport.TestPendingCommandCount);
+        Assert.Equal(TransportState.Connected, transport.State);
+        Assert.True(connection.IsActive);
+        Assert.False(command.IsCanceled);
     }
 
     /// <summary>
