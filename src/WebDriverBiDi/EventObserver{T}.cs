@@ -647,14 +647,45 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     internal async Task NotifyAsync(T notifyData)
     {
-        Task executingTask = this.handler(notifyData);
         bool isHandlerRunAsynchronously = this.handlerOptions == ObservableEventHandlerOptions.RunHandlerAsynchronously;
-        if (!isHandlerRunAsynchronously)
+
+        // Read once: a producer installs its reporter at most once, and never removes it.
+        Func<EventObserverErrorInfo, Task>? observerErrorReporter = this.observableEvent.ObserverErrorReporter;
+        Task executingTask;
+        try
         {
-            // Notification waits for a synchronously-run handler, so its failure propagates out
-            // of this method to the producer raising the event through the normal exception path,
-            // and no task reaches the capture buffer.
-            await executingTask.ConfigureAwait(false);
+            executingTask = this.handler(notifyData);
+            if (!isHandlerRunAsynchronously)
+            {
+                // Notification waits for a synchronously-run handler, so no task reaches the
+                // capture buffer.
+                await executingTask.ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex) when (isHandlerRunAsynchronously)
+        {
+            // An asynchronously-run handler that throws before returning its task is treated as
+            // having returned a faulted task, so that its failure takes the same route as any other
+            // failure of an asynchronously-run handler, described below, rather than being thrown
+            // back at the producer.
+            executingTask = Task.FromException(ex);
+        }
+        catch (Exception ex) when (observerErrorReporter is not null)
+        {
+            // A synchronously-run handler's failure is reported here, where this observer's
+            // identity is known, exactly as an asynchronously-run handler's failure is reported
+            // below. The producer raising the event is not interrupted, and every other observer is
+            // still notified. Without a reporter, the failure propagates to the producer instead.
+            await observerErrorReporter(new EventObserverErrorInfo()
+            {
+                ObservableEventName = GetObserverErrorEventName(notifyData, this.observableEvent.EventName),
+                ObserverId = this.Id,
+                ObserverDescription = this.Description,
+                Exception = ex,
+                IsAsynchronousHandler = false,
+                FaultOccurredAfterHandlerReturned = false,
+            }).ConfigureAwait(false);
+            return;
         }
 
         // The reported event name is resolved at capture time so that a fault surfaced

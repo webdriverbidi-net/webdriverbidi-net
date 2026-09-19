@@ -4239,17 +4239,55 @@ public class TransportTests
             taskCompletionSource.TrySetResult(e);
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddObserver(e =>
-        {
-            throw new WebDriverBiDiException("Log message handler exception");
-        });
+        EventObserver<LogMessageEventArgs> throwingObserver = transport.OnLogMessage.AddObserver(
+            e =>
+            {
+                throw new WebDriverBiDiException("Log message handler exception");
+            },
+            description: "throwing log observer");
         await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
 
+        // The report identifies the observer that failed, as it does for an asynchronously-run handler.
         EventHandlerErrorOccurredEventArgs eventArgs = await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal("transport.logMessage", eventArgs.ErrorInfo.ObservableEventName);
-        Assert.Equal("transport log message observer", eventArgs.ErrorInfo.ObserverDescription);
+        Assert.Equal(throwingObserver.Id, eventArgs.ErrorInfo.ObserverId);
+        Assert.Equal("throwing log observer", eventArgs.ErrorInfo.ObserverDescription);
+        Assert.False(eventArgs.ErrorInfo.IsAsynchronousHandler);
+        Assert.False(eventArgs.ErrorInfo.FaultOccurredAfterHandlerReturned);
         Assert.IsType<WebDriverBiDiException>(eventArgs.ErrorInfo.Exception);
         Assert.Contains("Log message handler exception", eventArgs.ErrorInfo.Exception.Message);
+    }
+
+    [Fact]
+    public async Task TestSynchronousConnectionLogObserverFailureDoesNotPropagateIntoTheConnection()
+    {
+        // A failing observer of the connection's own log event is reported like any other observer, through the
+        // transport's EventHandlerExceptionBehavior, rather than propagating into whatever connection operation
+        // raised the log message, such as a send or the receive loop.
+        TaskCompletionSource<EventHandlerErrorOccurredEventArgs> errorReported = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        transport.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            errorReported.TrySetResult(e);
+            return Task.CompletedTask;
+        });
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        EventObserver<LogMessageEventArgs> failingObserver = connection.OnLogMessage.AddObserver(
+            e =>
+            {
+                throw new InvalidOperationException("connection log observer failure");
+            },
+            description: "failing connection log observer");
+
+        // The connection's own logging completes, rather than throwing the observer's exception.
+        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Warn);
+
+        EventHandlerErrorOccurredEventArgs eventArgs = await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(failingObserver.Id, eventArgs.ErrorInfo.ObserverId);
+        Assert.Equal("failing connection log observer", eventArgs.ErrorInfo.ObserverDescription);
+        Assert.Equal("connection log observer failure", eventArgs.ErrorInfo.Exception.Message);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

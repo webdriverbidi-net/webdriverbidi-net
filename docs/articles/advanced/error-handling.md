@@ -119,6 +119,8 @@ Event handlers run on separate threads from your main application code. This mea
 
 For handlers registered with `ObservableEventHandlerOptions.RunHandlerAsynchronously`, this behavior also applies to exceptions that occur after the handler has returned control to the transport thread. In other words, exceptions from handlers being run asynchronously are not silently dropped.
 
+Each failing observer is reported on its own, whether it runs synchronously or asynchronously, and the report identifies it: `OnEventHandlerErrorOccurred` receives the observer's `ObserverId` and `ObserverDescription`, the name of the event it was added to, and the exception it threw. When several observers of one event fail, each is reported separately, and every observer is still notified.
+
 The one important exception is capture session task capture. If you capture async handler tasks by using `WaitForCapturedTasksAsync()` or `WaitForCapturedTasksCompleteAsync()`, those task exceptions remain owned by your code. They are propagated through the captured task path rather than being surfaced again through `EventHandlerExceptionBehavior`.
 
 ### Why Ignore is the Default

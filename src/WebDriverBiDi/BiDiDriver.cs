@@ -65,8 +65,6 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     /// </summary>
     public static readonly TimeSpan DefaultCommandWaitTimeout = TimeSpan.FromSeconds(60);
 
-    private const string LogMessageObserverDescription = "driver log message observer";
-
     private const string EventReceivedEventName = "driver.eventReceived";
     private const string UnexpectedErrorReceivedEventName = "driver.unexpectedErrorReceived";
     private const string UnknownMessageReceivedEventName = "driver.unknownMessageReceived";
@@ -209,11 +207,14 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
         this.DefaultCommandTimeout = defaultCommandWaitTimeout;
 
         this.transport = transport;
-        this.transportEventReceivedObserver = this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceivedAsync);
-        this.transportErrorReceivedObserver = this.transport.OnUnexpectedErrorReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
-        this.transportUnknownMessageReceivedObserver = this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
-        this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
-        this.transportEventHandlerErrorOccurredObserver = this.transport.OnEventHandlerErrorOccurred.AddObserver(this.OnTransportEventHandlerErrorOccurredAsync);
+
+        // Described, because a failure in dispatching to the driver's own observers, such as event data that is
+        // not of the type registered for the event, is reported as a failure of the observer that dispatches it.
+        this.transportEventReceivedObserver = this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceivedAsync, description: "driver dispatch of protocol events to modules and driver observers");
+        this.transportErrorReceivedObserver = this.transport.OnUnexpectedErrorReceived.AddObserver(this.OnTransportErrorEventReceivedAsync, description: "driver dispatch of unexpected errors");
+        this.transportUnknownMessageReceivedObserver = this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync, description: "driver dispatch of unknown messages");
+        this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync, description: "driver dispatch of transport log messages");
+        this.transportEventHandlerErrorOccurredObserver = this.transport.OnEventHandlerErrorOccurred.AddObserver(this.OnTransportEventHandlerErrorOccurredAsync, description: "driver dispatch of event handler errors");
 
         this.invocableEventReceivedObservableEvent = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
         this.invocableErrorReceivedObservableEvent = this.CreateObservableEvent<ErrorReceivedEventArgs>(UnexpectedErrorReceivedEventName);
@@ -860,25 +861,10 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
             return;
         }
 
-        // A synchronously throwing log observer would propagate its exception into
-        // whatever operation happened to emit the log message. We especially want
-        // to fix this so that disposal is not interrupted.
-        try
-        {
-            await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, logLevel, LoggerComponentName)).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            await this.ReportObservableEventObserverError(new EventObserverErrorInfo()
-            {
-                ObservableEventName = LogMessageEventName,
-                ObserverId = string.Empty,
-                ObserverDescription = LogMessageObserverDescription,
-                Exception = ex,
-                IsAsynchronousHandler = false,
-                FaultOccurredAfterHandlerReturned = false,
-            }).ConfigureAwait(false);
-        }
+        // A failing log observer is reported by the observer itself, through the event's reporter, so it
+        // does not propagate into whatever operation happened to emit the log message; disposal in
+        // particular is not interrupted.
+        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, logLevel, LoggerComponentName)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1000,11 +986,13 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     private async Task OnTransportEventReceivedAsync(EventReceivedEventArgs e)
     {
         // The module-level dispatch (to typed events such as Log.OnEntryAdded) and the
-        // driver-level OnEventReceived dispatch are independent. A fault in a module event
-        // observer must not prevent OnEventReceived observers from being notified, so a fault
-        // from the first stage is captured and the second stage is always run. Faults from
-        // both stages are then surfaced together, so each remains governed by the transport's
-        // EventHandlerExceptionBehavior exactly as it would if raised in isolation.
+        // driver-level OnEventReceived dispatch are independent. A failing observer of either is
+        // reported by the observer itself, through its event's reporter, so neither stage throws
+        // for an observer's failure. The module-level dispatch can still fail on its own account,
+        // as when the event data is not of the registered type, or when a module's invoker throws;
+        // such a failure must not prevent OnEventReceived observers from being notified, so it is
+        // captured, the second stage is run, and the failure is rethrown afterwards, to be
+        // reported through the transport like any other observer failure.
         Exception? invokerException = null;
         if (this.eventInvokers.TryGetValue(e.EventName, out EventInvoker? invoker))
         {
@@ -1018,19 +1006,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
             }
         }
 
-        try
-        {
-            await this.invocableEventReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
-        }
-        catch (Exception observableException)
-        {
-            if (invokerException is not null)
-            {
-                throw new AggregateException(invokerException, observableException);
-            }
-
-            throw;
-        }
+        await this.invocableEventReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
 
 #pragma warning disable IDE0011, SA1503
         if (invokerException is not null)
