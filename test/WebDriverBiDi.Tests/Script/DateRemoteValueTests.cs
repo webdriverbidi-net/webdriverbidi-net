@@ -99,6 +99,7 @@ public class DateRemoteValueTests
         Assert.NotNull(result);
         Assert.Equal(RemoteValueType.Date, result.Type);
         Assert.Equal(DateTime.MaxValue, result.Value);
+        Assert.Equal(DateTimeKind.Utc, result.Value.Kind);
     }
 
     [Fact]
@@ -118,6 +119,7 @@ public class DateRemoteValueTests
         Assert.NotNull(result);
         Assert.Equal(RemoteValueType.Date, result.Type);
         Assert.Equal(DateTime.MinValue, result.Value);
+        Assert.Equal(DateTimeKind.Utc, result.Value.Kind);
     }
 
     [Fact]

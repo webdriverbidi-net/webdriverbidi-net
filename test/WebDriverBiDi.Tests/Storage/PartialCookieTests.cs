@@ -457,11 +457,39 @@ public class PartialCookieTests
     }
 
     [Fact]
+    public void TestExpiresOfDateTimeMaxValueRoundTripsWithoutThrowing()
+    {
+        // DateTime.MaxValue is the usual way to say "never expires". It is a fraction of a second before the end
+        // of 9999, so it is stored as the last whole second, and reads back as that second rather than throwing.
+        PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
+        {
+            Expires = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc),
+        };
+
+        Assert.Equal(new DateTime(9999, 12, 31, 23, 59, 59, DateTimeKind.Utc), properties.Expires);
+        Assert.Equal(DateTimeKind.Utc, properties.Expires?.Kind);
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(properties));
+        Assert.Equal(253402300799UL, serialized["expiry"]?.Value<ulong>());
+    }
+
+    [Fact]
+    public void TestExpiresTruncatesAFractionOfASecond()
+    {
+        PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
+        {
+            Expires = new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(999),
+        };
+
+        Assert.Equal(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc), properties.Expires);
+    }
+
+    [Fact]
     public void TestCanSerializePartialCookieWithExpirationDate()
     {
         DateTime now = DateTime.UtcNow;
         DateTime expirationDate = now.AddDays(1);
-        ulong seconds = Convert.ToUInt64(expirationDate.Subtract(DateTime.UnixEpoch).TotalSeconds);
+        // Whole seconds, truncated: the setter never rounds up to the next second.
+        ulong seconds = (ulong)(expirationDate.Subtract(DateTime.UnixEpoch).Ticks / TimeSpan.TicksPerSecond);
         PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
         {
             Expires = expirationDate

@@ -33,7 +33,8 @@ public record DateRemoteValue : ValueHoldingRemoteValue<DateTime>, IObjectRefere
     /// -271821 to +275760) exceeds that of <see cref="DateTime"/> (years
     /// 0001-9999). A date before the <see cref="DateTime"/> range deserializes
     /// as <see cref="DateTime.MinValue"/>, and one after it as
-    /// <see cref="DateTime.MaxValue"/>.
+    /// <see cref="DateTime.MaxValue"/>, each with a <see cref="DateTime.Kind"/> of
+    /// <see cref="DateTimeKind.Utc"/> like every in-range value.
     /// </remarks>
     [JsonPropertyName("value")]
     [JsonInclude]

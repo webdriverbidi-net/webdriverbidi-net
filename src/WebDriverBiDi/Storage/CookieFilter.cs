@@ -83,6 +83,12 @@ public class CookieFilter
     /// <summary>
     /// Gets or sets the expiration time of the cookie for querying cookies.
     /// </summary>
+    /// <remarks>
+    /// The protocol expresses the time as whole seconds since the Unix epoch, so a value set here is truncated to
+    /// the second, and a value that is not UTC is converted to UTC first; setting a value before the epoch throws.
+    /// <see cref="DateTime.MaxValue"/>, the usual way to say "never expires", is therefore stored as the last whole
+    /// second of 9999, and reads back as that second. The value read is always UTC.
+    /// </remarks>
     [JsonIgnore]
     public DateTime? Expires
     {
@@ -90,7 +96,7 @@ public class CookieFilter
         {
             if (this.EpochExpires.HasValue)
             {
-                return DateTimeUtilities.UnixEpoch.AddSeconds(this.EpochExpires.Value);
+                return DateTimeUtilities.FromUnixEpochSeconds(this.EpochExpires.Value);
             }
 
             return null;
@@ -109,7 +115,7 @@ public class CookieFilter
                     throw new ArgumentOutOfRangeException(nameof(value), "Cookie expiration must be at or after the Unix epoch (1 January 1970 00:00:00 UTC).");
                 }
 
-                this.EpochExpires = Convert.ToUInt64((utcValue - DateTimeUtilities.UnixEpoch).TotalSeconds);
+                this.EpochExpires = DateTimeUtilities.ToUnixEpochSeconds(utcValue);
             }
             else
             {

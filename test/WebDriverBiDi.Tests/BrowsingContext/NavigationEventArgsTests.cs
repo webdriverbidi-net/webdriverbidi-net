@@ -286,6 +286,7 @@ public class NavigationEventArgsTests
         Assert.NotNull(eventArgs);
         Assert.Equal(timestamp, eventArgs.EpochTimestamp);
         Assert.Equal(DateTime.MaxValue, eventArgs.Timestamp);
+        Assert.Equal(DateTimeKind.Utc, eventArgs.Timestamp.Kind);
     }
 
     [Fact]
