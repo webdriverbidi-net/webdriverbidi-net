@@ -585,7 +585,11 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// its scheme is neither <c>ws</c> nor <c>wss</c>.
     /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the transport is disposed.</exception>
+    /// <exception cref="ObjectDisposedException">
+    /// Thrown when the transport is disposed, including when disposal begins while this attempt is waiting for
+    /// the connection lock or is connecting; the attempt then fails rather than connecting a transport that is
+    /// being disposed.
+    /// </exception>
     /// <remarks>
     /// <para>
     /// Connecting starts a new session and clears the errors the previous session accumulated under
@@ -613,6 +617,10 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            // Checked again now that the lock is held: disposal may have begun while this attempt was
+            // waiting for it, and disposal waits only for the operation holding the lock when it
+            // begins, so an attempt that proceeded now would connect a transport being disposed.
+            this.ThrowIfDisposed();
             if (this.State != TransportState.Disconnected)
             {
                 throw new WebDriverBiDiConnectionException($"The transport is already connected to {this.Connection.ConnectionString}; you must disconnect before connecting to another URL");
@@ -704,14 +712,29 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // the attempt, or Connected lands first and the handler tears the session down instead.
             // Done separately, a loss arriving between them would be recorded and never read, leaving
             // the transport connected over a connection whose receive loop has already exited.
+            //
+            // Disposal is checked at the same point. Disposal waits for this attempt only up to
+            // ShutdownTimeout, and then tears the transport down without it; the transport is marked
+            // disposed before that wait begins, so an attempt that outlived the wait always sees the
+            // mark here, and fails rather than publishing Connected over a disposed transport.
             WebDriverBiDiConnectionException? connectionLost;
+            bool isDisposed;
             lock (this.connectionStateLock)
             {
                 connectionLost = Interlocked.Exchange(ref this.connectionLostWhileConnecting, null);
-                if (connectionLost is null)
+                isDisposed = this.IsDisposed;
+                if (connectionLost is null && !isDisposed)
                 {
                     this.State = TransportState.Connected;
                 }
+            }
+
+            if (isDisposed)
+            {
+                // As below, the reader is never started, so the queue is drained to return the pooled
+                // buffers of anything already received.
+                _ = this.session.Drain();
+                throw new ObjectDisposedException(this.GetType().FullName, "The transport was disposed while it was connecting; the connect attempt did not complete.");
             }
 
             if (connectionLost is not null)
@@ -1016,10 +1039,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     /// <remarks>
     /// Disposing a transport that is already disposed does nothing, as <see cref="IAsyncDisposable"/>
-    /// requires. The teardown cannot simply be repeated: it disposes the semaphore that guards the
-    /// connection, and a second run would wait on that semaphore again if the first run left the
-    /// transport in the <see cref="TransportState.Connecting"/> state, which happens when a connect
-    /// attempt is still in flight and does not complete within <see cref="ShutdownTimeout"/>.
+    /// requires. The teardown cannot simply be repeated: it releases resources that are then gone, and a
+    /// second run would again wait, up to <see cref="ShutdownTimeout"/>, for an operation still holding the
+    /// connection lock, which is what remains when the first run's wait for that operation timed out.
     /// </remarks>
     public async ValueTask DisposeAsync()
     {
@@ -1305,12 +1327,21 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     /// <remarks>
+    /// <para>
     /// <see cref="DisposeAsync"/> calls this method once, on the first disposal only, and records the
     /// disposal before calling it, so an override neither repeats that guard nor needs one of its own.
     /// Because the transport is marked disposed before the teardown rather than after it, an operation
     /// that rejects a disposed transport -- <see cref="ConnectAsync"/>,
     /// <see cref="SendCommandAsync"/> and <see cref="RegisterTypeInfoResolverAsync"/> -- fails from the
     /// moment disposal begins rather than only once it has finished.
+    /// </para>
+    /// <para>
+    /// The teardown first waits, up to <see cref="ShutdownTimeout"/>, for any operation holding the
+    /// connection lock to finish: a connect attempt, a disconnect, or the teardown after a connection loss.
+    /// A connect attempt still in progress then fails with <see cref="ObjectDisposedException"/> rather than
+    /// completing. If the wait times out, the teardown proceeds without it, and the operation still holding
+    /// the lock finishes against the disposed transport.
+    /// </para>
     /// </remarks>
     protected virtual async ValueTask DisposeAsyncCore()
     {
@@ -1318,16 +1349,20 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         // and one for message processing to complete. Use one shutdown budget for both.
         long disposalTimestamp = this.TimeProvider.GetTimestamp();
 
-        // A connect attempt that is still in flight owns the connect/disconnect semaphore
-        // and is actively using the connection; disposing them out from under it would fail
-        // the attempt with ObjectDisposedException rather than its normal rollback.
-        // Serialize with the attempt by acquiring and releasing the lock, which cannot
-        // succeed until the attempt has either published Connected or rolled back to
-        // Disconnected; then tear down whichever state resulted. The wait is bounded by
-        // ShutdownTimeout so a pathological disposal from code the connect attempt itself
-        // invoked (such as a synchronous log observer) degrades to a logged, time-bounded
-        // wait rather than a deadlock; on timeout, disposal proceeds exactly as it would
-        // have without this serialization. The wait goes through AcquireConnectionLockAsync,
+        // An operation that holds the connection lock -- a connect attempt, a disconnect, or the
+        // teardown after a connection loss -- is actively using the connection, and each publishes
+        // its outcome in State only as it goes. Tearing the connection down under it would race that
+        // operation: a disconnect or loss teardown would still be closing the connection while it
+        // was disposed, and a connect attempt could publish Connected over a disposed transport.
+        // Serialize with whichever operation holds the lock by acquiring and releasing the lock,
+        // which cannot succeed until that operation has finished; then tear down whichever state
+        // resulted. An operation that has not yet acquired the lock cannot run afterwards: the
+        // transport is already marked disposed, which ConnectAsync checks once it holds the lock,
+        // and a disconnect finds nothing left to do. The wait is bounded by ShutdownTimeout so a
+        // pathological disposal from code the lock holder itself invoked (such as a synchronous
+        // log observer) degrades to a logged, time-bounded wait rather than a deadlock; on timeout,
+        // disposal proceeds without the serialization, which is safe because the lock itself is
+        // never disposed (see below). The wait goes through AcquireConnectionLockAsync,
         // which is also bounded by ConnectionLockTimeout and reports that bound as a
         // WebDriverBiDiTimeoutException rather than a cancellation; when that timeout is the
         // shorter of the two (including TimeSpan.Zero, which never waits), it is the one that
@@ -1335,9 +1370,8 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         // Letting it escape would abandon the teardown below and leave the connection and
         // the semaphore undisposed, with no second attempt possible because disposal has
         // already been recorded.
-        if (this.State == TransportState.Connecting)
+        using (CancellationTokenSource lockWaitCancellationTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ShutdownTimeout))
         {
-            using CancellationTokenSource lockWaitCancellationTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ShutdownTimeout);
             try
             {
                 await this.AcquireConnectionLockAsync(lockWaitCancellationTokenSource.Token).ConfigureAwait(false);
@@ -1345,7 +1379,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             }
             catch (Exception ex) when (ex is OperationCanceledException or WebDriverBiDiTimeoutException)
             {
-                await this.LogAsync("Timed out waiting for an in-flight connect attempt to complete during disposal", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+                await this.LogAsync("Timed out waiting for an in-progress connection operation to complete during disposal", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
         }
 
@@ -1386,8 +1420,12 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             }
         }
 
+        // The connection lock is deliberately not disposed. If the wait above timed out, the operation
+        // that holds the lock is still running, and it must be able to release the lock on its way out;
+        // a disposed SemaphoreSlim would throw ObjectDisposedException from that release instead, into
+        // whatever the operation was running on. SemaphoreSlim holds no unmanaged resources unless its
+        // AvailableWaitHandle is used, which this class never does.
         await this.Connection.DisposeAsync().ConfigureAwait(false);
-        this.connectDisconnectSemaphore.Dispose();
     }
 
     /// <summary>

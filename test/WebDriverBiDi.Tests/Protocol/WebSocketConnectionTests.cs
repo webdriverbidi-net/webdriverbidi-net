@@ -2910,6 +2910,36 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestDisposeDuringSendLeavesTheSendAbleToFinish()
+    {
+        // Disposing the connection cancels a send in progress, but the send may still be unwinding when
+        // disposal finishes. The send semaphore is never disposed, so the send still releases it cleanly,
+        // rather than throwing ObjectDisposedException.
+        TaskCompletionSource writeEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseWrite = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            SendWebSocketDataOverride = async data =>
+            {
+                writeEntered.TrySetResult();
+                await releaseWrite.Task;
+            },
+        };
+        await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        connection.BypassStart = false;
+        connection.IsConnectionOpenOverride = () => true;
+
+        Task sendTask = connection.SendDataAsync("test"u8.ToArray(), TestContext.Current.CancellationToken);
+        await writeEntered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        await connection.DisposeAsync();
+        Assert.True(connection.Disposed);
+
+        releaseWrite.SetResult();
+        await sendTask;
+    }
+
+    [Fact]
     public async Task TestSendDataWithCallerTokenIsCanceledWhenConnectionIsStopped()
     {
         // Stopping the connection is the one thing that interrupts a send in progress, even though its caller
