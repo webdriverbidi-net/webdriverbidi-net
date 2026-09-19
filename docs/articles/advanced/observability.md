@@ -70,6 +70,14 @@ been retired.
 | `ConnectionClosed` | 4 | Info | Connection fully closed | `connectionId` |
 | `ConnectionError` | 5 | Error | Connection error occurred | `connectionId`, `errorMessage` |
 
+Every session the transport opens is closed out the same way, however it ends: a session that raised
+`ConnectionOpened` and `TransportStarted` always ends with exactly one `ConnectionClosed` and one
+`TransportStopped`. A local stop raises `ConnectionClosing` first, with the termination reason, and raises the
+closing pair even if the connection's own stop fails. A session the remote end closes, or that ends in a
+connection error, raises no `ConnectionClosing`; its `TransportStopped` reason names the cause
+(`"Remote end closed the connection"`, or `"Connection error: "` followed by the error). A connect attempt that
+fails after `ConnectionOpening` raises `ConnectionError` with the failure, and no `ConnectionOpened`.
+
 The `connectionId` in these payloads is `Connection.Id`, a GUID string assigned when the `Connection` is
 constructed and stable for its lifetime. Read it from the connection object to correlate your own logging
 with these events, or to tell two connections apart in a process that runs more than one driver.

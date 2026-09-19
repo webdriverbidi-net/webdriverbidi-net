@@ -697,4 +697,85 @@ public class TransportEventSourceIntegrationTests
         });
         await connection.StopAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task TestRemoteCloseClosesOutTheSessionEventsOnce()
+    {
+        // A session the remote end closes still ends with ConnectionClosed and TransportStopped, naming the cause,
+        // and the stop that follows raises them no second time.
+        using TestEventListener listener = new();
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        listener.ClearEvents();
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+
+        Assert.Single(listener.GetEventsForEventName("ConnectionClosed"));
+        EventWrittenEventArgs stopped = Assert.Single(listener.GetEventsForEventName("TransportStopped"));
+        Assert.NotNull(stopped.Payload);
+        Assert.Equal("Remote end closed the connection", stopped.Payload[0]);
+        Assert.Empty(listener.GetEventsForEventName("ConnectionClosing"));
+    }
+
+    [Fact]
+    public async Task TestConnectionErrorClosesOutTheSessionEvents()
+    {
+        using TestEventListener listener = new();
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        listener.ClearEvents();
+
+        await connection.RaiseConnectionErrorEventAsync(new IOException("Simulated read failure"));
+
+        Assert.Single(listener.GetEventsForEventName("ConnectionClosed"));
+        EventWrittenEventArgs stopped = Assert.Single(listener.GetEventsForEventName("TransportStopped"));
+        Assert.NotNull(stopped.Payload);
+        Assert.Equal("Connection error: Simulated read failure", stopped.Payload[0]);
+    }
+
+    [Fact]
+    public async Task TestDisconnectWhoseStopFailsClosesOutTheSessionEvents()
+    {
+        // The session is over however the connection's stop went, so its closing events are raised even when the
+        // stop throws.
+        using TestEventListener listener = new();
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        listener.ClearEvents();
+
+        // Set after connecting: the double reports itself open while its stop is not bypassed.
+        connection.ThrowOnStop = true;
+        connection.BypassStop = false;
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(() => transport.DisconnectAsync(TestContext.Current.CancellationToken));
+
+        Assert.Single(listener.GetEventsForEventName("ConnectionClosing"));
+        Assert.Single(listener.GetEventsForEventName("ConnectionClosed"));
+        Assert.Single(listener.GetEventsForEventName("TransportStopped"));
+    }
+
+    [Fact]
+    public async Task TestFailedConnectRaisesConnectionError()
+    {
+        // A connect attempt that fails after raising ConnectionOpening raises ConnectionError with the failure,
+        // rather than leaving the opening with no outcome.
+        using TestEventListener listener = new();
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            ConnectWebSocketOverride = (uri, token) => Task.FromException(new WebDriverBiDiConnectionException("Simulated connect failure")),
+        };
+        await using Transport transport = new(connection);
+
+        await Assert.ThrowsAnyAsync<Exception>(() => transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken));
+
+        Assert.Single(listener.GetEventsForEventName("ConnectionOpening"));
+        Assert.Empty(listener.GetEventsForEventName("ConnectionOpened"));
+        EventWrittenEventArgs error = Assert.Single(listener.GetEventsForEventName("ConnectionError"));
+        Assert.NotNull(error.Payload);
+        Assert.Contains("Simulated connect failure", (string)error.Payload[1]!);
+    }
 }

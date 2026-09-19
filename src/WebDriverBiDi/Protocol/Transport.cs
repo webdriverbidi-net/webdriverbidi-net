@@ -786,6 +786,13 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.Id, connectionString);
             WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
         }
+        catch (Exception ex) when (this.State == TransportState.Connecting)
+        {
+            // The attempt raised ConnectionOpening as it published Connecting, so its failure is raised too,
+            // rather than leaving an opening with no outcome.
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.Id, ex.Message);
+            throw;
+        }
         finally
         {
             // If the attempt did not reach the Connected state (the body threw or was canceled after
@@ -1295,8 +1302,6 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 }
 
                 this.session.RaiseMessageStatisticsEvent();
-                WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
-                WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
                 await this.LogAsync("Transport disconnected", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
                 this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
@@ -1310,6 +1315,11 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 // timeout before reconnecting.
                 this.session.CloseMessageQueue();
                 this.PendingCommands.Clear();
+
+                // The session is over however the stop went, so the events that close it out are raised here,
+                // pairing the ConnectionClosing raised above and the TransportStarted raised when it began.
+                WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
+                WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
             }
         }
         finally
@@ -1861,7 +1871,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private async Task OnConnectionRemotelyDisconnectedAsync(ConnectionDisconnectedEventArgs e)
     {
         string logMessage = "Remote end closed connection; pending commands failed";
-        await this.HandleConnectionDisconnectionAsync(static () => new WebDriverBiDiConnectionException("Remote end closed the connection"), logMessage, WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+        await this.HandleConnectionDisconnectionAsync(static () => new WebDriverBiDiConnectionException("Remote end closed the connection"), logMessage, WebDriverBiDiLogLevel.Warn, "Remote end closed the connection").ConfigureAwait(false);
     }
 
     private async Task OnConnectionErrorAsync(ConnectionErrorEventArgs e)
@@ -1869,7 +1879,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         Exception connectionError = e.Exception;
         WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.Id, connectionError.Message);
         string logMessage = $"Connection error; pending commands failed: {connectionError.Message}";
-        await this.HandleConnectionDisconnectionAsync(() => new WebDriverBiDiConnectionException($"Unexpected connection error: {connectionError.Message}", connectionError), logMessage, WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+        await this.HandleConnectionDisconnectionAsync(() => new WebDriverBiDiConnectionException($"Unexpected connection error: {connectionError.Message}", connectionError), logMessage, WebDriverBiDiLogLevel.Error, $"Connection error: {connectionError.Message}").ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1882,8 +1892,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// </param>
     /// <param name="logMessage">The message to log for the loss.</param>
     /// <param name="logLevel">The level to log it at.</param>
+    /// <param name="stopReason">The reason the session ended, raised with the <c>TransportStopped</c> event.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task HandleConnectionDisconnectionAsync(Func<WebDriverBiDiConnectionException> connectionExceptionFactory, string logMessage, WebDriverBiDiLogLevel logLevel)
+    private async Task HandleConnectionDisconnectionAsync(Func<WebDriverBiDiConnectionException> connectionExceptionFactory, string logMessage, WebDriverBiDiLogLevel logLevel, string stopReason)
     {
         // Fast-path: if already disconnected, no work to do.
         // Prevents deadlock when connection error occurs during DisconnectAsync.
@@ -1973,8 +1984,12 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // the reader to finish before starting a new session.
             this.session.CloseMessageQueue();
 
-            // Log appropriate statistics and information.
+            // Log appropriate statistics and information. The session ends here rather than in DisconnectAsync,
+            // which a later stop reaches only by its fast path, so the events that close the session out are
+            // raised here too.
             this.session.RaiseMessageStatisticsEvent();
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
+            WebDriverBiDiEventSource.RaiseEvent.TransportStopped(stopReason);
             await this.LogAsync(logMessage, logLevel).ConfigureAwait(false);
         }
         finally
