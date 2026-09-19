@@ -625,7 +625,11 @@ public abstract class Connection : IAsyncDisposable
         }
         finally
         {
-            this.DataSendSemaphore.Dispose();
+            // The send semaphore is deliberately not disposed. Stopping the connection above cancels a
+            // send in progress, but that send may still be unwinding, and it must be able to release the
+            // semaphore on its way out; a disposed SemaphoreSlim would throw ObjectDisposedException
+            // from that release instead. SemaphoreSlim holds no unmanaged resources unless its
+            // AvailableWaitHandle is used, which this class never does.
             this.connectionCancellationTokenSource.Dispose();
         }
 

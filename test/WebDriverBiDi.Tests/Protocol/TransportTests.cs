@@ -2232,8 +2232,10 @@ public class TransportTests
     public async Task TestDisposeDuringInFlightConnectSerializesWithConnectAttempt()
     {
         // Disposing a transport whose connect attempt is still in flight must not tear the
-        // semaphore and connection out from under the attempt. Disposal waits for the
-        // attempt to complete, then tears down the connected transport normally.
+        // connection out from under the attempt. Disposal waits for the attempt to finish; the
+        // attempt finds the transport disposed before publishing Connected, so it fails and rolls
+        // back rather than connecting a transport that is being disposed, and disposal then tears
+        // down what remains.
         TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new()
         {
@@ -2252,11 +2254,144 @@ public class TransportTests
         Assert.False(disposeTask.IsCompleted);
 
         startBarrier.SetResult();
-        await connectTask;
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await connectTask);
         await disposeTask;
 
         Assert.Equal(TransportState.Disconnected, transport.State);
         Assert.True(transport.IsDisposed);
+        Assert.True(connection.Disposed);
+    }
+
+    [Fact]
+    public async Task TestDisposeWaitsForDisconnectInProgress()
+    {
+        // A disconnect publishes Disconnected at the start of its teardown, while it still holds the
+        // connection lock. Disposal must wait for it to finish rather than read that state and tear the
+        // transport down under it.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource disconnectHoldingLock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseDisconnect = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            LogLevel = WebDriverBiDiLogLevel.Info,
+        };
+        HoldDisconnectAtFinalLogMessage(transport, disconnectHoldingLock, releaseDisconnect);
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+
+        Task disconnectTask = Task.Run(() => transport.DisconnectAsync(cancellationToken), cancellationToken);
+        await disconnectHoldingLock.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        Assert.Equal(TransportState.Disconnected, transport.State);
+
+        Task disposeTask = transport.DisposeAsync().AsTask();
+        Assert.False(disposeTask.IsCompleted);
+        Assert.False(connection.Disposed);
+
+        releaseDisconnect.SetResult();
+        await disconnectTask;
+        await disposeTask;
+        Assert.True(connection.Disposed);
+    }
+
+    [Fact]
+    public async Task TestDisposeThatTimesOutWaitingForDisconnectLeavesTheDisconnectAbleToFinish()
+    {
+        // When the operation holding the connection lock outlasts ShutdownTimeout, disposal proceeds
+        // without it. The lock is never disposed, so that operation still releases it cleanly when it
+        // finishes, rather than throwing ObjectDisposedException into whatever it was running on.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource disconnectHoldingLock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseDisconnect = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider)
+        {
+            LogLevel = WebDriverBiDiLogLevel.Info,
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
+        List<string> warnings = [];
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Level == WebDriverBiDiLogLevel.Warn)
+            {
+                lock (warnings)
+                {
+                    warnings.Add(e.Message);
+                }
+            }
+        });
+        HoldDisconnectAtFinalLogMessage(transport, disconnectHoldingLock, releaseDisconnect);
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+
+        Task disconnectTask = Task.Run(() => transport.DisconnectAsync(cancellationToken), cancellationToken);
+        await disconnectHoldingLock.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        Task disposeTask = transport.DisposeAsync().AsTask();
+        await timeProvider.AdvanceUntilCompletedAsync(disposeTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), cancellationToken);
+        await disposeTask;
+        Assert.True(connection.Disposed);
+        lock (warnings)
+        {
+            Assert.Contains("Timed out waiting for an in-progress connection operation to complete during disposal", warnings);
+        }
+
+        releaseDisconnect.SetResult();
+        await disconnectTask;
+    }
+
+    [Fact]
+    public async Task TestConnectQueuedBehindLockWhenDisposalBeginsFailsWithoutConnecting()
+    {
+        // A connect attempt that passed its disposal check and was waiting for the connection lock
+        // when disposal began must not connect the transport being disposed. It checks again once it
+        // holds the lock, and fails before it touches the connection.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource disconnectHoldingLock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseDisconnect = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource connectWaitingForLock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            LogLevel = WebDriverBiDiLogLevel.Info,
+        };
+        List<string> messages = [];
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (messages)
+            {
+                messages.Add(e.Message);
+            }
+        });
+        HoldDisconnectAtFinalLogMessage(transport, disconnectHoldingLock, releaseDisconnect);
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+
+        Task disconnectTask = Task.Run(() => transport.DisconnectAsync(cancellationToken), cancellationToken);
+        await disconnectHoldingLock.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        transport.BeforeAcquireLockCallback = () =>
+        {
+            connectWaitingForLock.TrySetResult();
+            return Task.CompletedTask;
+        };
+        Task connectTask = transport.ConnectAsync("ws://localhost", cancellationToken);
+        await connectWaitingForLock.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        transport.BeforeAcquireLockCallback = null;
+        lock (messages)
+        {
+            messages.Clear();
+        }
+
+        Task disposeTask = transport.DisposeAsync().AsTask();
+        releaseDisconnect.SetResult();
+        await disconnectTask;
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => connectTask);
+        await disposeTask;
+
+        Assert.Equal(TransportState.Disconnected, transport.State);
+        lock (messages)
+        {
+            Assert.DoesNotContain("Transport connecting", messages);
+        }
     }
 
     [Fact]
@@ -2295,14 +2430,14 @@ public class TransportTests
         Assert.True(transport.IsDisposed);
         lock (logs)
         {
-            Assert.Contains(logs, log => log.Message.Contains("Timed out waiting for an in-flight connect attempt to complete during disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
+            Assert.Contains(logs, log => log.Message.Contains("Timed out waiting for an in-progress connection operation to complete during disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
         }
 
-        // Release the stuck attempt; it now completes against a disposed transport and
-        // faults (its finally releases the disposed connection lock), which is the same
-        // degradation the pre-serialization disposal produced for this pathological case.
+        // Release the stuck attempt. It finds the transport disposed before publishing
+        // Connected, so it fails and rolls back rather than connecting a disposed transport.
         startBarrier.SetResult();
         await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connectTask);
+        Assert.Equal(TransportState.Disconnected, transport.State);
     }
 
     [Fact]
@@ -2346,13 +2481,14 @@ public class TransportTests
         Assert.True(connection.Disposed);
         lock (logs)
         {
-            Assert.Contains(logs, log => log.Message.Contains("Timed out waiting for an in-flight connect attempt to complete during disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
+            Assert.Contains(logs, log => log.Message.Contains("Timed out waiting for an in-progress connection operation to complete during disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
         }
 
-        // The stuck attempt completes against a disposed transport and faults, as in the
-        // shutdown-timeout case above.
+        // The stuck attempt finds the transport disposed and fails, as in the shutdown-timeout
+        // case above.
         startBarrier.SetResult();
         await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connectTask);
+        Assert.Equal(TransportState.Disconnected, transport.State);
     }
 
     [Fact]
@@ -2394,11 +2530,12 @@ public class TransportTests
         Assert.True(connection.Disposed);
         lock (logs)
         {
-            Assert.Contains(logs, log => log.Message.Contains("Timed out waiting for an in-flight connect attempt to complete during disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
+            Assert.Contains(logs, log => log.Message.Contains("Timed out waiting for an in-progress connection operation to complete during disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
         }
 
         startBarrier.SetResult();
         await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connectTask);
+        Assert.Equal(TransportState.Disconnected, transport.State);
     }
 
     [Fact]
@@ -6224,6 +6361,21 @@ public class TransportTests
         }
 
         return value;
+    }
+
+    /// <summary>
+    /// Holds the next disconnect of the transport at its final log message, which it raises while it still
+    /// holds the connection lock, until released.
+    /// </summary>
+    private static void HoldDisconnectAtFinalLogMessage(Transport transport, TaskCompletionSource holdingLock, TaskCompletionSource release)
+    {
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message == "Transport disconnected" && holdingLock.TrySetResult())
+            {
+                release.Task.GetAwaiter().GetResult();
+            }
+        });
     }
 
     private sealed class NonGenericCommandParameters : CommandParameters
