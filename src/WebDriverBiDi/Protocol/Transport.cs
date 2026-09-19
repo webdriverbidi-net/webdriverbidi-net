@@ -92,10 +92,6 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private const string UnknownMessageReceivedEventName = "transport.unknownMessageReceived";
     private const string EventHandlerErrorOccurredEventName = "transport.eventHandlerErrorOccurred";
     private const string LogMessageEventName = "transport.logMessage";
-    private const string TransportEventObserverDescription = "transport event observer";
-    private const string TransportErrorObserverDescription = "transport error observer";
-    private const string TransportUnknownMessageObserverDescription = "transport unknown message observer";
-    private const string TransportLogMessageObserverDescription = "transport log message observer";
 
     private const string NormalShutdownReason = "Normal shutdown";
 
@@ -1083,34 +1079,19 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// <returns>A task that represents the asynchronous operation.</returns>
     /// <remarks>
     /// This method never throws for a failure in an observer of
-    /// <see cref="OnEventHandlerErrorOccurred"/> itself: the original handler failure is
-    /// always captured, and the error observer's own failure is captured as a separate
-    /// event-handler error without re-raising the error event.
+    /// <see cref="OnEventHandlerErrorOccurred"/> itself. Such a failure is reported by that observer,
+    /// through the event's own reporter, as a separate event-handler error, without re-raising the
+    /// error event; the original handler failure is captured regardless.
     /// </remarks>
     internal async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo, bool notifyObservers)
     {
         WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
-        Exception? errorObserverException = null;
         if (notifyObservers)
         {
-            try
-            {
-                await this.invocableErrorHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                // Handle a synchronously throwing observer of OnEventHandlerErrorOccurred
-                // so as not to derail the reporting of the original handler failure. This
-                // prevents double-reporting of this as an error.
-                errorObserverException = ex;
-            }
+            await this.invocableErrorHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
         }
 
         await this.CaptureSessionErrorAsync(UnhandledErrorKind.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName)).ConfigureAwait(false);
-        if (errorObserverException is not null)
-        {
-            await this.CaptureSessionErrorAsync(UnhandledErrorKind.EventHandlerException, errorObserverException, this.GetEventHandlerTerminalReason(EventHandlerErrorOccurredEventName)).ConfigureAwait(false);
-        }
     }
 
     /// <summary>
@@ -1839,40 +1820,22 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             _ => command.CommandParameters.CreateResponseTypeInfo(this.options) ?? this.options.GetTypeInfo(command.ResponseType));
     }
 
-    private async Task OnProtocolEventReceivedAsync(EventReceivedEventArgs e)
+    // A failing observer of the transport's own events is reported by the observer itself, through the
+    // reporter each event is created with (see CreateObservableEvent), so notifying these events does not
+    // throw for an observer's failure.
+    private Task OnProtocolEventReceivedAsync(EventReceivedEventArgs e)
     {
-        try
-        {
-            await this.invocableEventReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            await this.ReportEventObserverErrorAsync(e.EventName, TransportEventObserverDescription, ex).ConfigureAwait(false);
-        }
+        return this.invocableEventReceivedObservableEvent.InvokeNotifyObserversAsync(e);
     }
 
-    private async Task OnProtocolErrorEventReceivedAsync(ErrorReceivedEventArgs e)
+    private Task OnProtocolErrorEventReceivedAsync(ErrorReceivedEventArgs e)
     {
-        try
-        {
-            await this.invocableUnexpectedErrorReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            await this.ReportEventObserverErrorAsync(this.OnUnexpectedErrorReceived.EventName, TransportErrorObserverDescription, ex).ConfigureAwait(false);
-        }
+        return this.invocableUnexpectedErrorReceivedObservableEvent.InvokeNotifyObserversAsync(e);
     }
 
-    private async Task OnProtocolUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
+    private Task OnProtocolUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
     {
-        try
-        {
-            await this.invocableUnknownMessageReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            await this.ReportEventObserverErrorAsync(this.OnUnknownMessageReceived.EventName, TransportUnknownMessageObserverDescription, ex).ConfigureAwait(false);
-        }
+        return this.invocableUnknownMessageReceivedObservableEvent.InvokeNotifyObserversAsync(e);
     }
 
     private Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
@@ -2276,21 +2239,13 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         await this.NotifyLogMessageObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
-    private async Task NotifyLogMessageObserversAsync(LogMessageEventArgs e)
+    private Task NotifyLogMessageObserversAsync(LogMessageEventArgs e)
     {
-        // Without this, a synchronously throwing log observer would propagate into
-        // whatever operation happened to emit the log message. Routing the exception
-        // here keeps it governed by EventHandlerExceptionBehavior, the same as a
-        // fault raised by any other event handler. Note that ReportEventObserverErrorAsync
-        // does not emit log messages, so this action cannot recurse.
-        try
-        {
-            await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            await this.ReportEventObserverErrorAsync(this.OnLogMessage.EventName, TransportLogMessageObserverDescription, ex).ConfigureAwait(false);
-        }
+        // A failing log observer is reported by the observer itself, through the event's reporter, so it
+        // does not propagate into whatever operation happened to emit the log message, and is governed by
+        // EventHandlerExceptionBehavior like any other observer. ReportEventObserverErrorAsync emits no log
+        // messages, so reporting such a failure cannot recurse.
+        return this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e);
     }
 
     private Exception CreateTerminationException(IList<Exception> exceptions, TransportErrorBehavior errorBehavior = TransportErrorBehavior.Terminate)
@@ -2355,19 +2310,6 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         ObservableEventInvocable<T> observableEvent = new(eventName);
         observableEvent.InvokeSetObserverErrorReporter(this.ReportEventObserverErrorAsync);
         return observableEvent;
-    }
-
-    private async Task ReportEventObserverErrorAsync(string eventName, string observerDescription, Exception exception)
-    {
-        await this.ReportEventObserverErrorAsync(new EventObserverErrorInfo()
-        {
-            ObservableEventName = eventName,
-            ObserverId = string.Empty,
-            ObserverDescription = observerDescription,
-            Exception = exception,
-            IsAsynchronousHandler = false,
-            FaultOccurredAfterHandlerReturned = false,
-        }).ConfigureAwait(false);
     }
 
     private async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo)

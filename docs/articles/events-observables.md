@@ -189,12 +189,12 @@ The `ErrorInfo` property is an `EventObserverErrorInfo` record with the followin
 
 | Property | Description |
 |---|---|
-| `ObservableEventName` | The event name whose observer faulted (e.g., `"log.entryAdded"`) |
-| `ObserverId` | A unique string identifier for the observer instance |
-| `ObserverDescription` | A human-readable description of the observer |
-| `Exception` | The exception thrown by the observer |
+| `ObservableEventName` | The name of the event the faulted observer was added to (e.g., `"log.entryAdded"`, `"driver.unknownMessageReceived"`) |
+| `ObserverId` | The `Id` of the observer that faulted, as returned by `AddObserver` |
+| `ObserverDescription` | The `Description` of the observer that faulted |
+| `Exception` | The exception thrown by the observer; each failing observer is reported separately |
 | `IsAsynchronousHandler` | `true` if the observer was registered with `RunHandlerAsynchronously` |
-| `FaultOccurredAfterHandlerReturned` | `true` for async handlers that faulted after their `Task` was returned |
+| `FaultOccurredAfterHandlerReturned` | `true` for async handlers, whose failure always surfaces after their `Task` was returned |
 
 #### OnLogMessage
 

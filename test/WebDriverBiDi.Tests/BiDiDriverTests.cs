@@ -681,11 +681,42 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestSynchronousDriverObserverFailureIsReportedUnderTheDriverEvent()
+    {
+        // A failing synchronous observer of a driver-level event is reported under the name of the event it was
+        // added to, as it would be were it run asynchronously, rather than under the transport event the driver
+        // relays.
+        TaskCompletionSource<EventObserverErrorInfo> errorReported = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
+        driver.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            errorReported.TrySetResult(e.ErrorInfo);
+            return Task.CompletedTask;
+        });
+        EventObserver<UnknownMessageReceivedEventArgs> failingObserver = driver.OnUnknownMessageReceived.AddObserver(
+            e =>
+            {
+                throw new InvalidOperationException("driver observer failure");
+            },
+            description: "failing driver observer");
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "unknown" }""");
+
+        EventObserverErrorInfo errorInfo = await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal("driver.unknownMessageReceived", errorInfo.ObservableEventName);
+        Assert.Equal(failingObserver.Id, errorInfo.ObserverId);
+        Assert.Equal("failing driver observer", errorInfo.ObserverDescription);
+        Assert.False(errorInfo.IsAsynchronousHandler);
+        await driver.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestDriverRestartAfterReceiveLoopFaultOpensNewSession()
     {
-        // A synchronous observer of the connection's own log event that throws propagates into the
-        // connection's receive loop and ends it while the socket is still open. The transport tears the
-        // session down when the connection reports the error. The documented recovery, StopAsync followed
+        // A failure inside the connection's receive loop ends the loop while the socket is still open. The
+        // transport tears the session down when the connection reports the error. The documented recovery, StopAsync followed
         // by StartAsync, must then open a new session whose responses are read. Were the connection still
         // reporting itself active, StartAsync would adopt the old socket, which nothing reads any more,
         // and every command sent on the new session would time out.
@@ -716,19 +747,22 @@ public class BiDiDriverTests
         });
         await server.StartAsync();
 
-        WebSocketConnection connection = new()
-        {
-            // The traffic message for a received payload is what the failing observer below reacts to.
-            LogLevel = WebDriverBiDiLogLevel.Trace,
-        };
+        // The first text frame the real socket delivers fails inside the receive loop, as the loop is about to
+        // process it.
         int remainingFailures = 1;
-        connection.OnLogMessage.AddObserver(e =>
+        TestWebSocketConnection connection = new()
         {
-            if (e.Message.StartsWith("RECV", StringComparison.Ordinal) && Interlocked.Exchange(ref remainingFailures, 0) == 1)
+            BypassStart = false,
+            BypassStop = false,
+            BypassDataSend = false,
+            ReceiveCompletedObserver = result =>
             {
-                throw new InvalidOperationException("log observer failure");
-            }
-        });
+                if (result.MessageType == System.Net.WebSockets.WebSocketMessageType.Text && Interlocked.Exchange(ref remainingFailures, 0) == 1)
+                {
+                    throw new InvalidOperationException("receive loop failure");
+                }
+            },
+        };
 
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), transport);

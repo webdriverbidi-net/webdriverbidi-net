@@ -242,13 +242,21 @@ public class ObservableEvent<T>
     /// <summary>
     /// Asynchronously notifies observers when this observable event occurs. Each observer is
     /// notified independently; an exception thrown by one observer does not prevent subsequent
-    /// observers from being notified. If exactly one observer throws, the original exception is
-    /// rethrown. If multiple observers throw, an <see cref="AggregateException"/> containing all
-    /// caught exceptions is thrown after all observers have been notified.
+    /// observers from being notified.
     /// </summary>
     /// <param name="notifyData">The data of the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="AggregateException">Thrown when multiple observer handlers throw an exception.</exception>
+    /// <exception cref="AggregateException">
+    /// Thrown, when no observer-error reporter is installed, if multiple observer handlers throw an exception.
+    /// </exception>
+    /// <remarks>
+    /// When an observer-error reporter is installed, as it is for every event the library creates, a failing
+    /// observer reports its own failure through it, identifying itself, and this method does not throw for it.
+    /// Without a reporter, a failure of a synchronously-run observer propagates to the caller: if exactly one
+    /// observer throws, the original exception is rethrown; if multiple observers throw, an
+    /// <see cref="AggregateException"/> containing all caught exceptions is thrown after all observers have been
+    /// notified. A failure of an asynchronously-run observer never propagates to the caller.
+    /// </remarks>
     protected async Task NotifyObserversAsync(T notifyData)
     {
         // Read the observers without taking the lock. The array is replaced wholesale when the set

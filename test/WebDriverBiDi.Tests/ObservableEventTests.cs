@@ -385,6 +385,87 @@ public class ObservableEventTests
     }
 
     [Fact]
+    public async Task TestSynchronousHandlerFailuresAreReportedWithEachObserversIdentity()
+    {
+        // With a reporter installed, each failing synchronously-run observer is reported individually, identified
+        // as it would be were it run asynchronously, and notification neither throws nor stops at the failure.
+        List<EventObserverErrorInfo> reports = [];
+        TestEventSource testEventSource = new();
+        testEventSource.SetObserverErrorReporter(errorInfo =>
+        {
+            reports.Add(errorInfo);
+            return Task.CompletedTask;
+        });
+
+        Action<TestObservableEventArgs> firstFailingHandler = e => throw new InvalidOperationException("first failure");
+        Action<TestObservableEventArgs> secondFailingHandler = e => throw new ArgumentException("second failure");
+        bool succeedingObserverNotified = false;
+        EventObserver<TestObservableEventArgs> firstObserver = testEventSource.TestObservableEvent.AddObserver(firstFailingHandler, description: "first observer");
+        testEventSource.TestObservableEvent.AddObserver(e => succeedingObserverNotified = true);
+        EventObserver<TestObservableEventArgs> secondObserver = testEventSource.TestObservableEvent.AddObserver(secondFailingHandler, description: "second observer");
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        Assert.True(succeedingObserverNotified);
+        Assert.Collection(
+            reports,
+            report =>
+            {
+                Assert.Equal("testModule.testEvent", report.ObservableEventName);
+                Assert.Equal(firstObserver.Id, report.ObserverId);
+                Assert.Equal("first observer", report.ObserverDescription);
+                Assert.Equal("first failure", Assert.IsType<InvalidOperationException>(report.Exception).Message);
+                Assert.False(report.IsAsynchronousHandler);
+                Assert.False(report.FaultOccurredAfterHandlerReturned);
+            },
+            report =>
+            {
+                Assert.Equal(secondObserver.Id, report.ObserverId);
+                Assert.Equal("second observer", report.ObserverDescription);
+                Assert.IsType<ArgumentException>(report.Exception);
+            });
+    }
+
+    [Fact]
+    public async Task TestAsynchronousFuncHandlerThrowingBeforeReturningItsTaskIsReportedAfterReturn()
+    {
+        // A handler run asynchronously that throws before it returns its task is treated as having returned a
+        // faulted task: the failure is not thrown back at the producer, and is reported as any other failure of an
+        // asynchronously-run handler is.
+        EventObserverErrorInfo? reportedErrorInfo = null;
+        TaskCompletionSource reporterInvoked = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestEventSource testEventSource = new();
+        testEventSource.SetObserverErrorReporter(errorInfo =>
+        {
+            reportedErrorInfo = errorInfo;
+            reporterInvoked.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        Func<TestObservableEventArgs, Task> throwingHandler = e => throw new InvalidOperationException("thrown before returning");
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(throwingHandler, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+        await reporterInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(reportedErrorInfo);
+        Assert.Equal(observer.Id, reportedErrorInfo.ObserverId);
+        Assert.Equal("thrown before returning", Assert.IsType<InvalidOperationException>(reportedErrorInfo.Exception).Message);
+        Assert.True(reportedErrorInfo.IsAsynchronousHandler);
+        Assert.True(reportedErrorInfo.FaultOccurredAfterHandlerReturned);
+    }
+
+    [Fact]
+    public async Task TestAsynchronousFuncHandlerThrowingBeforeReturningItsTaskDoesNotThrowWithoutReporter()
+    {
+        TestEventSource testEventSource = new();
+        Func<TestObservableEventArgs, Task> throwingHandler = e => throw new InvalidOperationException("thrown before returning");
+        testEventSource.TestObservableEvent.AddObserver(throwingHandler, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+    }
+
+    [Fact]
     public async Task TestActionHandlerRunSynchronouslyExecutesInlineOnNotifyingThread()
     {
         int notifyingThreadId = Environment.CurrentManagedThreadId;
