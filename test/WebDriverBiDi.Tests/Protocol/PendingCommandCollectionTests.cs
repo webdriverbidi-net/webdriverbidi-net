@@ -176,6 +176,27 @@ public class PendingCommandCollectionTests
         collection.DisposeUnmanaged();
     }
 
+    [Fact]
+    public async Task TestCancelingACommandDoesNotRemoveADifferentCommandWithTheSameId()
+    {
+        // Only the instance being canceled is removed and remembered. Another command pending under the same ID is
+        // left pending, and is not recognized as canceled when its response arrives.
+        PendingCommandCollection collection = new();
+        Command pendingCommand = new(1, new TestCommandParameters("module.command"));
+        Command otherCommand = new(1, new TestCommandParameters("module.command"));
+        await collection.AddPendingCommandAsync(pendingCommand, TestContext.Current.CancellationToken);
+
+        bool canceled = collection.CancelPendingCommand(otherCommand, CommandCancellationReason.Canceled);
+
+        Assert.True(canceled);
+        Assert.True(otherCommand.IsCanceled);
+        Assert.False(pendingCommand.IsCanceled);
+        Assert.Equal(1, collection.PendingCommandCount);
+        Assert.Equal(0, collection.TrackedCanceledCommandCount);
+        Assert.True(collection.RemovePendingCommand(1, out Command? removedCommand));
+        Assert.Same(pendingCommand, removedCommand);
+    }
+
     private sealed class ExposedDisposeCollection : PendingCommandCollection
     {
         public void DisposeUnmanaged() => this.Dispose(false);
