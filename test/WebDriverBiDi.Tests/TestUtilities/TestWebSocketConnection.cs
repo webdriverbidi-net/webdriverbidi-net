@@ -346,8 +346,19 @@ public class TestWebSocketConnection : WebSocketConnection
     /// </summary>
     public TaskCompletionSource? CloseFrameSentSignal { get; set; }
 
+    /// <summary>
+    /// Gets or sets an exception the connection's Close frame send throws instead of sending, as the socket does when
+    /// the remote end has gone before the receive loop has noticed.
+    /// </summary>
+    public Exception? CloseFrameFailure { get; set; }
+
     protected override async Task SendWebSocketCloseFrameAsync(CancellationToken cancellationToken)
     {
+        if (this.CloseFrameFailure is not null)
+        {
+            throw this.CloseFrameFailure;
+        }
+
         await base.SendWebSocketCloseFrameAsync(cancellationToken).ConfigureAwait(false);
         this.CloseFrameSentSignal?.TrySetResult();
     }

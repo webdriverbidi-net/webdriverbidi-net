@@ -112,6 +112,8 @@ public class WebSocketConnection : Connection
     /// </remarks>
     private bool IsLocalCloseInitiated => Interlocked.CompareExchange(ref this.closeInitiator, (int)WebSocketCloseInitiator.None, (int)WebSocketCloseInitiator.None) == (int)WebSocketCloseInitiator.Local;
 
+    private bool IsRemoteCloseInitiated => Interlocked.CompareExchange(ref this.closeInitiator, (int)WebSocketCloseInitiator.None, (int)WebSocketCloseInitiator.None) == (int)WebSocketCloseInitiator.Remote;
+
     /// <summary>
     /// Resolves the connection string into the URI of the WebSocket server to connect to.
     /// </summary>
@@ -260,6 +262,16 @@ public class WebSocketConnection : Connection
             // The socket is no longer open, or the receive loop has already claimed the close in order to answer
             // a Close frame from the remote end, so this call starts no close handshake.
             await this.LogAsync($"Client state is {this.client.State}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+            if (this.IsRemoteCloseInitiated && this.DataReceiveTask is not null)
+            {
+                // The receive loop is answering the remote end's Close frame, and sends its answer with the
+                // connection's cancellation token, which the caller cancels as soon as this method returns.
+                // Returning now would abort the answer, and the remote end would see an abnormal closure; wait
+                // for the loop to finish instead, bounded as the wait for a close this end starts is.
+                using CancellationTokenSource timeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ShutdownTimeout);
+                using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
+                await Task.WhenAny(this.DataReceiveTask, TimeoutUtilities.DelayAsync(this.TimeProvider, Timeout.InfiniteTimeSpan, linkedTokenSource.Token)).ConfigureAwait(false);
+            }
         }
         else
         {
@@ -378,11 +390,10 @@ public class WebSocketConnection : Connection
         }
         catch (Exception e)
         {
-            // If the observer for OnDataReceived throws an unhandled exception, we will capture
-            // that here. This is important because otherwise the loop would stop silently, which
-            // is a separate case than the simple case of no further data being received. For
-            // pending commands, this would look like a command that never returns a response
-            // rather than the loop ending due to the observer exception.
+            // Any other failure inside the loop -- from a derived connection's read, for example; a failing
+            // observer of this connection's events is reported rather than thrown -- is captured here.
+            // Otherwise the loop would stop silently, which pending commands could not tell apart from a
+            // remote end that has simply gone quiet: they would wait for responses that never arrive.
             //
             // Nothing failed on the wire, so the socket is still open. Reporting the error marks the
             // connection inactive, but nothing will ever read from this socket again, so abort it
@@ -596,6 +607,16 @@ public class WebSocketConnection : Connection
         catch (OperationCanceledException)
         {
             // An OperationCanceledException is normal upon task/token cancellation, so disregard it
+        }
+        catch (WebSocketException ex)
+        {
+            // The Close frame could not be sent, typically because the remote end has gone while the receive
+            // loop has not yet noticed. The close is best-effort, so the stop still completes rather than failing,
+            // but no handshake can happen now: abort the socket, which also ends any read the receive loop has in
+            // progress. Relying on the cancellation that follows would leave the socket reporting itself open
+            // whenever the loop was between reads, and so exited on the token without touching the socket.
+            this.client.Abort();
+            await this.LogAsync($"Could not send the Close frame to the remote end; the connection was closed without the close handshake: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
         }
     }
 
