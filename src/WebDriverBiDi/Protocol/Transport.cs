@@ -141,7 +141,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private JsonTypeInfo<ErrorResponseMessage> errorResponseJsonTypeInfo;
     private JsonSerializerOptions options = new()
     {
-        TypeInfoResolver = ExtensionDataNameGuard.AddTo(CreateTypeInfoResolver()),
+        TypeInfoResolver = AddContractModifiers(CreateTypeInfoResolver()),
         RespectNullableAnnotations = true,
         MaxDepth = MaxJsonDepth,
     };
@@ -1682,6 +1682,21 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             : WebDriverBiDiJsonSerializerContext.Default;
     }
 
+    /// <summary>
+    /// Applies the contract rules the transport enforces to every type info a resolver creates, whether the resolver
+    /// is the library's own or one registered by a consumer.
+    /// </summary>
+    /// <param name="resolver">The resolver to modify.</param>
+    /// <returns>The modified resolver.</returns>
+    /// <remarks>
+    /// The members that describe a command are removed first, so that the extension-data guard judges names against
+    /// the properties that are actually written.
+    /// </remarks>
+    private static IJsonTypeInfoResolver AddContractModifiers(IJsonTypeInfoResolver resolver)
+    {
+        return ExtensionDataNameGuard.AddTo(CommandParametersContract.AddTo(resolver));
+    }
+
     private static ReceivedDataDictionary ConvertPayloadExtensionData(Dictionary<string, JsonElement>? extensionData)
     {
         return extensionData is null ? ReceivedDataDictionary.EmptyDictionary : JsonConverterUtilities.ConvertIncomingExtensionData(extensionData);
@@ -1792,7 +1807,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     {
         this.options = new JsonSerializerOptions(this.options)
         {
-            TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, ExtensionDataNameGuard.AddTo(resolver)),
+            TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, AddContractModifiers(resolver)),
         };
         this.commandJsonTypeInfo = (JsonTypeInfo<Command>)this.options.GetTypeInfo(typeof(Command));
         this.errorResponseJsonTypeInfo = (JsonTypeInfo<ErrorResponseMessage>)this.options.GetTypeInfo(typeof(ErrorResponseMessage));

@@ -41,6 +41,8 @@ Define parameters that extend `CommandParameters`:
 
 [!code-csharp[Command Parameters](../../code/advanced/CustomModulesSamples.cs#CommandParameters)]
 
+Override `MethodName` with the protocol method the parameters are sent as. It, and `ResponseType`, describe the command rather than carry its parameters, so the transport never writes either inside `params`; the override needs no `[JsonIgnore]`. The same holds for a parameters type whose metadata comes from a type-info resolver you register.
+
 ### Command Results
 
 Define results that extend `CommandResult`:

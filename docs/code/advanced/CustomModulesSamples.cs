@@ -530,7 +530,6 @@ public record CustomModulesCustomEventArgs : WebDriverBiDiEventArgs
 #region NamespaceCommand
 public class CustomModulesNamespacedCommandParameters : CommandParameters<MyCommandResult>
 {
-    [JsonIgnore]
     public override string MethodName => "myCompany.myModule.myCommand";  // Clear namespace
 
     [JsonPropertyName("value")]
