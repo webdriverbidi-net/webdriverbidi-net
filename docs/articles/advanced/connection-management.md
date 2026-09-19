@@ -98,6 +98,8 @@ Connections have three timeout properties (default: 10 seconds each):
 
 **DataTimeout**: How long a send waits for exclusive access to the connection while another send is in progress. It does not bound the send or the receive itself, so it is not a guard against a hung connection; a send that waits longer than this fails to acquire access and throws a `WebDriverBiDiTimeoutException` instead of queueing behind the send ahead of it. A zero value keeps its non-blocking meaning: access is taken only if it is free right now.
 
+**Cancellation and sends:** A command's `CancellationToken` is honored while the send waits for exclusive access, and up to the moment the message begins to be written, but not after. Once writing has begun, the message is sent in full, and only stopping the connection interrupts it. Abandoning a message part-way would leave the connection unusable for every other command, not just the canceled one: a WebSocket is aborted when a send is canceled, and a pipe would be left out of step with its message framing. Canceling still ends the wait for the command's response at once, and a response that arrives afterwards is discarded.
+
 ### Transport Shutdown Timeout
 
 `ShutdownTimeout`, reached through `BiDiDriver.TransportConfiguration` (or on a `Transport` directly), is a separate, transport-level timeout (default: 10 seconds) that controls how long `Transport.DisconnectAsync` waits for its in-memory message-processing task to drain before proceeding. If the processing task does not finish within this window, `DisconnectAsync` logs a warning and proceeds, and any pending commands are canceled. Giving up on the wait does not stop the reader: messages already delivered to the queue go on being processed in the background, and their handlers go on running. What the timeout bounds is how long shutdown waits for them, not whether they run — and a subsequent `StartAsync` waits for that processing to finish, bounded by this same timeout, before opening a new connection.
@@ -330,10 +332,11 @@ Pipes use null-terminated JSON messages:
 - Each message ends with `\0`
 
 Because that terminator is the only frame boundary, a message and its terminator are written as one
-operation. Canceling a command therefore either sends the whole message or sends none of it; cancellation
-is honored up to the moment the first byte is written, and not after. A canceled send can never leave a
-partial message in the pipe, which would otherwise put every message after it one frame out of step for
-the rest of the session.
+operation. A send is never interrupted by canceling a command once it has begun (see
+[Cancellation and sends](#connection-timeout-settings)), and even stopping the connection is honored only up
+to the moment the first byte is written, and not after. A send can therefore never leave a partial message
+in the pipe, which would otherwise put every message after it one frame out of step for the rest of the
+session.
 
 ### Limitations
 
@@ -394,7 +397,7 @@ the transport-specific parts, as `protected` overrides:
 | `ResolveConnectionString` | Interprets the connection string, rejecting a value this transport could never connect to. Optional; the default accepts every value. |
 | `StartConnectionAsync` | Establishes the connection. Returns only once it is established, throws if it cannot be. |
 | `StopConnectionAsync` | Whatever this transport must exchange with the remote end to close by agreement. Called on every stop, including when the connection is not active. |
-| `SendConnectionDataAsync` | Writes one message to the transport. |
+| `SendConnectionDataAsync` | Writes one message to the transport. Its cancellation token is canceled only when the connection stops; the caller's own token is honored only before the write begins, so an implementation never has to recover from a message abandoned part-way. |
 | `ReceiveDataAsync` | The receive loop, started for you once the connection is established. |
 | `DisposeAsyncCore` | Releases the resources the custom connection owns. |
 | `IsConnectionOpen` | Reports whether the transport-specific connection is open. `IsActive` combines it with the state of the receive loop, as described below. |
