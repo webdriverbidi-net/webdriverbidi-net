@@ -788,47 +788,11 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task TestReceiveDataRaisesErrorEventOnDataReceivedObserverException()
+    public async Task TestDataReceivedObserverFailureDoesNotEndTheReceiveLoop()
     {
-        // An exception from the observer of OnDataReceived is rethrown by the event into the
-        // receive loop. Were it not caught there, the loop would end without notice: the socket
-        // would remain open while no further message was ever delivered, which a caller awaiting
-        // a command response cannot distinguish from a remote end that has simply gone quiet.
-        static Task ThrowOnDataReceived(ConnectionDataReceivedEventArgs e) => throw new InvalidOperationException("observer failure");
-
-        await using Server server = this.CreateServer();
-        await server.StartAsync();
-
-        ConnectionErrorEventArgs? receivedErrorArgs = null;
-        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        await using WebSocketConnection connection = new();
-        connection.OnDataReceived.AddObserver(ThrowOnDataReceived);
-        connection.OnConnectionError.AddObserver(e =>
-        {
-            receivedErrorArgs = e;
-            taskCompletionSource.TrySetResult();
-            return Task.CompletedTask;
-        });
-
-        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
-        string registeredConnectionId = this.WaitForServerToRegisterConnection();
-        await server.SendWebSocketDataAsync(registeredConnectionId, "Hello back");
-
-        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await connection.StopAsync(TestContext.Current.CancellationToken);
-
-        Assert.NotNull(receivedErrorArgs);
-        Assert.Equal("observer failure", Assert.IsType<InvalidOperationException>(receivedErrorArgs.Exception).Message);
-    }
-
-    [Fact]
-    public async Task TestReceiveLoopEndedByObserverExceptionLeavesConnectionInactiveAndRestartable()
-    {
-        // The observer's exception ends the receive loop while the socket itself is still open: nothing
-        // failed on the wire. A connection that went on reporting itself active afterwards would be
-        // adopted, rather than reopened, by Transport.ConnectAsync, and the new session would send on a
-        // socket that nothing reads. The connection must report itself inactive by the time the failure
-        // is observable, and a restart must open a new session that delivers data.
+        // A failing observer of OnDataReceived is reported through the connection's observer-error reporter
+        // rather than thrown into the receive loop, so the loop goes on delivering later messages, and no
+        // connection error is raised.
         int remainingFailures = 1;
         Task OnDataReceivedAsync(ConnectionDataReceivedEventArgs e)
         {
@@ -843,10 +807,54 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
-        bool? isActiveWhenErrorRaised = null;
-        TaskCompletionSource errorRaisedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int connectionErrorCount = 0;
         await using WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(OnDataReceivedAsync);
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            Interlocked.Increment(ref connectionErrorCount);
+            return Task.CompletedTask;
+        });
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        string registeredConnectionId = this.WaitForServerToRegisterConnection();
+        await server.SendWebSocketDataAsync(registeredConnectionId, "first");
+        await server.SendWebSocketDataAsync(registeredConnectionId, "second");
+
+        Assert.Equal("second"u8.ToArray(), this.WaitForConnectionToReceiveData());
+        Assert.True(connection.IsActive);
+        Assert.Equal(0, connectionErrorCount);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestReceiveLoopEndedByFailureInsideTheLoopLeavesConnectionInactiveAndRestartable()
+    {
+        // A failure inside the receive loop ends it while the socket itself is still open: nothing failed on
+        // the wire. A connection that went on reporting itself active afterwards would be adopted, rather than
+        // reopened, by Transport.ConnectAsync, and the new session would send on a socket that nothing reads.
+        // The connection must report itself inactive by the time the failure is observable, and a restart must
+        // open a new session that delivers data.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        int remainingFailures = 1;
+        bool? isActiveWhenErrorRaised = null;
+        TaskCompletionSource errorRaisedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+            BypassDataSend = false,
+            ReceiveCompletedObserver = result =>
+            {
+                if (result.MessageType == WebSocketMessageType.Text && Interlocked.Exchange(ref remainingFailures, 0) == 1)
+                {
+                    throw new InvalidOperationException("receive loop failure");
+                }
+            },
+        };
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         connection.OnConnectionError.AddObserver(e =>
         {
             isActiveWhenErrorRaised = connection.IsActive;
@@ -2258,19 +2266,16 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task TestConnectionDoesNotDeliverMessageWhenTrafficLogObserverThrows()
+    public async Task TestConnectionDeliversMessageWhenTrafficLogObserverThrows()
     {
-        // The received message is logged before it is handed on, so a log observer that throws takes
-        // the delivery down with it: the notification never runs, and the failure travels out to the
-        // receive loop, which reports a connection error and ends. The connection returns the
-        // message's pooled memory before letting that failure propagate, though nothing observable
-        // from here distinguishes that from leaving the block unreturned.
+        // The received message is logged before it is handed on. A log observer that throws is reported
+        // through the connection's observer-error reporter rather than thrown, so the message is still
+        // delivered, and the receive loop goes on without a connection error.
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
-        TaskCompletionSource connectionErrorRaised = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        int deliveredMessageCount = 0;
-        List<ConnectionErrorEventArgs> connectionErrors = [];
+        TaskCompletionSource messageDelivered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int connectionErrorCount = 0;
         TestWebSocketConnection connection = new()
         {
             BypassStart = false,
@@ -2289,9 +2294,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             throw new OperationCanceledException(token);
         };
 
-        // This test asserts on Trace messages, which the default minimum level excludes. Only the
-        // traffic message throws: the loop logs its own error after the failure, and a log observer
-        // that threw for every message would fail that logging too and obscure what is under test.
+        // The traffic message is logged at Trace, which the default minimum level excludes.
         connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver(e =>
         {
@@ -2304,24 +2307,21 @@ public class WebSocketConnectionTests : IAsyncDisposable
         });
         connection.OnDataReceived.AddObserver(e =>
         {
-            Interlocked.Increment(ref deliveredMessageCount);
+            messageDelivered.TrySetResult();
             return Task.CompletedTask;
         });
         connection.OnConnectionError.AddObserver(e =>
         {
-            connectionErrors.Add(e);
-            connectionErrorRaised.TrySetResult();
+            Interlocked.Increment(ref connectionErrorCount);
             return Task.CompletedTask;
         });
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection();
-        await connectionErrorRaised.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await connection.StopAsync(TestContext.Current.CancellationToken);
+        await messageDelivered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // The message is logged before it is delivered, so a failure to log it costs the delivery.
-        Assert.Equal(0, deliveredMessageCount);
-        ConnectionErrorEventArgs connectionError = Assert.Single(connectionErrors);
-        Assert.Equal("Simulated log observer failure", connectionError.Exception.Message);
+        Assert.True(connection.IsActive);
+        Assert.Equal(0, connectionErrorCount);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

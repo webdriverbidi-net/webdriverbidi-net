@@ -18,6 +18,7 @@ public sealed class TestReportingConnection : Connection
     private int isOpenFlag;
     private int startConnectionCallCount;
     private int stopConnectionCallCount;
+    private int disposeCoreCallCount;
 
     public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
 
@@ -30,6 +31,8 @@ public sealed class TestReportingConnection : Connection
     public int StartConnectionCallCount => Interlocked.CompareExchange(ref this.startConnectionCallCount, 0, 0);
 
     public int StopConnectionCallCount => Interlocked.CompareExchange(ref this.stopConnectionCallCount, 0, 0);
+
+    public int DisposeCoreCallCount => Interlocked.CompareExchange(ref this.disposeCoreCallCount, 0, 0);
 
     /// <summary>
     /// Gets the task the current session's receive loop runs on, or <see langword="null"/> before the first start.
@@ -121,6 +124,7 @@ public sealed class TestReportingConnection : Connection
 
     protected override ValueTask DisposeAsyncCore()
     {
+        Interlocked.Increment(ref this.disposeCoreCallCount);
         return default;
     }
 }

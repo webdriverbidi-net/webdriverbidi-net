@@ -107,11 +107,38 @@ public class ConnectionTests
     }
 
     [Fact]
-    public async Task TestConnectionErrorObserversAreNotifiedWhenLoggingTheErrorFails()
+    public async Task TestThrowingLogObserverDoesNotDisruptTheConnectionLifecycle()
     {
-        // A synchronous log observer that throws on the error message propagates its exception into the report.
-        // The error observers must still be notified, because an observer such as a Transport tears its session
-        // down in response; and the log observer's failure must still surface, as it does for any log message.
+        // A connection used without a transport reports a failing observer through its default reporter, which
+        // records it rather than throwing it. A log observer that throws on every message therefore cannot keep
+        // StartAsync from completing, StopAsync from canceling the connection and waiting for its receive loop,
+        // or DisposeAsync from releasing the connection's resources.
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+        TestReportingConnection connection = new();
+        connection.OnLogMessage.AddObserver(e => throw new InvalidOperationException("Simulated log observer failure"));
+
+        await connection.StartAsync(ConnectionString, testCancellationToken);
+        Assert.True(connection.IsActive);
+        Task receiveLoopTask = connection.ReceiveLoopTask!;
+
+        await connection.StopAsync(testCancellationToken);
+        Assert.Equal(1, connection.StopConnectionCallCount);
+        Assert.True(receiveLoopTask.IsCompleted);
+        Assert.False(connection.IsActive);
+
+        await connection.StartAsync(ConnectionString, testCancellationToken);
+        Assert.True(connection.IsActive);
+
+        await connection.DisposeAsync();
+        Assert.Equal(2, connection.StopConnectionCallCount);
+        Assert.Equal(1, connection.DisposeCoreCallCount);
+    }
+
+    [Fact]
+    public async Task TestConnectionErrorIsReportedWhenLoggingTheErrorFails()
+    {
+        // A log observer that throws on the error message is reported through the connection's observer-error
+        // reporter rather than thrown, so the error observers are notified, and the receive loop ends normally.
         CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
         await using TestReportingConnection connection = new();
         connection.OnLogMessage.AddObserver(e =>
@@ -133,8 +160,7 @@ public class ConnectionTests
         connection.EndReceiveLoopWithConnectionError(new IOException("Simulated read failure"));
 
         await notified.Task.WaitAsync(TimeSpan.FromSeconds(5), testCancellationToken);
-        InvalidOperationException logFailure = await Assert.ThrowsAsync<InvalidOperationException>(async () => await receiveLoopTask.WaitAsync(TimeSpan.FromSeconds(5), testCancellationToken));
-        Assert.Equal("Simulated log observer failure", logFailure.Message);
+        await receiveLoopTask.WaitAsync(TimeSpan.FromSeconds(5), testCancellationToken);
         Assert.False(connection.IsActive);
     }
 
@@ -242,8 +268,10 @@ public class ConnectionTests
     }
 
     [Fact]
-    public async Task TestDeliveringPooledMemoryReturnsTheMemoryWhenLoggingTheMessageFails()
+    public async Task TestDeliveringAMessageSucceedsWhenLoggingTheMessageFails()
     {
+        // The message is logged before it is delivered. A log observer that throws is reported rather than
+        // thrown, so the message is still delivered.
         await using TestReportingConnection connection = new()
         {
             LogLevel = WebDriverBiDiLogLevel.Trace,
@@ -253,11 +281,9 @@ public class ConnectionTests
         connection.OnDataReceived.AddObserver(e => Interlocked.Increment(ref deliveredCount));
 
         TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("Hello"));
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await connection.DeliverMessageAsync(owner, owner.Length));
+        await connection.DeliverMessageAsync(owner, owner.Length);
 
-        Assert.Equal("Simulated log observer failure", exception.Message);
-        Assert.True(owner.IsDisposed);
-        Assert.Equal(0, deliveredCount);
+        Assert.Equal(1, deliveredCount);
     }
 
     [Fact]

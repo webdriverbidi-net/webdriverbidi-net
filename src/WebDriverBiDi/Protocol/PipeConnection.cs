@@ -428,11 +428,10 @@ public class PipeConnection : Connection
         }
         catch (Exception e)
         {
-            // If the observer for OnDataReceived throws an unhandled exception, we will capture
-            // that here. This is important because otherwise the loop would stop silently, which
-            // is a separate case than the simple case of no further data being received. For
-            // pending commands, this would look like a command that never returns a response
-            // rather than the loop ending due to the observer exception.
+            // Any other failure inside the loop -- from a derived connection's read, for example; a failing
+            // observer of this connection's events is reported rather than thrown -- is captured here.
+            // Otherwise the loop would stop silently, which pending commands could not tell apart from a
+            // remote end that has simply gone quiet: they would wait for responses that never arrive.
             this.IsConnectionActive = false;
             await this.NotifyConnectionErrorObserversAsync($"Unexpected error processing received data: {e.Message}", e).ConfigureAwait(false);
         }
