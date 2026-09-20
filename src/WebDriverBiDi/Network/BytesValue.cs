@@ -99,4 +99,21 @@ public record BytesValue
     {
         return new BytesValue(BytesValueType.Base64, Convert.ToBase64String(bytes));
     }
+
+    /// <summary>
+    /// Prints the members of this value for <see cref="object.ToString"/>: its <see cref="Type"/> and <see cref="Value"/>.
+    /// </summary>
+    /// <param name="builder">The builder to print the members to.</param>
+    /// <returns><see langword="true"/>, because members were printed.</returns>
+    /// <remarks>
+    /// <see cref="ValueAsByteArray"/> is deliberately not printed. It decodes the whole value each time it is read, which
+    /// would make printing a large body expensive only to print the name of the array type, and it throws for a
+    /// <see cref="BytesValueType.Base64"/> value that is not valid base64, which would make <see cref="object.ToString"/>
+    /// throw. <see cref="Value"/> already shows the content.
+    /// </remarks>
+    protected virtual bool PrintMembers(StringBuilder builder)
+    {
+        builder.Append("Type = ").Append(this.Type).Append(", Value = ").Append(this.Value);
+        return true;
+    }
 }

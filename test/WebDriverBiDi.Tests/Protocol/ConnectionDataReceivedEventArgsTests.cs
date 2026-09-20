@@ -26,4 +26,22 @@ public class ConnectionDataReceivedEventArgsTests
         ConnectionDataReceivedEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
     }
+
+    [Fact]
+    public void TestToStringAfterTheBufferIsDisposedDoesNotThrow()
+    {
+        // The consumer of the event disposes the pooled buffer once it has processed the message, after which
+        // reading Data throws. The printed form does not read it, so the event arguments still print.
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(5);
+        ConnectionDataReceivedEventArgs eventArgs = new(owner, 5);
+        owner.Dispose();
+        Assert.Throws<ObjectDisposedException>(() => eventArgs.Data);
+
+        string printed = eventArgs.ToString();
+
+        Assert.StartsWith("ConnectionDataReceivedEventArgs { AdditionalData = ", printed);
+        Assert.EndsWith(", DataLength = 5 }", printed);
+        Assert.DoesNotContain("Data = ", printed.Replace("AdditionalData = ", string.Empty).Replace("DataLength = ", string.Empty));
+        Assert.DoesNotContain("BufferOwner", printed);
+    }
 }
