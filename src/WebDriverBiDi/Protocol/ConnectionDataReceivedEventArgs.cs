@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
+using System.Text;
 
 /// <summary>
 /// Object containing event data for events raised when data is received from a WebDriver Bidi connection.
@@ -41,4 +42,23 @@ public record ConnectionDataReceivedEventArgs : WebDriverBiDiEventArgs
     /// Gets the number of valid bytes in the owner's buffer.
     /// </summary>
     public int DataLength { get; }
+
+    /// <summary>
+    /// Prints the members of these event arguments for <see cref="object.ToString"/>: those of the base record, and
+    /// <see cref="DataLength"/>.
+    /// </summary>
+    /// <param name="builder">The builder to print the members to.</param>
+    /// <returns><see langword="true"/>, because members were printed.</returns>
+    /// <remarks>
+    /// <see cref="Data"/> and <see cref="BufferOwner"/> are deliberately not printed. The buffer is pooled memory that
+    /// the consumer of the event disposes once it has processed the message, after which reading <see cref="Data"/>
+    /// throws <see cref="ObjectDisposedException"/>, so printing it would make <see cref="object.ToString"/> throw.
+    /// </remarks>
+    protected override bool PrintMembers(StringBuilder builder)
+    {
+        // The base record always prints its members, so these follow a separator.
+        base.PrintMembers(builder);
+        builder.Append(", DataLength = ").Append(this.DataLength);
+        return true;
+    }
 }

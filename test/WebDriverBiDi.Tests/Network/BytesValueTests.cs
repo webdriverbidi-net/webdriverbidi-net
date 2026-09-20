@@ -221,4 +221,22 @@ public class BytesValueTests
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json, this.options));
     }
+
+    [Fact]
+    public void TestToStringDoesNotDecodeTheValue()
+    {
+        // The printed form shows the type and the value as sent, and never decodes it, so an invalid base64 value
+        // prints rather than throwing.
+        BytesValue value = BytesValue.FromBase64String("not-base64!!");
+
+        string printed = value.ToString();
+
+        Assert.Equal("BytesValue { Type = Base64, Value = not-base64!! }", printed);
+    }
+
+    [Fact]
+    public void TestToStringOfStringValue()
+    {
+        Assert.Equal("BytesValue { Type = String, Value = hello }", BytesValue.FromString("hello").ToString());
+    }
 }
