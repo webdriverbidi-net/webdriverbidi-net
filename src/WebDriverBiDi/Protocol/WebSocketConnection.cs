@@ -520,7 +520,17 @@ public class WebSocketConnection : Connection
 #if NET5_0_OR_GREATER
         await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, cancellationToken).ConfigureAwait(false);
 #else
-        await this.client.SendAsync(new ArraySegment<byte>(messageBuffer.ToArray()), WebSocketMessageType.Text, endOfMessage: true, cancellationToken).ConfigureAwait(false);
+        if (!MemoryMarshal.TryGetArray(messageBuffer, out ArraySegment<byte> segment))
+        {
+            // Every buffer the transport sends is the array System.Text.Json serialized the message into,
+            // so the array is there to be found and the send costs no copy. A buffer a caller supplied over
+            // memory of its own, which no array backs, cannot be handed to the ArraySegment overload this
+            // target framework offers -- it would arrive as a null array, which the socket rejects -- so it
+            // is copied.
+            segment = new ArraySegment<byte>(messageBuffer.ToArray());
+        }
+
+        await this.client.SendAsync(segment, WebSocketMessageType.Text, endOfMessage: true, cancellationToken).ConfigureAwait(false);
 #endif
     }
 
