@@ -12,7 +12,7 @@ using WebDriverBiDi.JsonConverters;
 using WebDriverBiDi.Protocol;
 
 /// <summary>
-/// Represents data for a WebDriver Bidi command where the response type is known.
+/// Represents data for a WebDriver BiDi command where the response type is known.
 /// </summary>
 /// <typeparam name="T">The type of the response for this command.</typeparam>
 public abstract class CommandParameters<T> : CommandParameters

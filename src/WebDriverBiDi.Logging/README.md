@@ -14,6 +14,7 @@ dotnet add package WebDriverBiDi.Logging
 
 ## Quick Start
 
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#LoggingQuickStart -->
 ```csharp
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +49,7 @@ separate channel: the library's own log messages, including every message exchan
 at `Trace`, filtered by `driver.TransportConfiguration.LogLevel` rather than by the `EventLevel` passed to
 `AddWebDriverBiDi`. To send them to an `ILogger` as well, observe the event:
 
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#LoggingOnLogMessage -->
 ```csharp
 driver.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
 {
@@ -70,6 +72,7 @@ driver.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
 
 By default, events at `EventLevel.Informational` and above are captured:
 
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#LoggingDefaultConfiguration -->
 ```csharp
 services.AddLogging(builder => builder.AddWebDriverBiDi());
 ```
@@ -78,6 +81,7 @@ services.AddLogging(builder => builder.AddWebDriverBiDi());
 
 Specify a minimum event level to capture:
 
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#LoggingCustomEventLevel -->
 ```csharp
 using System.Diagnostics.Tracing;
 
@@ -104,6 +108,7 @@ WebDriver BiDi EventSource levels are mapped to ILogger levels as follows:
 
 Events are logged with structured properties, enabling rich filtering and querying:
 
+<!-- inline-csharp: an annotated illustration of one logged event's message, format string and properties; it is comments only and compiles to nothing -->
 ```csharp
 // A CommandCompleted event is logged with:
 //   message:          Command 1 (session.status) completed in 42ms
@@ -118,6 +123,7 @@ Structured logging providers (Application Insights, Serilog, etc.) can capture t
 
 Use standard ILogger filtering to control which events are logged:
 
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#LoggingFiltering -->
 ```csharp
 services.AddLogging(builder =>
 {
@@ -144,6 +150,7 @@ Or use configuration:
 
 ### ASP.NET Core
 
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#LoggingAspNetCore -->
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddWebDriverBiDi();
@@ -152,6 +159,7 @@ var app = builder.Build();
 
 ### Console Application
 
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#LoggingConsoleApplication -->
 ```csharp
 using System.Diagnostics.Tracing;
 using Microsoft.Extensions.Logging;

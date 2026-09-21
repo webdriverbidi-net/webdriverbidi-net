@@ -326,7 +326,7 @@ If `StartAsync` succeeds and the first command (or `Session.StatusAsync`) fails 
 ## Best Practices
 
 1. **Use a dedicated profile**: `--user-data-dir` (or let the driver create a temporary one) prevents conflicts
-2. **Fixed port**: Always use the same driver port for consistency
+2. **Port selection**: Let the launcher pick a free port. Fix one only when something outside the test must know it in advance, and never share a fixed port between concurrent sessions
 3. **Launch before connect**: Wait for the driver's `/status` endpoint before creating a session
 4. **Clean shutdown**: Close connections before killing browser
 5. **Headless for CI**: Use `--headless=new` in CI environments

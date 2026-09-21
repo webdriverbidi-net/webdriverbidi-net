@@ -83,6 +83,7 @@ public class PartialCookie
     /// <see cref="DateTime.MaxValue"/>, the usual way to say "never expires", is therefore stored as the last whole
     /// second of 9999, and reads back as that second. The value read is always UTC.
     /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is before the Unix epoch.</exception>
     [JsonIgnore]
     public DateTime? Expires
     {

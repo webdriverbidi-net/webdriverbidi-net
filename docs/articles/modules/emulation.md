@@ -37,6 +37,12 @@ of commands treat that differently:
 For the second group the specification requires a scope, so add at least one browsing context or user
 context before executing the command.
 
+The two scopes are mutually exclusive. A command that names both browsing contexts and user contexts is
+rejected with `invalid argument`, so scope each command one way or the other. The same holds outside this
+module wherever a command offers both, such as `browsingContext.setViewport` (whose `BrowsingContextId` and
+`UserContexts` cannot be combined), `browsingContext.setBypassCSP`, `network.setExtraHeaders` and
+`script.addPreloadScript`.
+
 ## Timeout and Cancellation
 
 All commands in this module accept optional `timeoutOverride` and `CancellationToken` parameters. Use `timeoutOverride` to set a per-command timeout (defaults to `BiDiDriver.DefaultCommandTimeout` when omitted). Use `CancellationToken` for cooperative cancellation. See the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for details and examples.

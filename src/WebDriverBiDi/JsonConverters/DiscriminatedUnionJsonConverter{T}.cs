@@ -47,7 +47,7 @@ public class DiscriminatedUnionJsonConverter<[DynamicallyAccessedMembers(Dynamic
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
-    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <param name="options">The JsonSerializerOptions used for deserializing the JSON.</param>
     /// <returns>An instance of a derived type of <typeparamref name="T"/> as described by the JSON.</returns>
     /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -103,7 +103,7 @@ public class DiscriminatedUnionJsonConverter<[DynamicallyAccessedMembers(Dynamic
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The object to be serialized.</param>
-    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <param name="options">The JsonSerializerOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
         // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo

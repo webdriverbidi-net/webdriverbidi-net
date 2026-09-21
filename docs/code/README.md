@@ -19,6 +19,8 @@ This directory contains C# code snippets that are included in the documentation 
 - `IndexSamples.cs` - Snippets for `docs/index.md`
 - `DocsReadmeSamples.cs` - Snippets for `docs/README.md`
 - `QuickReferenceSamples.cs` - Snippets for `docs/articles/quick-reference.md`
+- `QuickReferenceRowSamples.cs` - The compiled counterpart of every table row in `docs/articles/quick-reference.md`, which states its code in cells that cannot hold a region reference
+- `PackageReadmeSamples.cs` - The compiled counterpart of the code blocks in the packed READMEs, `README.md`, `src/WebDriverBiDi/README.md` and `src/WebDriverBiDi.Logging/README.md`, which nuget.org renders without DocFX
 
 ## Validation
 

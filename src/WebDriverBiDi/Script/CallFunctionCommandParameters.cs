@@ -84,7 +84,8 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether to activate the browsing context when calling the function. When omitted, is treated as if false.
+    /// Gets or sets a value indicating whether the call is treated as user-activated, as though the user had
+    /// interacted with the page, which APIs gated on a user gesture require. When omitted, is treated as if false.
     /// </summary>
     [JsonPropertyName("userActivation")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

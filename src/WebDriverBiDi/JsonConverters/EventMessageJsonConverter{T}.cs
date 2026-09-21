@@ -26,7 +26,7 @@ public class EventMessageJsonConverter<T> : JsonConverter<EventMessage<T>>
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
-    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <param name="options">The JsonSerializerOptions used for deserializing the JSON.</param>
     /// <returns>The deserialized <see cref="EventMessage{T}"/>.</returns>
     /// <exception cref="JsonException">Thrown when the JSON is not an object, or the <c>type</c>, <c>method</c> or <c>params</c> property is missing or malformed.</exception>
     public override EventMessage<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -90,7 +90,7 @@ public class EventMessageJsonConverter<T> : JsonConverter<EventMessage<T>>
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The value to serialize.</param>
-    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <param name="options">The JsonSerializerOptions used for serializing the object.</param>
     /// <exception cref="NotSupportedException">Thrown when called, as this converter is only used for deserialization.</exception>
     public override void Write(Utf8JsonWriter writer, EventMessage<T> value, JsonSerializerOptions options)
     {

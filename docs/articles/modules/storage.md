@@ -61,7 +61,7 @@ The `GetCookiesCommandResult` also reports the storage `PartitionKey` the cookie
 ## Best Practices
 
 1. **Set cookies before navigation**: Set cookies before navigating to the domain
-2. **Match domains correctly**: Cookie domain must match the current page domain
+2. **Match domains correctly**: Give the cookie the domain you intend to read it back from; `storage.setCookie` does not require it to match the page currently loaded
 3. **Use appropriate SameSite**: Choose `Strict`, `Lax`, or `None` based on needs; cookies the browser reports without an explicit policy have `CookieSameSiteValue.Default`
 4. **Clean up between tests**: Clear cookies and storage for test isolation
 5. **Handle secure cookies**: Set `Secure` flag for HTTPS-only cookies

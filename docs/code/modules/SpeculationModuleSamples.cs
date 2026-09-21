@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/modules/speculation.md
 
-#pragma warning disable CS8600, CS8602, CS1591
+#pragma warning disable CS1591
 
 namespace WebDriverBiDi.Docs.Code.Modules;
 

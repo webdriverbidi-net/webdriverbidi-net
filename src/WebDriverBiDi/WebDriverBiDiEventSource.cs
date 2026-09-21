@@ -43,7 +43,10 @@ using WebDriverBiDi.Protocol;
 ///
 ///     protected override void OnEventWritten(EventWrittenEventArgs eventData)
 ///     {
-///         Console.WriteLine($"[{eventData.Level}] {eventData.EventName}: {eventData.Payload?[0]}");
+///         // Payload is an empty collection, not null, for an event without parameters such as
+///         // TransportStarted, so index it only when it holds something.
+///         string detail = eventData.Payload?.Count > 0 ? eventData.Payload[0]?.ToString() ?? string.Empty : string.Empty;
+///         Console.WriteLine($"[{eventData.Level}] {eventData.EventName}: {detail}");
 ///     }
 /// }
 /// </code>
@@ -55,10 +58,12 @@ using WebDriverBiDi.Protocol;
 /// </code>
 /// </para>
 /// <para>
-/// <strong>Example 3: EventPipe in code</strong>
+/// <strong>Example 3: EventPipe from another process</strong>
 /// <code>
-/// using var session = EventPipeSystem.CreateSession(new EventPipeProvider("WebDriverBiDi"));
-/// // Collect events...
+/// // Microsoft.Diagnostics.NETCore.Client, from the target process's ID:
+/// DiagnosticsClient client = new(processId);
+/// using EventPipeSession session = client.StartEventPipeSession(new EventPipeProvider("WebDriverBiDi", EventLevel.Informational));
+/// // Read session.EventStream with TraceEvent...
 /// </code>
 /// </para>
 /// </remarks>

@@ -42,8 +42,8 @@ This document provides an architectural overview of WebDriverBiDi.NET, explainin
 │  │  │  WebSocket │  │  Pipes   │               │    │
 │  │  │ Connection │  │Connection│               │    │
 │  │  └─────┬──────┘  └────┬─────┘               │    │
-│  └────────┼──────────────┼─────────────────────┘.   |
-└───────────┼──────────────┼─────────────────--───────┘
+│  └────────┼──────────────┼─────────────────────┘    │
+└───────────┼──────────────┼──────────────────────────┘
             │              │
             ▼              ▼
        WebSocket        Pipes
@@ -97,10 +97,10 @@ Commands (Your Code → Browser):
 └──────────────┘                 └───────────┘
 
 Responses (Browser → Your Code):
-┌─────────┐   WebSocket   ┌───────────-┐   Deserialize    ┌──────────────┐
+┌─────────┐   WebSocket   ┌────────────┐   Deserialize    ┌──────────────┐
 │ Browser │──────────────▶│  JSON      │─────────────────▶│ Command      │
 └─────────┘               │  Message   │                  │ Result       │
-                          └─────-──────┘                  └──────────────┘
+                          └────────────┘                  └──────────────┘
 
 Events (Browser → Observers):
 ┌─────────┐   WebSocket   ┌───────────┐   Deserialize    ┌──────────────┐
@@ -304,11 +304,11 @@ ObservableEvent<TEventArgs>
   │
   │ Notifies
   ▼
-┌────────────────────────--─-─┐
+┌─────────────────────────────┐
 │  EventObserver<TEventArgs>  │
 │  EventObserver<TEventArgs>  │
 │  EventObserver<TEventArgs>  │
-└─────────────────────────--─-┘
+└─────────────────────────────┘
   │
   │ Invokes
   ▼

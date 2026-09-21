@@ -4,8 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/common-pitfalls.md
 
-#pragma warning disable CS8600, CS8602
-
 namespace WebDriverBiDi.Docs.Code.CommonPitfalls;
 
 using System.Collections.Generic;
@@ -16,6 +14,7 @@ using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Session;
+using WebDriverBiDi.UserAgentClientHints;
 
 /// <summary>
 /// Snippets for common pitfalls documentation. Compiled at build time to prevent API drift.
@@ -231,10 +230,15 @@ public static class CommonPitfallsSamples
         };
         localeParams.UserContexts.Add(userContextId);   // ...or add later
 
-        // Shape 2: nullable and settable. Only headers/cookies on the network
-        // continueRequest, continueResponse and provideResponse commands, where the
-        // protocol distinguishes an absent field from an empty array.
+        // Shape 2: nullable and settable. The headers and cookies of the network continueRequest,
+        // continueResponse and provideResponse commands, and Brands, FullVersionList and FormFactors on
+        // ClientHintsMetadata, where the protocol distinguishes an absent field from an empty array.
         continueParams.Headers = [];           // sends "headers": []
+        ClientHintsMetadata clientHints = new ClientHintsMetadata
+        {
+            Brands = [],                       // sends "brands": [], overriding the browser's own with none
+            FullVersionList = null,            // omitted, so the browser's own is kept
+        };
         #endregion
     }
 
@@ -390,10 +394,11 @@ public static class CommonPitfallsSamples
         // Trigger events
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        // Wait for events to occur AND handlers to complete
-        await observer.WaitForCapturedTasksCompleteAsync(5, TimeSpan.FromSeconds(10));
+        // Wait for events to occur AND handlers to complete. The result says whether the expected number
+        // arrived: false means the timeout elapsed first, and some handlers are still running.
+        bool allCompleted = await observer.WaitForCapturedTasksCompleteAsync(5, TimeSpan.FromSeconds(10));
+        Console.WriteLine(allCompleted ? "All handlers completed" : "Timed out waiting for handlers");
 
-        // Now all handlers have completed
         observer.StopCapturingTasks();
         #endregion
     }
@@ -495,7 +500,7 @@ public static class CommonPitfallsSamples
     private static void ProcessLogEntry(EntryAddedEventArgs e)
     {
         // Simulate processing that might throw
-        if (e.Text.Contains("error"))
+        if (e.Text is not null && e.Text.Contains("error"))
         {
             throw new Exception("Error log entry!");
         }
@@ -530,11 +535,17 @@ public static class CommonPitfallsSamples
 
             await driver.Session.SubscribeAsync(subscribeParams);
 
-            // If handler throws, exception surfaces here on next command
+            // If a handler threw, the next command is where it surfaces
             await driver.BrowsingContext.NavigateAsync(navParams);
+        }
+        catch (AggregateException ex)
+        {
+            // More than one error accumulated before the next command: each is an inner exception.
+            Console.WriteLine($"Event handler errors: {string.Join(", ", ex.InnerExceptions.Select(inner => inner.Message))}");
         }
         catch (WebDriverBiDiException ex)
         {
+            // Exactly one error accumulated.
             Console.WriteLine($"Event handler error: {ex.Message}");
         }
         #endregion

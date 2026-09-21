@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 using WebDriverBiDi.Internal;
 
 /// <summary>
-/// Represents a connection to a WebDriver Bidi remote end over a WebSocket.
+/// Represents a connection to a WebDriver BiDi remote end over a WebSocket.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -33,7 +33,7 @@ using WebDriverBiDi.Internal;
 /// <list type="bullet">
 /// <item><description>Universal browser support</description></item>
 /// <item><description>Network flexibility (local and remote)</description></item>
-/// <item><description>Low latency (1-3ms per message for local connections)</description></item>
+/// <item><description>Low latency for local connections</description></item>
 /// <item><description>Automatic retry on startup (retries every 500ms within StartupTimeout; both each attempt and the pause between attempts are bounded by the remaining StartupTimeout, so neither a host that never answers nor one that refuses immediately can hold startup open past the timeout)</description></item>
 /// <item><description>Supports reconnection after calling StopAsync</description></item>
 /// <item><description>Configurable socket options (request headers, proxy, keep-alive interval, certificate validation) through an override of <see cref="CreateClientWebSocket"/></description></item>

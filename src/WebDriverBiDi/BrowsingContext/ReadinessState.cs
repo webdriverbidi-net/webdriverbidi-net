@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// The readiness state of the browsing context.
+/// The stage of document loading at which a navigation command returns.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<ReadinessState>))]
 public enum ReadinessState

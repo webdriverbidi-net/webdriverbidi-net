@@ -2,7 +2,7 @@
 
 The Speculation module provides **monitoring** of prefetch status updates from the browser. It is defined in the [Prefetch specification's Automated testing section](https://wicg.github.io/nav-speculation/prefetch.html#automated-testing) as an extension to WebDriver BiDi.
 
-> **Scope note**: The WebDriver BiDi spec defines only the `speculation.prefetchStatusUpdated` event. There are no commands to add or remove speculation rules—those are configured by the page itself via the [Speculation Rules API](https://wicg.github.io/nav-speculation/prefetch.html) (e.g., `<script type="speculationrules">` in HTML). This module is intentionally limited to what the spec defines.
+> **Scope note**: The Prefetch specification defines only the `speculation.prefetchStatusUpdated` event. There are no commands to add or remove speculation rules—those are configured by the page itself via the [Speculation Rules API](https://wicg.github.io/nav-speculation/prefetch.html) (e.g., `<script type="speculationrules">` in HTML). This module is intentionally limited to what the spec defines.
 
 ## Overview
 

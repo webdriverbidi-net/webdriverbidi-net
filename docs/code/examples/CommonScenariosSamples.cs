@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/examples/common-scenarios.md
 
-#pragma warning disable CS8600, CS8602, CS8618
+#pragma warning disable CS8618
 
 namespace WebDriverBiDi.Docs.Code.Examples;
 
@@ -540,9 +540,9 @@ public static class CommonScenariosSamples
             EvaluateResult complexResult = await driver.Script.EvaluateAsync(
                 new EvaluateCommandParameters(complexScript, new ContextTarget(contextId), true));
 
-            if (complexResult is EvaluateResultSuccess complexSuccess)
+            if (complexResult is EvaluateResultSuccess complexSuccess &&
+                complexSuccess.Result.As<KeyValuePairCollectionRemoteValue>().Value is RemoteValueDictionary data)
             {
-                RemoteValueDictionary data = complexSuccess.Result.As<KeyValuePairCollectionRemoteValue>().Value;
                 Console.WriteLine($"\nPage analysis:");
                 Console.WriteLine($"  URL: {data["url"].As<StringRemoteValue>().Value}");
                 Console.WriteLine($"  Links: {data["linkCount"].As<NumberRemoteValue>().Value}");

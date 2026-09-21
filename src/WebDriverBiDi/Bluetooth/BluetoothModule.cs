@@ -6,7 +6,8 @@
 namespace WebDriverBiDi.Bluetooth;
 
 /// <summary>
-/// The Bluetooth module contains commands for simulating communication with Bluetooth devices.
+/// The Bluetooth module contains commands for simulating communication with Bluetooth devices, and events
+/// reporting the prompts and requests that simulation produces.
 /// </summary>
 public sealed class BluetoothModule : Module
 {

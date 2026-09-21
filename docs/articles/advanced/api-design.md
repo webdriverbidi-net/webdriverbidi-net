@@ -20,7 +20,7 @@ Module commands fall into two categories based on their `CommandParameters`:
 
 [!code-csharp[Optional Parameters](../../code/api-design/TimeoutAndCancellationSamples.cs#OptionalParameters)]
 
-**Commands with required parameters** always require a parameters object. These commands have a static "reset" property that clears a value on the remote end. Passing no parameters would be ambiguous—are you setting or resetting?
+**Commands with required parameters** always require a parameters object, because the parameters type has required members. Some of them also expose a static "reset" property that clears a value on the remote end. Passing no parameters would be ambiguous—are you setting or resetting?
 
 [!code-csharp[Required Parameters](../../code/api-design/TimeoutAndCancellationSamples.cs#RequiredParameters)]
 
@@ -190,9 +190,8 @@ Once the package reaches 1.0, the usual SemVer contract applies:
 
 The main library multi-targets `netstandard2.0`, `net8.0`, `net9.0`, and `net10.0`. The .NET Standard 2.0 target ensures compatibility with:
 
-- .NET Framework 4.6.1+
-- .NET Core 2.0+
-- .NET 5, 6, 7, 8, 9, 10
+- .NET Framework 4.6.2+
+- .NET 8, 9, 10
 
 Projects targeting .NET 8 or later bind to the corresponding assembly, which is the build marked `IsAotCompatible` and therefore the one that supports trimming and native AOT publishing. The published API reference is generated from the `netstandard2.0` assembly.
 

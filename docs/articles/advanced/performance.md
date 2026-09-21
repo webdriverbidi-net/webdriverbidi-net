@@ -25,10 +25,10 @@ WebSocket connections are the standard transport mechanism for WebDriver BiDi:
 - **Universal compatibility**: Supported by all browsers with WebDriver BiDi
 - **Network flexibility**: Connect to local or remote browsers
 - **Simple setup**: Just provide a WebSocket URL
-- **Low latency**: Typically 1-3ms per command for local connections
+- **Low latency**: a command to a local browser costs a serialize, a socket write, and the browser's own processing. No figure here is measured: the benchmarks in this repository deliberately measure no real connection
 
 **Performance:**
-- Command execution: 5-15ms average (including browser processing)
+- Command execution: dominated by the browser's processing of the command rather than by the library
 - Event delivery: Real-time with minimal overhead
 - Suitable for all automation scenarios
 
@@ -44,7 +44,7 @@ For specific scenarios where the browser and test runner are co-located, pipe co
 - Absolute minimum latency is critical
 
 **Trade-offs:**
-- Slightly lower latency (~0.5-1ms reduction per message)
+- Slightly lower latency: no socket, no WebSocket framing, and no handshake
 - No network stack overhead
 - Requires process lifecycle management
 - Limited browser support
@@ -174,6 +174,10 @@ The property is safe to read concurrently with message production and consumptio
 #### In-Flight Async Handler Tasks (AsyncHandlerTaskCount EventSource event)
 
 When handlers are registered with `ObservableEventHandlerOptions.RunHandlerAsynchronously`, the reader task does not wait for them to complete — so a growing queue is not the only backlog symptom. The second symptom is a growing set of running async handler tasks. The `WebDriverBiDi` EventSource publishes an `AsyncHandlerTaskCount` event (verbose level) each time this count changes; subscribe with an `EventListener`:
+
+[!code-csharp[Async Handler Backlog Listener](../../code/advanced/PerformanceSamples.cs#AsyncHandlerBacklogListener)]
+
+Construct it where you want the counting to begin, and dispose it when you are finished:
 
 [!code-csharp[Async Handler Backlog Monitoring](../../code/advanced/PerformanceSamples.cs#AsyncHandlerBacklogMonitoring)]
 

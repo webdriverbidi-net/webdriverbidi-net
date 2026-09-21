@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/events-observables.md
 
-#pragma warning disable CS1591, CS0168, CS0219, CS8600, CS8602
+#pragma warning disable CS1591, CS0168, CS0219
 
 namespace WebDriverBiDi.Docs.Code.EventsObservables;
 
@@ -650,11 +650,7 @@ public static class EventObserverSamples
         TaskCompletionSource<RemoteValue> elementFound =
             new TaskCompletionSource<RemoteValue>();
 
-        // The channel delivers through the script.message event, which must be subscribed
-        // once per session; without this the observer below never runs.
-        await driver.Session.SubscribeAsync(
-            new SubscribeCommandParameters(driver.Script.OnMessage.EventName));
-
+        // Add the observer first, so that no message can arrive before it is listening.
         driver.Script.OnMessage.AddObserver((e) =>
         {
             if (e.ChannelId == "elementWatcher")
@@ -662,6 +658,11 @@ public static class EventObserverSamples
                 elementFound.SetResult(e.Data);
             }
         });
+
+        // The channel delivers through the script.message event, which must be subscribed
+        // once per session; without this the observer above never runs.
+        await driver.Session.SubscribeAsync(
+            new SubscribeCommandParameters(driver.Script.OnMessage.EventName));
 
         // Preload script watches for element
         string preloadScript = """
@@ -690,8 +691,10 @@ public static class EventObserverSamples
 
         // Wait for element to appear
         RemoteValue elementRemoteValue = await elementFound.Task;
-        elementRemoteValue.TryAs(out NodeRemoteValue element);
-        Console.WriteLine($"Element found: {element.SharedId}");
+        if (elementRemoteValue.TryAs(out NodeRemoteValue? element))
+        {
+            Console.WriteLine($"Element found: {element.SharedId}");
+        }
         #endregion
     }
 
@@ -727,7 +730,7 @@ public static class EventObserverSamples
         driver.BrowsingContext.OnLoad.AddObserver((NavigationEventArgs e) =>
         {
             string contextId = e.BrowsingContextId;
-            string navigationId = e.NavigationId;
+            string? navigationId = e.NavigationId;  // Null if the event is not part of a navigation
             string url = e.Url;
             DateTime timestamp = e.Timestamp;
         });
@@ -771,7 +774,7 @@ public static class EventObserverSamples
             string method = e.Request.Method;
             IList<ReadOnlyHeader> headers = e.Request.Headers;
             bool isBlocked = e.IsBlocked;    // True if intercepted
-            string contextId = e.BrowsingContextId;
+            string? contextId = e.BrowsingContextId;  // Null for a request with no browsing context
         });
         #endregion
     }
@@ -1080,8 +1083,9 @@ public static class EventObserverSamples
 
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        // Stream each log entry as it is buffered; loop exits when the collector
-        // is disposed or the cancellation token is cancelled.
+        // Stream each log entry as it is buffered. Disposing the collector ends the loop; canceling the
+        // token instead throws OperationCanceledException out of the enumerator, so catch it where the
+        // cancellation is expected.
         await foreach (EntryAddedEventArgs entry in
             collector.Events.WithCancellation(cancellationToken))
         {
@@ -1107,7 +1111,7 @@ public static class EventObserverSamples
 
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        // Collect entries until we find a fatal error, then stop
+        // Collect entries until an entry at Error level arrives, then stop
         await foreach (EntryAddedEventArgs entry in collector.Events)
         {
             Console.WriteLine($"[{entry.Level}] {entry.Text}");
@@ -1449,5 +1453,3 @@ public static class EventObserverSamples
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning restore CS0168 // Variable declared but never used
 #pragma warning restore CS0219 // Variable assigned but never used
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type
-#pragma warning restore CS8602 // Dereference of a possibly null reference

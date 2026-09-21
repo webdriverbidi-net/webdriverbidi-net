@@ -6,7 +6,7 @@
 namespace WebDriverBiDi;
 
 /// <summary>
-/// The base exception class for all WebDriver Bidi errors.
+/// The base exception class for all WebDriver BiDi errors.
 /// </summary>
 public class WebDriverBiDiException : Exception
 {

@@ -9,7 +9,7 @@ using System.Buffers;
 using System.Text;
 
 /// <summary>
-/// Object containing event data for events raised when data is received from a WebDriver Bidi connection.
+/// Object containing event data for events raised when data is received from a WebDriver BiDi connection.
 /// </summary>
 public record ConnectionDataReceivedEventArgs : WebDriverBiDiEventArgs
 {

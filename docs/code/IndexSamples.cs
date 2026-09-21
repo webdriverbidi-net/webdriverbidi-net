@@ -4,8 +4,6 @@
 // </copyright>
 // Code snippets for docs/index.md
 
-#pragma warning disable CS8600, CS8602
-
 namespace WebDriverBiDi.Docs.Code;
 
 using WebDriverBiDi;

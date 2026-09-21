@@ -20,25 +20,25 @@ also included in this library are:
 * [User Agent Client Hints](https://wicg.github.io/ua-client-hints/)
 * [Digital Credentials](https://www.w3.org/TR/digital-credentials/)
 
-The library allows a user to automate a browser using WebDriver BiDi, standard protocol developed and maintained
+The library allows a user to automate a browser using WebDriver BiDi, a standard protocol developed and maintained
 under the auspices of the World Wide Web Consortium (W3C). The protocol is implemented by browser vendors as part
 of the Web Platform as a direct alternative to proprietary options like the Chrome DevTools Protocol. It allows
 scenarios like:
 * Capturing log messages written to the JavaScript console
 * Receiving notifications when new browser windows or tabs are opened
 * Receiving notifications when navigation events occur
-* Adding JavaScript to each page before any other JavaScript is loaded, and have that so-called "preload"
+* Adding JavaScript to each page before any other JavaScript is loaded, making that so-called "preload"
 script available to the page being automated.
 * Other scenarios to be added as features become documented in the specification and implemented by browser
 vendors
 
-WebDriver BiDi uses JSON payloads across a websocket connection to communicate with the browser to execute
-commands and receive responses and events. This library manages the communication across the websocket and
-serializing and deserializing the JSON payloads. Consumers of this library should note that a general
-principle about the .NET API contained herein that objects received from the remote end (browser) of the
-connection are immutable; the data contained within cannot be modified. Objects being sent from the local
-end to the remote end are intended to have settable properties to shape the proper values sent across the
-connection.
+WebDriver BiDi uses JSON payloads to communicate with the browser to execute commands and receive responses
+and events. The payloads travel over a websocket connection, or, for a Chromium-based browser launched with
+its remote debugging pipe, over that pipe instead. This library manages the connection and the serializing
+and deserializing of the JSON payloads. Consumers of this library should note a general principle about the
+.NET API contained herein: objects received from the remote end (browser) of the connection are immutable,
+and the data contained within cannot be modified. Objects being sent from the local end to the remote end
+are intended to have settable properties to shape the proper values sent across the connection.
 
 It is important to note some of the things this library is explicitly _not_ intended for.
 * This library is not itself a replacement for [Selenium](https://selenium.dev), [Puppeteer](https://pptr.dev)
@@ -47,7 +47,9 @@ as the library is a low-level implementation of a client for the protocol. Howev
 aforementioned could conceivably use this library as a mechanism for driving the browser using .NET.
 * This library does not manage browser launching and/or profile information. It expects a browser to already
 be launched, and for the WebDriver BiDi websocket to already be open and available for communication. Moreover,
-it is the user's responsibility to know what the URL of the websocket connection is to initiate a session.
+it is the user's responsibility to know what the URL of the websocket connection is to initiate a session. A
+browser driven over a remote debugging pipe rather than a websocket is launched the same way, by the user,
+and the session is started with `PipeConnection` in place of the default websocket connection.
 
 ## Getting Started
 The library is built to support .NET Standard 2.0. This should allow the widest usage of the library across

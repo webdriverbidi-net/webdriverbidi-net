@@ -11,7 +11,7 @@ using WebDriverBiDi.Internal;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Object containing data about a WebDriver Bidi command.
+/// Object containing data about a WebDriver BiDi command.
 /// </summary>
 [JsonConverter(typeof(CommandJsonConverter))]
 public class Command

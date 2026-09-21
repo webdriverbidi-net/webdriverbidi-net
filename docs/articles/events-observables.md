@@ -9,7 +9,7 @@ Browser events allow you to react to things happening in the browser in real-tim
 - Navigation events (page loads, redirects)
 - Network events (requests, responses)
 - Console log messages
-- User context creation/destruction
+- Browsing context creation/destruction
 - And more...
 
 ## The Two-Step Subscription Process

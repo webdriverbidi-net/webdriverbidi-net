@@ -8,7 +8,8 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the emulation.setGeolocationOverride command.
+/// Provides parameters for the emulation.setGeolocationOverride command that make the geolocation fail with
+/// an error instead of returning a position.
 /// </summary>
 public class SetGeolocationOverrideErrorCommandParameters : SetGeolocationOverrideCommandParameters
 {

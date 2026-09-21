@@ -6,7 +6,7 @@
 namespace WebDriverBiDi;
 
 /// <summary>
-/// Represents log levels for the WebDriver Bidi protocol.
+/// Represents log levels for the WebDriver BiDi protocol.
 /// </summary>
 public enum WebDriverBiDiLogLevel
 {

@@ -6,7 +6,7 @@
 namespace WebDriverBiDi;
 
 /// <summary>
-/// Base EventArgs class for use with WebDriver Bidi events.
+/// Base EventArgs class for use with WebDriver BiDi events.
 /// </summary>
 public record WebDriverBiDiEventArgs
 {

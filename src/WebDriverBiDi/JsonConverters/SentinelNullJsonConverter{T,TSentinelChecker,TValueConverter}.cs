@@ -50,7 +50,7 @@ public class SentinelNullJsonConverter<T, TSentinelChecker, TValueConverter> : S
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The value to be serialized. It is never <see langword="null"/> and never the sentinel.</param>
-    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <param name="options">The JsonSerializerOptions used for serializing the object.</param>
     protected override void WriteValue(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
         this.valueConverter.Write(writer, value, options);

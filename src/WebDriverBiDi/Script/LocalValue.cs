@@ -75,6 +75,10 @@ public record LocalValue
     /// </summary>
     /// <param name="numericValue">The long to wrap as a LocalValue.</param>
     /// <returns>A LocalValue for a number.</returns>
+    /// <remarks>
+    /// JavaScript numbers are doubles, so a value whose magnitude exceeds 2^53 - 1 cannot be represented exactly
+    /// and reaches the remote end rounded. Use <see cref="BigInt"/> to send such a value exactly.
+    /// </remarks>
     public static LocalValue Number(long numericValue) => new LocalArgumentValue("number") { Value = numericValue };
 
     /// <summary>

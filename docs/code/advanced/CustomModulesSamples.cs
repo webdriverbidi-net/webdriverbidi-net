@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/advanced/custom-modules.md
 
-#pragma warning disable CS0649, CS1591, CS8600, CS8602, CS8618, CS8604, CS8619
+#pragma warning disable CS0649, CS1591, CS8618
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
@@ -224,9 +224,9 @@ public class PageUtilitiesModule : Module
             parameters);
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is KeyValuePairCollectionRemoteValue remoteValue)
+            success.Result is KeyValuePairCollectionRemoteValue remoteValue &&
+            remoteValue.Value is RemoteValueDictionary data)
         {
-            RemoteValueDictionary data = remoteValue.Value;
             return data["found"].As<BooleanRemoteValue>().Value;
         }
 
@@ -304,9 +304,10 @@ public class PageUtilitiesModule : Module
         EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is KeyValuePairCollectionRemoteValue remoteValue)
+            success.Result is KeyValuePairCollectionRemoteValue remoteValue &&
+            remoteValue.Value is RemoteValueDictionary properties)
         {
-            return ToDictionary(remoteValue.Value);
+            return ToDictionary(properties);
         }
 
         return new Dictionary<string, object>();
@@ -410,9 +411,9 @@ public class TestUtilitiesModule : Module
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is KeyValuePairCollectionRemoteValue remoteValue)
+            success.Result is KeyValuePairCollectionRemoteValue remoteValue &&
+            remoteValue.Value is RemoteValueDictionary dimensions)
         {
-            RemoteValueDictionary dimensions = remoteValue.Value;
             long width = dimensions["width"].As<NumberRemoteValue>();
             long height = dimensions["height"].As<NumberRemoteValue>();
 
@@ -446,10 +447,10 @@ public class TestUtilitiesModule : Module
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is CollectionRemoteValue remoteValue)
+            success.Result is CollectionRemoteValue remoteValue &&
+            remoteValue.Value is RemoteValueList links)
         {
-            RemoteValueList links = remoteValue.Value;
-            return links.Select(l => l.As<StringRemoteValue>().Value ?? "").ToList();
+            return links.Select(l => l.As<StringRemoteValue>().Value).ToList();
         }
 
         return new List<string>();
@@ -510,6 +511,7 @@ public class CustomEventsModule : Module
 
     public override string ModuleName => CustomModuleName;
 
+    [ObservableEventName(CustomEventName)]
     public ObservableEvent<CustomEventArgs> OnCustomEvent => this.onCustomEvent;
 }
 
@@ -708,7 +710,7 @@ public static class CustomTransportSamples
     }
 }
 
-#pragma warning restore CS1591, CS8600, CS8602, CS8618
+#pragma warning restore CS1591, CS8618
 
 #region FilteringTransport
 

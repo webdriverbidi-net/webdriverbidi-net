@@ -4,8 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/modules/network.md and docs/articles/examples/network-interception.md
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-
 namespace WebDriverBiDi.Docs.Code.Modules;
 
 using System.Collections.Generic;
@@ -827,4 +825,3 @@ public class HttpTransaction
     public string? ResponseBody { get; set; }
 }
 
-#pragma warning restore CS8602 // Dereference of a possibly null reference.

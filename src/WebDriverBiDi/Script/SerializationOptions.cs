@@ -25,8 +25,9 @@ public class SerializationOptions
     /// <remarks>
     /// <para>
     /// Valid values for this property are greater than or equal to zero (or <see cref="InfiniteMaxDomDepth"/>
-    /// for no limit). This property does not validate its value; a value outside this range is sent as-is,
-    /// and a conforming remote end rejects it when the command is executed.
+    /// for no limit). This property does not validate its value. A value of zero or greater is sent as-is; any
+    /// negative value is sent as JSON <c>null</c>, which the protocol reads as no limit, so a negative value
+    /// other than the sentinel asks for the same thing rather than being rejected.
     /// </para>
     /// <para>
     /// Any negative value means no limit, but only <see cref="InfiniteMaxDomDepth"/> is declared as the

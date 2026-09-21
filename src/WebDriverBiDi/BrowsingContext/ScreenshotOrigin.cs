@@ -15,13 +15,14 @@ using WebDriverBiDi.JsonConverters;
 public enum ScreenshotOrigin
 {
     /// <summary>
-    /// The screenshot captures the visual viewport, and any clip rectangle is relative to it.
+    /// The screenshot captures the visual viewport. A box clip rectangle is positioned relative to it; an
+    /// element clip rectangle is positioned at its element whatever the origin.
     /// </summary>
     Viewport,
 
     /// <summary>
-    /// The screenshot captures the whole document, producing a full-page image, and any clip
-    /// rectangle is relative to the document origin.
+    /// The screenshot captures the whole document, producing a full-page image. A box clip rectangle is
+    /// positioned relative to the document origin; an element clip rectangle is positioned at its element.
     /// </summary>
     Document,
 }

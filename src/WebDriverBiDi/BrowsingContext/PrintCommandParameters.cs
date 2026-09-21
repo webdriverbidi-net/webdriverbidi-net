@@ -77,7 +77,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     public double? Scale { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether to shrink the content to fit on a single page. If omitted, defaults to true.
+    /// Gets or sets a value indicating whether to shrink the content to fit the width of the page. If omitted, defaults to true.
     /// </summary>
     [JsonPropertyName("shrinkToFit")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

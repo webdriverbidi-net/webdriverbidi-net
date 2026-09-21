@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/advanced/aot-compatibility.md
 
-#pragma warning disable CS8600, CS8602, CS8618, SYSLIB1038
+#pragma warning disable CS8618, SYSLIB1038
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
@@ -186,3 +186,15 @@ public partial class ModuleAJsonContext : JsonSerializerContext { }
 
 [JsonSerializable(typeof(ModuleBCommandParameters))]
 public partial class ModuleBJsonContext : JsonSerializerContext { }
+
+#region AdditionalDataUnderAot
+// A value of a type the library's own context does not already register needs a context of its own.
+public record ExtensionPayload
+{
+    [JsonPropertyName("detail")]
+    public string Detail { get; set; } = string.Empty;
+}
+
+[JsonSerializable(typeof(ExtensionPayload))]
+public partial class ExtensionPayloadJsonContext : JsonSerializerContext { }
+#endregion

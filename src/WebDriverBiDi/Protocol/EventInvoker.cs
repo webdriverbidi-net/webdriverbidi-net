@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 /// <summary>
-/// Object containing data about a WebDriver Bidi event.
+/// Object containing data about a WebDriver BiDi event.
 /// </summary>
 public abstract class EventInvoker
 {

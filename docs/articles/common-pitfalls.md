@@ -14,7 +14,7 @@ By default, event handlers run **synchronously on the transport thread**, which 
 
 **Why This Happens:**
 
-WebDriverBiDi.NET uses a single transport thread to process all incoming messages from the browser. When your handler blocks that thread, nothing else can be processed.
+WebDriverBiDi.NET processes all incoming messages from the browser on a single reader task, which runs on the thread pool. When your handler blocks it, nothing else can be processed.
 
 **The Solution:**
 

@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 /// <summary>
-/// Object containing event data for events raised when an error occurs on a WebDriver Bidi connection.
+/// Object containing event data for events raised when an error occurs on a WebDriver BiDi connection.
 /// </summary>
 public record ConnectionErrorEventArgs : WebDriverBiDiEventArgs
 {

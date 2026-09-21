@@ -143,7 +143,7 @@ uses `T` itself as the event args type and throws `WebDriverBiDiException` when 
 else, which the [BIDI035](analyzers.md#bidi035) analyzer reports.
 
 Mark each `ObservableEvent<T>` property on your module with `[ObservableEventName("your.event")]`, naming the
-same string you passed to the `ObservableEvent<T>` constructor. The library's analyzers read that attribute
+same string you passed to the `ObservableEventInvocable<T>` constructor, as the module sample above does. The library's analyzers read that attribute
 from compiled metadata, which is what lets BIDI005 and BIDI015 recognise your module's events in a consuming
 project that references your module as a package.
 

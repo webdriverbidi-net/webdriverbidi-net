@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/remote-values.md
 
-#pragma warning disable CS1591, CS0168, CS0219, CS8600, CS8602, CS8604 // Possible null reference argument.
+#pragma warning disable CS1591, CS0168, CS0219
 
 namespace WebDriverBiDi.Docs.Code.RemoteValues;
 
@@ -39,7 +39,7 @@ public static class RemoteValuesSamples
 
             // Can also convert to double
             double doubleNumber = remoteValue.As<NumberRemoteValue>();
-            Console.WriteLine(doubleNumber); // 42.0
+            Console.WriteLine(doubleNumber); // 42, because a whole double prints without a decimal point
         }
         #endregion
     }
@@ -128,12 +128,14 @@ public static class RemoteValuesSamples
         {
             KeyValuePairCollectionRemoteValue obj = success.Result.As<KeyValuePairCollectionRemoteValue>();
 
-            // Convert to RemoteValueDictionary; extract values with As<T>()
-            RemoteValueDictionary dict = obj.Value;
-
-            Console.WriteLine(dict["name"].As<StringRemoteValue>().Value);   // "John"
-            Console.WriteLine(dict["age"].As<NumberRemoteValue>().Value);    // 30
-            Console.WriteLine(dict["active"].As<BooleanRemoteValue>().Value); // True
+            // Convert to RemoteValueDictionary; extract values with As<T>(). Value is null when
+            // the remote end sent the object without its contents, so test before reading it.
+            if (obj.Value is RemoteValueDictionary dict)
+            {
+                Console.WriteLine(dict["name"].As<StringRemoteValue>().Value);   // "John"
+                Console.WriteLine(dict["age"].As<NumberRemoteValue>().Value);    // 30
+                Console.WriteLine(dict["active"].As<BooleanRemoteValue>().Value); // True
+            }
         }
         #endregion
     }
@@ -161,13 +163,14 @@ public static class RemoteValuesSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(script, target, true));
 
+        // Each level is only present if the remote end serialized it, which it stops doing at the
+        // object depth limit, so each Value is tested as it is unwrapped.
         if (result is EvaluateResultSuccess success &&
-            success.Result is KeyValuePairCollectionRemoteValue dictionaryValue)
+            success.Result is KeyValuePairCollectionRemoteValue dictionaryValue &&
+            dictionaryValue.Value is RemoteValueDictionary dict &&
+            dict["user"].As<KeyValuePairCollectionRemoteValue>().Value is RemoteValueDictionary user &&
+            user["address"].As<KeyValuePairCollectionRemoteValue>().Value is RemoteValueDictionary address)
         {
-            RemoteValueDictionary dict = dictionaryValue.Value;
-            RemoteValueDictionary user = dict["user"].As<KeyValuePairCollectionRemoteValue>().Value;
-            RemoteValueDictionary address = user["address"].As<KeyValuePairCollectionRemoteValue>().Value;
-
             Console.WriteLine(address["city"].As<StringRemoteValue>().Value); // "New York"
         }
         #endregion
@@ -187,10 +190,9 @@ public static class RemoteValuesSamples
             new EvaluateCommandParameters(script, target, true));
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is CollectionRemoteValue listValue)
+            success.Result is CollectionRemoteValue listValue &&
+            listValue.Value is RemoteValueList list)
         {
-            RemoteValueList list = listValue.Value;
-
             Console.WriteLine($"Length: {list.Count}"); // 5
 
             foreach (RemoteValue item in list)
@@ -221,14 +223,15 @@ public static class RemoteValuesSamples
             new EvaluateCommandParameters(script, target, true));
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is CollectionRemoteValue listValue)
+            success.Result is CollectionRemoteValue listValue &&
+            listValue.Value is RemoteValueList list)
         {
-            RemoteValueList list = listValue.Value;
-
             foreach (RemoteValue item in list)
             {
-                RemoteValueDictionary person = item.As<KeyValuePairCollectionRemoteValue>().Value;
-                Console.WriteLine($"{person["name"].As<StringRemoteValue>().Value}, age {person["age"].As<NumberRemoteValue>().Value}");
+                if (item.As<KeyValuePairCollectionRemoteValue>().Value is RemoteValueDictionary person)
+                {
+                    Console.WriteLine($"{person["name"].As<StringRemoteValue>().Value}, age {person["age"].As<NumberRemoteValue>().Value}");
+                }
             }
         }
         #endregion
@@ -265,10 +268,12 @@ public static class RemoteValuesSamples
     {
         #region ToObjectUsage
         // Usage: convert RemoteValueDictionary to Dictionary<string, object>
-        RemoteValueDictionary dict = success.Result.As<KeyValuePairCollectionRemoteValue>().Value;
-        Dictionary<string, object?> flat = dict.ToDictionary(
-            kvp => kvp.Key.ToString() ?? "",
-            kvp => ToObject(kvp.Value));
+        if (success.Result.As<KeyValuePairCollectionRemoteValue>().Value is RemoteValueDictionary dict)
+        {
+            Dictionary<string, object?> flat = dict.ToDictionary(
+                kvp => kvp.Key.ToString() ?? "",
+                kvp => ToObject(kvp.Value));
+        }
         #endregion
     }
 
@@ -289,13 +294,16 @@ public static class RemoteValuesSamples
         if (result is EvaluateResultSuccess success)
         {
             RemoteValue elementRemoteValue = success.Result;
-            elementRemoteValue.TryAs(out NodeRemoteValue element);
+            if (!elementRemoteValue.TryAs(out NodeRemoteValue? element))
+            {
+                return;
+            }
 
             Console.WriteLine($"Type: {element.Type}"); // Node
             Console.WriteLine($"SharedId: {element.SharedId}");
 
-            // Get node properties
-            NodeProperties nodeProps = element.Value;
+            // Get node properties; this throws if the remote end sent the node without them
+            NodeProperties nodeProps = element.GetNodeProperties();
 
             Console.WriteLine($"Tag: {nodeProps.LocalName}");
             Console.WriteLine($"Node Type: {nodeProps.NodeType}");
@@ -330,7 +338,10 @@ public static class RemoteValuesSamples
 
         if (getResult is EvaluateResultSuccess getSuccess)
         {
-            getSuccess.Result.TryAs(out NodeRemoteValue? element);
+            if (!getSuccess.Result.TryAs(out NodeRemoteValue? element))
+            {
+                return;
+            }
 
             // Create a reference
             SharedReference elementRef = element.ToSharedReference();
@@ -468,11 +479,12 @@ public static class RemoteValuesSamples
                 break;
 
             case RemoteValueType.Object:
-                RemoteValueDictionary obj = value.As<KeyValuePairCollectionRemoteValue>().Value;
+                // Null when the remote end sent the object without its contents
+                RemoteValueDictionary? obj = value.As<KeyValuePairCollectionRemoteValue>().Value;
                 break;
 
             case RemoteValueType.Array:
-                RemoteValueList list = value.As<CollectionRemoteValue>().Value;
+                RemoteValueList? list = value.As<CollectionRemoteValue>().Value;
                 break;
 
             case RemoteValueType.Node:
@@ -493,17 +505,16 @@ public static class RemoteValuesSamples
     public static void CheckingForSpecificTypes(RemoteValue value)
     {
         #region CheckingforSpecificTypes
-        if (value.Type == RemoteValueType.Node)
+        // TryAs is the type test as well as the conversion; it returns false for any other type.
+        if (value.TryAs(out NodeRemoteValue? nodeValue))
         {
             // It's a DOM element
-            value.TryAs(out NodeRemoteValue? nodeValue);
             SharedReference elementRef = nodeValue.ToSharedReference();
         }
-        else if (value.Type == RemoteValueType.Array)
+        else if (value.TryAs(out CollectionRemoteValue? listValue))
         {
-            // It's an array
-            value.TryAs(out CollectionRemoteValue? listValue);
-            RemoteValueList list = listValue.Value;
+            // It's an array, whose contents are null if the remote end omitted them
+            RemoteValueList? list = listValue.Value;
         }
         #endregion
     }
@@ -529,10 +540,9 @@ public static class RemoteValuesSamples
             new EvaluateCommandParameters(script, target, true));
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is KeyValuePairCollectionRemoteValue dictionaryValue)
+            success.Result is KeyValuePairCollectionRemoteValue dictionaryValue &&
+            dictionaryValue.Value is RemoteValueDictionary data)
         {
-            RemoteValueDictionary data = dictionaryValue.Value;
-
             string title = data["title"].As<StringRemoteValue>().Value;
             string url = data["url"].As<StringRemoteValue>().Value;
             long linkCount = data["linkCount"].As<NumberRemoteValue>();
@@ -554,10 +564,9 @@ public static class RemoteValuesSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(script, target, true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result.As<CollectionRemoteValue>().Value is RemoteValueList links)
         {
-            RemoteValueList links = success.Result.As<CollectionRemoteValue>().Value;
-
             foreach (RemoteValue link in links)
             {
                 Console.WriteLine(link.As<StringRemoteValue>().Value);
@@ -581,7 +590,10 @@ public static class RemoteValuesSamples
                 target,
                 true));
 
-        getResult.As<EvaluateResultSuccess>().Result.TryAs(out NodeRemoteValue? element);
+        if (!getResult.As<EvaluateResultSuccess>().Result.TryAs(out NodeRemoteValue? element))
+        {
+            return;
+        }
 
         // Get properties from element
         CallFunctionCommandParameters propsParams = new CallFunctionCommandParameters(
@@ -597,7 +609,7 @@ public static class RemoteValuesSamples
         propsParams.Arguments.Add(element.ToSharedReference());
 
         EvaluateResult propsResult = await driver.Script.CallFunctionAsync(propsParams);
-        RemoteValueDictionary props = propsResult.As<EvaluateResultSuccess>().Result
+        RemoteValueDictionary? props = propsResult.As<EvaluateResultSuccess>().Result
             .As<KeyValuePairCollectionRemoteValue>().Value;
         #endregion
     }
@@ -606,6 +618,3 @@ public static class RemoteValuesSamples
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning restore CS0168 // Variable declared but never used
 #pragma warning restore CS0219 // Variable assigned but never used
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-#pragma warning restore CS8604 // Possible null reference argument.

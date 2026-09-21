@@ -46,12 +46,15 @@ WebDriverBiDi.NET enables sophisticated browser automation scenarios:
 - [Installation and Setup](articles/getting-started.md)
 - [Your First WebDriverBiDi Application](articles/first-application.md)
 - [Browser Setup Guide](articles/browser-setup.md)
+- [Quick Reference](articles/quick-reference.md): a cheat sheet of the most-used commands
 
 ### Core Concepts
 - [Understanding the Architecture](articles/architecture.md)
 - [Modules and Commands](articles/core-concepts.md)
 - [Events and Observables](articles/events-observables.md)
 - [Working with Remote Values](articles/remote-values.md)
+- [Common Pitfalls](articles/common-pitfalls.md)
+- [Protocol Reference](articles/protocol-reference.md): every specification method and the API that sends it
 
 ### Module Guides
 - [Browser Module](articles/modules/browser.md)

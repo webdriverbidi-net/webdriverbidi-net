@@ -10,7 +10,7 @@ using System.Text;
 using WebDriverBiDi.Internal;
 
 /// <summary>
-/// Represents a connection to a WebDriver Bidi remote end.
+/// Represents a connection to a WebDriver BiDi remote end.
 /// </summary>
 /// <remarks>
 /// <para>

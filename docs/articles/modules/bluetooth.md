@@ -220,7 +220,7 @@ This library does not launch browsers (see [Browser Setup](../browser-setup.md))
 
 **Solution**:
 - Use correct company identifier codes
-- Ensure byte array format is valid
+- Pass the data as a base64 string, which is what `BluetoothManufacturerData.Data` holds
 - Reference [Bluetooth Company Identifiers](https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers/)
 
 ## Next Steps

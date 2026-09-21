@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/advanced/error-handling.md
 
-#pragma warning disable CS0168, CS8600, CS8618, CS0169, CS0649
+#pragma warning disable CS0168, CS8618, CS0169, CS0649
 
 namespace WebDriverBiDi.Docs.Code.ErrorHandling;
 
@@ -315,6 +315,10 @@ public class ErrorHandlingSamples
     {
         #region ThreadingModel
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+        // Terminate mode is what surfaces a handler's exception on a later command; under the default
+        // Ignore the command below completes and the catch never runs.
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Main thread (your code)
@@ -322,10 +326,10 @@ public class ErrorHandlingSamples
 
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
-            // Transport thread (separate from main thread)
-            Console.WriteLine($"Transport thread: Processing event {e.Type}");
+            // The reader task, not the thread that started the driver
+            Console.WriteLine($"Reader task: Processing event {e.Type}");
 
-            // If this throws, the exception occurs on the transport thread
+            // If this throws, the exception occurs on the reader task
             if (e.Level == LogLevel.Error)
             {
                 throw new InvalidOperationException("Error log entry");
@@ -338,15 +342,18 @@ public class ErrorHandlingSamples
 
         try
         {
-            // Main thread (your code)
-            // With Terminate mode: event handler exceptions from transport thread
-            // are surfaced here when we synchronize via this command
+            // Your own thread: with Terminate mode, a handler's exception from the reader task is
+            // surfaced here, on the next command
             await driver.BrowsingContext.NavigateAsync(navParams);
+        }
+        catch (AggregateException ex)
+        {
+            // More than one error accumulated before this command: each is an inner exception.
+            Console.WriteLine($"Caught errors from the reader task: {string.Join(", ", ex.InnerExceptions.Select(inner => inner.Message))}");
         }
         catch (WebDriverBiDiException ex)
         {
-            // Main thread catches the exception that originated on transport thread
-            Console.WriteLine($"Main thread: Caught exception from transport: {ex.Message}");
+            Console.WriteLine($"Caught exception from the reader task: {ex.Message}");
         }
         #endregion
     }
@@ -407,13 +414,24 @@ public class ErrorHandlingSamples
     /// <summary>
     /// ObservableEventHandlerOptions enum values: RunHandlerSynchronously, RunHandlerAsynchronously.
     /// </summary>
-    public static void ObservableEventHandlerOptionsValues()
+    public static void ObservableEventHandlerOptionsValues(BiDiDriver driver)
     {
         #region ObservableEventHandlerOptions
-        _ = ObservableEventHandlerOptions.RunHandlerSynchronously;
-        _ = ObservableEventHandlerOptions.RunHandlerAsynchronously;
+        // The default: the reader task waits for the handler, so the next event is not dispatched until it
+        // returns, and a command sent from here cannot be answered while it runs.
+        driver.Log.OnEntryAdded.AddObserver(
+            (e) => Console.WriteLine($"Log entry: {e.Text}"),
+            ObservableEventHandlerOptions.RunHandlerSynchronously);
+
+        // Queued to the thread pool: the reader task moves on at once, so a handler that performs I/O, or
+        // drives the driver, does not hold up the events behind it.
+        driver.Log.OnEntryAdded.AddObserver(
+            async (e) => await ArchiveLogEntryAsync(e),
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
         #endregion
     }
+
+    private static Task ArchiveLogEntryAsync(EntryAddedEventArgs e) => Task.CompletedTask;
 
     /// <summary>
     /// IsContextValidAsync usage example.

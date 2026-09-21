@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Protocol;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Deserializes a message that represents an event as defined by the WebDriver Bidi protocol.
+/// Deserializes a message that represents an event as defined by the WebDriver BiDi protocol.
 /// </summary>
 public abstract class EventMessage : Message
 {

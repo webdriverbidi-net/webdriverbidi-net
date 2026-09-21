@@ -4,8 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/first-application.md
 
-#pragma warning disable CS8600, CS8602
-
 namespace WebDriverBiDi.Docs.Code.Examples;
 
 using WebDriverBiDi;
@@ -102,9 +100,9 @@ public static class FirstApplicationSamples
             EvaluateResult infoResult = await driver.Script.EvaluateAsync(infoParams);
 
             if (infoResult is EvaluateResultSuccess infoSuccess &&
-                infoSuccess.Result is KeyValuePairCollectionRemoteValue infoValue)
+                infoSuccess.Result is KeyValuePairCollectionRemoteValue infoValue &&
+                infoValue.Value is RemoteValueDictionary info)
             {
-                RemoteValueDictionary info = infoValue.Value;
                 Console.WriteLine("Page Analysis:");
                 Console.WriteLine($"  URL: {info["url"].As<StringRemoteValue>().Value}");
                 Console.WriteLine($"  Links: {info["linkCount"].As<NumberRemoteValue>().Value}");

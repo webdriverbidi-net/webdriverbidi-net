@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/api/index.md
 
-#pragma warning disable CS8600, CS8602, CS8618, CS8603, CS8625
+#pragma warning disable CS8618, CS8603, CS8625
 
 namespace WebDriverBiDi.Docs.Code.Api;
 
@@ -77,7 +77,7 @@ public class ApiIndexSamples
     {
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
-            string text = e.Text;
+            string? text = e.Text;
         });
     }
 

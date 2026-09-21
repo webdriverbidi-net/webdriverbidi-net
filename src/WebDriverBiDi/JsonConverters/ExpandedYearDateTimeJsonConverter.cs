@@ -50,7 +50,7 @@ public class ExpandedYearDateTimeJsonConverter : JsonConverter<DateTime>
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
-    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <param name="options">The JsonSerializerOptions used for deserializing the JSON.</param>
     /// <returns>
     /// The deserialized DateTime value. Instants before the range of <see cref="DateTime"/>
     /// are clamped to <see cref="DateTime.MinValue"/>, and instants after it to
@@ -115,7 +115,7 @@ public class ExpandedYearDateTimeJsonConverter : JsonConverter<DateTime>
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The DateTime value to be serialized.</param>
-    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <param name="options">The JsonSerializerOptions used for serializing the object.</param>
     /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
     {
