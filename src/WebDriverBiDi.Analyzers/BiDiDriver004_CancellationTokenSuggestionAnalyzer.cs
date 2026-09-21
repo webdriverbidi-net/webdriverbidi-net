@@ -59,9 +59,9 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
         InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)context.Node;
 
         // Rule out the overwhelming majority of invocations on their name alone, before paying for
-        // the semantic model. ShouldSuggestToken below remains the authoritative test, against the
-        // resolved symbol's name; this only avoids binding calls that cannot possibly match.
-        if (!AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, LongRunningMethods))
+        // the semantic model. Every command's name ends with Async; ShouldSuggestToken below remains
+        // the authoritative test against the resolved symbol.
+        if (!AnalyzerSymbolHelpers.CouldInvokeNameEndingWith(invocation, "Async"))
         {
             return;
         }
@@ -111,20 +111,37 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
         return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || AnalyzerSymbolHelpers.IsLibraryModuleType(type);
     }
 
-    // Operations that support cancellation. NavigateAsync is deliberately absent: it is reported by
-    // BIDI013 (long-running operation) at Warning severity, and reporting it here as well would produce
-    // two diagnostics for one call. Hoisted to a static field to avoid allocating on every invocation.
-    private static readonly string[] LongRunningMethods =
+    /// <summary>
+    /// The operations BIDI013 reports at Warning severity for the same omission. Suggesting a token
+    /// here as well would produce two diagnostics for one call.
+    /// </summary>
+    private static readonly string[] LongRunningOperations =
     [
-        "ExecuteCommandAsync",
-        "EvaluateAsync",
-        "CallFunctionAsync",
-        "GetTreeAsync",
-        "LocateNodesAsync",
+        "NavigateAsync",
+        "PrintAsync",
+        "ReloadAsync",
+        "StartAsync",
+        "WaitForCapturedTasksAsync",
+        "WaitForCapturedTasksCompleteAsync",
     ];
 
+    /// <summary>
+    /// Determines whether a call is one this rule suggests a token for.
+    /// </summary>
+    /// <param name="method">The method the invocation binds to.</param>
+    /// <returns><see langword="true"/> if the call should carry a token.</returns>
+    /// <remarks>
+    /// Every method of a module is judged, rather than a list of names that left one command suggested
+    /// and the next one not; the caller pays for a token overload only where the method declares one,
+    /// which the caller has already established. The driver's own <c>ExecuteCommandAsync</c> sends a
+    /// command over the same connection and is judged with them, while its lifecycle members --
+    /// <c>StopAsync</c>, <c>RegisterTypeInfoResolverAsync</c> -- are not commands and are left alone.
+    /// </remarks>
     private static bool ShouldSuggestToken(IMethodSymbol method)
     {
-        return LongRunningMethods.Contains(method.Name);
+        // A delegate's Invoke is not a command, however module-shaped the delegate type is.
+        return method.MethodKind == MethodKind.Ordinary
+            && !LongRunningOperations.Contains(method.Name)
+            && (AnalyzerSymbolHelpers.IsLibraryModuleType(method.ContainingType) || method.Name == "ExecuteCommandAsync");
     }
 }

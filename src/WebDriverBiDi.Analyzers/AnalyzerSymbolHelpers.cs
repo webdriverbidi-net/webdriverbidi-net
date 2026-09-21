@@ -722,6 +722,30 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
+    /// Determines whether an invocation could name a method whose name ends with <c>Async</c>.
+    /// </summary>
+    /// <param name="invocation">The invocation.</param>
+    /// <param name="suffix">The suffix the written name must end with.</param>
+    /// <returns><see langword="true"/> unless the written name rules it out.</returns>
+    /// <remarks>
+    /// The syntactic counterpart of <see cref="CouldInvokeAnyOf"/> for a rule whose subject is a family
+    /// of methods rather than a list of names. A shape whose name cannot be read syntactically -- an
+    /// invocation of a delegate a call returns, say -- is left to the bind, as there.
+    /// </remarks>
+    internal static bool CouldInvokeNameEndingWith(InvocationExpressionSyntax invocation, string suffix)
+    {
+        SimpleNameSyntax? invokedName = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
+            MemberBindingExpressionSyntax memberBinding => memberBinding.Name,
+            SimpleNameSyntax simpleName => simpleName,
+            _ => null,
+        };
+
+        return invokedName is null || invokedName.Identifier.ValueText.EndsWith(suffix, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The syntax kinds that carry an executable body the intra-procedural analyzers examine: a method
     /// declaration, a constructor declaration, and a compilation unit (whose global statements form the
     /// body of a top-level program). Registering an analyzer for all three lets it fire in constructors

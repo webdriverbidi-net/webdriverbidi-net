@@ -122,13 +122,47 @@ public class BiDiDriver004AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that methods not in the suggestion list do not report a diagnostic. ActivateAsync is a
-    /// real BrowsingContext module method with a CancellationToken overload, but it is absent from the
-    /// BIDI004 suggestion list, so the analyzer must not flag it.
+    /// Tests that the driver's own lifecycle members are not suggested, though they take a
+    /// cancellation token. Only the command pipeline is this rule's subject on the driver itself.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task NonSuggestedMethod_WithoutCancellationToken_NoDiagnostic()
+    public async Task DriverLifecycleMembers_WithoutCancellationToken_NoDiagnostic()
+    {
+        string test = """
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver, IJsonTypeInfoResolver resolver)
+                    {
+                        await driver.RegisterTypeInfoResolverAsync(resolver);
+                        await driver.StopAsync();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a module command outside the handful the rule once listed is suggested like any
+    /// other. ActivateAsync is a real BrowsingContext command with a CancellationToken overload; the
+    /// rule judges every module method rather than a list of names.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommandOutsideTheFormerList_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
             using System.Threading.Tasks;
@@ -142,16 +176,21 @@ public class BiDiDriver004AnalyzerTests
                     public async Task TestMethod(BiDiDriver driver, string contextId)
                     {
                         ActivateCommandParameters activateParams = new ActivateCommandParameters(contextId);
-                        await driver.BrowsingContext.ActivateAsync(activateParams);
+                        await {|#0:driver.BrowsingContext.ActivateAsync(activateParams)|};
                     }
                 }
             }
             """;
 
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("ActivateAsync");
+
         RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
         };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -749,11 +788,10 @@ public class BiDiDriver004AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that invoking a delegate whose variable name happens to match a long-running method is
-    /// not reported. The syntactic pre-filter matches on that name and admits the call, but the call
-    /// resolves to the delegate's <c>Invoke</c> method; the authoritative name test against the
-    /// resolved symbol is what rejects it, even though the delegate's containing type is
-    /// module-shaped and its <c>Invoke</c> does take a cancellation token.
+    /// Tests that invoking a delegate through a variable is not reported. The syntactic pre-filter
+    /// admits the call on its name, but it resolves to the delegate's <c>Invoke</c>; that method kind
+    /// is what rejects it, even though the delegate's type is module-shaped and its <c>Invoke</c> does
+    /// take a cancellation token.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
