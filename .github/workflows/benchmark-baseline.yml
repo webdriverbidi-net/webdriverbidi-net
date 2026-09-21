@@ -27,6 +27,7 @@ permissions:
 
 jobs:
   produce-baseline:
+    timeout-minutes: 60
     runs-on: ubuntu-latest
 
     steps:

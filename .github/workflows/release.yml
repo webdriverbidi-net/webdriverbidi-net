@@ -32,10 +32,10 @@ jobs:
   tests:
     name: Tests
     uses: ./.github/workflows/_tests.yml
-    secrets: inherit
 
   validate-docs:
     name: Validate documentation
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -45,6 +45,7 @@ jobs:
 
   verify-tag:
     name: Verify tag
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -85,14 +86,16 @@ jobs:
       - name: Build documentation sample code
         run: dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release --no-restore
 
-      - name: Install DocFX
-        run: dotnet tool install -g docfx
+      # Pinned in .config/dotnet-tools.json, which Dependabot bumps, rather than installed unpinned:
+      # build-docs gates the release, so a bad DocFX release would otherwise block publishing.
+      - name: Restore .NET tools
+        run: dotnet tool restore
 
       - name: Build documentation site
         run: |
           cd docs
-          docfx metadata docfx.json
-          docfx build docfx.json
+          dotnet docfx metadata docfx.json
+          dotnet docfx build docfx.json
           touch _site/.nojekyll
 
       - name: Upload Pages artifact
@@ -102,7 +105,9 @@ jobs:
 
   deploy-docs:
     name: Deploy documentation
-    needs: build-docs
+    # Also needs the release: published docs must correspond to a released NuGet version, so a failed
+    # push leaves the docs unpublished rather than describing a version that is not on NuGet.
+    needs: [build-docs, release]
     concurrency:
       group: pages
       cancel-in-progress: false
@@ -112,6 +117,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
@@ -207,4 +213,6 @@ jobs:
           user: ${{ secrets.NUGET_USER }}
 
       - name: Push packages to NuGet
-        run: dotnet nuget push "*.nupkg" --skip-duplicate --source https://api.nuget.org/v3/index.json --api-key "${{steps.login.outputs.NUGET_API_KEY}}"
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "*.nupkg" --skip-duplicate --source https://api.nuget.org/v3/index.json --api-key "${NUGET_API_KEY}"

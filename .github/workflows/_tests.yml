@@ -188,6 +188,8 @@ jobs:
       - name: Upload code coverage
         uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2
         with:
+          # A coveralls.io outage must not fail the job that gates pull requests and the tag release.
+          fail-on-error: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
           files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info
           format: lcov

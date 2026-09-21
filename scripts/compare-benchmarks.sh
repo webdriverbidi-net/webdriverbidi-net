@@ -187,6 +187,20 @@ for current_file in "$results_dir"/*-report-full-compressed.json; do
   render_class_table "$class_name" "$current_file" "$baseline_file"
 done
 
+# A baseline with no current results is a class that was deleted or renamed. The loop above iterates the
+# current results only, so such a class would otherwise vanish from the comparison without a word.
+for baseline_file in "$baselines_dir"/ci-baseline-*.json; do
+  [ -f "$baseline_file" ] || continue
+  baseline_name=$(basename "$baseline_file" .json)
+  class_name=${baseline_name#ci-baseline-}
+  if [ ! -f "$results_dir/WebDriverBiDi.Benchmarks.${class_name}-report-full-compressed.json" ]; then
+    echo "### $class_name"
+    echo ""
+    echo "_(class removed) A baseline is on file for this class, but the run produced no results for it; it was renamed or deleted._"
+    echo ""
+  fi
+done
+
 if [ "$found_any" = "false" ]; then
   echo "_No benchmark results were produced in \`$results_dir\`. The benchmark run may have failed._"
 fi

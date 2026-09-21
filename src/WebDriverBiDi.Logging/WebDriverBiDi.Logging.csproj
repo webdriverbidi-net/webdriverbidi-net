@@ -25,6 +25,10 @@
     <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- SourceLink maps only the sources in source control; the SDK generates others (AssemblyInfo,
+         GlobalUsings). Embedding them puts every source a debugger may ask for in the symbol package. -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <ItemGroup>

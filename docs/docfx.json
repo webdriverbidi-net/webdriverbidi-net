@@ -69,7 +69,6 @@
       "description": "Documentation for the WebDriverBiDi.NET library",
       "author": "WebDriverBiDi.NET Committers",
       "copyright": "Copyright (c) 2022-2026 WebDriverBiDi.NET Committers. All rights reserved.",
-      "version": "${VERSION}",
       "_appLogoPath": "images/winston.png",
       "_appFaviconPath": "images/favicon.ico"
     },
