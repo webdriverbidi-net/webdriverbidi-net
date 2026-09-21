@@ -111,10 +111,14 @@ Events are logged with structured properties, enabling rich filtering and queryi
 <!-- inline-csharp: an annotated illustration of one logged event's message, format string and properties; it is comments only and compiles to nothing -->
 ```csharp
 // A CommandCompleted event is logged with:
-//   message:          Command 1 (session.status) completed in 42ms
-//   {OriginalFormat}: Command {commandId} ({method}) completed in {elapsedMilliseconds}ms
+//   message:          [7f3a.../b21c...] Command 1 (session.status) completed in 42ms
+//   {OriginalFormat}: [{connectionId}/{sessionId}] Command {commandId} ({method}) completed in {elapsedMilliseconds}ms
 //   properties:       EventId=7, EventName=CommandCompleted, EventSource=WebDriverBiDi,
-//                     commandId=1, method=session.status, elapsedMilliseconds=42
+//                     connectionId=7f3a..., sessionId=b21c..., commandId=1,
+//                     method=session.status, elapsedMilliseconds=42
+//
+// Every event except AsyncHandlerTaskCount begins with connectionId and sessionId, so two drivers
+// running in one process can be told apart.
 ```
 
 Structured logging providers (Application Insights, Serilog, etc.) can capture these properties for powerful diagnostics.

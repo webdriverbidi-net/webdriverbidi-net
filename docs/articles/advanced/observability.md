@@ -64,11 +64,11 @@ been retired.
 
 | Event | ID | Level | Description | Payload |
 |-------|---:|-------|-------------|---------|
-| `ConnectionOpening` | 1 | Info | Connection is being established | `connectionId`, `url` |
-| `ConnectionOpened` | 2 | Info | Connection successfully established | `connectionId`, `url` |
-| `ConnectionClosing` | 3 | Info | Connection is being closed | `connectionId`, `reason` |
-| `ConnectionClosed` | 4 | Info | Connection fully closed | `connectionId` |
-| `ConnectionError` | 5 | Error | Connection error occurred | `connectionId`, `errorMessage` |
+| `ConnectionOpening` | 1 | Info | Connection is being established | `connectionId`, `sessionId`, `url` |
+| `ConnectionOpened` | 2 | Info | Connection successfully established | `connectionId`, `sessionId`, `url` |
+| `ConnectionClosing` | 3 | Info | Connection is being closed | `connectionId`, `sessionId`, `reason` |
+| `ConnectionClosed` | 4 | Info | Connection fully closed | `connectionId`, `sessionId` |
+| `ConnectionError` | 5 | Error | Connection error occurred | `connectionId`, `sessionId`, `errorMessage` |
 
 Every session the transport opens is closed out the same way, however it ends: a session that raised
 `ConnectionOpened` and `TransportStarted` always ends with exactly one `ConnectionClosed` and one
@@ -78,51 +78,59 @@ connection error, raises no `ConnectionClosing`; its `TransportStopped` reason n
 (`"Remote end closed the connection"`, or `"Connection error: "` followed by the error). A connect attempt that
 fails after `ConnectionOpening` raises `ConnectionError` with the failure, and no `ConnectionOpened`.
 
-The `connectionId` in these payloads is `Connection.Id`, a GUID string assigned when the `Connection` is
-constructed and stable for its lifetime. Read it from the connection object to correlate your own logging
-with these events, or to tell two connections apart in a process that runs more than one driver.
+Every event except `AsyncHandlerTaskCount` begins its payload with `connectionId` and `sessionId`, and its
+rendered message with `[connectionId/sessionId]`, so a line identifies the driver it came from without
+cross-referencing anything.
+
+`connectionId` is `Connection.Id`, a GUID string assigned when the `Connection` is constructed and stable for
+its lifetime, including across reconnects; read it from the connection object to correlate your own logging.
+`sessionId` is a GUID assigned to each session the transport opens, so it changes on every reconnect and
+distinguishes the work of one session from the next on the same connection. It is empty on `ConnectionOpening`,
+which precedes the session it opens, on the module and event registration events, which are only legal while
+the transport is disconnected, and on events raised by a `Connection` used without a `Transport`, which has no
+sessions. `AsyncHandlerTaskCount` carries neither: it is a process-wide counter shared by every driver.
 
 ### Command Execution
 
 | Event | ID | Level | Description | Payload |
 |-------|---:|-------|-------------|---------|
-| `CommandSending` | 6 | Verbose | Command being sent to remote end | `commandId`, `method` |
-| `CommandCompleted` | 7 | Info | Command completed successfully | `commandId`, `method`, `elapsedMilliseconds` |
-| `CommandTimeout` | 8 | Warning | Command timed out | `commandId`, `method`, `timeoutMilliseconds` |
-| `CommandError` | 9 | Error | Command failed with error response | `commandId`, `method`, `errorCode`, `errorType`, `errorMessage` |
-| `CommandSendFailed` | 22 | Warning | Command could not be transmitted to the remote end | `commandId`, `method`, `failureType`, `failureMessage`, `elapsedMilliseconds` |
-| `CanceledCommandResponseDiscarded` | 24 | Info | A response arrived for a command the local end had already stopped waiting for (timed out, canceled, or pending at connection close) and was discarded | `commandId`, `method`, `reason`, `millisecondsSinceCancellation` |
+| `CommandSending` | 6 | Verbose | Command being sent to remote end | `connectionId`, `sessionId`, `commandId`, `method` |
+| `CommandCompleted` | 7 | Info | Command completed successfully | `connectionId`, `sessionId`, `commandId`, `method`, `elapsedMilliseconds` |
+| `CommandTimeout` | 8 | Warning | Command timed out | `connectionId`, `sessionId`, `commandId`, `method`, `timeoutMilliseconds` |
+| `CommandError` | 9 | Error | Command failed with error response | `connectionId`, `sessionId`, `commandId`, `method`, `errorCode`, `errorType`, `errorMessage` |
+| `CommandSendFailed` | 22 | Warning | Command could not be transmitted to the remote end | `connectionId`, `sessionId`, `commandId`, `method`, `failureType`, `failureMessage`, `elapsedMilliseconds` |
+| `CanceledCommandResponseDiscarded` | 24 | Info | A response arrived for a command the local end had already stopped waiting for (timed out, canceled, or pending at connection close) and was discarded | `connectionId`, `sessionId`, `commandId`, `method`, `reason`, `millisecondsSinceCancellation` |
 
 ### Event Handling
 
 | Event | ID | Level | Description | Payload |
 |-------|---:|-------|-------------|---------|
-| `EventReceived` | 10 | Verbose | Protocol event received | `eventMethod` |
-| `EventHandlerError` | 15 | Warning | User event handler threw exception | `eventMethod`, `errorMessage` |
+| `EventReceived` | 10 | Verbose | Protocol event received | `connectionId`, `sessionId`, `eventMethod` |
+| `EventHandlerError` | 15 | Warning | User event handler threw exception | `connectionId`, `sessionId`, `eventMethod`, `errorMessage` |
 
 ### Protocol Processing
 
 | Event | ID | Level | Description | Payload |
 |-------|---:|-------|-------------|---------|
-| `UnknownMessageReceived` | 13 | Warning | Message that is not valid JSON, or not a command response, error response or registered event | `messageType`, `messageLength` |
-| `ProtocolError` | 14 | Error | Error response or registered event whose payload could not be deserialized, or a fault in the message processing loop | `errorMessage`, `messageSnippet` |
+| `UnknownMessageReceived` | 13 | Warning | Message that is not valid JSON, or not a command response, error response or registered event | `connectionId`, `sessionId`, `messageType`, `messageLength` |
+| `ProtocolError` | 14 | Error | Error response or registered event whose payload could not be deserialized, or a fault in the message processing loop | `connectionId`, `sessionId`, `errorMessage`, `messageSnippet` |
 
 ### Transport & Statistics
 
 | Event | ID | Level | Description | Payload |
 |-------|---:|-------|-------------|---------|
-| `TransportStarted` | 17 | Info | Transport message processing started | (none) |
-| `TransportStopped` | 18 | Info | Transport message processing stopped | `reason` |
-| `PendingCommandCount` | 16 | Verbose | Current pending command count | `pendingCount` |
+| `TransportStarted` | 17 | Info | Transport message processing started | `connectionId`, `sessionId` |
+| `TransportStopped` | 18 | Info | Transport message processing stopped | `connectionId`, `sessionId`, `reason` |
+| `PendingCommandCount` | 16 | Verbose | Current pending command count | `connectionId`, `sessionId`, `pendingCount` |
 | `AsyncHandlerTaskCount` | 23 | Verbose | Number of in-flight asynchronous event handler tasks (see [Performance](performance.md#in-flight-async-handler-tasks-asynchandlertaskcount-eventsource-event)) | `inFlightCount` |
-| `MessageStatistics` | 21 | Verbose | Message statistics for a session, raised when the session ends; `messagesSent` counts commands and `messagesReceived` command responses | `messagesSent`, `messagesReceived`, `eventsReceived`, `errorsReceived` |
+| `MessageStatistics` | 21 | Verbose | Message statistics for a session, raised when the session ends; `messagesSent` counts commands and `messagesReceived` command responses | `connectionId`, `sessionId`, `messagesSent`, `messagesReceived`, `eventsReceived`, `errorsReceived` |
 
 ### Module & Extensibility
 
 | Event | ID | Level | Description | Payload |
 |-------|---:|-------|-------------|---------|
-| `CustomModuleRegistered` | 19 | Info | Custom module registered | `moduleName` |
-| `CustomEventRegistered` | 20 | Info | Custom event type registered | `eventName`, `eventType` |
+| `CustomModuleRegistered` | 19 | Info | Custom module registered | `connectionId`, `sessionId`, `moduleName` |
+| `CustomEventRegistered` | 20 | Info | Custom event type registered | `connectionId`, `sessionId`, `eventName`, `eventType` |
 
 ## Common Scenarios
 

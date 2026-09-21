@@ -141,7 +141,7 @@ public abstract class Connection : IAsyncDisposable
     protected Connection()
     {
         this.ConnectionCancellationToken = this.connectionCancellationTokenSource.Token;
-        this.SetObserverErrorReporter(RecordObserverError);
+        this.SetObserverErrorReporter(this.RecordObserverError);
     }
 
     /// <summary>
@@ -1040,9 +1040,9 @@ public abstract class Connection : IAsyncDisposable
         await this.logMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
-    private static Task RecordObserverError(EventObserverErrorInfo errorInfo)
+    private Task RecordObserverError(EventObserverErrorInfo errorInfo)
     {
-        WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
+        WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(this.Id, string.Empty, errorInfo.ObservableEventName, errorInfo.Exception.Message);
         return Task.CompletedTask;
     }
 
@@ -1253,6 +1253,6 @@ public abstract class Connection : IAsyncDisposable
 
         // Use EventSource rather than LogAsync to keep this fire-and-forget fault handler
         // synchronous; awaiting the log pipeline here would create another unobserved task.
-        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Id, aggregateException.Message);
+        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Id, string.Empty, aggregateException.Message);
     }
 }

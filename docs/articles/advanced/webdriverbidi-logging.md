@@ -91,20 +91,22 @@ string:
 | `EventName` | `string` | EventSource event name (e.g., `CommandCompleted`) |
 | `EventSource` | `string` | Always `"WebDriverBiDi"` |
 | *(event payload fields)* | varies | All payload properties from the EventSource event (see below) |
-| `{OriginalFormat}` | `string` | The event's message template, with each hole named after its payload property (e.g., `Command {commandId} ({method}) completed in {elapsedMilliseconds}ms`). Omitted for an event that declares no template |
+| `{OriginalFormat}` | `string` | The event's message template, with each hole named after its payload property (e.g., `[{connectionId}/{sessionId}] Command {commandId} ({method}) completed in {elapsedMilliseconds}ms`). Omitted for an event that declares no template |
 
-The payload properties vary by event. Common examples:
+The payload properties vary by event. Every event except `AsyncHandlerTaskCount` begins with
+`connectionId` and `sessionId`, which name the driver and the session the event belongs to; filter or group
+on them to separate two drivers running in one process. Common examples:
 
 | Event | Payload Properties |
 |---|---|
-| `ConnectionOpening` / `ConnectionOpened` | `connectionId`, `url` |
-| `CommandSending` | `commandId`, `method` |
-| `CommandCompleted` | `commandId`, `method`, `elapsedMilliseconds` |
-| `CommandError` | `commandId`, `method`, `errorCode`, `errorType`, `errorMessage` |
-| `CommandTimeout` | `commandId`, `method`, `timeoutMilliseconds` |
-| `EventReceived` | `eventMethod` |
-| `EventHandlerError` | `eventMethod`, `errorMessage` |
-| `ProtocolError` | `errorMessage`, `messageSnippet` |
+| `ConnectionOpening` / `ConnectionOpened` | `connectionId`, `sessionId`, `url` |
+| `CommandSending` | `connectionId`, `sessionId`, `commandId`, `method` |
+| `CommandCompleted` | `connectionId`, `sessionId`, `commandId`, `method`, `elapsedMilliseconds` |
+| `CommandError` | `connectionId`, `sessionId`, `commandId`, `method`, `errorCode`, `errorType`, `errorMessage` |
+| `CommandTimeout` | `connectionId`, `sessionId`, `commandId`, `method`, `timeoutMilliseconds` |
+| `EventReceived` | `connectionId`, `sessionId`, `eventMethod` |
+| `EventHandlerError` | `connectionId`, `sessionId`, `eventMethod`, `errorMessage` |
+| `ProtocolError` | `connectionId`, `sessionId`, `errorMessage`, `messageSnippet` |
 
 See [Observability and Diagnostics — Available Events](observability.md#available-events) for the
 complete list of events and their payloads.

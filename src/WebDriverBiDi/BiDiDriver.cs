@@ -588,7 +588,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
                 // exactly like any other completion.
                 if (this.transport.CancelCommand(command, CommandCancellationReason.TimedOut))
                 {
-                    WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(command.CommandId, commandParameters.MethodName, Convert.ToInt64(commandTimeout.Value.TotalMilliseconds));
+                    WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(this.transport.ConnectionId, this.transport.CurrentSessionId, command.CommandId, commandParameters.MethodName, Convert.ToInt64(commandTimeout.Value.TotalMilliseconds));
                     throw new WebDriverBiDiTimeoutException($"Timed out executing command {commandParameters.MethodName} after {commandTimeout.Value.TotalMilliseconds} milliseconds");
                 }
             }
@@ -935,7 +935,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
 
             if (this.isInitializationComplete)
             {
-                WebDriverBiDiEventSource.RaiseEvent.CustomModuleRegistered(module.ModuleName);
+                WebDriverBiDiEventSource.RaiseEvent.CustomModuleRegistered(this.transport.ConnectionId, string.Empty, module.ModuleName);
             }
         }
     }
@@ -978,7 +978,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
 
             if (this.isInitializationComplete)
             {
-                WebDriverBiDiEventSource.RaiseEvent.CustomEventRegistered(eventName, typeof(T).ToString());
+                WebDriverBiDiEventSource.RaiseEvent.CustomEventRegistered(this.transport.ConnectionId, string.Empty, eventName, typeof(T).ToString());
             }
         }
     }

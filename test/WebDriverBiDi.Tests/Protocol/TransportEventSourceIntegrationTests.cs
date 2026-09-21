@@ -12,6 +12,53 @@ using TestUtilities;
 public class TransportEventSourceIntegrationTests
 {
     [Fact]
+    public async Task TestEventsFromTwoTransportsCarryDifferentConnectionIds()
+    {
+        // The point of the identifiers: a process running two drivers produced indistinguishable
+        // command lines, because command ids restart at 1 for each transport.
+        using TestEventListener listener = new();
+        TestWebSocketConnection firstConnection = new();
+        TestWebSocketConnection secondConnection = new();
+        await using Transport firstTransport = new(firstConnection);
+        await using Transport secondTransport = new(secondConnection);
+
+        await firstTransport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        await secondTransport.ConnectAsync("ws://localhost:9223", TestContext.Current.CancellationToken);
+        await firstTransport.SendCommandAsync(new TestCommandParameters("session.status"), TestContext.Current.CancellationToken);
+        await secondTransport.SendCommandAsync(new TestCommandParameters("session.status"), TestContext.Current.CancellationToken);
+
+        List<EventWrittenEventArgs> sending = listener.GetEventsForEventName("CommandSending");
+        Assert.Equal(2, sending.Count);
+
+        // Same command id, told apart only by the connection the event names.
+        Assert.Equal("1", sending[0].Payload![2]);
+        Assert.Equal("1", sending[1].Payload![2]);
+        Assert.NotEqual(sending[0].Payload![0], sending[1].Payload![0]);
+
+        await firstTransport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await secondTransport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestReconnectKeepsTheConnectionIdAndChangesTheSessionId()
+    {
+        using TestEventListener listener = new();
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+
+        List<EventWrittenEventArgs> started = listener.GetEventsForEventName("TransportStarted");
+        Assert.Equal(2, started.Count);
+        Assert.Equal(started[0].Payload![0], started[1].Payload![0]);
+        Assert.NotEqual(started[0].Payload![1], started[1].Payload![1]);
+
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestTransportEmitsConnectionOpeningAndOpenedEvents()
     {
         using TestEventListener listener = new();
@@ -26,12 +73,12 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal("ConnectionOpening", events[0].EventName);
         ReadOnlyCollection<object?>? payload0 = events[0].Payload;
         Assert.NotNull(payload0);
-        Assert.Equal("ws://localhost:9222", payload0[1]);
+        Assert.Equal("ws://localhost:9222", payload0[2]);
 
         Assert.Equal("ConnectionOpened", events[1].EventName);
         ReadOnlyCollection<object?>? payload1 = events[1].Payload;
         Assert.NotNull(payload1);
-        Assert.Equal("ws://localhost:9222", payload1[1]);
+        Assert.Equal("ws://localhost:9222", payload1[2]);
 
         Assert.Equal("TransportStarted", events[2].EventName);
 
@@ -56,14 +103,14 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal("ConnectionClosing", events[0].EventName);
         ReadOnlyCollection<object?>? payload0 = events[0].Payload;
         Assert.NotNull(payload0);
-        Assert.Equal("Normal shutdown", payload0[1]);
+        Assert.Equal("Normal shutdown", payload0[2]);
 
         Assert.Equal("ConnectionClosed", events[1].EventName);
 
         Assert.Equal("TransportStopped", events[2].EventName);
         ReadOnlyCollection<object?>? payload2 = events[2].Payload;
         Assert.NotNull(payload2);
-        Assert.Equal("Normal shutdown", payload2[0]);
+        Assert.Equal("Normal shutdown", payload2[2]);
 
     }
 
@@ -89,7 +136,7 @@ public class TransportEventSourceIntegrationTests
         // The terminate teardown reported the non-default reason.
         EventWrittenEventArgs terminateStopped = Assert.Single(listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "TransportStopped"));
         Assert.NotNull(terminateStopped.Payload);
-        Assert.Equal("Unknown message from connection", terminateStopped.Payload[0]);
+        Assert.Equal("Unknown message from connection", terminateStopped.Payload[2]);
         listener.ClearEvents();
 
         // Session 2: reconnecting resets the termination reason to its default, so a normal shutdown
@@ -99,7 +146,7 @@ public class TransportEventSourceIntegrationTests
 
         EventWrittenEventArgs stopped = Assert.Single(listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "TransportStopped"));
         Assert.NotNull(stopped.Payload);
-        Assert.Equal("Normal shutdown", stopped.Payload[0]);
+        Assert.Equal("Normal shutdown", stopped.Payload[2]);
 
     }
 
@@ -151,14 +198,14 @@ public class TransportEventSourceIntegrationTests
 
         ReadOnlyCollection<object?>? sendingPayload = sendingEvent.Payload;
         Assert.NotNull(sendingPayload);
-        Assert.Equal("1", sendingPayload[0]);
-        Assert.Equal("session.status", sendingPayload[1]);
+        Assert.Equal("1", sendingPayload[2]);
+        Assert.Equal("session.status", sendingPayload[3]);
 
         ReadOnlyCollection<object?>? completedPayload = completedEvent.Payload;
         Assert.NotNull(completedPayload);
-        Assert.Equal("1", completedPayload[0]);
-        Assert.Equal("session.status", completedPayload[1]);
-        Assert.IsType<long>(completedPayload[2]); // elapsed time
+        Assert.Equal("1", completedPayload[2]);
+        Assert.Equal("session.status", completedPayload[3]);
+        Assert.IsType<long>(completedPayload[4]); // elapsed time
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
@@ -207,11 +254,11 @@ public class TransportEventSourceIntegrationTests
         ReadOnlyCollection<object?>? errorPayload = errorEvent.Payload;
         Assert.NotNull(errorPayload);
 
-        Assert.Equal("1", errorPayload[0]);
-        Assert.Equal("session.status", errorPayload[1]);
-        Assert.Equal("InvalidSessionId", errorPayload[2]);
-        Assert.Equal("invalid session id", errorPayload[3]);
-        Assert.Equal("Session not found", errorPayload[4]);
+        Assert.Equal("1", errorPayload[2]);
+        Assert.Equal("session.status", errorPayload[3]);
+        Assert.Equal("InvalidSessionId", errorPayload[4]);
+        Assert.Equal("invalid session id", errorPayload[5]);
+        Assert.Equal("Session not found", errorPayload[6]);
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
@@ -239,20 +286,20 @@ public class TransportEventSourceIntegrationTests
 
         ReadOnlyCollection<object?>? sendingPayload = sendingEvent.Payload;
         Assert.NotNull(sendingPayload);
-        Assert.Equal("1", sendingPayload[0]);
-        Assert.Equal("session.status", sendingPayload[1]);
+        Assert.Equal("1", sendingPayload[2]);
+        Assert.Equal("session.status", sendingPayload[3]);
 
         ReadOnlyCollection<object?>? failedPayload = failedEvent.Payload;
         Assert.NotNull(failedPayload);
-        Assert.Equal("1", failedPayload[0]);
-        Assert.Equal("session.status", failedPayload[1]);
-        Assert.Equal(typeof(InvalidOperationException).FullName, failedPayload[2]);
-        Assert.Equal("Simulated send failure", failedPayload[3]);
-        Assert.IsType<long>(failedPayload[4]);
+        Assert.Equal("1", failedPayload[2]);
+        Assert.Equal("session.status", failedPayload[3]);
+        Assert.Equal(typeof(InvalidOperationException).FullName, failedPayload[4]);
+        Assert.Equal("Simulated send failure", failedPayload[5]);
+        Assert.IsType<long>(failedPayload[6]);
 
         ReadOnlyCollection<object?>? countPayload = countEvent.Payload;
         Assert.NotNull(countPayload);
-        Assert.Equal(0, countPayload[0]);
+        Assert.Equal(0, countPayload[2]);
 
         Assert.DoesNotContain(events, e => e.EventName == "CommandCompleted");
         Assert.DoesNotContain(events, e => e.EventName == "CommandError");
@@ -292,15 +339,15 @@ public class TransportEventSourceIntegrationTests
 
         ReadOnlyCollection<object?>? failedPayload = failedEvent.Payload;
         Assert.NotNull(failedPayload);
-        Assert.Equal("1", failedPayload[0]);
-        Assert.Equal("session.status", failedPayload[1]);
-        Assert.Equal(typeof(TaskCanceledException).FullName, failedPayload[2]);
-        Assert.NotEmpty((string)failedPayload[3]!);
-        Assert.IsType<long>(failedPayload[4]);
+        Assert.Equal("1", failedPayload[2]);
+        Assert.Equal("session.status", failedPayload[3]);
+        Assert.Equal(typeof(TaskCanceledException).FullName, failedPayload[4]);
+        Assert.NotEmpty((string)failedPayload[5]!);
+        Assert.IsType<long>(failedPayload[6]);
 
         ReadOnlyCollection<object?>? countPayload = countEvent.Payload;
         Assert.NotNull(countPayload);
-        Assert.Equal(0, countPayload[0]);
+        Assert.Equal(0, countPayload[2]);
 
         Assert.DoesNotContain(events, e => e.EventName == "CommandCompleted");
         Assert.DoesNotContain(events, e => e.EventName == "CommandError");
@@ -345,7 +392,7 @@ public class TransportEventSourceIntegrationTests
 
         ReadOnlyCollection<object?>? payload0 = eventReceived.Payload;
         Assert.NotNull(payload0);
-        Assert.Equal("protocol.event", payload0[0]);
+        Assert.Equal("protocol.event", payload0[2]);
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
@@ -371,8 +418,8 @@ public class TransportEventSourceIntegrationTests
         ReadOnlyCollection<object?>? unknownPayload = unknownEvent.Payload;
         Assert.NotNull(unknownPayload);
 
-        Assert.Equal("unknown", unknownPayload[0]);
-        Assert.IsType<int>(unknownPayload[1]); // message length
+        Assert.Equal("unknown", unknownPayload[2]);
+        Assert.IsType<int>(unknownPayload[3]); // message length
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
@@ -398,8 +445,8 @@ public class TransportEventSourceIntegrationTests
         ReadOnlyCollection<object?>? unknownPayload = unknownEvent.Payload;
         Assert.NotNull(unknownPayload);
 
-        Assert.Equal("unknown", unknownPayload[0]); // Should fall back to "unknown"
-        Assert.IsType<int>(unknownPayload[1]); // message length
+        Assert.Equal("unknown", unknownPayload[2]); // Should fall back to "unknown"
+        Assert.IsType<int>(unknownPayload[3]); // message length
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
@@ -433,8 +480,8 @@ public class TransportEventSourceIntegrationTests
         EventWrittenEventArgs protocolError = events[0];
         ReadOnlyCollection<object?>? protocolPayload = protocolError.Payload;
         Assert.NotNull(protocolPayload);
-        Assert.NotEmpty((string)protocolPayload[0]!); // error message
-        Assert.NotEmpty((string)protocolPayload[1]!); // message snippet
+        Assert.NotEmpty((string)protocolPayload[2]!); // error message
+        Assert.NotEmpty((string)protocolPayload[3]!); // message snippet
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
@@ -483,8 +530,8 @@ public class TransportEventSourceIntegrationTests
         ReadOnlyCollection<object?>? handlerPayload = handlerError.Payload;
         Assert.NotNull(handlerPayload);
 
-        Assert.Equal("protocol.event", handlerPayload[0]);
-        Assert.Equal("Test exception message", handlerPayload[1]);
+        Assert.Equal("protocol.event", handlerPayload[2]);
+        Assert.Equal("Test exception message", handlerPayload[3]);
 
         // Collect mode surfaces the collected handler failure when the transport disconnects.
         AggregateException exception = await Assert.ThrowsAsync<AggregateException>(
@@ -511,7 +558,7 @@ public class TransportEventSourceIntegrationTests
         EventWrittenEventArgs connectionError = events[0];
         ReadOnlyCollection<object?>? connectionPayload = connectionError.Payload;
         Assert.NotNull(connectionPayload);
-        Assert.Contains("Connection lost", (string)connectionPayload[1]!);
+        Assert.Contains("Connection lost", (string)connectionPayload[2]!);
 
     }
 
@@ -535,7 +582,7 @@ public class TransportEventSourceIntegrationTests
 
         ReadOnlyCollection<object?>? errorPayload = events[0].Payload;
         Assert.NotNull(errorPayload);
-        Assert.Contains("Connection lost during shutdown", (string)errorPayload[1]!);
+        Assert.Contains("Connection lost during shutdown", (string)errorPayload[2]!);
 
     }
 
@@ -558,7 +605,7 @@ public class TransportEventSourceIntegrationTests
         EventWrittenEventArgs countEvent = events[0];
         ReadOnlyCollection<object?>? countPayload = countEvent.Payload;
         Assert.NotNull(countPayload);
-        Assert.IsType<int>(countPayload[0]);
+        Assert.IsType<int>(countPayload[2]);
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
@@ -593,10 +640,10 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal(EventLevel.Informational, discardedEvent.Level);
         ReadOnlyCollection<object?>? payload = discardedEvent.Payload;
         Assert.NotNull(payload);
-        Assert.Equal(command.CommandId.ToString(), payload[0]);
-        Assert.Equal("module.command", payload[1]);
-        Assert.Equal("TimedOut", payload[2]);
-        Assert.True((long)payload[3]! >= 0);
+        Assert.Equal(command.CommandId.ToString(), payload[2]);
+        Assert.Equal("module.command", payload[3]);
+        Assert.Equal("TimedOut", payload[4]);
+        Assert.True((long)payload[5]! >= 0);
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
@@ -667,10 +714,10 @@ public class TransportEventSourceIntegrationTests
         EventWrittenEventArgs statisticsEvent = Assert.Single(listener.GetEventsForEventName("MessageStatistics"));
         ReadOnlyCollection<object?>? payload = statisticsEvent.Payload;
         Assert.NotNull(payload);
-        Assert.Equal(1L, payload[0]);
-        Assert.Equal(1L, payload[1]);
-        Assert.Equal(0L, payload[2]);
-        Assert.Equal(0L, payload[3]);
+        Assert.Equal(1L, payload[2]);
+        Assert.Equal(1L, payload[3]);
+        Assert.Equal(0L, payload[4]);
+        Assert.Equal(0L, payload[5]);
     }
 
     [Fact]
@@ -692,8 +739,8 @@ public class TransportEventSourceIntegrationTests
         {
             ReadOnlyCollection<object?>? payload = handlerError.Payload;
             Assert.NotNull(payload);
-            Assert.Equal("connection.logMessage", payload[0]);
-            Assert.Equal("standalone observer failure", payload[1]);
+            Assert.Equal("connection.logMessage", payload[2]);
+            Assert.Equal("standalone observer failure", payload[3]);
         });
         await connection.StopAsync(TestContext.Current.CancellationToken);
     }
@@ -715,7 +762,7 @@ public class TransportEventSourceIntegrationTests
         Assert.Single(listener.GetEventsForEventName("ConnectionClosed"));
         EventWrittenEventArgs stopped = Assert.Single(listener.GetEventsForEventName("TransportStopped"));
         Assert.NotNull(stopped.Payload);
-        Assert.Equal("Remote end closed the connection", stopped.Payload[0]);
+        Assert.Equal("Remote end closed the connection", stopped.Payload[2]);
         Assert.Empty(listener.GetEventsForEventName("ConnectionClosing"));
     }
 
@@ -733,7 +780,7 @@ public class TransportEventSourceIntegrationTests
         Assert.Single(listener.GetEventsForEventName("ConnectionClosed"));
         EventWrittenEventArgs stopped = Assert.Single(listener.GetEventsForEventName("TransportStopped"));
         Assert.NotNull(stopped.Payload);
-        Assert.Equal("Connection error: Simulated read failure", stopped.Payload[0]);
+        Assert.Equal("Connection error: Simulated read failure", stopped.Payload[2]);
     }
 
     [Fact]
@@ -776,6 +823,6 @@ public class TransportEventSourceIntegrationTests
         Assert.Empty(listener.GetEventsForEventName("ConnectionOpened"));
         EventWrittenEventArgs error = Assert.Single(listener.GetEventsForEventName("ConnectionError"));
         Assert.NotNull(error.Payload);
-        Assert.Contains("Simulated connect failure", (string)error.Payload[1]!);
+        Assert.Contains("Simulated connect failure", (string)error.Payload[2]!);
     }
 }
