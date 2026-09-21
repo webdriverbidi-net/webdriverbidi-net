@@ -33,6 +33,28 @@ public class ErrorResultTests
     }
 
     [Fact]
+    public void TestExtensionMembersOfAnErrorAreEnvelopeProperties()
+    {
+        // An error response has no result object, so every member beside the specified ones is on the envelope,
+        // and is exposed where the envelope's extension members of a successful response are.
+        string json = """
+                      {
+                        "type": "error",
+                        "id": 1,
+                        "error": "unknown error",
+                        "message": "This is a test error message",
+                        "goog:channel": "channelValue"
+                      }
+                      """;
+        ErrorResponseMessage? messageResult = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.NotNull(messageResult);
+        ErrorResult result = messageResult.GetErrorResponseData();
+
+        Assert.Equal("channelValue", result.AdditionalResponseProperties["goog:channel"]);
+        Assert.Empty(result.AdditionalData);
+    }
+
+    [Fact]
     public void TestCopySemantics()
     {
         // ErrorResult constructor is internal, so we will create it by
