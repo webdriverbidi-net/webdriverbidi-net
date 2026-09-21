@@ -836,7 +836,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
-    /// <exception cref="WebDriverBiDiSerializationException">Thrown if the command parameters cannot be serialized to JSON, including when an extension-data entry on the command or on any object inside its parameters uses a property name that object already serializes.</exception>
+    /// <exception cref="WebDriverBiDiSerializationException">Thrown if the command parameters cannot be serialized to JSON: when an extension-data entry on the command or on any object inside its parameters uses a property name that object already serializes; when an object-typed member holds a value JSON cannot express, such as a non-finite <see langword="double"/>; or when a value's type has no serialization metadata. The failure that caused it is the <see cref="Exception.InnerException"/>.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is not connected to a remote end.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the connection is not obtained within <see cref="ConnectionLockTimeout"/>.</exception>
     /// <exception cref="ArgumentNullException">Thrown when the command parameters are null.</exception>
@@ -882,15 +882,24 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         {
             commandJson = this.SerializeCommand(command);
         }
-        catch (Exception ex) when (ex is JsonException or NotSupportedException or WebDriverBiDiSerializationException)
+        catch (Exception ex) when (ex is JsonException or NotSupportedException or ArgumentException or WebDriverBiDiSerializationException)
         {
-            // A JsonException is raised for values JSON cannot represent (for example, a NaN
-            // double); a NotSupportedException is raised when a value's type has no serialization
-            // metadata (for example, an unregistered AdditionalData value type under AOT); and a
+            // A JsonException is raised for values JSON cannot represent when the library's own
+            // converter writes them (a typed double of NaN, say, through FixedDoubleJsonConverter); an
+            // ArgumentException is raised for the same values written through System.Text.Json's own
+            // number converter, which is the path a boxed double takes out of an AdditionalData entry,
+            // an AdditionalCommandProperties entry, or any other object-typed member; a
+            // NotSupportedException is raised when a value's type has no serialization metadata (for
+            // example, an unregistered AdditionalData value type under AOT); and a
             // WebDriverBiDiSerializationException is raised when an extension-data entry, on the
             // envelope or on any object inside the parameters, would duplicate a property name that
             // object already writes. Surface all of them through the library's own serialization
             // exception type, naming the command, as is done for failures to deserialize a response.
+            //
+            // ArgumentException covers its derived types, so an ArgumentNullException out of the
+            // serializer -- which would mean a library defect rather than bad caller data -- is wrapped
+            // as well. The try encloses the single call to SerializeCommand, so nothing else can raise
+            // one here, and the wrapper keeps the original as its InnerException.
             throw new WebDriverBiDiSerializationException($"Could not serialize command '{command.CommandName}' (command ID: {command.CommandId}): {ex.Message}", ex);
         }
 

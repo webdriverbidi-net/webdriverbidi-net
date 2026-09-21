@@ -5987,6 +5987,80 @@ public class TransportTests
         Assert.Null(connection.DataSent);
     }
 
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public async Task TestSendCommandWrapsNonFiniteNumbersInParametersExtensionData(double value)
+    {
+        // A double in an object-typed member is written by System.Text.Json's own number converter,
+        // which raises ArgumentException rather than JsonException for a value JSON cannot express.
+        // The command's own double properties go through FixedDoubleJsonConverter instead, so this
+        // path is reached only through extension data and other object-typed members.
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        TestCommandParameters parameters = new("module.command");
+        parameters.AdditionalData["ratio"] = value;
+
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
+            async () => await transport.SendCommandAsync(parameters, TestContext.Current.CancellationToken));
+        Assert.StartsWith("Could not serialize command 'module.command' (command ID: 1)", exception.Message);
+        Assert.IsAssignableFrom<ArgumentException>(exception.InnerException);
+        Assert.Equal(0, transport.PendingCommandCount);
+        Assert.Null(connection.DataSent);
+    }
+
+    [Fact]
+    public async Task TestSendCommandWrapsNonFiniteNumbersInEnvelopeExtensionData()
+    {
+        // The envelope's extension data is written by the same converter, outside the parameters
+        // object, so it reaches the filter by a different route.
+        TestWebSocketConnection connection = new();
+        await using NonFiniteEnvelopeTransport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
+            async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+        Assert.StartsWith("Could not serialize command 'module.command' (command ID: 1)", exception.Message);
+        Assert.IsAssignableFrom<ArgumentException>(exception.InnerException);
+        Assert.Equal(0, transport.PendingCommandCount);
+        Assert.Null(connection.DataSent);
+    }
+
+    [Fact]
+    public async Task TestSendCommandWrapsNonFiniteNumbersNestedInsideExtensionData()
+    {
+        // The value need not be the entry itself: a dictionary or list an entry holds is walked by the
+        // same converter, and the failure surfaces from deeper in the payload.
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        TestCommandParameters parameters = new("module.command");
+        parameters.AdditionalData["measurements"] = new Dictionary<string, object?> { ["ratio"] = double.NaN };
+
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
+            async () => await transport.SendCommandAsync(parameters, TestContext.Current.CancellationToken));
+        Assert.IsAssignableFrom<ArgumentException>(exception.InnerException);
+        Assert.Equal(0, transport.PendingCommandCount);
+        Assert.Null(connection.DataSent);
+    }
+
+    private sealed class NonFiniteEnvelopeTransport : Transport
+    {
+        public NonFiniteEnvelopeTransport(Connection connection)
+            : base(connection)
+        {
+        }
+
+        protected override Command CreateCommand(CommandParameters commandData)
+        {
+            Command command = base.CreateCommand(commandData);
+            command.AdditionalCommandProperties["ratio"] = double.NaN;
+            return command;
+        }
+    }
+
     private sealed class EnvelopeShadowingTransport : Transport
     {
         public EnvelopeShadowingTransport(Connection connection)
