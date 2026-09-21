@@ -598,7 +598,11 @@ public abstract class Connection : IAsyncDisposable
     /// <remarks>
     /// A connection that is still open is stopped before its resources are released, even when its receive loop
     /// has already ended, so that the remote end sees
-    /// the shutdown the transport defines rather than the connection simply disappearing. A failure to
+    /// the shutdown the transport defines rather than the connection simply disappearing. A connection that is
+    /// no longer open has no shutdown to perform, but if its receive loop is still running -- the state a pipe
+    /// reports once its server process has exited -- the session is canceled and the loop waited for, so that
+    /// <see cref="DisposeAsyncCore"/> does not release the underlying pipes or socket while the loop is still
+    /// reading from them. A failure to
     /// stop is logged and does not prevent disposal, because disposal must release the connection's
     /// resources whatever state it is in. A derived class releases its own resources by implementing
     /// <see cref="DisposeAsyncCore"/>; it neither performs the stop nor records the disposal
@@ -620,6 +624,16 @@ public abstract class Connection : IAsyncDisposable
                         // The disposal has already been recorded above, so the public StopAsync, which
                         // does nothing on a disposed connection, cannot be used here.
                         await this.CloseConnectionAsync(CancellationToken.None).ConfigureAwait(false);
+                    }
+                    else if (this.DataReceiveTask is { IsCompleted: false })
+                    {
+                        // The connection is no longer open, so there is no shutdown to perform, but its
+                        // receive loop has not ended: a pipe whose server process has exited reports
+                        // exactly this state. Cancel the session and wait for the loop, so that
+                        // DisposeAsyncCore does not release the pipes or the socket underneath a loop
+                        // that is still reading from them.
+                        this.CancelConnection();
+                        await this.WaitForReceiveTaskCompletionAsync($"Timed out waiting for {this.ConnectionKind} connection receive loop to complete during disposal").ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)

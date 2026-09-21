@@ -77,6 +77,18 @@ public class TestPipeConnection : PipeConnection
 
     public bool Disposed => this.IsDisposed;
 
+    /// <summary>
+    /// Gets the token of the current session, so that a test can wait for the connection to be
+    /// canceled rather than guessing when a stop or a disposal has reached that point. Snapshot it
+    /// after <c>StartAsync</c>, which replaces the source for the new session.
+    /// </summary>
+    public CancellationToken SessionToken => this.ConnectionCancellationToken;
+
+    /// <summary>
+    /// Gets the background receive loop's task, so that a test can assert whether the loop has ended.
+    /// </summary>
+    public Task? ReceiveTask => this.DataReceiveTask;
+
     public async Task RaiseRemoteDisconnectedEventAsync()
     {
         await this.NotifyRemoteDisconnectedObserversAsync();

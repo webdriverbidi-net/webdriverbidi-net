@@ -1465,4 +1465,146 @@ public class PipeConnectionTests
         await connection.StopAsync(TestContext.Current.CancellationToken);
         testPipeServer.Stop();
     }
+
+    [Theory]
+    [InlineData("io")]
+    [InlineData("disposed")]
+    [InlineData("other")]
+    public async Task TestReadThatFailsAfterAStopIsNotReportedAsAConnectionError(string failureKind)
+    {
+        // A pipe read does not reliably observe cancellation on every target framework, so a stop can
+        // leave one outstanding; the pipes are then disposed underneath it and it fails. The session was
+        // ended on purpose, so that failure must not reach OnConnectionError, where a consumer would read
+        // it as a stop that went wrong. It is logged at Debug instead.
+        Exception failure = failureKind switch
+        {
+            "io" => new IOException("Pipe is broken."),
+            "disposed" => new ObjectDisposedException("pipe"),
+            _ => new InvalidOperationException("Simulated read failure"),
+        };
+
+        object logLock = new();
+        List<LogMessageEventArgs> logs = [];
+        List<ConnectionErrorEventArgs> errors = [];
+        TaskCompletionSource readEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseRead = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using TestPipeServer testPipeServer = new();
+        await using TestPipeConnection connection = new(testPipeServer)
+        {
+            LogLevel = WebDriverBiDiLogLevel.Debug,
+        };
+
+        connection.ReadHandler = async (buffer, offset, count, callNumber) =>
+        {
+            readEntered.TrySetResult();
+            await releaseRead.Task;
+            throw failure;
+        };
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            lock (logLock)
+            {
+                logs.Add(e);
+            }
+
+            return Task.CompletedTask;
+        });
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            lock (logLock)
+            {
+                errors.Add(e);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await readEntered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Release the read only once the stop has canceled the session, so that the failure lands in the
+        // catch blocks with cancellation already requested. That ordering is what the fix turns on, and
+        // waiting for the token rather than for an elapsed time makes it deterministic.
+        TaskCompletionSource sessionCanceled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using CancellationTokenRegistration registration = connection.SessionToken.Register(() => sessionCanceled.TrySetResult());
+        Task stopTask = connection.StopAsync(TestContext.Current.CancellationToken);
+        await sessionCanceled.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        releaseRead.SetResult();
+        await stopTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        testPipeServer.Stop();
+
+        lock (logLock)
+        {
+            Assert.True(errors.Count == 0, $"A read abandoned by the stop must not be reported as a connection error, but {errors.Count} were raised: {string.Join(", ", errors.Select(error => error.Exception.Message))}");
+            Assert.Contains(logs, log => log.Level == WebDriverBiDiLogLevel.Debug
+                && log.Message.Contains("after the connection was stopped", StringComparison.Ordinal)
+                && log.Message.Contains(failure.Message, StringComparison.Ordinal));
+            Assert.DoesNotContain(logs, log => log.Level == WebDriverBiDiLogLevel.Error);
+        }
+    }
+
+    [Fact]
+    public async Task TestDisposeWaitsForTheReceiveLoopWhenTheConnectionIsNoLongerOpen()
+    {
+        // A pipe reports itself closed once the server process exits, while its receive loop is still
+        // running. Disposal has no shutdown to perform in that state, but it must still cancel the
+        // session and wait for the loop: DisposeAsyncCore disposes the pipes, and a loop still reading
+        // from them would fail against disposed handles.
+        object logLock = new();
+        List<LogMessageEventArgs> logs = [];
+        TaskCompletionSource readEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseRead = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer)
+        {
+            LogLevel = WebDriverBiDiLogLevel.Debug,
+        };
+
+        // The read ends only when the session is canceled, so a disposal that never cancels leaves the
+        // loop running and the assertion below sees an incomplete task rather than hanging.
+        connection.ReadHandler = async (buffer, offset, count, callNumber) =>
+        {
+            readEntered.TrySetResult();
+            await releaseRead.Task;
+            return 0;
+        };
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            lock (logLock)
+            {
+                logs.Add(e);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        try
+        {
+            testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+            await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+            await readEntered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+            using CancellationTokenRegistration registration = connection.SessionToken.Register(() => releaseRead.TrySetResult());
+
+            // The server process has exited, as far as the connection can tell.
+            connection.IsConnectionOpenOverride = () => false;
+            await connection.DisposeAsync();
+
+            Assert.True(connection.ReceiveTask is { IsCompleted: true }, "Disposal must cancel and wait for the receive loop when the connection is no longer open.");
+            lock (logLock)
+            {
+                Assert.DoesNotContain(logs, log => log.Message.Contains("Timed out waiting", StringComparison.Ordinal));
+            }
+        }
+        finally
+        {
+            // Releases the loop if the assertion above found it still running, so the test cannot leave
+            // a read parked on the barrier.
+            releaseRead.TrySetResult();
+            testPipeServer.Stop();
+            await connection.DisposeAsync();
+        }
+    }
+
 }
