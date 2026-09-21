@@ -415,17 +415,11 @@ public class PipeConnection : Connection
         }
         catch (IOException e)
         {
-            // The receive loop is exiting and no further data can be received, so the connection
-            // is no longer active regardless of the state of the pipe or the server process.
-            // Clear the flag before notifying observers, for the same reason as the end-of-file
-            // path above.
-            this.IsConnectionActive = false;
-            await this.NotifyConnectionErrorObserversAsync($"Unexpected error during receive of data: {e.Message}", e).ConfigureAwait(false);
+            await this.ReportReceiveFailureAsync(e, connectionCancellationToken, "Unexpected error during receive of data").ConfigureAwait(false);
         }
         catch (ObjectDisposedException e)
         {
-            this.IsConnectionActive = false;
-            await this.NotifyConnectionErrorObserversAsync($"Unexpected error during receive of data: {e.Message}", e).ConfigureAwait(false);
+            await this.ReportReceiveFailureAsync(e, connectionCancellationToken, "Unexpected error during receive of data").ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -433,8 +427,7 @@ public class PipeConnection : Connection
             // observer of this connection's events is reported rather than thrown -- is captured here.
             // Otherwise the loop would stop silently, which pending commands could not tell apart from a
             // remote end that has simply gone quiet: they would wait for responses that never arrive.
-            this.IsConnectionActive = false;
-            await this.NotifyConnectionErrorObserversAsync($"Unexpected error processing received data: {e.Message}", e).ConfigureAwait(false);
+            await this.ReportReceiveFailureAsync(e, connectionCancellationToken, "Unexpected error processing received data").ConfigureAwait(false);
         }
     }
 
@@ -472,5 +465,38 @@ public class PipeConnection : Connection
             // treat as not running.
             return false;
         }
+    }
+
+    /// <summary>
+    /// Reports a failure that ended the receive loop, unless the session it belonged to was already
+    /// canceled.
+    /// </summary>
+    /// <param name="e">The exception that ended the loop.</param>
+    /// <param name="connectionCancellationToken">The token of the session the loop was reading for.</param>
+    /// <param name="description">What the loop was doing, which begins the message.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// A pipe read does not reliably observe cancellation on every target framework, so stopping a
+    /// connection can leave a read outstanding; the pipes are then disposed underneath it and it fails.
+    /// That failure belongs to a session the caller deliberately ended, and reporting it as a connection
+    /// error would tell a consumer that a stop it asked for went wrong -- raising
+    /// <c>OnConnectionError</c>, logging at <c>Error</c>, and, with a transport attached, emitting the
+    /// EventSource <c>ConnectionError</c> event. It is logged at <c>Debug</c> instead. The active flag
+    /// is likewise left alone, as it is for <see cref="OperationCanceledException"/>: on that path
+    /// <c>StopAsync</c> owns it.
+    /// </remarks>
+    private async Task ReportReceiveFailureAsync(Exception e, CancellationToken connectionCancellationToken, string description)
+    {
+        if (connectionCancellationToken.IsCancellationRequested)
+        {
+            await this.LogAsync($"{description} after the connection was stopped, which abandoned the read: {e.Message}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+            return;
+        }
+
+        // The receive loop is exiting and no further data can be received, so the connection is no
+        // longer active regardless of the state of the pipe or the server process. Clear the flag
+        // before notifying observers, for the same reason as the end-of-file path above.
+        this.IsConnectionActive = false;
+        await this.NotifyConnectionErrorObserversAsync($"{description}: {e.Message}", e).ConfigureAwait(false);
     }
 }
