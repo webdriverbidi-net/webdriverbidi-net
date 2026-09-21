@@ -28,7 +28,7 @@ public class PacProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<PacProxyConfigurationResult>(proxyResult);
-        PacProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
+        PacProxyConfigurationResult proxyConfig = proxyResult.As<PacProxyConfigurationResult>();
 
         Assert.Equal(ProxyType.ProxyAutoConfig, proxyConfig.ProxyType);
         Assert.Equal("proxy.autoconfig.url", proxyConfig.ProxyAutoConfigUrl);
@@ -59,7 +59,7 @@ public class PacProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<PacProxyConfigurationResult>(proxyResult);
-        PacProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
+        PacProxyConfigurationResult proxyConfig = proxyResult.As<PacProxyConfigurationResult>();
         PacProxyConfigurationResult copy = proxyConfig with { };
         Assert.Equal(proxyConfig, copy);
     }

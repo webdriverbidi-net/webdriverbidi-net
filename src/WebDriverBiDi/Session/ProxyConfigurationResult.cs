@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Session;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using WebDriverBiDi.Internal;
 
@@ -54,14 +55,42 @@ public record ProxyConfigurationResult
     }
 
     /// <summary>
-    /// Gets the ProxyConfigurationResult as the type-specific type.
+    /// Casts this <see cref="ProxyConfigurationResult"/> to a type-specific proxy configuration result,
+    /// throwing if it is not of that type. Use <see cref="TryAs{T}"/> to test without throwing.
     /// </summary>
-    /// <typeparam name="T">A <see cref="ProxyConfigurationResult"/> type to convert to.</typeparam>
-    /// <returns>The <see cref="ProxyConfigurationResult"/> type to convert to.</returns>
-    public T ProxyConfigurationResultAs<T>()
+    /// <typeparam name="T">A <see cref="ProxyConfigurationResult"/> type to cast to.</typeparam>
+    /// <returns>This instance cast to the specified correct type.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if this ProxyConfigurationResult is not the specified type.</exception>
+    public T As<T>()
         where T : ProxyConfigurationResult
     {
-        return (T)this;
+        if (this is T castValue)
+        {
+            return castValue;
+        }
+
+        throw new WebDriverBiDiException($"This ProxyConfigurationResult cannot be cast to {typeof(T)}");
+    }
+
+    /// <summary>
+    /// Attempts to cast this <see cref="ProxyConfigurationResult"/> to a type-specific proxy
+    /// configuration result, returning <see langword="false"/> rather than throwing when it
+    /// is not of that type.
+    /// </summary>
+    /// <typeparam name="T">The specific type of ProxyConfigurationResult to return.</typeparam>
+    /// <param name="result">When this method returns, contains the cast value or null if the cast failed.</param>
+    /// <returns><see langword="true"/> if the cast was successful; otherwise, <see langword="false"/>.</returns>
+    public bool TryAs<T>([NotNullWhen(true)] out T? result)
+        where T : ProxyConfigurationResult
+    {
+        if (this is T converted)
+        {
+            result = converted;
+            return true;
+        }
+
+        result = null;
+        return false;
     }
 
     /// <summary>

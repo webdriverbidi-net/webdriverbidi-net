@@ -32,7 +32,7 @@ public class ManualProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<ManualProxyConfigurationResult>(proxyResult);
-        ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
+        ManualProxyConfigurationResult proxyConfig = proxyResult.As<ManualProxyConfigurationResult>();
 
         Assert.Equal(ProxyType.Manual, proxyConfig.ProxyType);
         Assert.Equal("http.proxy", proxyConfig.HttpProxy);
@@ -71,7 +71,7 @@ public class ManualProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<ManualProxyConfigurationResult>(proxyResult);
-        ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
+        ManualProxyConfigurationResult proxyConfig = proxyResult.As<ManualProxyConfigurationResult>();
 
         Assert.Equal(ProxyType.Manual, proxyConfig.ProxyType);
         Assert.Equal("http.proxy", proxyConfig.HttpProxy);
@@ -110,7 +110,7 @@ public class ManualProxyConfigurationResultTests
         Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
-        ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
+        ManualProxyConfigurationResult proxyConfig = proxyResult.As<ManualProxyConfigurationResult>();
 
         Assert.Equal("http.proxy", proxyConfig.HttpProxy);
         Assert.Empty(proxyConfig.NoProxyAddresses);
@@ -144,7 +144,7 @@ public class ManualProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<ManualProxyConfigurationResult>(proxyResult);
-        ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
+        ManualProxyConfigurationResult proxyConfig = proxyResult.As<ManualProxyConfigurationResult>();
         ManualProxyConfigurationResult copy = proxyConfig with { };
         Assert.Equal(proxyConfig, copy);
     }
