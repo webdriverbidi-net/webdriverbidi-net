@@ -528,13 +528,14 @@ public static class CommonScenariosSamples
             }
 
             // Execute complex script
+            // Parenthesized: a script beginning with a brace parses as a block, not an object literal.
             string complexScript = @"
-            {
+            ({
                 url: window.location.href,
                 linkCount: document.querySelectorAll('a').length,
                 imageCount: document.querySelectorAll('img').length,
                 hasTitle: !!document.title
-            }";
+            })";
 
             EvaluateResult complexResult = await driver.Script.EvaluateAsync(
                 new EvaluateCommandParameters(complexScript, new ContextTarget(contextId), true));

@@ -743,11 +743,13 @@ public static class EventObserverSamples
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             LogLevel level = e.Level;          // Error, Warn, Info, Debug
-            string text = e.Text;              // Log message
+            string? text = e.Text;             // Log message; null for an entry without one
             DateTime timestamp = e.Timestamp;
             string? source = e.Source.RealmId; // Realm the entry came from
+
+            // An entry carries a stack trace only when the remote end sent one, as for console.error.
             List<string> stackLines = new List<string>();
-            foreach (StackFrame frame in e.StackTrace.CallFrames)
+            foreach (StackFrame frame in e.StackTrace?.CallFrames ?? new List<StackFrame>())
             {
                 stackLines.Add($"{frame.FunctionName} at {frame.Url}:{frame.LineNumber}:{frame.ColumnNumber}");
             }

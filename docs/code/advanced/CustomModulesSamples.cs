@@ -77,11 +77,16 @@ public class MyCommandParameters : CommandParameters<MyCommandResult>
 #region CommandResult
 public record MyCommandResult : CommandResult
 {
+    // A received member needs an accessor the serializer can set. A private setter is not one, and
+    // [JsonInclude] is what opts a non-public accessor in; without both, the member stays at its default
+    // and its value is diverted to AdditionalData.
     [JsonPropertyName("success")]
-    public bool Success { get; private set; }
+    [JsonInclude]
+    public bool Success { get; internal set; }
 
     [JsonPropertyName("data")]
-    public string Data { get; private set; } = string.Empty;
+    [JsonInclude]
+    public string Data { get; internal set; } = string.Empty;
 }
 #endregion
 
@@ -511,7 +516,8 @@ public class CustomEventsModule : Module
 public record CustomEventArgs : WebDriverBiDiEventArgs
 {
     [JsonPropertyName("data")]
-    public string Data { get; private set; } = string.Empty;
+    [JsonInclude]
+    public string Data { get; internal set; } = string.Empty;
 }
 #endregion
 
@@ -642,7 +648,8 @@ public class ExperimentalCommandParameters : CommandParameters<ExperimentalComma
 public record ExperimentalCommandResult : CommandResult
 {
     [JsonPropertyName("result")]
-    public string Result { get; private set; } = string.Empty;
+    [JsonInclude]
+    public string Result { get; internal set; } = string.Empty;
 }
 
 // Implement in module
