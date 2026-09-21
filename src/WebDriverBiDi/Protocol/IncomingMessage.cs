@@ -7,9 +7,9 @@ namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Represents a message being received over the wire from the WebDriverBiDi protocol.
@@ -71,11 +71,7 @@ public class IncomingMessage : IDisposable
     {
         get
         {
-#if NET5_0_OR_GREATER
-            return this.cachedText ??= Encoding.UTF8.GetString(this.memoryOwner.Memory.Slice(0, this.MessageLength).Span);
-#else
-            return this.cachedText ??= Encoding.UTF8.GetString(this.memoryOwner.Memory.Slice(0, this.MessageLength).ToArray());
-#endif
+            return this.cachedText ??= BufferUtilities.GetUtf8String(this.memoryOwner.Memory.Slice(0, this.MessageLength));
         }
     }
 

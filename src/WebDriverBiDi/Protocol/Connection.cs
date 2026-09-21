@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
-using System.Text;
 using WebDriverBiDi.Internal;
 
 /// <summary>
@@ -533,6 +532,12 @@ public abstract class Connection : IAsyncDisposable
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the connection for sending times out.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled before the data begins to be sent.</exception>
     /// <remarks>
+    /// <para>
+    /// <paramref name="data"/> is written to the connection as it stands, rather than copied, so it must not be
+    /// modified -- or returned to a pool it was rented from -- until the returned task completes. A buffer
+    /// changed while its message is in flight sends the remote end something the caller did not mean to say.
+    /// </para>
+    /// <para>
     /// <paramref name="cancellationToken"/> is honored while this method waits for exclusive access to the
     /// connection, and up to the moment the data begins to be sent, but not after. Once the first byte may have
     /// been written, the send runs to completion, and only stopping the connection interrupts it. A message is
@@ -540,6 +545,7 @@ public abstract class Connection : IAsyncDisposable
     /// is aborted when a send is canceled, and a pipe would be left holding an unterminated message that
     /// misframes every message after it. Honoring the caller's cancellation during the send would therefore end
     /// the session for every other command using the connection, not just the caller's own.
+    /// </para>
     /// </remarks>
     public virtual async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
@@ -1056,11 +1062,7 @@ public abstract class Connection : IAsyncDisposable
     {
         if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Trace))
         {
-#if NET5_0_OR_GREATER
-            await this.LogAsync($"{logPrefix}{Encoding.UTF8.GetString(messageData.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-            await this.LogAsync($"{logPrefix}{Encoding.UTF8.GetString(messageData.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
+            await this.LogAsync($"{logPrefix}{BufferUtilities.GetUtf8String(messageData.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
         }
     }
 
