@@ -45,6 +45,213 @@ public class BiDiDriver010AnalyzerTests
     }
 
     [Fact]
+    public async Task FireAndForgetObserverWait_ReportsError()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(EventObserver<EntryAddedEventArgs> observer)
+                    {
+                        {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1))|};
+                        {|#1:observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(1))|};
+                        {|#2:observer.DisposeAsync()|};
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(
+            testCode,
+            Expect("WaitForCapturedTasksAsync", 0),
+            Expect("WaitForCapturedTasksCompleteAsync", 1),
+            Expect("DisposeAsync", 2));
+    }
+
+    [Fact]
+    public async Task FireAndForgetCollectorDisposal_ReportsError()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(EventDataCollector<EntryAddedEventArgs> collector)
+                    {
+                        {|#0:collector.DisposeAsync()|};
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, Expect("DisposeAsync", 0));
+    }
+
+    [Fact]
+    public async Task FireAndForgetTransportAndConnectionOperations_ReportError()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using WebDriverBiDi.Session;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(Connection connection)
+                    {
+                        Transport transport = new();
+                        {|#0:transport.ConnectAsync("ws://localhost:1234")|};
+                        {|#1:transport.SendCommandAsync(new StatusCommandParameters())|};
+                        {|#2:transport.DisconnectAsync()|};
+                        {|#3:connection.StartAsync("ws://localhost:1234")|};
+                        {|#4:connection.SendDataAsync(new byte[0])|};
+                        {|#5:connection.StopAsync()|};
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(
+            testCode,
+            Expect("ConnectAsync", 0),
+            Expect("SendCommandAsync", 1),
+            Expect("DisconnectAsync", 2),
+            Expect("StartAsync", 3),
+            Expect("SendDataAsync", 4),
+            Expect("StopAsync", 5));
+    }
+
+    [Fact]
+    public async Task AwaitedLibraryAsyncOperations_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(Connection connection, EventObserver<EntryAddedEventArgs> observer)
+                    {
+                        await connection.StartAsync("ws://localhost:1234");
+                        Task[] captured = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1));
+                        await observer.DisposeAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task FireAndForgetOverriddenLibraryOperation_ReportsError()
+    {
+        // The override is still the library's send, so discarding it discards the same failure.
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestNamespace
+            {
+                public class LoggingConnection : WebSocketConnection
+                {
+                    public override Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+                    {
+                        return base.SendDataAsync(data, cancellationToken);
+                    }
+
+                    public Task RecordAsync() => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(LoggingConnection connection)
+                    {
+                        {|#0:connection.SendDataAsync(new byte[0])|};
+
+                        // Not reported: the type derives from Connection, but this method is the caller's own.
+                        connection.RecordAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, Expect("SendDataAsync", 0));
+    }
+
+    [Fact]
+    public async Task FireAndForgetLibraryAwaitableOutsideTheJudgedTypes_NoDiagnostic()
+    {
+        // Command is a library type, but its waits are not among the operations this rule judges.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(Command command)
+                    {
+                        command.WaitForCompletionAsync(TimeSpan.FromSeconds(1));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task FireAndForgetAsyncMethodOnANonLibraryType_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class Connection
+                {
+                    public Task StartAsync() => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(Connection connection)
+                    {
+                        connection.StartAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    [Fact]
     public async Task AwaitedModuleCommand_NoDiagnostic()
     {
         string testCode = """
@@ -2032,5 +2239,12 @@ public class BiDiDriver010AnalyzerTests
             """;
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    private static DiagnosticResult Expect(string methodName, int location)
+    {
+        return new DiagnosticResult(BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithLocation(location)
+            .WithArguments(methodName);
     }
 }

@@ -27,7 +27,7 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
 
     private static readonly LocalizableString MessageFormat = "Async method '{0}' should be awaited, assigned to a variable, or passed as an argument to avoid fire-and-forget behavior";
 
-    private static readonly LocalizableString Description = "Fire-and-forget async calls to module commands, and to the driver's own lifecycle operations, can lead to unhandled exceptions, race conditions, and operations that never execute. Always await async operations or explicitly capture the Task for later handling.";
+    private static readonly LocalizableString Description = "Fire-and-forget async calls to module commands, to the driver's own lifecycle operations, and to the library's other asynchronous operations -- a transport's or connection's connect, disconnect, send and disposal, an observer's waits for captured tasks, and an observer's or collector's disposal -- can lead to unhandled exceptions, race conditions, and operations that never execute. Always await async operations or explicitly capture the Task for later handling.";
 
     /// <summary>
     /// The driver's own asynchronous lifecycle operations. Discarding one of these tasks is at least
@@ -44,6 +44,21 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         "StopAsync",
         "RegisterTypeInfoResolverAsync",
         "DisposeAsync",
+    ];
+
+    /// <summary>
+    /// The library types whose asynchronous operations are as damaging to discard as a command's.
+    /// A wait for captured tasks that is never awaited returns nothing the caller can act on; an
+    /// un-awaited <c>DisposeAsync</c> leaves an observer subscribed, a collector's channel open, or a
+    /// connection and its receive loop running; and an un-awaited connect, disconnect or send races
+    /// whatever the caller does next, with any failure going unobserved.
+    /// </summary>
+    private static readonly string[] AsyncOperationOwnerTypeNames =
+    [
+        "Transport",
+        "Connection",
+        "EventObserver",
+        "EventDataCollector",
     ];
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -77,7 +92,8 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         // same connection a module command does), or one of the driver's own lifecycle operations.
         // Discarding any of their tasks is the same class of hazard.
         bool isDriverLifecycleCall = IsDriverLifecycleMethod(method);
-        if (!IsModuleType(method.ContainingType) && !IsExecuteCommandAsync(method) && !isDriverLifecycleCall)
+        bool isLibraryAsyncOperation = IsLibraryAsyncOperation(method);
+        if (!IsModuleType(method.ContainingType) && !IsExecuteCommandAsync(method) && !isDriverLifecycleCall && !isLibraryAsyncOperation)
         {
             return;
         }
@@ -86,7 +102,7 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         // lifecycle operations answer with no value: StartAsync, StopAsync and
         // RegisterTypeInfoResolverAsync return a bare Task and DisposeAsync a ValueTask, none of which
         // the generic test admits.
-        if (!(isDriverLifecycleCall ? IsAwaitableReturningMethod(method) : IsTaskReturningMethod(method)))
+        if (!(isDriverLifecycleCall || isLibraryAsyncOperation ? IsAwaitableReturningMethod(method) : IsTaskReturningMethod(method)))
         {
             return;
         }
@@ -125,6 +141,41 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         // discarding that task is not this rule's subject.
         return System.Array.IndexOf(DriverLifecycleMethodNames, method.Name) >= 0
             && AnalyzerSymbolHelpers.IsCommandExecutorType(method.ContainingType);
+    }
+
+    /// <summary>
+    /// Determines whether a method is one of the library's own asynchronous operations outside the
+    /// command pipeline.
+    /// </summary>
+    /// <param name="method">The method the invocation binds to.</param>
+    /// <returns><see langword="true"/> if the library declares the operation.</returns>
+    /// <remarks>
+    /// The declaring type decides, so that a user's own asynchronous method on a type derived from
+    /// <c>Connection</c> is not judged, while an override of one of the library's own is: an overridden
+    /// <c>SendDataAsync</c> is still the send whose failure would go unobserved.
+    /// </remarks>
+    private static bool IsLibraryAsyncOperation(IMethodSymbol method)
+    {
+        IMethodSymbol declaration = method;
+        while (declaration.OverriddenMethod is not null)
+        {
+            declaration = declaration.OverriddenMethod;
+        }
+
+        if (!AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(declaration.ContainingType))
+        {
+            return false;
+        }
+
+        for (INamedTypeSymbol? current = declaration.ContainingType; current is not null; current = current.BaseType)
+        {
+            if (System.Array.IndexOf(AsyncOperationOwnerTypeNames, current.Name) >= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool HasModuleBaseClass(INamedTypeSymbol type)
