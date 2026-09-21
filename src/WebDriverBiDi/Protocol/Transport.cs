@@ -1146,11 +1146,22 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     }
 
     /// <summary>
-    /// Adds an event message type to the map of known event message types.
+    /// Adds an event message type to the map of known event message types. To intercept or rewrite
+    /// registrations, override <see cref="RegisterEventMessage{T}"/>, which the driver calls.
     /// </summary>
     /// <param name="eventName">The name of the event.</param>
     /// <param name="eventMessageType">The type of data to be returned in the event.</param>
-    protected virtual void AddEventMessageType(string eventName, Type eventMessageType)
+    /// <remarks>
+    /// The type is deserialized through the serializer's metadata for it, because the envelope
+    /// converter needs the payload type as a compile-time argument and building it for a runtime
+    /// <see cref="Type"/> would need reflection, which native AOT cannot keep. Envelopes registered
+    /// this way are therefore read more leniently than those registered through
+    /// <see cref="RegisterEventMessage{T}"/>: a missing <c>method</c> or a null <c>params</c> is
+    /// accepted here, and surfaces later as a protocol error rather than as a deserialization
+    /// failure. Register through <see cref="RegisterEventMessage{T}"/> wherever the payload type is
+    /// known at compile time.
+    /// </remarks>
+    protected void AddEventMessageType(string eventName, Type eventMessageType)
     {
         this.AddEventMessageType(eventName, eventMessageType, null);
     }
@@ -2189,8 +2200,10 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
 
             // As for responses, extension properties inside the params object and on the event
             // envelope are exposed separately (AdditionalData and AdditionalEventProperties). The
-            // converter rejects a null or missing 'params', so a deserialized event always carries
-            // non-null data whose runtime type drives which payload properties are extension data.
+            // envelope converter rejects a null or missing 'params', so data is non-null for every
+            // event registered through RegisterEventMessage<T>. A type registered through
+            // AddEventMessageType is read by the serializer's own metadata instead, which accepts
+            // both; such an envelope fails here and is reported as a protocol error by the catch.
             ReceivedDataDictionary payloadExtensionData = ConvertPayloadExtensionData(packet.CollectPayloadExtensionData("params", this.options.GetTypeInfo(eventMessageData.EventData!.GetType())));
             await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData, payloadExtensionData)).ConfigureAwait(false);
             return true;
