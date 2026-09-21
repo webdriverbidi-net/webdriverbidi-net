@@ -655,6 +655,19 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         try
         {
             executingTask = this.handler(notifyData);
+            if (executingTask is null)
+            {
+                // A handler that returns null has no task to await, capture or count, and nothing
+                // downstream can cope with one: the capture buffer would hold a null for
+                // WaitForCapturedTasksAsync to trip over, and an asynchronously-run handler would
+                // increment the in-flight counter and then fail to attach the continuation that
+                // decrements it, raising AsyncHandlerTaskCount for the life of the process and
+                // throwing a NullReferenceException at the producer. Failing here instead routes it
+                // exactly as a handler that threw: reported to the observer-error reporter, with the
+                // observer named, and the producer left undisturbed.
+                throw new InvalidOperationException($"The handler for observer '{this.Description}' (ID: {this.Id}) returned a null Task. A handler must return the task representing its work, or Task.CompletedTask if it has none.");
+            }
+
             if (!isHandlerRunAsynchronously)
             {
                 // Notification waits for a synchronously-run handler, so no task reaches the
@@ -709,7 +722,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             // WebDriverBiDiEventSource.AsyncHandlerTaskCount. The increment must
             // precede attaching the decrement continuation: if the task completes
             // between this line and ContinueWith, the continuation still runs (it
-            // schedules on already-completed tasks), so the counter remains balanced.
+            // schedules on already-completed tasks), so the counter remains balanced. The one way
+            // the pair could come apart -- a null task, which has no continuation to attach -- is
+            // rejected above, before the increment.
             // The continuation also will observe the task if it is faulted, preventing
             // an UnobservedTaskException, and forwarding the exception to the higher-
             // level error reporting pipeline.
