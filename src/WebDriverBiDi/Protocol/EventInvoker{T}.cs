@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 /// <summary>
-/// Object containing data about a WebDriver Bidi event where the data type is specifically known.
+/// Object containing data about a WebDriver BiDi event where the data type is specifically known.
 /// </summary>
 /// <typeparam name="T">The type of the data for the event.</typeparam>
 public class EventInvoker<T> : EventInvoker

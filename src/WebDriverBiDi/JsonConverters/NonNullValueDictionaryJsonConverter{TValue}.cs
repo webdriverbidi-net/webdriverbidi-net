@@ -39,7 +39,7 @@ public class NonNullValueDictionaryJsonConverter<TValue> : JsonConverter<Diction
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
-    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <param name="options">The JsonSerializerOptions used for deserializing the JSON.</param>
     /// <returns>The deserialized dictionary.</returns>
     /// <exception cref="JsonException">
     /// Thrown when the JSON value is not an object, or when the value of any property is <c>null</c>.
@@ -80,7 +80,7 @@ public class NonNullValueDictionaryJsonConverter<TValue> : JsonConverter<Diction
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The dictionary to be serialized.</param>
-    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <param name="options">The JsonSerializerOptions used for serializing the object.</param>
     /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override void Write(Utf8JsonWriter writer, Dictionary<string, TValue> value, JsonSerializerOptions options)
     {

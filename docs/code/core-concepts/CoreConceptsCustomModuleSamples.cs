@@ -4,7 +4,7 @@
 // </copyright>
 // Custom module types for core-concepts advanced section snippets.
 
-#pragma warning disable CS1591, CS0168, CS8600, CS8618
+#pragma warning disable CS1591, CS0168, CS8618
 #pragma warning disable SYSLIB1038
 
 namespace WebDriverBiDi.Docs.Code.CoreConcepts;
@@ -151,5 +151,5 @@ public class MyCustomModule : Module
     public ObservableEvent<MyEventArgs> OnMyEvent => this.onMyEvent;
 }
 
-#pragma warning restore CS1591, CS0168, CS8600, CS8618
+#pragma warning restore CS1591, CS0168, CS8618
 #pragma warning restore SYSLIB1038 // Inaccessible properties annotated with the JsonIncludeAttribute are not supported in source generation mode.

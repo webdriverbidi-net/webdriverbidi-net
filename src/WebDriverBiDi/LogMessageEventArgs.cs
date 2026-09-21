@@ -6,7 +6,7 @@
 namespace WebDriverBiDi;
 
 /// <summary>
-/// Object containing event data for events raised when a log message is received from a WebDriver Bidi connection.
+/// Object containing event data for events raised when a log message is received from a WebDriver BiDi connection.
 /// </summary>
 public record LogMessageEventArgs : WebDriverBiDiEventArgs
 {

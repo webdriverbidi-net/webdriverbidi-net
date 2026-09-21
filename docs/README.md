@@ -151,6 +151,22 @@ fragment may stay in the markdown, but the line directly above its fence must ca
 reason, `<!-- inline-csharp: why this cannot be a compiled region -->`, so the exception is a deliberate
 choice rather than an oversight. `validate-doc-regions.sh` fails on any unmarked C# fence.
 
+Two places cannot use a region reference at all, and have rules of their own.
+
+The READMEs packed into the NuGet packages (`README.md`, `src/WebDriverBiDi/README.md`,
+`src/WebDriverBiDi.Logging/README.md`) are rendered by nuget.org, which knows nothing of DocFX, so their
+samples are written out in full. Each fence names the region it mirrors on the line above it,
+`<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#RegionName -->` (the path is relative to the
+repository root, because a package's reader has only the README). `validate-doc-regions.sh` then compares
+the fence with that region, ignoring indentation and line breaks, and checks that every `using` directive
+the fence shows is one the region's file declares. A fence that could not compile carries the
+`inline-csharp` marker instead.
+
+The quick reference states its code in table cells, which DocFX cannot fill from a region. Every row's
+code is therefore duplicated in `docs/code/QuickReferenceRowSamples.cs`, and the script requires the row
+to appear there verbatim, whitespace aside. Add the row and its counterpart together; a row whose code is
+a sketch rather than a statement opts out with `<!-- not-compiled: reason -->` in the same cell.
+
 ### Cross-References
 
 Link to other documentation:

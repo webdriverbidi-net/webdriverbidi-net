@@ -4,10 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/examples/preload-scripts.md
 
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-#pragma warning disable CS8604 // Possible null reference argument.
-
 namespace WebDriverBiDi.Docs.Code.Script;
 
 using System.Collections.Generic;
@@ -132,9 +128,9 @@ public static class PreloadScriptSamples
                 Console.WriteLine($"📨 Received message from preload script");
 
                 if (e.Data.Type == RemoteValueType.Object &&
-                    e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue)
+                    e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue &&
+                    dataRemoteValue.Value is RemoteValueDictionary data)
                 {
-                    RemoteValueDictionary data = dataRemoteValue.Value;
                     Console.WriteLine($"Page ready: {data["ready"].As<BooleanRemoteValue>().Value}");
                     Console.WriteLine($"Load time: {data["loadTime"].As<NumberRemoteValue>().Value}ms");
 
@@ -219,9 +215,9 @@ public static class PreloadScriptSamples
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
             if (e.ChannelId == "elementWatcher" &&
-                e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue)
+                e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue &&
+                dataRemoteValue.Value is RemoteValueDictionary data)
             {
-                RemoteValueDictionary data = dataRemoteValue.Value;
                 elementFoundSignal.SetResult(data);
             }
         });
@@ -294,9 +290,9 @@ public static class PreloadScriptSamples
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
             if (e.ChannelId == "elementWatcher" &&
-                e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue)
+                e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue &&
+                dataRemoteValue.Value is RemoteValueDictionary data)
             {
-                RemoteValueDictionary data = dataRemoteValue.Value;
                 elementFoundSignal.SetResult(data);
             }
         });
@@ -374,9 +370,9 @@ public static class PreloadScriptSamples
 
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
-            if (e.ChannelId == "fetchInterceptor")
+            if (e.ChannelId == "fetchInterceptor" &&
+                e.Data.As<KeyValuePairCollectionRemoteValue>().Value is RemoteValueDictionary data)
             {
-                RemoteValueDictionary data = e.Data.As<KeyValuePairCollectionRemoteValue>().Value;
                 fetchCalls.Add(data);
                 Console.WriteLine($"🌐 Fetch intercepted: {data["url"].As<StringRemoteValue>().Value}");
             }
@@ -561,6 +557,3 @@ public static class PreloadScriptSamples
     }
 }
 
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-#pragma warning restore CS8604 // Possible null reference argument.

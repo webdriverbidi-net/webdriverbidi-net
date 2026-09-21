@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/advanced/observability.md
 
-#pragma warning disable CS8600, CS8602, CS8604, CS1591, CS0169, CS0649
+#pragma warning disable CS1591, CS0169, CS0649
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 

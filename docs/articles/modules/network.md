@@ -127,7 +127,7 @@ Use `DisownDataAsync` to release response-body data held by a data collector whe
 
 [!code-csharp[Disown Data](../../code/modules/NetworkModuleSamples.cs#DisownData)]
 
-Alternatively, you can set `DisownCollectedData = true` when calling `GetDataAsync` to release the data immediately after retrieval.
+Alternatively, you can set `DisownCollectedData = true` when calling `GetDataAsync` to release the data immediately after retrieval. Disowning requires `CollectorId` to name the collector the data is removed from; without it the command is rejected with `invalid argument`.
 
 ### Remove Data Collector
 

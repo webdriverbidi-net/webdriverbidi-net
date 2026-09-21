@@ -52,7 +52,7 @@ public class NonNullElementListJsonConverter<T> : JsonConverter<List<T>>
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
-    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <param name="options">The JsonSerializerOptions used for deserializing the JSON.</param>
     /// <returns>The deserialized list.</returns>
     /// <exception cref="JsonException">
     /// Thrown when the JSON value is not an array, or when any element of the array is <c>null</c>.
@@ -92,7 +92,7 @@ public class NonNullElementListJsonConverter<T> : JsonConverter<List<T>>
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The list to be serialized.</param>
-    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <param name="options">The JsonSerializerOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, List<T> value, JsonSerializerOptions options)
     {
         // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo

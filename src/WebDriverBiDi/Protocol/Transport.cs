@@ -15,7 +15,7 @@ using WebDriverBiDi.Internal;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// The transport object used for serializing and deserializing JSON data used in the WebDriver Bidi protocol.
+/// The transport object used for serializing and deserializing JSON data used in the WebDriver BiDi protocol.
 /// It uses a <see cref="Connection"/> object to communicate with the remote end, and does no further processing
 /// of the objects serialized or deserialized. Consumers of this class are expected to handle things like awaiting
 /// the response of a WebDriver BiDi command message.
@@ -272,7 +272,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
     /// collected nor thrown from a later call; it is still written to <see cref="OnLogMessage"/> at
     /// <see cref="WebDriverBiDiLogLevel.Error"/> and, for a payload that cannot be deserialized, raised as the
-    /// <c>ProtocolError</c> event of <see cref="WebDriverBiDiEventSource"/>. No observable event is raised for it.
+    /// <c>ProtocolError</c> event of <see cref="WebDriverBiDiEventSource"/> as well. A fault of the
+    /// message-processing loop itself raises that EventSource event and is not logged. No observable event is
+    /// raised for any of them.
     /// </summary>
     public TransportErrorBehavior ProtocolErrorBehavior { get => this.UnhandledErrors.ProtocolErrorBehavior; set => this.UnhandledErrors.ProtocolErrorBehavior = value; }
 

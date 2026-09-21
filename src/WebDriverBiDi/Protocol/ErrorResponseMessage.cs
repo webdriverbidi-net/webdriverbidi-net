@@ -69,7 +69,7 @@ public class ErrorResponseMessage : Message
     /// <summary>
     /// Gets the data associated with the error without the command information.
     /// </summary>
-    /// <returns>An ErrorResponseData object containing the data about the error.</returns>
+    /// <returns>An ErrorResult object containing the data about the error.</returns>
     public ErrorResult GetErrorResponseData()
     {
         return new ErrorResult(this);

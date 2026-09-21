@@ -22,7 +22,7 @@ using System.Runtime.ExceptionServices;
 /// Notification reads that array without taking the lock and iterates it to completion, so a
 /// long-running handler neither blocks registration nor is disturbed by one, and an observer added or
 /// removed while an event is being dispatched takes effect from the next event. See
-/// <see cref="EventObserver{T}"/> for thread-safety of checkpoint methods on observers.
+/// <see cref="EventObserver{T}"/> for thread-safety of the capture methods on observers.
 /// </para>
 /// </remarks>
 public class ObservableEvent<T>

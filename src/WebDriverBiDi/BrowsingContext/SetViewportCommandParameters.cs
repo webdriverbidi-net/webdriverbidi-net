@@ -88,6 +88,10 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// <summary>
     /// Gets or sets the ID of the browsing context for which to set the viewport.
     /// </summary>
+    /// <remarks>
+    /// This and <see cref="UserContexts"/> are mutually exclusive: a command that names both a browsing context
+    /// and user contexts is rejected by the remote end with an <c>invalid argument</c> error.
+    /// </remarks>
     [JsonPropertyName("context")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? BrowsingContextId { get; set; }
@@ -129,10 +133,16 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// Gets the user context IDs for which to set the viewport.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The protocol requires this property, when present, to contain at least one entry.
     /// An empty list therefore means "not specified": the property is omitted from the JSON
     /// payload entirely, and an empty array is never sent. Add entries to the list to scope
     /// the command.
+    /// </para>
+    /// <para>
+    /// This and <see cref="BrowsingContextId"/> are mutually exclusive: a command that names both is rejected by
+    /// the remote end with an <c>invalid argument</c> error.
+    /// </para>
     /// </remarks>
     [JsonIgnore]
     public List<string> UserContexts { get; } = [];

@@ -7,7 +7,6 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable CS0168 // Variable declared but never used
 #pragma warning disable CS0219 // Variable assigned but never used
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
 
 namespace WebDriverBiDi.Docs.Code.CoreConcepts;
 
@@ -196,8 +195,9 @@ public static class CoreConceptsSamples
         string webSocketUrl)
     {
         #region ProperDisposal-tryfinally
-        // Using statement (recommended)
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+        // Stopping ends the session; disposing also releases the driver's own resources, so do both. The
+        // `await using` declaration disposes the driver when the method returns, whatever happens.
+        await using BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         try
         {
             await driver.StartAsync(webSocketUrl);
@@ -205,6 +205,8 @@ public static class CoreConceptsSamples
         }
         finally
         {
+            // Stop inside the try/finally so that collected errors are observed here rather than by
+            // DisposeAsync, which logs them and moves on.
             await driver.StopAsync();
         }
         #endregion
@@ -399,7 +401,7 @@ public static class CoreConceptsSamples
             NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(@params);
             // Result properties are read-only
             string url = result.Url;
-            string navigationId = result.NavigationId;
+            string? navigationId = result.NavigationId;
         }
         catch (WebDriverBiDiException ex)
         {
@@ -850,4 +852,3 @@ public static class CoreConceptsSamples
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning restore CS0168 // Variable declared but never used
 #pragma warning restore CS0219 // Variable assigned but never used
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.

@@ -51,6 +51,11 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     /// <summary>
     /// Gets or sets a value indicating whether the retrieved collected data should be removed from the collector after retrieval.
     /// </summary>
+    /// <remarks>
+    /// Setting this to <see langword="true"/> requires <see cref="CollectorId"/> to name the collector the data is
+    /// removed from; a command that disowns without naming one is rejected by the remote end with an
+    /// <c>invalid argument</c> error.
+    /// </remarks>
     [JsonPropertyName("disown")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? DisownCollectedData { get; set; }

@@ -11,7 +11,7 @@ using System.IO.Pipes;
 using System.Runtime.InteropServices;
 
 /// <summary>
-/// Represents a connection to a WebDriver Bidi remote end over anonymous pipes.
+/// Represents a connection to a WebDriver BiDi remote end over anonymous pipes.
 /// This is used with Chromium's --remote-debugging-pipe flag, which on non-Windows
 /// systems communicates via file descriptors 3 (browser reads) and 4 (browser writes).
 /// </summary>
@@ -65,6 +65,7 @@ public class PipeConnection : Connection
     /// Initializes a new instance of the <see cref="PipeConnection"/> class.
     /// </summary>
     /// <param name="processProvider">An implementation of <see cref="IPipeServerProcessProvider"/> that provides a <see cref="Process"/> that is able to send and receive messages over pipe connections.</param>
+    /// <exception cref="ArgumentNullException">Thrown when a null is passed for the process provider.</exception>
     public PipeConnection(IPipeServerProcessProvider processProvider)
     {
         if (processProvider is null)

@@ -48,7 +48,7 @@ public class SentinelNullJsonConverter<T, TSentinelChecker> : JsonConverter<T>
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
-    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <param name="options">The JsonSerializerOptions used for deserializing the JSON.</param>
     /// <returns>Never returns; always throws.</returns>
     /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -61,7 +61,7 @@ public class SentinelNullJsonConverter<T, TSentinelChecker> : JsonConverter<T>
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The value to be serialized.</param>
-    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <param name="options">The JsonSerializerOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
         if (value is not null)
@@ -82,7 +82,7 @@ public class SentinelNullJsonConverter<T, TSentinelChecker> : JsonConverter<T>
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The value to be serialized. It is never <see langword="null"/> and never the sentinel.</param>
-    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <param name="options">The JsonSerializerOptions used for serializing the object.</param>
     /// <remarks>
     /// The default implementation writes the value with the serializer's metadata for its runtime type.
     /// </remarks>

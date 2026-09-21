@@ -4,9 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/examples/form-submission.md
 
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-
 namespace WebDriverBiDi.Docs.Code.Examples;
 
 using System.Collections.Generic;
@@ -278,10 +275,9 @@ public static class FormSubmissionSamples
 
             EvaluateResult inputResult = await driver.Script.EvaluateAsync(evalParams);
 
-            if (inputResult is EvaluateResultSuccess inputSuccess)
+            if (inputResult is EvaluateResultSuccess inputSuccess &&
+                inputSuccess.Result.TryAs(out NodeRemoteValue? inputElement))
             {
-                RemoteValue inputElementRemoteValue = inputSuccess.Result;
-                inputElementRemoteValue.TryAs(out NodeRemoteValue inputElement);
                 Console.WriteLine($"Found input element: {inputElement.SharedId}");
 
                 // Click the input to focus it
@@ -324,10 +320,9 @@ public static class FormSubmissionSamples
                         new ContextTarget(contextId),
                         true));
 
-                if (phoneResult is EvaluateResultSuccess phoneSuccess)
+                if (phoneResult is EvaluateResultSuccess phoneSuccess &&
+                    phoneSuccess.Result.TryAs(out NodeRemoteValue? phoneElement))
                 {
-                    phoneSuccess.Result.TryAs(out NodeRemoteValue? phoneElement);
-
                     // Click phone field
                     PerformActionsCommandParameters clickPhoneParams = new PerformActionsCommandParameters(contextId);
                     PointerSourceActions clickPhoneParamsMouse = new PointerSourceActions
@@ -367,10 +362,9 @@ public static class FormSubmissionSamples
                         new ContextTarget(contextId),
                         true));
 
-                if (buttonResult is EvaluateResultSuccess buttonSuccess)
+                if (buttonResult is EvaluateResultSuccess buttonSuccess &&
+                    buttonSuccess.Result.TryAs(out NodeRemoteValue? buttonElement))
                 {
-                    RemoteValue buttonElementRemoteValue = buttonSuccess.Result;
-                    buttonElementRemoteValue.TryAs(out NodeRemoteValue buttonElement);
                     Console.WriteLine($"Found submit button: {buttonElement.SharedId}");
 
                     // Set up navigation observer

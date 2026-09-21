@@ -26,6 +26,8 @@ public class HandleRequestDevicePromptAcceptCommandParameters : HandleRequestDev
     /// <summary>
     /// Gets or sets the ID of the device for which to accept the prompt.
     /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when read before a device ID has been set.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when a null is assigned.</exception>
     [JsonIgnore]
     public string DeviceId
     {

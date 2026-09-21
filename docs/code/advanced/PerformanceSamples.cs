@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/advanced/performance.md
 
-#pragma warning disable CS8600, CS8602, CS8604, CS8618, CS1591, CS4014, CS0649
+#pragma warning disable CS8618, CS1591, CS4014, CS0649
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
@@ -194,9 +194,9 @@ public class PerformanceSamples
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is KeyValuePairCollectionRemoteValue remoteValue)
+            success.Result is KeyValuePairCollectionRemoteValue remoteValue &&
+            remoteValue.Value is RemoteValueDictionary data)
         {
-            RemoteValueDictionary data = remoteValue.Value;
             string actualTitle = data["title"].As<StringRemoteValue>().Value;
             string actualUrl = data["url"].As<StringRemoteValue>().Value;
             long actualLinkCount = data["linkCount"].As<NumberRemoteValue>();
@@ -273,18 +273,17 @@ public class PerformanceSamples
     public static void FilterEventsEarly(BiDiDriver driver)
     {
         #region FilterEventsEarly
-        // ❌ Slow: Process all events then filter
+        // ❌ Slow: the expensive work runs for every response, including the ones thrown away
         driver.Network.OnResponseCompleted.AddObserver((e) =>
         {
-            // Process every single response
+            string summary = SummarizeResponse(e);
             if (e.Response.Url.Contains(".json"))
             {
-                // Only use JSON responses
-                ProcessResponse(e);
+                RecordSummary(summary);
             }
         });
 
-        // ✅ Fast: Filter in observer
+        // ✅ Fast: decide first, so the expensive work runs only for the responses that are kept
         driver.Network.OnResponseCompleted.AddObserver((e) =>
         {
             if (!e.Response.Url.Contains(".json"))
@@ -292,7 +291,7 @@ public class PerformanceSamples
                 return;  // Exit early
             }
 
-            ProcessResponse(e);
+            RecordSummary(SummarizeResponse(e));
         });
         #endregion
     }
@@ -391,7 +390,7 @@ public class PerformanceSamples
             {
                 if (logQueue.TryDequeue(out var logEvent))
                 {
-                    var analysis = await PerformComplexAnalysisAsync(logEvent.Text);
+                    var analysis = await PerformComplexAnalysisAsync(logEvent.Text ?? string.Empty);
                     await SaveToDatabaseAsync(analysis);
                     await SendNotificationAsync(analysis);
                 }
@@ -526,6 +525,7 @@ public class PerformanceSamples
         #endregion
     }
 
+#region AsyncHandlerBacklogListener
     private sealed class AsyncHandlerBacklogListener : EventListener
     {
         protected override void OnEventSourceCreated(EventSource eventSource)
@@ -546,6 +546,7 @@ public class PerformanceSamples
             }
         }
     }
+#endregion
 
     /// <summary>
     /// Memory monitoring.
@@ -819,6 +820,10 @@ public class PerformanceSamples
     private static Task ProcessRequestAsync(BeforeRequestSentEventArgs e) => Task.CompletedTask;
 
     private static void ProcessResponse(ResponseCompletedEventArgs e) { }
+
+    private static string SummarizeResponse(ResponseCompletedEventArgs e) => e.Response.Url;
+
+    private static void RecordSummary(string summary) { }
 
     private static void AnalyzeResponse(ResponseCompletedEventArgs e) { }
 

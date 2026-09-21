@@ -4,9 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/modules/script.md and docs/articles/advanced/error-handling.md
 
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-
 namespace WebDriverBiDi.Docs.Code.Script;
 
 using System.Collections.Generic;
@@ -157,7 +154,10 @@ public class ScriptSamples
 
         if (objectResult is EvaluateResultSuccess objectSuccess)
         {
-            objectSuccess.Result.TryAs(out NodeRemoteValue? divElement);
+            if (!objectSuccess.Result.TryAs(out NodeRemoteValue? divElement))
+            {
+                return;
+            }
 
             // Call getAttribute method
             string functionDefinition = "(element, attrName) => element.getAttribute(attrName)";
@@ -477,10 +477,10 @@ public class ScriptSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is KeyValuePairCollectionRemoteValue obj)
+            success.Result is KeyValuePairCollectionRemoteValue obj &&
+            obj.Value is RemoteValueDictionary dict)
         {
-            // Access as RemoteValueDictionary
-            RemoteValueDictionary dict = obj.Value;
+            // Access as RemoteValueDictionary; Value is null if the remote end omitted the contents
             Console.WriteLine($"Name: {dict["name"].As<StringRemoteValue>().Value}");
             Console.WriteLine($"Age: {dict["age"].As<NumberRemoteValue>().Value}");
         }
@@ -505,10 +505,10 @@ public class ScriptSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is CollectionRemoteValue listValue)
+            success.Result is CollectionRemoteValue listValue &&
+            listValue.Value is RemoteValueList list)
         {
-            // Access as RemoteValueList
-            RemoteValueList list = listValue.Value;
+            // Access as RemoteValueList; Value is null if the remote end omitted the contents
             Console.WriteLine($"Array length: {list.Count}");
             foreach (RemoteValue item in list)
             {
@@ -537,10 +537,10 @@ public class ScriptSamples
             RemoteValue elementRemoteValue = success.Result;
 
             // Check if it's a node
-            if (elementRemoteValue.TryAs(out NodeRemoteValue element))
+            if (elementRemoteValue.TryAs(out NodeRemoteValue? element))
             {
-                // Get node properties
-                NodeProperties nodeProps = element.Value;
+                // Get node properties; this throws if the node was sent without them
+                NodeProperties nodeProps = element.GetNodeProperties();
                 Console.WriteLine($"Tag: {nodeProps.LocalName}");
                 Console.WriteLine($"Node type: {nodeProps.NodeType}");
 
@@ -814,7 +814,10 @@ public class ScriptSamples
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("button")));
 
-        locateResult.Nodes[0].TryAs(out NodeRemoteValue? element);
+        if (!locateResult.Nodes[0].TryAs(out NodeRemoteValue? element))
+        {
+            return;
+        }
 
         // Click element
         CallFunctionCommandParameters clickParams = new CallFunctionCommandParameters(
@@ -1000,5 +1003,3 @@ public class ScriptSamples
     }
 }
 
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning restore CS8602 // Dereference of a possibly null reference.

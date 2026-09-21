@@ -160,7 +160,7 @@ anywhere sets it everywhere:
 |-------|--------------|
 | `Warn` and above | Shutdown timeouts, disposal problems, connection errors |
 | `Info` (default) | Connection and transport lifecycle |
-| `Debug` | A message per command sent, answered, or discarded as a late response |
+| `Debug` | A message per command sent, answered, or discarded as a late response, and one per event received, which dominates the volume on a subscribed session |
 | `Trace` | Every message exchanged with the remote end (`SEND >>>` / `RECV <<<`) |
 | `Off` | Nothing at all, including `Fatal` |
 

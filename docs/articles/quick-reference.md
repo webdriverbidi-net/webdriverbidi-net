@@ -8,7 +8,7 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 |-----------|------|
 | Create driver | `BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));` |
 | Start connection | `await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");` (the `webSocketUrl` from a chromedriver/geckodriver session; see [Browser Setup](browser-setup.md)) |
-| Check if started | `if (driver.IsStarted) { ... }` |
+| Check if started | `bool isStarted = driver.IsStarted;` |
 | Stop connection | `await driver.StopAsync();` |
 | Dispose | `await driver.DisposeAsync();` |
 

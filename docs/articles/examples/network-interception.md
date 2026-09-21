@@ -66,7 +66,7 @@ URL patterns match whole URL parts for equality and accept no wildcards, so they
 
 **Problem**: Memory usage grows over time.
 
-**Solution**: Set `DisownCollectedData = true` when getting response bodies.
+**Solution**: Set `DisownCollectedData = true` when getting response bodies, naming the collector in `CollectorId` as disowning requires.
 
 ### Timing Problems
 

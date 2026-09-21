@@ -6,7 +6,7 @@
 namespace WebDriverBiDi;
 
 /// <summary>
-/// Base class representing a module in the WebDriver Bidi protocol.
+/// Base class representing a module in the WebDriver BiDi protocol.
 /// </summary>
 public abstract class Module
 {

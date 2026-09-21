@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.Internal;
 
 /// <summary>
-/// Object containing data about a WebDriver Bidi message.
+/// Object containing data about a WebDriver BiDi message.
 /// This class is not thread-safe. Instances are created and consumed
 /// on the single message-processing loop and should not be shared
 /// across threads.

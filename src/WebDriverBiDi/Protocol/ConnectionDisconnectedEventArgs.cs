@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 /// <summary>
-/// Object containing event data for events raised when the remote end gracefully closes a WebDriver Bidi connection.
+/// Object containing event data for events raised when the remote end gracefully closes a WebDriver BiDi connection.
 /// </summary>
 public record ConnectionDisconnectedEventArgs : WebDriverBiDiEventArgs
 {

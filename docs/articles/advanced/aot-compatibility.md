@@ -111,6 +111,25 @@ and nothing is written to say why, so it looks simply like an absence of events.
 
 See [Observability](observability.md) for the events this restores.
 
+### Values in `AdditionalData` are not serialized through your context
+
+`AdditionalData`, `CapabilityRequest.AdditionalCapabilities` and `Command.AdditionalCommandProperties` hold
+`object?` values, so the serializer must look their runtime types up when the command is sent, rather than knowing
+them from a generated contract. Under Native AOT, a type nothing has registered fails the send with
+`WebDriverBiDiSerializationException` wrapping a `NotSupportedException` naming the type. The
+[BIDI022](analyzers.md#available-analyzers) analyzer flags every write to these dictionaries as a reminder.
+
+The library's own context already registers the types these dictionaries usually hold: `string`, `bool`, `int`,
+`long`, `uint`, `ulong`, `double`, `decimal`, `DateTime`, `object`, `List<object?>` and `Dictionary<string, object?>`.
+Values of those types need nothing from you. A value of any other type — your own record, an enum, an array of a
+custom type — needs a context that includes it, registered exactly as a custom module's types are:
+
+[!code-csharp[AdditionalData Under AOT](../../code/advanced/AotCompatibilitySamples.cs#AdditionalDataUnderAot)]
+
+Register it before `StartAsync`, exactly as a custom module's context is registered (see
+[Step 3](#step-3-register-the-context-with-the-driver)). Registering the value's own type is enough; the transport
+serializes the command envelope itself.
+
 ## Best Practices
 
 1. **Always create a `JsonSerializerContext` for custom modules** — even if you don't target AOT today, this future-proofs your code and avoids reflection overhead.

@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/advanced/connection-management.md
 
-#pragma warning disable CS8600, CS8602, CS1591
+#pragma warning disable CS1591
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
@@ -79,8 +79,8 @@ public static class ConnectionManagementSamples
     /// Connection timeout settings.
     /// </summary>
     public static void TimeoutSettings()
-    #region TimeoutSettings
     {
+        #region TimeoutSettings
         WebSocketConnection connection = new WebSocketConnection()
         {
             StartupTimeout = TimeSpan.FromSeconds(15),
@@ -161,7 +161,7 @@ public static class ConnectionManagementSamples
 
         // ❌ Invalid
         await driver.StartAsync("http://localhost:9222");  // Wrong scheme
-        await driver.StartAsync("localhost:9222");         // Not absolute
+        await driver.StartAsync("localhost:9222");         // Parsed as scheme "localhost", which is not ws or wss
         #endregion
     }
 

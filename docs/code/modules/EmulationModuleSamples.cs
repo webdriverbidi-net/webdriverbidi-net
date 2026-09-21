@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/modules/emulation.md
 
-#pragma warning disable CS8600, CS8602, CS0219
+#pragma warning disable CS0219
 
 namespace WebDriverBiDi.Docs.Code.Modules;
 
@@ -164,9 +164,9 @@ public class EmulationModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result.As<KeyValuePairCollectionRemoteValue>().Value is RemoteValueDictionary location)
         {
-            RemoteValueDictionary location = success.Result.As<KeyValuePairCollectionRemoteValue>().Value;
             Console.WriteLine($"Browser location: {location["lat"].As<NumberRemoteValue>().Value}, {location["lng"].As<NumberRemoteValue>().Value}");
         }
         #endregion

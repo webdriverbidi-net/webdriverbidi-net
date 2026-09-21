@@ -53,10 +53,16 @@ public class SetTouchOverrideCommandParameters : CommandParameters<SetTouchOverr
     /// Gets the browsing contexts for which to set the touch override.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The protocol requires this property, when present, to contain at least one entry.
     /// An empty list therefore means "not specified": the property is omitted from the JSON
     /// payload entirely, and an empty array is never sent. Add entries to the list to scope
     /// the command.
+    /// </para>
+    /// <para>
+    /// The two scopes are mutually exclusive: a command that names both browsing contexts and user contexts is
+    /// rejected by the remote end with an <c>invalid argument</c> error. Scope the command one way or the other.
+    /// </para>
     /// </remarks>
     [JsonIgnore]
     public List<string> Contexts { get; } = [];
@@ -65,10 +71,16 @@ public class SetTouchOverrideCommandParameters : CommandParameters<SetTouchOverr
     /// Gets the user contexts for which to set the touch override.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The protocol requires this property, when present, to contain at least one entry.
     /// An empty list therefore means "not specified": the property is omitted from the JSON
     /// payload entirely, and an empty array is never sent. Add entries to the list to scope
     /// the command.
+    /// </para>
+    /// <para>
+    /// The two scopes are mutually exclusive: a command that names both browsing contexts and user contexts is
+    /// rejected by the remote end with an <c>invalid argument</c> error. Scope the command one way or the other.
+    /// </para>
     /// </remarks>
     [JsonIgnore]
     public List<string> UserContexts { get; } = [];

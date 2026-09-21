@@ -4,9 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/examples/console-monitoring.md
 
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-
 namespace WebDriverBiDi.Docs.Code.Examples;
 
 using System.Collections.Generic;
@@ -201,7 +198,8 @@ public static class ConsoleMonitoringSamples
         // Only capture console API calls (not JavaScript errors)
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
-            if (e.Type == "console")
+            // Arguments is only present on a console API entry, so it is tested along with the type
+            if (e.Type == "console" && e.Arguments is not null)
             {
                 Console.WriteLine($"console.{e.Method}() called");
                 Console.WriteLine($"  Arguments: {e.Arguments.Count}");

@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 /// <summary>
-/// Object containing event data for events raised when a protocol error is received from a WebDriver Bidi connection.
+/// Object containing event data for events raised when a protocol error is received from a WebDriver BiDi connection.
 /// </summary>
 public record ErrorReceivedEventArgs : WebDriverBiDiEventArgs
 {
@@ -14,6 +14,7 @@ public record ErrorReceivedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="ErrorReceivedEventArgs" /> class.
     /// </summary>
     /// <param name="errorData">The data about the error received from the connection.</param>
+    /// <exception cref="ArgumentNullException">Thrown when a null is passed for the error data.</exception>
     public ErrorReceivedEventArgs(ErrorResult errorData)
     {
         this.ErrorData = errorData ?? throw new ArgumentNullException(nameof(errorData));

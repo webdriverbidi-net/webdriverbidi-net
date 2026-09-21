@@ -4,8 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/getting-started.md
 
-#pragma warning disable CS8600, CS8602
-
 namespace WebDriverBiDi.Docs.Code.Examples;
 
 using System.Net.Http;

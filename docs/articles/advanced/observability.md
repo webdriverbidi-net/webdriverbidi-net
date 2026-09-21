@@ -296,7 +296,7 @@ Always dispose EventListener instances:
 
 ## Performance Considerations
 
-- **Cheap when not enabled** - each event method checks `IsEnabled` before writing, so nothing is emitted without a listener. It is not allocation-free: a few call sites build their arguments first, such as the exception type name in `CommandSendFailed` and the error type name in `CommandError`
+- **Cheap when not enabled** - each event method checks `IsEnabled` before writing, so nothing is emitted without a listener. It is not allocation-free: a few call sites build their arguments first, such as the exception type name in `CommandSendFailed`
 - **Low overhead** - Minimal impact even with Verbose logging
 - **ETW optimized** - On Windows, uses highly optimized ETW infrastructure
 - **Works with the standard logging pipeline** - the `WebDriverBiDi.Logging` bridge forwards events to `ILogger`, whose `Log` method is synchronous

@@ -22,7 +22,7 @@ public class BigIntegerJsonConverter : JsonConverter<BigInteger>
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
-    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <param name="options">The JsonSerializerOptions used for deserializing the JSON.</param>
     /// <returns>The deserialized BigInteger value.</returns>
     public override BigInteger Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -48,7 +48,7 @@ public class BigIntegerJsonConverter : JsonConverter<BigInteger>
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The BigInteger value to be serialized.</param>
-    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <param name="options">The JsonSerializerOptions used for serializing the object.</param>
     /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override void Write(Utf8JsonWriter writer, BigInteger value, JsonSerializerOptions options)
     {

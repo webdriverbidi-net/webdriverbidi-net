@@ -8,7 +8,8 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the session.unsubscribe command.
+/// Provides parameters for the session.unsubscribe command that cancel subscriptions by the IDs the matching
+/// session.subscribe commands returned.
 /// </summary>
 public class UnsubscribeByIdsCommandParameters : UnsubscribeCommandParameters
 {

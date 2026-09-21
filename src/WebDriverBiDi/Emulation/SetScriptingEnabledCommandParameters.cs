@@ -48,6 +48,11 @@ public class SetScriptingEnabledCommandParameters : CommandParameters<SetScripti
     /// Gets or sets a value indicating whether scripting is enabled or disabled for the specified contexts.
     /// Note carefully that only emulation of disabled JavaScript is supported.
     /// </summary>
+    /// <remarks>
+    /// The protocol only supports disabling scripting: the valid values are <see langword="false"/> to disable
+    /// scripting, or <see langword="null"/> to clear the override. Sending <see langword="true"/> is not defined
+    /// by the protocol, and the remote end is expected to reject it.
+    /// </remarks>
     [JsonPropertyName("enabled")]
     public bool? IsScriptingEnabled { get; set; }
 
@@ -55,10 +60,16 @@ public class SetScriptingEnabledCommandParameters : CommandParameters<SetScripti
     /// Gets the browsing contexts for which to set whether scripting is enabled.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The protocol requires this property, when present, to contain at least one entry.
     /// An empty list therefore means "not specified": the property is omitted from the JSON
     /// payload entirely, and an empty array is never sent. Add entries to the list to scope
     /// the command.
+    /// </para>
+    /// <para>
+    /// The two scopes are mutually exclusive: a command that names both browsing contexts and user contexts is
+    /// rejected by the remote end with an <c>invalid argument</c> error. Scope the command one way or the other.
+    /// </para>
     /// </remarks>
     [JsonIgnore]
     public List<string> Contexts { get; } = [];
@@ -67,10 +78,16 @@ public class SetScriptingEnabledCommandParameters : CommandParameters<SetScripti
     /// Gets the user contexts for which to set whether scripting is enabled.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The protocol requires this property, when present, to contain at least one entry.
     /// An empty list therefore means "not specified": the property is omitted from the JSON
     /// payload entirely, and an empty array is never sent. Add entries to the list to scope
     /// the command.
+    /// </para>
+    /// <para>
+    /// The two scopes are mutually exclusive: a command that names both browsing contexts and user contexts is
+    /// rejected by the remote end with an <c>invalid argument</c> error. Scope the command one way or the other.
+    /// </para>
     /// </remarks>
     [JsonIgnore]
     public List<string> UserContexts { get; } = [];

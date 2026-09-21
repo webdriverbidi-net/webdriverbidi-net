@@ -67,7 +67,8 @@ public abstract class CommandParameters
     /// <c>PublishAot=true</c> and use this dictionary must ensure every value's
     /// runtime type is discoverable by a registered <see cref="System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver"/>
     /// (see <see cref="BiDiDriver.RegisterTypeInfoResolverAsync(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver, CancellationToken)"/>),
-    /// or the command will fail at send time with a <see cref="NotSupportedException"/>.
+    /// or the command will fail at send time with a <see cref="WebDriverBiDiSerializationException"/> wrapping
+    /// the <see cref="NotSupportedException"/> that names the type.
     /// </para>
     /// </remarks>
     [JsonExtensionData]

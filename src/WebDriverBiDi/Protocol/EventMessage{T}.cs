@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Protocol;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Deserializes a message that represents an event as defined by the WebDriver Bidi protocol where the event data type is known.
+/// Deserializes a message that represents an event as defined by the WebDriver BiDi protocol where the event data type is known.
 /// </summary>
 /// <typeparam name="T">The type of data contained in the event.</typeparam>
 public class EventMessage<T> : EventMessage

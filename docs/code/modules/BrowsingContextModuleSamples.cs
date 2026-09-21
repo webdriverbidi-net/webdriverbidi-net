@@ -4,9 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/modules/browsing-context.md
 
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-
 namespace WebDriverBiDi.Docs.Code.Modules;
 
 using System.Collections.Generic;
@@ -44,7 +41,7 @@ public static class BrowsingContextModuleSamples
             Console.WriteLine($"Context ID: {context.BrowsingContextId}");
             Console.WriteLine($"URL: {context.Url}");
             Console.WriteLine($"Parent: {context.Parent ?? "none"}");
-            Console.WriteLine($"Children: {context.Children.Count}");
+            Console.WriteLine($"Children: {context.Children?.Count ?? 0}");
         }
         #endregion
     }
@@ -281,7 +278,10 @@ public static class BrowsingContextModuleSamples
         LocateNodesCommandResult parentResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("#container")));
 
-        parentResult.Nodes[0].TryAs(out NodeRemoteValue? parent);
+        if (!parentResult.Nodes[0].TryAs(out NodeRemoteValue? parent))
+        {
+            return;
+        }
 
         LocateNodesCommandParameters parameters = new LocateNodesCommandParameters(
             contextId,
@@ -387,7 +387,10 @@ public static class BrowsingContextModuleSamples
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("#chart")));
 
-        locateResult.Nodes[0].TryAs(out NodeRemoteValue? element);
+        if (!locateResult.Nodes[0].TryAs(out NodeRemoteValue? element))
+        {
+            return;
+        }
 
         // Capture element screenshot
         CaptureScreenshotCommandParameters parameters =

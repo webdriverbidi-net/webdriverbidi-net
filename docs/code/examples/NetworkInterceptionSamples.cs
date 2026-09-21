@@ -4,9 +4,6 @@
 // </copyright>
 // Code snippets for docs/articles/examples/network-interception.md
 
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-
 namespace WebDriverBiDi.Docs.Code.Examples;
 
 using System.Collections.Generic;
@@ -192,7 +189,7 @@ public static class NetworkInterceptionSamples
                 Uri uri = new Uri(e.Request.Url);
                 string path = uri.AbsolutePath;
 
-                if (mockResponses.TryGetValue(path, out string mockData))
+                if (mockResponses.TryGetValue(path, out string? mockData))
                 {
                     Console.WriteLine($"🎭 Mocking: {path}");
 

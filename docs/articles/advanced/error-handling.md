@@ -34,7 +34,7 @@ Exception
 | Type | Thrown when | Where you see it |
 |------|-------------|------------------|
 | `WebDriverBiDiCommandException` | The browser answers a command with an error response | From the command call (`NavigateAsync`, `ExecuteCommandAsync`, ...) |
-| `WebDriverBiDiProtocolException` | The browser sends an error response that matches no pending command | Never from a command call; routed through `UnexpectedErrorBehavior` (logged, collected, or thrown from the next command) |
+| `WebDriverBiDiProtocolException` | The browser sends an error response that matches no pending command | Never from a command call; routed through `UnexpectedErrorBehavior` (ignored, collected, or thrown from the next command) |
 | `WebDriverBiDiTimeoutException` | No response arrives within the command timeout; a connection does not open within its `StartupTimeout`; a send does not obtain exclusive access to the connection within its `DataTimeout`; or an operation does not obtain exclusive access to the connection within `Transport.ConnectionLockTimeout` (see [Transport Connection Lock Timeout](connection-management.md#transport-connection-lock-timeout)) | From the command call, or from `StartAsync` or `StopAsync` |
 | `WebDriverBiDiConnectionException` | Sending while not connected; starting an already-started driver; the connection drops while a command is in flight; the connection cannot be opened; or the connection is lost while the session is being established (see [Losing the connection while connecting](connection-management.md#losing-the-connection-while-connecting)) | From the command call, or from `StartAsync` |
 | `WebDriverBiDiSerializationException` | Command parameters cannot be serialized, or a response cannot be deserialized | From the command call. A malformed error response or event that belongs to no command is routed through `ProtocolErrorBehavior` instead, and a message that is not valid JSON through `UnknownMessageBehavior` |
@@ -163,7 +163,7 @@ can watch for it without changing the behavior:
 | Error | Still reported through |
 |---|---|
 | Event handler exception | `OnEventHandlerErrorOccurred`, and the `EventHandlerError` EventSource event |
-| Protocol error | `OnLogMessage` at `Error` and, for a payload that cannot be deserialized, the `ProtocolError` EventSource event. No observable event is raised for it |
+| Protocol error | `OnLogMessage` at `Error`, and, for a payload that cannot be deserialized, the `ProtocolError` EventSource event as well. A fault of the message-processing loop itself raises that EventSource event and is not logged. No observable event is raised for any of them |
 | Unknown message | `OnUnknownMessageReceived`, and the `UnknownMessageReceived` EventSource event; a message that is not valid JSON is also written to `OnLogMessage` at `Error` |
 | Unexpected error | `OnUnexpectedErrorReceived` |
 
@@ -480,7 +480,6 @@ When multiple handlers are registered, they all execute in sequence. With synchr
 | "Transport must be connected to a remote end to execute commands" | Commands sent before `StartAsync` or after disconnect | Ensure `StartAsync` has completed before sending commands. Check `IsStarted` before operations. |
 | "no such frame" / "no such window" | Browsing context was closed or no longer exists | Verify the context ID is still valid. Use `GetTreeAsync` to refresh context list. |
 | "Timed out executing command" | Command exceeded the timeout | Increase `timeoutOverride` for the command, or construct the driver with a larger `DefaultCommandTimeout` (it is set via the `BiDiDriver` constructor). |
-| "Cannot add command; pending command collection is closed" | Command sent during or after shutdown | Avoid sending commands from event handlers during `StopAsync` or `DisconnectAsync`. |
 | "Cannot register a type info resolver after the transport is connected" | `RegisterTypeInfoResolverAsync` called after `StartAsync` | Register type resolvers before calling `StartAsync`. |
 | "This observable event only allows N observer(s)" | Too many observers added to an event with `MaxObserverCount` | Remove observers with `Unobserve()` or `Dispose()` before adding new ones. |
 | "This observable event only allows 1 observer" on `OnDataReceived` | `OnDataReceived` transfers ownership of a pooled buffer, so it admits only the `Transport` | Do not observe `OnDataReceived`. To inspect traffic, set `LogLevel` to `Trace` and observe `OnLogMessage`. See [Connection Management](connection-management.md). |

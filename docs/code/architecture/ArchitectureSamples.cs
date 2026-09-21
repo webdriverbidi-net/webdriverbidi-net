@@ -4,7 +4,7 @@
 // </copyright>
 // Code snippets for docs/articles/architecture.md
 
-#pragma warning disable CS8600, CS8602, CS1591, CS8604
+#pragma warning disable CS1591
 
 namespace WebDriverBiDi.Docs.Code.Architecture;
 
@@ -193,10 +193,19 @@ public static class ArchitectureSamples
         try
         {
             await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
+
+            // Terminate mode surfaces an accumulated error on the next command, so it takes a command to
+            // observe one. This one throws if anything was accumulated while the session was running.
+            await driver.Session.StatusAsync();
+        }
+        catch (AggregateException ex)
+        {
+            // More than one error accumulated: each is an inner exception.
+            Console.WriteLine($"Errors: {string.Join(", ", ex.InnerExceptions.Select(inner => inner.Message))}");
         }
         catch (WebDriverBiDiException ex)
         {
-            Console.WriteLine($"Connection failed: {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
         }
         #endregion
     }
@@ -339,6 +348,11 @@ public static class ArchitectureSamples
 
             // Perform operations...
             await driver.BrowsingContext.NavigateAsync(navParams);  // Exception thrown here if handler failed
+        }
+        catch (AggregateException ex)
+        {
+            // More than one error accumulated before this command: each is an inner exception.
+            Console.WriteLine($"Event handler errors: {string.Join(", ", ex.InnerExceptions.Select(inner => inner.Message))}");
         }
         catch (WebDriverBiDiException ex)
         {
