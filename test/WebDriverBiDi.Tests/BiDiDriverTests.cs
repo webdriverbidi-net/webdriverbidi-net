@@ -608,7 +608,7 @@ public class BiDiDriverTests
         };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
-        Assert.Equal("Could not convert error response from transport for SendCommandAndWait to ErrorResult", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Equal("Could not convert error response from transport for ExecuteCommandAsync to ErrorResult", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -629,7 +629,7 @@ public class BiDiDriverTests
         };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
-        Assert.Equal("Could not convert response from transport for SendCommandAndWait to WebDriverBiDi.TestUtilities.TestCommandResult", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Equal("Could not convert response from transport for ExecuteCommandAsync to WebDriverBiDi.TestUtilities.TestCommandResult", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]

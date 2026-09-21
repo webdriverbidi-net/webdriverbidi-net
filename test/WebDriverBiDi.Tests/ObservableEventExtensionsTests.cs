@@ -309,6 +309,29 @@ public class ObservableEventExtensionsTests
         subscription.Dispose();
     }
 
+    [Fact]
+    public void TestToObservableThrowsForNullSource()
+    {
+        ObservableEvent<TestObservableEventArgs> source = null!;
+        ArgumentNullException exception = Assert.ThrowsAny<ArgumentNullException>(() => source.ToObservable());
+        Assert.Equal("source", exception.ParamName);
+    }
+
+    [Fact]
+    public void TestSubscribeThrowsForNullObserver()
+    {
+        // Left unguarded, the subscription is created and counts against MaxObserverCount, and the
+        // failure surfaces only at the first event: the delivery loop catches the
+        // NullReferenceException, reports it to the null observer, swallows that failure too, and
+        // disposes the collector, so the caller holds a subscription that delivers nothing.
+        TestEventSource testEventSource = new();
+        IObservable<TestObservableEventArgs> observable = testEventSource.TestObservableEvent.ToObservable();
+
+        ArgumentNullException exception = Assert.ThrowsAny<ArgumentNullException>(() => observable.Subscribe(null!));
+        Assert.Equal("observer", exception.ParamName);
+        Assert.Equal(0, testEventSource.TestObservableEvent.CurrentObserverCount);
+    }
+
     private sealed class DelegateObserver<T> : IObserver<T>
     {
         private readonly Action<T>? onNext;

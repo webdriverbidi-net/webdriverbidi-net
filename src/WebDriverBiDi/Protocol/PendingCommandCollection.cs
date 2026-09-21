@@ -225,7 +225,7 @@ public class PendingCommandCollection : IDisposable
     {
         if (this.IsAcceptingCommands)
         {
-            throw new InvalidOperationException("Cannot clear the collection while it can accept new incoming commands; close it with the Close method first");
+            throw new InvalidOperationException($"Cannot clear the collection while it can accept new incoming commands; close it with {nameof(this.CloseAsync)} first");
         }
 
         foreach (Command pendingCommand in this.pendingCommands.Values)
@@ -253,7 +253,7 @@ public class PendingCommandCollection : IDisposable
     {
         if (this.IsAcceptingCommands)
         {
-            throw new InvalidOperationException("Cannot fail commands while the collection can accept new incoming commands; close it with the Close method first");
+            throw new InvalidOperationException($"Cannot fail commands while the collection can accept new incoming commands; close it with {nameof(this.CloseAsync)} first");
         }
 
         foreach (Command pendingCommand in this.pendingCommands.Values)

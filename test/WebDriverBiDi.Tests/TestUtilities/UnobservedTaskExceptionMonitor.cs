@@ -76,8 +76,8 @@ public sealed class UnobservedTaskExceptionMonitor : IDisposable
     /// </summary>
     /// <param name="task">A weak reference to the task whose fault the test is checking.</param>
     /// <returns>
-    /// <see langword="true"/> if the task was collected, and its finalization has therefore run; otherwise,
-    /// <see langword="false"/>.
+    /// <see langword="true"/> if the task was collected and its finalization has run, so that
+    /// <see cref="Raised"/> has settled; otherwise, <see langword="false"/>.
     /// </returns>
     /// <remarks>
     /// <para>
@@ -107,6 +107,11 @@ public sealed class UnobservedTaskExceptionMonitor : IDisposable
             // method's state machine and keep the task alive into the next attempt.
             if (!task.TryGetTarget(out _))
             {
+                // The collect above is what made the task unreachable, so its exception holder was queued
+                // for finalization by that collect and the wait before it cannot have run the finalizer
+                // that raises the event. Wait once more, so that a caller reading Raised is reading a
+                // settled value rather than racing the finalizer thread.
+                GC.WaitForPendingFinalizers();
                 return true;
             }
         }

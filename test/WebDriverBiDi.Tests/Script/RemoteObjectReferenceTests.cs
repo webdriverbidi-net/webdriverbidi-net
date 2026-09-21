@@ -89,6 +89,15 @@ public class RemoteObjectReferenceTests
     }
 
     [Fact]
+    public void TestConstructingRemoteObjectReferenceWithNullHandleThrows()
+    {
+        // The setter has always rejected null. Without the same guard here, the handle the protocol
+        // requires could be left null by construction, and the reference would serialize without it.
+        ArgumentNullException exception = Assert.ThrowsAny<ArgumentNullException>(() => new RemoteObjectReference(null!));
+        Assert.Equal("handle", exception.ParamName);
+    }
+
+    [Fact]
     public void TestDeserializingRemoteObjectReferenceThrowsWhenHandleIsMissing()
     {
         string json = "{}";

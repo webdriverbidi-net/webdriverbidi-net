@@ -432,7 +432,7 @@ public abstract class Connection : IAsyncDisposable
 
         if (this.IsActive)
         {
-            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection is already connected to {this.ConnectionString}; call the Stop method to disconnect before calling Start");
+            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection is already connected to {this.ConnectionString}; call {nameof(this.StopAsync)} to disconnect before calling {nameof(this.StartAsync)}");
         }
 
         // Honor a caller who has already given up before any work is done. Each implementation of
@@ -555,7 +555,7 @@ public abstract class Connection : IAsyncDisposable
             // whether by StopAsync or by the remote end, and for one whose receive loop has ended, and this
             // guard does not tell those apart. The message therefore names all of them, rather than telling a
             // caller who did start the connection that they forgot to.
-            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection is not active; it has not been started, it has already been closed, or its receive loop has ended. Call the Start method to open it before sending data.");
+            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection is not active; it has not been started, it has already been closed, or its receive loop has ended. Call {nameof(this.StartAsync)} to open it before sending data.");
         }
 
         // Notify log-message observers before acquiring the send semaphore to avoid
