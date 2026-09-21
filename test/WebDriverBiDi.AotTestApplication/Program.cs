@@ -65,7 +65,12 @@ try
 
     Transport transport = launcher.CreateTransport();
     driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-    EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver((e) => Console.WriteLine($"Load event fired for {e.Url}"));
+    NavigationEventArgs? capturedNavigation = null;
+    EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver((e) =>
+    {
+        capturedNavigation = e;
+        Console.WriteLine($"Load event fired for {e.Url}");
+    });
 
     // A consumer-defined command type is unknown to the library's source-generated context.
     // Registering our own context is the documented AOT pattern; without it, the command
@@ -103,7 +108,23 @@ try
     };
     await driver.BrowsingContext.NavigateAsync(navigateParams);
     Console.WriteLine($"Navigation to {url} complete.");
-    await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1));
+
+    // The result of the wait is tested, and the event args kept, because the default error behavior is
+    // Ignore: a NavigationEventArgs that failed to deserialize under native AOT would leave the handler
+    // uncalled, and this application would otherwise print PASS having exercised nothing. The wait ends
+    // as soon as the handler's task is captured, so the bound only matters to a failing run.
+    Task[] navigationTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+    if (navigationTasks.Length != 1 || capturedNavigation is null)
+    {
+        throw new InvalidOperationException("Did not receive the browsingContext.load event within the timeout.");
+    }
+
+    if (string.IsNullOrEmpty(capturedNavigation.Url))
+    {
+        throw new InvalidOperationException("The browsingContext.load event arrived with no URL; its payload did not deserialize.");
+    }
+
+    Console.WriteLine($"Navigation event captured: {capturedNavigation.Url}");
 
     EvaluateCommandParameters evalParams = new("document.title", new ContextTarget(contextId), true);
     EvaluateResult evalResult = await driver.Script.EvaluateAsync(evalParams);

@@ -315,4 +315,35 @@ public class CookieFilterTests
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             new CookieFilter { Expires = new DateTime(1969, 12, 31, 23, 59, 59, DateTimeKind.Utc) });
     }
+
+    [Theory]
+    [InlineData(DateTimeKind.Local)]
+    [InlineData(DateTimeKind.Unspecified)]
+    public void TestSettingExpirationDateNormalizesToUtc(DateTimeKind kind)
+    {
+        // As PartialCookie: a Local (or Unspecified) DateTime is converted to UTC before it becomes epoch
+        // seconds, so a filter matches the instant the caller meant. The expectation uses the same
+        // conversion, so the test does not depend on the machine time zone.
+        DateTime expirationDate = new(2030, 1, 1, 12, 0, 0, kind);
+        DateTime expectedUtc = expirationDate.ToUniversalTime();
+        ulong expectedEpochSeconds = (ulong)(expectedUtc.Subtract(DateTime.UnixEpoch).Ticks / TimeSpan.TicksPerSecond);
+
+        CookieFilter properties = new()
+        {
+            Expires = expirationDate,
+        };
+
+        Assert.Equal(expectedUtc, properties.Expires);
+        Assert.Equal(DateTimeKind.Utc, properties.Expires!.Value.Kind);
+
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(properties));
+        Assert.Equal(expectedEpochSeconds, serialized["expiry"]?.Value<ulong>());
+
+        CookieFilter fromUtc = new()
+        {
+            Expires = expectedUtc,
+        };
+        Assert.Equal(serialized["expiry"]?.Value<ulong>(), JObject.Parse(JsonSerializer.Serialize(fromUtc))["expiry"]?.Value<ulong>());
+    }
+
 }

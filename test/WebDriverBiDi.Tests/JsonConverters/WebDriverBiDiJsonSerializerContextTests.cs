@@ -12,8 +12,12 @@ using TestUtilities;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.DigitalCredentials;
 using WebDriverBiDi.Input;
+using WebDriverBiDi.Log;
+using WebDriverBiDi.Network;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
+using WebDriverBiDi.Session;
+using WebDriverBiDi.Storage;
 
 public class WebDriverBiDiJsonSerializerContextTests
 {
@@ -95,6 +99,142 @@ public class WebDriverBiDiJsonSerializerContextTests
     };
 
     public static TheoryData<string> ContextSerializationCaseNames => [.. ContextSerializationCases.Keys];
+
+    // Every shape the library receives whose deserialization the source-generated context cannot settle from
+    // declared types alone: a payload whose runtime type is chosen by a discriminator (RemoteValue and its
+    // 26 productions, EvaluateResult) or that is read through a converter of the library's own. Serializing
+    // these shapes proves nothing about receiving them — the source generator emits separate read and write
+    // metadata, and an application published with native AOT reads every message through this context.
+    private static readonly Dictionary<string, ContextDeserializationCase> ContextDeserializationCases = new()
+    {
+        ["undefined result"] = EvaluateResultCase("""{"type":"undefined"}"""),
+        ["null result"] = EvaluateResultCase("""{"type":"null"}"""),
+        ["string result"] = EvaluateResultCase("""{"type":"string","value":"myStringValue"}"""),
+        ["number result"] = EvaluateResultCase("""{"type":"number","value":42}"""),
+        ["fractional number result"] = EvaluateResultCase("""{"type":"number","value":3.25}"""),
+        ["NaN result"] = EvaluateResultCase("""{"type":"number","value":"NaN"}"""),
+        ["negative zero result"] = EvaluateResultCase("""{"type":"number","value":"-0"}"""),
+        ["infinity result"] = EvaluateResultCase("""{"type":"number","value":"Infinity"}"""),
+        ["negative infinity result"] = EvaluateResultCase("""{"type":"number","value":"-Infinity"}"""),
+        ["boolean result"] = EvaluateResultCase("""{"type":"boolean","value":true}"""),
+        ["bigint result"] = EvaluateResultCase("""{"type":"bigint","value":"9007199254740993"}"""),
+        ["date result"] = EvaluateResultCase("""{"type":"date","value":"2026-09-15T01:02:03.000Z"}"""),
+        ["symbol result"] = EvaluateResultCase("""{"type":"symbol","handle":"myHandle"}"""),
+        ["function result"] = EvaluateResultCase("""{"type":"function","handle":"myHandle","internalId":"1"}"""),
+        ["regexp result"] = EvaluateResultCase("""{"type":"regexp","value":{"pattern":"ab+c","flags":"gi"}}"""),
+        ["regexp result without flags"] = EvaluateResultCase("""{"type":"regexp","value":{"pattern":"ab+c"}}"""),
+        ["array result"] = EvaluateResultCase("""{"type":"array","value":[{"type":"number","value":1},{"type":"string","value":"two"}]}"""),
+        ["nested array result"] = EvaluateResultCase("""{"type":"array","value":[{"type":"array","value":[{"type":"date","value":"2026-01-01T00:00:00.000Z"}]}]}"""),
+        ["set result"] = EvaluateResultCase("""{"type":"set","value":[{"type":"boolean","value":false}]}"""),
+        ["object result"] = EvaluateResultCase("""{"type":"object","value":[["name",{"type":"string","value":"John"}],["age",{"type":"number","value":30}]]}"""),
+        ["map result with remote value keys"] = EvaluateResultCase("""{"type":"map","value":[[{"type":"number","value":1},{"type":"string","value":"one"}],["key",{"type":"null"}]]}"""),
+        ["object result without contents"] = EvaluateResultCase("""{"type":"object","internalId":"7"}"""),
+        ["error result"] = EvaluateResultCase("""{"type":"error","handle":"myHandle"}"""),
+        ["promise result"] = EvaluateResultCase("""{"type":"promise"}"""),
+        ["proxy result"] = EvaluateResultCase("""{"type":"proxy","handle":"myHandle"}"""),
+        ["generator result"] = EvaluateResultCase("""{"type":"generator"}"""),
+        ["weakmap result"] = EvaluateResultCase("""{"type":"weakmap"}"""),
+        ["weakset result"] = EvaluateResultCase("""{"type":"weakset"}"""),
+        ["typedarray result"] = EvaluateResultCase("""{"type":"typedarray"}"""),
+        ["arraybuffer result"] = EvaluateResultCase("""{"type":"arraybuffer"}"""),
+        ["window result"] = EvaluateResultCase("""{"type":"window","value":{"context":"myContextId"},"handle":"myHandle","internalId":"3"}"""),
+        ["node result"] = EvaluateResultCase(
+            """
+            {"type":"node","sharedId":"mySharedId","value":{"nodeType":1,"nodeValue":"","childNodeCount":1,"localName":"div","namespaceURI":"http://www.w3.org/1999/xhtml","attributes":{"id":"myId","class":"myClass"},"children":[{"type":"node","sharedId":"myChildSharedId","value":{"nodeType":3,"nodeValue":"text","childNodeCount":0}}],"shadowRoot":null}}
+            """),
+        ["node result without contents"] = EvaluateResultCase("""{"type":"node","sharedId":"mySharedId"}"""),
+        ["nodelist result"] = EvaluateResultCase("""{"type":"nodelist","value":[{"type":"node","sharedId":"mySharedId","value":{"nodeType":1,"nodeValue":"","childNodeCount":0}}]}"""),
+        ["htmlcollection result"] = EvaluateResultCase("""{"type":"htmlcollection","value":[{"type":"node","sharedId":"mySharedId","value":{"nodeType":1,"nodeValue":"","childNodeCount":0}}]}"""),
+        ["script exception"] = new(
+            typeof(CommandResponseMessage<EvaluateResult>),
+            """
+            {"type":"success","id":1,"result":{"type":"exception","realm":"myRealmId","exceptionDetails":{"text":"kaboom","lineNumber":5,"columnNumber":9,"stackTrace":{"callFrames":[{"functionName":"myFunction","url":"http://example.com/script.js","lineNumber":5,"columnNumber":9}]},"exception":{"type":"error","handle":"myHandle"}}}}
+            """),
+        ["new session capabilities"] = new(
+            typeof(CommandResponseMessage<NewCommandResult>),
+            """
+            {"type":"success","id":1,"result":{"sessionId":"mySessionId","capabilities":{"acceptInsecureCerts":true,"browserName":"myBrowser","browserVersion":"1.0","platformName":"myPlatform","setWindowRect":false,"userAgent":"myUserAgent","webSocketUrl":"ws://localhost:5555","proxy":{"proxyType":"manual","httpProxy":"http://proxy.example.com:8080","noProxy":["localhost"]},"unhandledPromptBehavior":{"default":"dismiss"},"goog:extension":{"nested":true}}}}
+            """),
+        ["get cookies result"] = new(
+            typeof(CommandResponseMessage<GetCookiesCommandResult>),
+            """
+            {"type":"success","id":1,"result":{"cookies":[{"name":"myCookie","value":{"type":"string","value":"myValue"},"domain":"example.com","path":"/","size":16,"httpOnly":false,"secure":true,"sameSite":"lax","expiry":1735689600,"goog:priority":"high"}],"partitionKey":{"userContext":"myUserContext"}}}
+            """),
+        ["locate nodes result"] = new(
+            typeof(CommandResponseMessage<LocateNodesCommandResult>),
+            """
+            {"type":"success","id":1,"result":{"nodes":[{"type":"node","sharedId":"mySharedId","value":{"nodeType":1,"nodeValue":"","childNodeCount":0,"localName":"button","attributes":{"type":"submit"}}}]}}
+            """),
+        ["before request sent event"] = new(
+            typeof(EventMessage<BeforeRequestSentEventArgs>),
+            """
+            {"type":"event","method":"network.beforeRequestSent","params":{"context":"myContextId","navigation":"myNavigationId","redirectCount":0,"isBlocked":false,"timestamp":1735689600000,"request":{"request":"myRequestId","url":"http://example.com/","method":"GET","headers":[{"name":"Accept","value":{"type":"string","value":"text/html"}}],"cookies":[],"headersSize":42,"bodySize":0,"timings":{"timeOrigin":0,"requestTime":1,"redirectStart":0,"redirectEnd":0,"fetchStart":2,"dnsStart":3,"dnsEnd":4,"connectStart":5,"connectEnd":6,"tlsStart":7,"requestStart":8,"responseStart":9,"responseEnd":10},"destination":"document","initiatorType":null},"initiator":{"type":"other"}}}
+            """),
+        ["response completed event"] = new(
+            typeof(EventMessage<ResponseCompletedEventArgs>),
+            """
+            {"type":"event","method":"network.responseCompleted","params":{"context":"myContextId","navigation":null,"redirectCount":0,"isBlocked":false,"timestamp":1735689600000,"request":{"request":"myRequestId","url":"http://example.com/","method":"GET","headers":[],"cookies":[],"headersSize":42,"bodySize":0,"timings":{"timeOrigin":0,"requestTime":1,"redirectStart":0,"redirectEnd":0,"fetchStart":2,"dnsStart":3,"dnsEnd":4,"connectStart":5,"connectEnd":6,"tlsStart":7,"requestStart":8,"responseStart":9,"responseEnd":10},"destination":"","initiatorType":null},"response":{"url":"http://example.com/","protocol":"http/1.1","status":200,"statusText":"OK","fromCache":false,"headers":[{"name":"Content-Type","value":{"type":"string","value":"text/html"}}],"mimeType":"text/html","bytesReceived":1024,"headersSize":128,"bodySize":896,"content":{"size":896},"authChallenges":[{"scheme":"Basic","realm":"myRealm"}]}}}
+            """),
+        ["fetch error event"] = new(
+            typeof(EventMessage<FetchErrorEventArgs>),
+            """
+            {"type":"event","method":"network.fetchError","params":{"context":"myContextId","navigation":null,"redirectCount":0,"isBlocked":false,"timestamp":1735689600000,"request":{"request":"myRequestId","url":"http://example.com/","method":"GET","headers":[],"cookies":[],"headersSize":0,"bodySize":0,"timings":{"timeOrigin":0,"requestTime":0,"redirectStart":0,"redirectEnd":0,"fetchStart":0,"dnsStart":0,"dnsEnd":0,"connectStart":0,"connectEnd":0,"tlsStart":0,"requestStart":0,"responseStart":0,"responseEnd":0},"destination":"","initiatorType":null},"errorText":"net::ERR_CONNECTION_REFUSED"}}
+            """),
+        ["auth required event"] = new(
+            typeof(EventMessage<AuthRequiredEventArgs>),
+            """
+            {"type":"event","method":"network.authRequired","params":{"context":"myContextId","navigation":null,"redirectCount":0,"isBlocked":true,"timestamp":1735689600000,"request":{"request":"myRequestId","url":"http://example.com/","method":"GET","headers":[],"cookies":[],"headersSize":0,"bodySize":0,"timings":{"timeOrigin":0,"requestTime":0,"redirectStart":0,"redirectEnd":0,"fetchStart":0,"dnsStart":0,"dnsEnd":0,"connectStart":0,"connectEnd":0,"tlsStart":0,"requestStart":0,"responseStart":0,"responseEnd":0},"destination":"","initiatorType":null},"response":{"url":"http://example.com/","protocol":"http/1.1","status":401,"statusText":"Unauthorized","fromCache":false,"headers":[],"mimeType":"text/html","bytesReceived":0,"headersSize":0,"bodySize":0,"content":{"size":0},"authChallenges":[{"scheme":"Basic","realm":"myRealm"}]}}}
+            """),
+        ["navigation event"] = new(
+            typeof(EventMessage<NavigationEventArgs>),
+            """
+            {"type":"event","method":"browsingContext.load","params":{"context":"myContextId","navigation":"myNavigationId","timestamp":1735689600000,"url":"http://example.com/"}}
+            """),
+        // The log module deserializes a LogEntry and converts it to the event args, so LogEntry — itself a
+        // discriminated union over the entry's "type" — is the received type.
+        ["console log entry event"] = new(
+            typeof(EventMessage<LogEntry>),
+            """
+            {"type":"event","method":"log.entryAdded","params":{"type":"console","level":"warn","source":{"realm":"myRealmId","context":"myContextId"},"text":"myMessage","timestamp":1735689600000,"method":"warn","args":[{"type":"string","value":"myArgument"},{"type":"number","value":"NaN"}],"stackTrace":{"callFrames":[{"functionName":"myFunction","url":"http://example.com/script.js","lineNumber":5,"columnNumber":9}]}}}
+            """),
+        ["window realm created event"] = new(
+            typeof(EventMessage<RealmInfo>),
+            """
+            {"type":"event","method":"script.realmCreated","params":{"type":"window","realm":"myRealmId","origin":"http://example.com","context":"myContextId","sandbox":"mySandbox","userContext":"myUserContext"}}
+            """),
+        ["dedicated worker realm created event"] = new(
+            typeof(EventMessage<RealmInfo>),
+            """
+            {"type":"event","method":"script.realmCreated","params":{"type":"dedicated-worker","realm":"myRealmId","origin":"http://example.com","owners":["myOwnerRealmId"]}}
+            """),
+        ["get realms result"] = new(
+            typeof(CommandResponseMessage<GetRealmsCommandResult>),
+            """
+            {"type":"success","id":1,"result":{"realms":[{"type":"window","realm":"myRealmId","origin":"http://example.com","context":"myContextId"},{"type":"service-worker","realm":"myWorkerRealmId","origin":"http://example.com"}]}}
+            """),
+        ["download complete event"] = new(
+            typeof(EventMessage<DownloadEndEventArgs>),
+            """
+            {"type":"event","method":"browsingContext.downloadEnd","params":{"status":"complete","download":"myDownloadId","context":"myContextId","navigation":"myNavigationId","timestamp":1735689600000,"url":"http://example.com/file.zip","filepath":"/tmp/file.zip"}}
+            """),
+        ["download canceled event"] = new(
+            typeof(EventMessage<DownloadEndEventArgs>),
+            """
+            {"type":"event","method":"browsingContext.downloadEnd","params":{"status":"canceled","download":"myDownloadId","context":"myContextId","navigation":null,"timestamp":1735689600000,"url":"http://example.com/file.zip"}}
+            """),
+        ["javascript log entry event"] = new(
+            typeof(EventMessage<LogEntry>),
+            """
+            {"type":"event","method":"log.entryAdded","params":{"type":"javascript","level":"error","source":{"realm":"myRealmId"},"text":"myError","timestamp":1735689600000,"stackTrace":{"callFrames":[]}}}
+            """),
+        ["generic log entry event"] = new(
+            typeof(EventMessage<LogEntry>),
+            """
+            {"type":"event","method":"log.entryAdded","params":{"type":"myCustomType","level":"info","source":{"realm":"myRealmId"},"text":null,"timestamp":1735689600000}}
+            """),
+    };
+
+    public static TheoryData<string> ContextDeserializationCaseNames => [.. ContextDeserializationCases.Keys];
 
     [Fact]
     public void TestAllCommandParametersAreIncludedInSerializationContext()
@@ -396,6 +536,102 @@ public class WebDriverBiDiJsonSerializerContextTests
             $"Serialization under the source-generated context differs from reflection.\nReflection: {reflectionJson}\nContext:    {contextJson}");
     }
 
+    [Theory]
+    [MemberData(nameof(ContextDeserializationCaseNames))]
+    public void TestReceivedShapeDeserializesUnderSourceGeneratedContextAsUnderReflection(string caseName)
+    {
+        // The mirror of the test above, for the direction every other test reaches only through reflection.
+        // A native AOT application reads each message through the source-generated context alone, and the
+        // generator emits read metadata separately from write metadata: a payload the context serializes
+        // correctly can still fail, or produce a different graph, when the context deserializes it. The
+        // reflection result is the reference.
+        ContextDeserializationCase deserializationCase = ContextDeserializationCases[caseName];
+        JsonSerializerOptions reflectionOptions = new()
+        {
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+            RespectNullableAnnotations = true,
+        };
+        JsonSerializerOptions contextOptions = new()
+        {
+            TypeInfoResolver = WebDriverBiDiJsonSerializerContext.Default,
+            RespectNullableAnnotations = true,
+        };
+
+        object? fromReflection = JsonSerializer.Deserialize(deserializationCase.Json, deserializationCase.RootType, reflectionOptions);
+        object? fromContext = JsonSerializer.Deserialize(deserializationCase.Json, deserializationCase.RootType, contextOptions);
+        Assert.NotNull(fromReflection);
+        Assert.NotNull(fromContext);
+
+        // The runtime type of the payload is the whole point of a discriminated union, and two graphs of
+        // different types can still compare equivalent member by member, so it is asserted on its own.
+        object reflectionPayload = SelectPayload(fromReflection);
+        object contextPayload = SelectPayload(fromContext);
+        Assert.Equal(reflectionPayload.GetType(), contextPayload.GetType());
+        Assert.Equivalent(fromReflection, fromContext, strict: true);
+    }
+
+    [Fact]
+    public void TestEveryReceivedDiscriminatedUnionHasAContextDeserializationCase()
+    {
+        // The receive-side counterpart of the object-carrying guard below. A discriminated union is read
+        // into whichever derived type its discriminator names, which no static analysis of the context can
+        // follow, so the only proof the context can read one is reading it. Requiring a case per union
+        // keeps the theory above from falling behind as unions are added.
+        //
+        // Two of the library's unions are only ever sent — Target names where a script runs, and
+        // ProxyConfiguration is a capability the caller asks for (CapabilityRequest.Proxy,
+        // CreateUserContextCommandParameters.Proxy); what comes back is ProxyConfigurationResult, which is
+        // not a union. Their serialization is covered by the sent-shape cases instead.
+        HashSet<Type> sentOnlyUnions = [typeof(Target), typeof(ProxyConfiguration)];
+
+        List<Type> receivedUnions = [];
+        foreach (Type assemblyType in typeof(BiDiDriver).Assembly.GetTypes())
+        {
+            if (!IsLibraryNamespace(assemblyType) || sentOnlyUnions.Contains(assemblyType))
+            {
+                continue;
+            }
+
+            if (assemblyType.GetCustomAttribute<JsonConverterAttribute>(inherit: false)?.ConverterType is { IsGenericType: true } converterType
+                && converterType.GetGenericTypeDefinition() == typeof(DiscriminatedUnionJsonConverter<>))
+            {
+                receivedUnions.Add(assemblyType);
+            }
+        }
+
+        // Guard against the sweep reaching nothing, which would make the check below vacuous. There are
+        // five received unions today: RemoteValue, EvaluateResult, LogEntry, RealmInfo and
+        // DownloadEndEventArgs.
+        Assert.True(receivedUnions.Count >= 5, $"The discriminated-union sweep found only {receivedUnions.Count} received unions; the walk is broken.");
+
+        JsonSerializerOptions reflectionOptions = new()
+        {
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+            RespectNullableAnnotations = true,
+        };
+
+        // The types the cases actually produce, rather than the types they claim to: each deserialized
+        // message is walked, so a case cannot cover a union by assertion alone.
+        HashSet<Type> producedTypes = [];
+        foreach (ContextDeserializationCase deserializationCase in ContextDeserializationCases.Values)
+        {
+            object? message = JsonSerializer.Deserialize(deserializationCase.Json, deserializationCase.RootType, reflectionOptions);
+            CollectRuntimeTypes(message, producedTypes, []);
+        }
+
+        List<string> uncoveredUnions =
+        [
+            .. receivedUnions
+                .Where(union => !producedTypes.Any(union.IsAssignableFrom))
+                .Select(union => union.Name)
+                .Order(StringComparer.Ordinal)
+        ];
+        Assert.True(
+            uncoveredUnions.Count == 0,
+            "The following received types choose their runtime type from a discriminator, but no context deserialization case produces one:\n"
+                + string.Join("\n", uncoveredUnions.Select(union => $"  - {union}")));
+    }
+
     [Fact]
     public void TestAllObjectCarryingSerializedMembersHaveContextSerializationCases()
     {
@@ -620,6 +856,85 @@ public class WebDriverBiDiJsonSerializerContextTests
         return underlying.IsGenericType && underlying.GetGenericArguments().Any(ContainsObjectType);
     }
 
+    // Collects the runtime type of every library object reachable from a deserialized message, following
+    // properties and the contents of collections. Reference identity guards against a graph that points
+    // back at itself; nothing in a received message does today, and the walk should not depend on that.
+    private static void CollectRuntimeTypes(object? value, HashSet<Type> collected, HashSet<object> visited)
+    {
+        if (value is null or string || value.GetType().IsPrimitive)
+        {
+            return;
+        }
+
+        if (!visited.Add(value))
+        {
+            return;
+        }
+
+        Type valueType = value.GetType();
+        if (IsLibraryNamespace(valueType))
+        {
+            collected.Add(valueType);
+        }
+
+        if (value is System.Collections.IDictionary dictionary)
+        {
+            foreach (System.Collections.DictionaryEntry entry in dictionary)
+            {
+                CollectRuntimeTypes(entry.Key, collected, visited);
+                CollectRuntimeTypes(entry.Value, collected, visited);
+            }
+
+            return;
+        }
+
+        if (value is System.Collections.IEnumerable enumerable)
+        {
+            foreach (object? element in enumerable)
+            {
+                CollectRuntimeTypes(element, collected, visited);
+            }
+
+            return;
+        }
+
+        if (!IsLibraryNamespace(valueType))
+        {
+            return;
+        }
+
+        foreach (PropertyInfo property in valueType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+        {
+            if (property.GetIndexParameters().Length > 0 || property.GetMethod is null)
+            {
+                continue;
+            }
+
+            CollectRuntimeTypes(property.GetValue(value), collected, visited);
+        }
+    }
+
+    // The payload of a received message: the command result, or the event's arguments. Both carry the types
+    // whose deserialization the context has to settle, and both are what the driver hands a consumer.
+    private static object SelectPayload(object message)
+    {
+        Type messageType = message.GetType();
+        PropertyInfo? payloadProperty = messageType.GetProperty("Result") ?? messageType.GetProperty("EventData");
+        Assert.NotNull(payloadProperty);
+        object? payload = payloadProperty.GetValue(message);
+        Assert.NotNull(payload);
+        return payload;
+    }
+
+    private static ContextDeserializationCase EvaluateResultCase(string remoteValueJson)
+    {
+        return new(
+            typeof(CommandResponseMessage<EvaluateResult>),
+            """{"type":"success","id":1,"result":{"type":"success","realm":"myRealmId","result":"""
+                + remoteValueJson.Trim()
+                + "}}");
+    }
+
     private static ContextSerializationCase LocateNodesCase(Locator locator)
     {
         return new(typeof(LocateNodesCommandParameters), () => new LocateNodesCommandParameters("myContext", locator), []);
@@ -687,4 +1002,11 @@ public class WebDriverBiDiJsonSerializerContextTests
     /// <param name="CreateValue">Creates the value to serialize.</param>
     /// <param name="ObjectCarryingMembers">The members, named as <c>DeclaringType.Property</c>, whose object values the case writes.</param>
     private sealed record ContextSerializationCase(Type RootType, Func<object> CreateValue, string[] ObjectCarryingMembers);
+
+    /// <summary>
+    /// A shape the library receives, as the transport reads it: the envelope type and the message's JSON.
+    /// </summary>
+    /// <param name="RootType">The type the message is deserialized as, which is how the transport reads it.</param>
+    /// <param name="Json">The message as the remote end sends it.</param>
+    private sealed record ContextDeserializationCase(Type RootType, string Json);
 }

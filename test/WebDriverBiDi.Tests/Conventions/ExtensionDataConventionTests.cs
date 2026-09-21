@@ -17,14 +17,25 @@ public class ExtensionDataConventionTests
     public void TestCommandResultTypesDoNotDeclareExtensionData()
     {
         List<string> offenders = [];
+        int resultCount = 0;
         foreach (Type type in typeof(CommandResult).Assembly.GetTypes())
         {
-            if (typeof(CommandResult).IsAssignableFrom(type) && DeclaresExtensionData(type))
+            if (!typeof(CommandResult).IsAssignableFrom(type))
+            {
+                continue;
+            }
+
+            resultCount++;
+            if (DeclaresExtensionData(type))
             {
                 offenders.Add(type.FullName ?? type.Name);
             }
         }
 
+        // A floor rather than an inventory, so adding a command does not break it. It fails if the walk
+        // stops finding result types, which would otherwise let the check above pass by sweeping nothing
+        // at all. There are 87 today.
+        Assert.True(resultCount >= 70, $"The command result sweep found only {resultCount} result types; the walk is broken.");
         Assert.True(offenders.Count == 0, $"Command result types are payload roots; the transport captures their extension data. Remove [JsonExtensionData] from: {string.Join(", ", offenders)}");
     }
 
@@ -39,6 +50,11 @@ public class ExtensionDataConventionTests
         Assert.NotNull(field);
         System.Collections.IDictionary? registry = field.GetValue(transport) as System.Collections.IDictionary;
         Assert.NotNull(registry);
+
+        // A floor rather than an inventory, so registering another event does not break it. It fails if
+        // the registry walk reaches nothing — a renamed field, or a driver that registers no events —
+        // which would otherwise let the check below pass vacuously. The modules register 29 today.
+        Assert.True(registry.Count >= 25, $"The event payload sweep found only {registry.Count} registered events; the walk is broken.");
 
         List<string> offenders = [];
         foreach (object? registration in registry.Values)

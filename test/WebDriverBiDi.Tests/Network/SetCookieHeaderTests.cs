@@ -532,4 +532,31 @@ public class SetCookieHeaderTests
         Assert.True(serialized.ContainsKey("maxAge"));
         Assert.Equal(-1L, serialized["maxAge"]!.Value<long>());
     }
+
+    [Theory]
+    [InlineData(DateTimeKind.Local)]
+    [InlineData(DateTimeKind.Unspecified)]
+    public void TestCanSerializeWithExpiresNormalizesToUtc(DateTimeKind kind)
+    {
+        // The header writes an HTTP-date, which is UTC by definition, so a Local (or Unspecified) value
+        // is converted before formatting. The expectation applies the same conversion, so the test does
+        // not depend on the machine time zone, and the UTC spelling of the same instant must format
+        // identically.
+        DateTime expirationTime = new(2026, 8, 30, 12, 0, 0, kind);
+        string expected = expirationTime.ToUniversalTime().ToString("R", CultureInfo.InvariantCulture);
+
+        SetCookieHeader cookieHeader = new("cookieName", "cookieValue")
+        {
+            Expires = expirationTime,
+        };
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(cookieHeader));
+        Assert.Equal(expected, serialized["expiry"]?.Value<string>());
+
+        SetCookieHeader fromUtc = new("cookieName", "cookieValue")
+        {
+            Expires = expirationTime.ToUniversalTime(),
+        };
+        Assert.Equal(expected, JObject.Parse(JsonSerializer.Serialize(fromUtc))["expiry"]?.Value<string>());
+    }
+
 }
