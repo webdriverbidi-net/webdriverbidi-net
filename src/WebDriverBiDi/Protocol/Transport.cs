@@ -529,6 +529,17 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     internal bool IsDisposed => Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
 
     /// <summary>
+    /// Gets the identifier of the connection, for the diagnostic events raised by this transport.
+    /// </summary>
+    internal string ConnectionId => this.Connection.Id;
+
+    /// <summary>
+    /// Gets the identifier of the session a diagnostic event belongs to: the one the calling reader is
+    /// draining, or the transport's current session.
+    /// </summary>
+    internal string CurrentSessionId => this.sessionId.Value ?? this.session.Id;
+
+    /// <summary>
     /// Gets the collection of pending commands of the current session: commands that have been sent and
     /// have not yet received a response. This collection is thread-safe.
     /// </summary>
@@ -660,7 +671,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 this.State = TransportState.Connecting;
             }
 
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, connectionString);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.ConnectionId, string.Empty, connectionString);
             await this.LogAsync("Transport connecting", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
             // When reconnecting after disconnect, the message processing of the previous
@@ -785,14 +796,14 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Default);
 
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.Id, connectionString);
-            WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.ConnectionId, this.CurrentSessionId, connectionString);
+            WebDriverBiDiEventSource.RaiseEvent.TransportStarted(this.ConnectionId, this.CurrentSessionId);
         }
         catch (Exception ex) when (this.State == TransportState.Connecting)
         {
             // The attempt raised ConnectionOpening as it published Connecting, so its failure is raised too,
             // rather than leaving an opening with no outcome.
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.Id, ex.Message);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.ConnectionId, this.CurrentSessionId, ex.Message);
             throw;
         }
         finally
@@ -938,14 +949,14 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 // message which re-enters the transport waits for a lock this call holds, and is bounded
                 // by ConnectionLockTimeout rather than waiting indefinitely.
                 command.StartTiming();
-                WebDriverBiDiEventSource.RaiseEvent.CommandSending(command.CommandId, command.CommandName);
+                WebDriverBiDiEventSource.RaiseEvent.CommandSending(this.ConnectionId, this.CurrentSessionId, command.CommandId, command.CommandName);
 
                 await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
 
                 // Counted under the connection lock, after the check above that the session was not
                 // replaced, so the count goes to the session the command was sent in.
                 this.session.IncrementCommandSentCount();
-                WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
+                WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.ConnectionId, this.CurrentSessionId, this.PendingCommands.PendingCommandCount);
 
                 return command;
             }
@@ -958,8 +969,8 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                     command.StopTiming();
                 }
 
-                WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(command.CommandId, command.CommandName, ex.GetType().ToString(), ex.Message, command.ElapsedMilliseconds);
-                WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
+                WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(this.ConnectionId, this.CurrentSessionId, command.CommandId, command.CommandName, ex.GetType().ToString(), ex.Message, command.ElapsedMilliseconds);
+                WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.ConnectionId, this.CurrentSessionId, this.PendingCommands.PendingCommandCount);
                 throw;
             }
         }
@@ -1103,7 +1114,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// </remarks>
     internal async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo, bool notifyObservers)
     {
-        WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
+        WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(this.ConnectionId, this.CurrentSessionId, errorInfo.ObservableEventName, errorInfo.Exception.Message);
         if (notifyObservers)
         {
             await this.invocableErrorHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
@@ -1269,7 +1280,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // re-entrant calls (e.g., from event handlers still executing
             // during shutdown) see the transport as disconnected and
             // short-circuit rather than attempting a redundant disconnect.
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing(this.Connection.Id, this.TerminationReason);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing(this.ConnectionId, this.CurrentSessionId, this.TerminationReason);
             this.State = TransportState.Disconnected;
 
             // DisconnectAsync owns the shutdown, and we are about to await the completion
@@ -1323,7 +1334,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                     timeoutCancelTokenSource.Cancel();
                 }
 
-                this.session.RaiseMessageStatisticsEvent();
+                this.session.RaiseMessageStatisticsEvent(this.ConnectionId);
                 await this.LogAsync("Transport disconnected", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
                 this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
@@ -1340,8 +1351,8 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
 
                 // The session is over however the stop went, so the events that close it out are raised here,
                 // pairing the ConnectionClosing raised above and the TransportStarted raised when it began.
-                WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
-                WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
+                WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.ConnectionId, this.CurrentSessionId);
+                WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.ConnectionId, this.CurrentSessionId, this.TerminationReason);
             }
         }
         finally
@@ -1623,7 +1634,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             if (!isProcessed)
             {
                 string message = packet.MessageText;
-                WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(packet.MessageKind, packet.MessageLength);
+                WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(this.ConnectionId, this.CurrentSessionId, packet.MessageKind, packet.MessageLength);
                 await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message)).ConfigureAwait(false);
                 await this.CaptureSessionErrorAsync(UnhandledErrorKind.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection").ConfigureAwait(false);
             }
@@ -1898,7 +1909,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private async Task OnConnectionErrorAsync(ConnectionErrorEventArgs e)
     {
         Exception connectionError = e.Exception;
-        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.Id, connectionError.Message);
+        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.ConnectionId, this.CurrentSessionId, connectionError.Message);
         string logMessage = $"Connection error; pending commands failed: {connectionError.Message}";
         await this.HandleConnectionDisconnectionAsync(() => new WebDriverBiDiConnectionException($"Unexpected connection error: {connectionError.Message}", connectionError), logMessage, WebDriverBiDiLogLevel.Error, $"Connection error: {connectionError.Message}").ConfigureAwait(false);
     }
@@ -2008,9 +2019,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // Log appropriate statistics and information. The session ends here rather than in DisconnectAsync,
             // which a later stop reaches only by its fast path, so the events that close the session out are
             // raised here too.
-            this.session.RaiseMessageStatisticsEvent();
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
-            WebDriverBiDiEventSource.RaiseEvent.TransportStopped(stopReason);
+            this.session.RaiseMessageStatisticsEvent(this.ConnectionId);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.ConnectionId, this.CurrentSessionId);
+            WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.ConnectionId, this.CurrentSessionId, stopReason);
             await this.LogAsync(logMessage, logLevel).ConfigureAwait(false);
         }
         finally
@@ -2055,7 +2066,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         // Use EventSource rather than LogAsync to avoid the async path on this
         // fire-and-forget fault handler. Capture onto the unhandled-error pipeline
         // for symmetry with per-message failures in ReadIncomingMessagesAsync.
-        WebDriverBiDiEventSource.RaiseEvent.ProtocolError(exception.Message, "Message processing loop faulted");
+        WebDriverBiDiEventSource.RaiseEvent.ProtocolError(this.ConnectionId, this.CurrentSessionId, exception.Message, "Message processing loop faulted");
         this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, exception, "Message processing loop faulted");
     }
 
@@ -2067,7 +2078,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             {
                 // Stop timing and log completion
                 executedCommand.StopTiming();
-                WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(responseId, executedCommand.CommandName, executedCommand.ElapsedMilliseconds);
+                WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(this.ConnectionId, this.CurrentSessionId, responseId, executedCommand.CommandName, executedCommand.ElapsedMilliseconds);
                 try
                 {
                     JsonTypeInfo responseTypeInfo = this.GetResponseTypeInfo(executedCommand);
@@ -2121,7 +2132,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 {
                     // Stop timing and log error
                     executedCommand.StopTiming();
-                    WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value, executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
+                    WebDriverBiDiEventSource.RaiseEvent.CommandError(this.ConnectionId, this.CurrentSessionId, errorMessage.CommandId.Value, executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
                     if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
                     {
                         await this.LogAsync($"Received error response for command '{executedCommand.CommandName}' (command ID: {errorMessage.CommandId.Value})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
@@ -2158,14 +2169,14 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             if (packet.TryGetCommandId(out long commandId) && pendingCommands.RemovePendingCommand(commandId, out Command? executedCommand))
             {
                 executedCommand.StopTiming();
-                WebDriverBiDiEventSource.RaiseEvent.CommandError(commandId, executedCommand.CommandName, ErrorCode.UnsetErrorCode, "invalid error json", "Error response contained incorrect JSON for a protocol error");
+                WebDriverBiDiEventSource.RaiseEvent.CommandError(this.ConnectionId, this.CurrentSessionId, commandId, executedCommand.CommandName, ErrorCode.UnsetErrorCode, "invalid error json", "Error response contained incorrect JSON for a protocol error");
                 executedCommand.SetException(new WebDriverBiDiSerializationException($"Error response for command {commandId} contained incorrect JSON for protocol error (response JSON: {messageString})", ex));
                 return true;
             }
 
             await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             await this.CaptureSessionErrorAsync(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in protocol error response: {messageString}").ConfigureAwait(false);
-            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
+            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(this.ConnectionId, this.CurrentSessionId, ex.Message, TruncateMessage(messageString, 100));
 
             // The message was recognized as an error response, and its malformed payload has
             // been captured as a protocol error above, so the message is handled.
@@ -2192,7 +2203,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 throw new WebDriverBiDiSerializationException($"Deserialization of event message returned null for event type {eventMessageType}");
             }
 
-            WebDriverBiDiEventSource.RaiseEvent.EventReceived(eventName);
+            WebDriverBiDiEventSource.RaiseEvent.EventReceived(this.ConnectionId, this.CurrentSessionId, eventName);
             if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
             {
                 await this.LogAsync($"Received event {eventName}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
@@ -2213,7 +2224,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             string messageString = packet.MessageText;
             await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             await this.CaptureSessionErrorAsync(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in event message: {messageString}").ConfigureAwait(false);
-            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
+            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(this.ConnectionId, this.CurrentSessionId, ex.Message, TruncateMessage(messageString, 100));
 
             // The message was recognized as a registered event; its malformed payload has
             // been captured as a protocol error above, so the message is handled and must
@@ -2260,7 +2271,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private async Task ReportDiscardedCanceledCommandResponseAsync(CanceledCommandInfo canceledCommand)
     {
         long millisecondsSinceCancellation = (long)canceledCommand.TimeSinceCancellation.TotalMilliseconds;
-        WebDriverBiDiEventSource.RaiseEvent.CanceledCommandResponseDiscarded(canceledCommand.CommandId, canceledCommand.CommandName, canceledCommand.Reason, millisecondsSinceCancellation);
+        WebDriverBiDiEventSource.RaiseEvent.CanceledCommandResponseDiscarded(this.ConnectionId, this.CurrentSessionId, canceledCommand.CommandId, canceledCommand.CommandName, canceledCommand.Reason, millisecondsSinceCancellation);
         if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
         {
             await this.LogAsync($"Discarding late response for command '{canceledCommand.CommandName}' (command ID: {canceledCommand.CommandId}); the command was canceled ({canceledCommand.Reason}) {millisecondsSinceCancellation} ms before this response arrived", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
@@ -2624,9 +2635,10 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         /// <summary>
         /// Raises the <c>MessageStatistics</c> event with this session's counts.
         /// </summary>
-        public void RaiseMessageStatisticsEvent()
+        /// <param name="connectionId">The identifier of the connection this session runs on.</param>
+        public void RaiseMessageStatisticsEvent(string connectionId)
         {
-            WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(Interlocked.Read(ref this.commandMessagesSent), Interlocked.Read(ref this.commandResponseMessagesReceived), Interlocked.Read(ref this.eventMessagesReceived), Interlocked.Read(ref this.errorMessagesReceived));
+            WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(connectionId, this.Id, Interlocked.Read(ref this.commandMessagesSent), Interlocked.Read(ref this.commandResponseMessagesReceived), Interlocked.Read(ref this.eventMessagesReceived), Interlocked.Read(ref this.errorMessagesReceived));
         }
     }
 }

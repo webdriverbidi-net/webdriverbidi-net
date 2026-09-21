@@ -29,7 +29,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         // an orphan the caller never received and can never dispose, holding the source enabled at
         // LogAlways for the life of the process. A full collection does not reclaim it, because that
         // static list is a strong reference, so the only observable is the source's own state.
-        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "warm-up", 1);
+        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout("conn-1", "session-1", 1, "warm-up", 1);
         Assert.False(
             WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None),
             "Another EventListener already has the WebDriverBiDi EventSource enabled at Verbose, so this test cannot measure what the throwing constructor left behind.");
@@ -47,14 +47,14 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-123", "ws://localhost:9222");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-123", "session-1", "ws://localhost:9222");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
         Assert.Equal(LogLevel.Information, entry.LogLevel);
         Assert.Equal(1, entry.EventId.Id);
         Assert.Equal("ConnectionOpening", entry.EventId.Name);
-        Assert.Equal("Opening connection conn-123 to ws://localhost:9222", entry.Message);
+        Assert.Equal("[conn-123/session-1] Opening connection to ws://localhost:9222", entry.Message);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "session.status");
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending("conn-1", "session-1", 1, "session.status");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandSending");
@@ -77,7 +77,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "session.status", 5000);
+            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout("conn-1", "session-1", 1, "session.status", 5000);
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandTimeout");
@@ -91,7 +91,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionError("conn-123", "Socket closed");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionError("conn-123", "session-1", "Socket closed");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionError");
@@ -105,7 +105,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-456", "ws://example.com");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-456", "session-1", "ws://example.com");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
@@ -125,12 +125,12 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.TransportStopped("Normal shutdown");
+            WebDriverBiDiEventSource.RaiseEvent.TransportStopped("conn-1", "session-1", "Normal shutdown");
         }
 
         // The template is "Transport stopped: {0}".
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "TransportStopped");
-        Assert.Equal("Transport stopped: Normal shutdown", entry.Message);
+        Assert.Equal("[conn-1/session-1] Transport stopped: Normal shutdown", entry.Message);
     }
 
     [Fact]
@@ -139,14 +139,14 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-456", "ws://example.com");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-456", "session-1", "ws://example.com");
         }
 
         // The EventSource template "Opening connection {0} to {1}" is carried with its holes named after
         // the payload properties, so a template-aware provider can bind each hole to a state property.
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
         Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
-        Assert.Equal("Opening connection {connectionId} to {url}", state["{OriginalFormat}"]);
+        Assert.Equal("[{connectionId}/{sessionId}] Opening connection to {url}", state["{OriginalFormat}"]);
         Assert.Equal("{OriginalFormat}", state.Keys.Last());
     }
 
@@ -156,13 +156,13 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(7, "session.status", 42);
+            WebDriverBiDiEventSource.RaiseEvent.CommandCompleted("conn-1", "session-1", 7, "session.status", 42);
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandCompleted");
         Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
-        Assert.Equal("Command {commandId} ({method}) completed in {elapsedMilliseconds}ms", state["{OriginalFormat}"]);
-        Assert.Equal("Command 7 (session.status) completed in 42ms", entry.Message);
+        Assert.Equal("[{connectionId}/{sessionId}] Command {commandId} ({method}) completed in {elapsedMilliseconds}ms", state["{OriginalFormat}"]);
+        Assert.Equal("[conn-1/session-1] Command 7 (session.status) completed in 42ms", entry.Message);
     }
 
     [Fact]
@@ -173,11 +173,11 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionError("conn-1", "unexpected {connectionId}");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionError("conn-1", "session-1", "unexpected {connectionId}");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionError");
-        Assert.Equal("Connection conn-1 error: unexpected {connectionId}", entry.Message);
+        Assert.Equal("[conn-1/session-1] Connection error: unexpected {connectionId}", entry.Message);
     }
 
     [Fact]
@@ -186,19 +186,19 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-1");
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-2");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-1", "session-1");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-2", "session-1");
         }
 
         TestLogger.LogEntry[] entries = fakeLogger.Entries.Where(e => e.EventId.Name == "ConnectionClosed").ToArray();
         Assert.Equal(2, entries.Length);
-        Assert.Equal("Connection conn-1 closed", entries[0].Message);
-        Assert.Equal("Connection conn-2 closed", entries[1].Message);
+        Assert.Equal("[conn-1/session-1] Connection closed", entries[0].Message);
+        Assert.Equal("[conn-2/session-1] Connection closed", entries[1].Message);
 
         // The second event is given the template rewritten for the first, rather than a new rewrite.
         object? firstTemplate = ((Dictionary<string, object?>)entries[0].State!)["{OriginalFormat}"];
         object? secondTemplate = ((Dictionary<string, object?>)entries[1].State!)["{OriginalFormat}"];
-        Assert.Equal("Connection {connectionId} closed", firstTemplate);
+        Assert.Equal("[{connectionId}/{sessionId}] Connection closed", firstTemplate);
         Assert.Same(firstTemplate, secondTemplate);
     }
 
@@ -208,9 +208,9 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Warning))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-1", "ws://test");
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "test");
-            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "test", 5000);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-1", "session-1", "ws://test");
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending("conn-1", "session-1", 1, "test");
+            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout("conn-1", "session-1", 1, "test", 5000);
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandTimeout");
@@ -236,7 +236,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         EventWrittenEventArgs? capturedArgs = null;
         using (WebDriverBiDiArgsCapturingListener capture = new(args => capturedArgs ??= args))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "session.status");
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending("conn-1", "session-1", 1, "session.status");
         }
 
         Assert.NotNull(capturedArgs);
@@ -259,7 +259,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         // Touch the source first so it is guaranteed to pre-exist, which is the ordering that
         // previously left it enabled at LogAlways: OnEventSourceCreated runs from the base
         // EventListener constructor, before the configured level has been assigned.
-        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "warm-up", 1);
+        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout("conn-1", "session-1", 1, "warm-up", 1);
 
         // IsEnabled answers for the source across every EventListener in the process, not for this one
         // alone, so it measures what this listener subscribed at only while nothing else has the source
@@ -290,8 +290,8 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Informational))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "test");
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-1", "ws://test");
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending("conn-1", "session-1", 1, "test");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-1", "session-1", "ws://test");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
@@ -309,7 +309,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.LogAlways))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "test");
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending("conn-1", "session-1", 1, "test");
         }
 
         Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
@@ -321,7 +321,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandError(1, "session.status", ErrorCode.InvalidSessionId, "invalid session id", "Session not found");
+            WebDriverBiDiEventSource.RaiseEvent.CommandError("conn-1", "session-1", 1, "session.status", ErrorCode.InvalidSessionId, "invalid session id", "Session not found");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandError");
@@ -390,7 +390,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         };
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-123", "ws://localhost:9222");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-123", "session-1", "ws://localhost:9222");
         }
 
         Assert.Empty(fakeLogger.Entries);
@@ -409,7 +409,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         EventWrittenEventArgs? capturedArgs = null;
         using (WebDriverBiDiArgsCapturingListener capture = new(args => capturedArgs ??= args))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-123", "ws://localhost:9222");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-123", "session-1", "ws://localhost:9222");
         }
 
         Assert.NotNull(capturedArgs);
@@ -436,7 +436,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-123");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-123", "session-1");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionClosed");
