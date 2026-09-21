@@ -75,8 +75,22 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         description: Description,
         helpLinkUri: HelpLinkUri);
 
+    private static readonly LocalizableString CollectorFilterMessageFormat = "Module command '{0}' is called inside a data collector filter. The filter decides whether to keep an event and runs on the thread dispatching it; it takes no handler options, so the command cannot be offloaded. Collect the event and issue the command where the collected data is read.";
+
+    // Same ID, category and severity as Rule; used for the filter of AddDataCollector, which the library
+    // invokes synchronously on the dispatching thread and which has no RunHandlerAsynchronously to offer.
+    private static readonly DiagnosticDescriptor CollectorFilterRule = new(
+        DiagnosticId,
+        Title,
+        CollectorFilterMessageFormat,
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: Description,
+        helpLinkUri: HelpLinkUri);
+
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, SynchronousBodyRule, BeforeFirstAwaitRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, SynchronousBodyRule, BeforeFirstAwaitRule, CollectorFilterRule);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -96,7 +110,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
-        if (memberAccess.Name.Identifier.ValueText != "AddObserver")
+        if (memberAccess.Name.Identifier.ValueText is not ("AddObserver" or "AddDataCollector"))
         {
             return;
         }
@@ -107,7 +121,10 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
-        if (!AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver"))
+        // A collector's filter runs on the dispatching thread exactly as a synchronous handler does: the
+        // collector registers it through an observer of its own with RunHandlerSynchronously.
+        bool collectorFilter = AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventDataCollector");
+        if (!collectorFilter && !AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver"))
         {
             return;
         }
@@ -117,13 +134,13 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         // reported. A non-async Task-returning handler issues every command inline, so each is reported with a
         // message saying the option cannot help; an async handler (an async lambda or an async method group)
         // is reported for the commands it issues before its first await.
-        bool optionPresent = AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation);
+        bool optionPresent = !collectorFilter && AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation);
         if (optionPresent && AnalyzerSymbolHelpers.IsBoundToActionOverload(methodSymbol))
         {
             return;
         }
 
-        ArgumentSyntax? handlerArgument = AnalyzerSymbolHelpers.GetArgumentForParameter(invocation, methodSymbol, "handler");
+        ArgumentSyntax? handlerArgument = AnalyzerSymbolHelpers.GetArgumentForParameter(invocation, methodSymbol, collectorFilter ? "filter" : "handler");
         if (handlerArgument == null)
         {
             return;
@@ -147,7 +164,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         // option every command in the handler is reported, but the ones before that await are still marked,
         // because the code fix has to await first to move them.
         Func<SyntaxNode, bool> runsBeforeFirstYield = asyncHandler ? AnalyzerSymbolHelpers.GetRunsBeforeFirstYield(handlerBody) : static _ => true;
-        DiagnosticDescriptor rule = !optionPresent ? Rule : asyncHandler ? BeforeFirstAwaitRule : SynchronousBodyRule;
+        DiagnosticDescriptor rule = collectorFilter ? CollectorFilterRule : !optionPresent ? Rule : asyncHandler ? BeforeFirstAwaitRule : SynchronousBodyRule;
         IEnumerable<(InvocationExpressionSyntax Node, string MethodName)> moduleCommands = FindModuleCommandInvocations(semanticModel, handlerBody);
         foreach ((InvocationExpressionSyntax node, string methodName) in moduleCommands)
         {

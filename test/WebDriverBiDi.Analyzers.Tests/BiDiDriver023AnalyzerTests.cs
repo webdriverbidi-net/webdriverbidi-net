@@ -906,6 +906,72 @@ public class BiDiDriver023AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    [Fact]
+    public async Task AddDataCollectorFilter_WithModuleCommand_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var collector = driver.Log.OnEntryAdded.AddDataCollector(args =>
+                        {
+                            {|#0:driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters())|};
+                            return true;
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Module command 'GetTreeAsync' is called inside a data collector filter. The filter decides whether to keep an event and runs on the thread dispatching it; it takes no handler options, so the command cannot be offloaded. Collect the event and issue the command where the collected data is read.");
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AddDataCollectorFilter_WithoutModuleCommand_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var collector = driver.Log.OnEntryAdded.AddDataCollector(args => args.Level == WebDriverBiDi.Log.LogLevel.Error);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
     /// <summary>
     /// Tests that SupportedDiagnostics contains BIDI023.
     /// </summary>
@@ -915,10 +981,11 @@ public class BiDiDriver023AnalyzerTests
         BiDiDriver023_ModuleCommandInEventHandlerAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        // Three descriptors share the ID: the default message, the message used when
-        // RunHandlerAsynchronously is present but the handler body is synchronous, and the message used
-        // when the option is present and the operation runs before an async handler's first await.
-        Assert.Equal(3, diagnostics.Length);
+        // Four descriptors share the ID: the default message, the message used when
+        // RunHandlerAsynchronously is present but the handler body is synchronous, the message used
+        // when the option is present and the operation runs before an async handler's first await, and
+        // the message for a data collector's filter, which has no such option.
+        Assert.Equal(4, diagnostics.Length);
         Assert.All(diagnostics, descriptor => Assert.Equal(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, descriptor.Id));
     }
 

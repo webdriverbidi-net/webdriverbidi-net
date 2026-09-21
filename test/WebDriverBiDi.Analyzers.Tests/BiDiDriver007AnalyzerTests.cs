@@ -603,14 +603,13 @@ public class BiDiDriver007AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that non-AddObserver invocations are not analyzed.
+    /// Tests that a blocking operation in a data collector's filter is reported, with the message that
+    /// fits a filter: it runs on the dispatching thread and takes no handler options.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task NonAddObserverInvocation_NoDiagnostic()
+    public async Task AddDataCollectorFilter_WithBlockingOperation_ReportsWarning()
     {
-        // AddDataCollector is a real ObservableEvent method that is not AddObserver, so the analyzer
-        // short-circuits on the member name and never inspects the handler body.
         string test = """
             using System;
             using System.Threading;
@@ -625,9 +624,80 @@ public class BiDiDriver007AnalyzerTests
                     {
                         var collector = driver.Log.OnEntryAdded.AddDataCollector(args =>
                         {
-                            Thread.Sleep(1000);
+                            {|#0:Thread.Sleep(1000)|};
                             return true;
                         });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Sleep()' detected in a data collector filter. The filter decides whether to keep an event and runs on the thread dispatching it; it takes no handler options, so the work cannot be offloaded. Keep the filter to a test of the event data and do the work where the collected data is read.");
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a filter that only tests the event data is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddDataCollectorFilter_WithoutBlockingOperation_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var collector = driver.Log.OnEntryAdded.AddDataCollector(args => args.Level == WebDriverBiDi.Log.LogLevel.Error);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a collector added with no filter at all is not analyzed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddDataCollectorWithoutFilter_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var collector = driver.Log.OnEntryAdded.AddDataCollector();
                     }
                 }
             }
@@ -1028,10 +1098,11 @@ public class BiDiDriver007AnalyzerTests
         BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        // Three descriptors share the ID: the default message, the message used when
-        // RunHandlerAsynchronously is present but the handler body is synchronous, and the message used
-        // when the option is present and the operation runs before an async handler's first await.
-        Assert.Equal(3, diagnostics.Length);
+        // Four descriptors share the ID: the default message, the message used when
+        // RunHandlerAsynchronously is present but the handler body is synchronous, the message used
+        // when the option is present and the operation runs before an async handler's first await, and
+        // the message for a data collector's filter, which has no such option.
+        Assert.Equal(4, diagnostics.Length);
         Assert.All(diagnostics, descriptor => Assert.Equal(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, descriptor.Id));
     }
 
