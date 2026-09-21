@@ -323,11 +323,31 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
 
         try
         {
-            await this.captureReadSemaphore.WaitAsync(linkedCancellationTokenSource.Token).ConfigureAwait(false);
+            // Taking thesemaphore without waiting, and draining the buffer before waiting on it,
+            // makes the zero-timeout case return what is already in the buffer; a caller who
+            // requests a cancel is still honored, because the token is tested before the fast
+            // path and by every wait after it.
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!this.captureReadSemaphore.Wait(0))
+            {
+                await this.captureReadSemaphore.WaitAsync(linkedCancellationTokenSource.Token).ConfigureAwait(false);
+            }
+
             try
             {
                 while (currentCaptureCount < count)
                 {
+                    while (currentCaptureCount < count && channel.Reader.TryRead(out CapturedTask capturedTask))
+                    {
+                        collectedTasks[currentCaptureCount] = capturedTask.Task;
+                        currentCaptureCount++;
+                    }
+
+                    if (currentCaptureCount == count)
+                    {
+                        break;
+                    }
+
                     bool hasData = await channel.Reader.WaitToReadAsync(linkedCancellationTokenSource.Token).ConfigureAwait(false);
                     if (!hasData)
                     {
@@ -335,12 +355,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                         // blocked waiting). WaitToReadAsync returns false only when the buffer is
                         // empty AND the writer is completed, so there is nothing left to remove.
                         break;
-                    }
-
-                    while (currentCaptureCount < count && channel.Reader.TryRead(out CapturedTask capturedTask))
-                    {
-                        collectedTasks[currentCaptureCount] = capturedTask.Task;
-                        currentCaptureCount++;
                     }
                 }
 
@@ -483,16 +497,21 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         Task[] tasksToWait = await this.WaitForCapturedTasksAsync(count, timeout, cancellationToken).ConfigureAwait(false);
         if (tasksToWait.Length == count)
         {
-            bool isInfiniteTimeout = timeout == Timeout.InfiniteTimeSpan;
-            TimeSpan remainingTime = isInfiniteTimeout ? Timeout.InfiniteTimeSpan : timeout - this.timeProvider.GetElapsedTime(startTimestamp);
-            if (!isInfiniteTimeout && remainingTime <= TimeSpan.Zero)
-            {
-                return false;
-            }
-
+            // Whether the handlers have already finished is settled before the budget is consulted;
+            // zero timeout behaves as it does elsewhere, reporting what is already true.
             Task whenAllTask = Task.WhenAll(tasksToWait);
             if (!whenAllTask.IsCompleted)
             {
+                bool isInfiniteTimeout = timeout == Timeout.InfiniteTimeSpan;
+                TimeSpan remainingTime = isInfiniteTimeout ? Timeout.InfiniteTimeSpan : timeout - this.timeProvider.GetElapsedTime(startTimestamp);
+                if (!isInfiniteTimeout && remainingTime <= TimeSpan.Zero)
+                {
+                    // Abandoning an incomplete wrapper leaves its aggregate unobserved, exactly as the
+                    // timeout branch below does, so it is observed on the way out here too.
+                    ObserveFaultOf(whenAllTask);
+                    return false;
+                }
+
                 using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
                 // The delay must be created against this observer's TimeProvider, matching the
@@ -502,17 +521,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
                 if (completedTask == cancellationTask)
                 {
-                    // The WhenAll wrapper is a distinct task holding its own aggregate of
-                    // any handler faults; the individual handler tasks are observed by the
-                    // continuations attached during notification, but abandoning the wrapper
-                    // unobserved here would raise TaskScheduler.UnobservedTaskException if a
-                    // handler faults after this method has given up waiting. Observe the
-                    // wrapper before abandoning the wait.
-                    _ = whenAllTask.ContinueWith(
-                        static t => _ = t.Exception,
-                        CancellationToken.None,
-                        TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-                        TaskScheduler.Default);
+                    ObserveFaultOf(whenAllTask);
                     cancellationToken.ThrowIfCancellationRequested();
                     return false;
                 }
@@ -731,6 +740,19 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             AsyncHandlerTaskMetrics.IncrementInFlight();
             this.AttachCompletionContinuation(executingTask, reportedEventName, !isCaptured, decrementInFlightCount: true);
         }
+    }
+
+    private static void ObserveFaultOf(Task whenAllTask)
+    {
+        // The WhenAll wrapper is a distinct task holding its own aggregate of any handler faults; the
+        // individual handler tasks are observed by the continuations attached during notification, but
+        // abandoning the wrapper unobserved would raise TaskScheduler.UnobservedTaskException if a handler
+        // faults after this method has given up waiting. Every path that abandons the wrapper calls this.
+        _ = whenAllTask.ContinueWith(
+            static t => _ = t.Exception,
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
     }
 
     private static string GetObserverErrorEventName(T notifyData, string observableEventName)
