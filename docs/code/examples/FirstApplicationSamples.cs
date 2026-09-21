@@ -85,13 +85,14 @@ public static class FirstApplicationSamples
 
             // Get page information
             Console.WriteLine("\nGetting page information...");
+            // Parenthesized: a script beginning with a brace parses as a block, not an object literal.
             string infoScript = @"
-            {
+            ({
                 url: window.location.href,
                 linkCount: document.querySelectorAll('a').length,
                 headingCount: document.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
                 paragraphCount: document.querySelectorAll('p').length
-            }";
+            })";
 
             EvaluateCommandParameters infoParams = new EvaluateCommandParameters(
                 infoScript,

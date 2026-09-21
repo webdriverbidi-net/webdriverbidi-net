@@ -246,9 +246,11 @@ public static class RemoteValuesSamples
             RemoteValueType.Number => value.As<NumberRemoteValue>().Value,
             RemoteValueType.Boolean => value.As<BooleanRemoteValue>().Value,
             RemoteValueType.Null or RemoteValueType.Undefined => null,
-            RemoteValueType.Object or RemoteValueType.Map => value.As<KeyValuePairCollectionRemoteValue>().Value
+            // Value is null when the remote end sent the object or array by reference, without its
+            // contents: a platform object, or a value beyond the serialization depth.
+            RemoteValueType.Object or RemoteValueType.Map => value.As<KeyValuePairCollectionRemoteValue>().Value?
                 .ToDictionary(kvp => kvp.Key.ToString() ?? "", kvp => ToObject(kvp.Value)),
-            RemoteValueType.Array or RemoteValueType.Set => value.As<CollectionRemoteValue>().Value
+            RemoteValueType.Array or RemoteValueType.Set => value.As<CollectionRemoteValue>().Value?
                 .Select(ToObject)
                 .ToList(),
             _ => (value as ValueHoldingRemoteValue)?.ValueObject ?? "(object)"

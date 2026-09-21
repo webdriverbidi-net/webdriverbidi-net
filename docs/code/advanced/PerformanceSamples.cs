@@ -613,20 +613,23 @@ public class PerformanceSamples
         {
             // Use collector
             await CaptureNetworkTraffic();
+
+            // Read the collected data, disowning it so the collector frees it as it is retrieved. This has
+            // to happen while the collector still exists, so it belongs here rather than after the removal.
+            GetDataCommandParameters getDataParams =
+                new GetDataCommandParameters(requestId, DataType.Request)
+            {
+                CollectorId = collector.CollectorId,
+                DisownCollectedData = true  // Free memory after retrieval
+            };
+            GetDataCommandResult data = await driver.Network.GetDataAsync(getDataParams);
+            Console.WriteLine($"Collected {data.Bytes.Value.Length} bytes");
         }
         finally
         {
             await driver.Network.RemoveDataCollectorAsync(
                 new RemoveDataCollectorCommandParameters(collector.CollectorId));
         }
-
-        // Disown collected data to free memory
-        GetDataCommandParameters getDataParams =
-            new GetDataCommandParameters(requestId, DataType.Request)
-        {
-            CollectorId = collector.CollectorId,
-            DisownCollectedData = true  // Free memory after retrieval
-        };
         #endregion
     }
 

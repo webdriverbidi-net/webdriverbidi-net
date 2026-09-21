@@ -68,6 +68,9 @@ public static class ArchitectureSamples
 
             await driver.StartAsync("pipes");
 
+            // The mapper does not create a session; do it here
+            await driver.Session.NewSessionAsync(new NewCommandParameters());
+
             // Use the driver
             await driver.BrowsingContext.NavigateAsync(navParams);
 
@@ -102,10 +105,8 @@ public static class ArchitectureSamples
     public static async Task CommandExecutionFlow(BiDiDriver driver, NavigateCommandParameters navParams)
     {
         #region CommandExecutionFlow
-        NavigateCommandParameters parameters = null;
-
         // Synchronous-looking code (with async/await)
-        NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(parameters);
+        NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(navParams);
 
         // What actually happens:
         // 1. NavigateAsync creates a Command object

@@ -62,13 +62,16 @@ public class CustomCommandParameters : CommandParameters<CustomCommandResult>
 // Command result (immutable - received from browser)
 public record CustomCommandResult : CommandResult
 {
-    public string ResultData { get; internal set; }
+    // [JsonInclude] is what opts a non-public accessor in; without it the member never populates.
+    [JsonInclude]
+    public string ResultData { get; internal set; } = string.Empty;
 }
 
 // Event arguments (immutable - received from browser)
 public record CustomEventArgs : WebDriverBiDiEventArgs
 {
-    public string EventData { get; internal set; }
+    [JsonInclude]
+    public string EventData { get; internal set; } = string.Empty;
 }
 #endregion
 

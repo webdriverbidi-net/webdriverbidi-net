@@ -141,8 +141,10 @@ public static class CoreConceptsSamples
     public static void ThreadSafeRegistration(BiDiDriver driver)
     {
         #region ThreadSafeRegistration
+        // Each module registers under its own name; two modules sharing a name is rejected however they
+        // are registered.
         CoreConceptsDocModule customModule1 = new CoreConceptsDocModule(driver);
-        CoreConceptsDocModule customModule2 = new CoreConceptsDocModule(driver);
+        CoreConceptsOtherDocModule customModule2 = new CoreConceptsOtherDocModule(driver);
 
         // This is safe - concurrent registration is handled properly
         Parallel.Invoke(
