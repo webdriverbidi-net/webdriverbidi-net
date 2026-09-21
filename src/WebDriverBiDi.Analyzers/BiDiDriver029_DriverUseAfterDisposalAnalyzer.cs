@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -84,10 +85,12 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         Dictionary<string, bool> driverDisposedStatus = [];
 
         // A driver whose disposal or rebinding this member cannot place in its own execution order is
-        // never tracked. Collecting those names up front, rather than at the point of escape, is what
-        // the Error severity demands: the nested function that disposes the driver may run before or
-        // after the use textually, and a wrong Error on correct code is worse than a missed report.
-        HashSet<string> untrackableNames = FindUntrackableVariableNames(context.Node, semanticModel);
+        // never tracked. The names are collected for the whole member rather than at the point of
+        // escape, as the Error severity demands: the nested function that disposes the driver may run
+        // before or after the use textually, and a wrong Error on correct code is worse than a missed
+        // report. The walk is deferred until a driver declaration asks for it, so a member that
+        // declares none never pays for it.
+        Lazy<HashSet<string>> untrackableNames = new(() => FindUntrackableVariableNames(context.Node, semanticModel));
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
@@ -174,17 +177,15 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         VariableDeclarationSyntax declaration,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
-            if (untrackableNames.Contains(variable.Identifier.ValueText))
-            {
-                continue;
-            }
-
+            // The type test comes first so that the escape walk is forced only by a declaration that
+            // is actually a driver, as the sibling capture-session rules do.
             ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
-            if (AnalyzerSymbolHelpers.IsCommandExecutorType(localSymbol.Type))
+            if (AnalyzerSymbolHelpers.IsCommandExecutorType(localSymbol.Type)
+                && !untrackableNames.Value.Contains(variable.Identifier.ValueText))
             {
                 driverDisposedStatus[variable.Identifier.ValueText] = false;
             }
@@ -197,7 +198,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // Walk the node's descendants in document order, checking each invocation against the tracked
         // disposal state. The walk does not descend into the bodies of nested functions: their code runs
@@ -284,7 +285,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
         ProcessNode(ifStatement.Condition, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
@@ -314,7 +315,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // The condition is evaluated before either arm, and exactly one arm is evaluated after it: the shape of an
         // if statement with an else clause, forked and merged the same way: a driver counts as disposed after it only when both arms dispose it.
@@ -338,7 +339,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // The governing expression is evaluated before any arm, and the arms are mutually exclusive. Matching no arm
         // throws rather than continuing after the expression, so the arms are the only paths out; with no arms at
@@ -375,7 +376,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // The left operand is always evaluated, and the right one only when the left does not settle the result
         // (&&, ||) or is null (??, ??=). The right operand is therefore walked as a path that may not run, as the
@@ -403,7 +404,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // A for loop's declaration or initializers, a foreach loop's collection expression, and the
         // loop condition all run before the first test of the condition, so they are walked against the
@@ -448,7 +449,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // The governing expression executes unconditionally, before any section.
         ProcessNode(switchStatement.Expression, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
@@ -481,7 +482,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         Dictionary<string, bool> entryStatus = new(driverDisposedStatus);
         Dictionary<string, bool> tryStatus = new(driverDisposedStatus);
@@ -489,13 +490,14 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
 
         // A catch clause (or a finally block) may begin executing after any prefix of the try block has
         // run, so inside one a driver counts as disposed only when every partial execution of the try
-        // leaves it disposed: the conjunction of the state at try entry and the state after the full try
-        // walk. A DisposeAsync inside the try may not have run yet, and an assignment of a fresh driver
-        // inside the try may not have run either.
+        // leaves it disposed: it was disposed at entry and the try cannot have replaced it with a fresh
+        // driver. A DisposeAsync inside the try may not have run yet, so it cannot raise the state here,
+        // and an assignment inside the try may have run, so it lowers it.
         Dictionary<string, bool> certainlyDisposedStatus = [];
         foreach (string driverName in entryStatus.Keys)
         {
-            certainlyDisposedStatus[driverName] = entryStatus[driverName] && tryStatus[driverName];
+            certainlyDisposedStatus[driverName] = entryStatus[driverName]
+                && !AnalyzerSymbolHelpers.ContainsRebinding(tryStatement.Block, driverName);
         }
 
         // The try block and each catch clause are the ways the statement can complete normally, and after it a
@@ -543,7 +545,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
-        HashSet<string> untrackableNames)
+        Lazy<HashSet<string>> untrackableNames)
     {
         // A classic using statement disposes its resource when the body finishes, so the body is walked
         // against the state as it stands and the disposal is applied afterwards. A using *declaration*

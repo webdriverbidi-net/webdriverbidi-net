@@ -38,7 +38,7 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
 
     private static readonly LocalizableString MessageFormat = "The constant value {0} assigned to '{1}' is outside the specification range {2}. A conforming remote end will reject it.";
 
-    private static readonly LocalizableString Description = "Flags a compile-time constant assigned to a command-parameter property whose WebDriver BiDi specification range is declared by SpecRangeAttribute. The library deliberately does not validate these ranges at run time, so this provides compile-time feedback for an obviously out-of-range constant. A range's upper bound may be declared exclusive, in which case a constant equal to it is flagged. A property's declared reset sentinel value is treated as valid, and runtime or dynamic values are never flagged.";
+    private static readonly LocalizableString Description = "Flags a compile-time constant assigned to a command-parameter property whose WebDriver BiDi specification range is declared by SpecRangeAttribute. The library deliberately does not validate these ranges at run time, so this provides compile-time feedback for an obviously out-of-range constant. Either bound may be declared exclusive, in which case a constant equal to that bound is flagged. A property's declared reset sentinel value is treated as valid, and runtime or dynamic values are never flagged.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,

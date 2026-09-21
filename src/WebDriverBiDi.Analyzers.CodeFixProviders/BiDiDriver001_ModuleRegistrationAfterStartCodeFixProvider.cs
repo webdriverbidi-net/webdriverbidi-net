@@ -24,7 +24,9 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
     public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId);
 
     /// <inheritdoc/>
-    public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    // Every diagnostic in a member moves its call to the same place, so the batch fixer would keep
+    // one edit and drop the rest; the fixes are applied one after another instead.
+    public sealed override FixAllProvider GetFixAllProvider() => SequentialDocumentFixAllProvider.Create(this);
 
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)

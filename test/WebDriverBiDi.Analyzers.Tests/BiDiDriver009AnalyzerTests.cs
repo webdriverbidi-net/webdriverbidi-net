@@ -3188,6 +3188,38 @@ public class BiDiDriver009AnalyzerTests
     }
 
     /// <summary>
+    /// Tests that a driver constructed from a transport the calling code holds is not tracked, because
+    /// connecting that transport starts the driver without a <c>StartAsync</c> call on it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DriverConstructedFromTransport_CommandAfterTransportConnect_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(Connection connection)
+                    {
+                        Transport transport = new Transport(connection);
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10), transport);
+                        await transport.ConnectAsync("ws://localhost:9222");
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
     /// Tests that calling a method the driver inherits from <see cref="object"/> does not stop the driver
     /// being tracked, because such a method cannot start it.
     /// </summary>
@@ -3346,4 +3378,42 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
     }
+    /// <summary>
+    /// Tests that a command in a catch is not reported when the try started the driver and then stopped
+    /// it: the catch may be entered between the two, with the driver started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInCatch_AfterTryThatStartsThenStops_ReportsNothing()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(NavigateCommandParameters navigateParameters, CaptureScreenshotCommandParameters screenshotParameters)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            await driver.BrowsingContext.NavigateAsync(navigateParameters);
+                            await driver.StopAsync();
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            await driver.BrowsingContext.CaptureScreenshotAsync(screenshotParameters);
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
 }

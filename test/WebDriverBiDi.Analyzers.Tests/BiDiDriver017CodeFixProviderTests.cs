@@ -25,11 +25,10 @@ public class BiDiDriver017CodeFixProviderTests
     [Fact]
     public async Task BelowCSharp8_ReportsNothingSoTheFixIsNeverAskedFor()
     {
-        // The fix emits ??=, which is C# 8, and offers no fallback for older language versions. This
-        // pins the reason that is safe: the diagnostic is reported only for a property whose type is an
-        // annotated nullable reference type, and those annotations arrived in C# 8 too, so below it the
-        // analyzer sees no annotation and reports nothing at all. The same source produces a diagnostic
-        // and a fix on a current language version, which the tests above cover.
+        // The fix emits ??=, which is C# 8, and offers no fallback for older language versions, so the
+        // analyzer does not report below it. The rule reads the property's declared annotation, which
+        // metadata carries whatever the consumer's language version or nullable context, so the guard
+        // is explicit rather than a side effect of the annotation being invisible.
         string testCode = """
             using System.Collections.Generic;
             using WebDriverBiDi.UserAgentClientHints;

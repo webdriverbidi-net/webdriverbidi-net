@@ -1500,4 +1500,184 @@ public class BiDiDriver024AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+    /// <summary>
+    /// Tests that a name reused in a sibling scope for something that is not a driver is judged on its
+    /// own, rather than against the state the earlier driver of that name left behind.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NameReusedInSiblingScopeForNonDriver_ReportsNothing()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public interface IHostLike
+                {
+                    Task StartAsync();
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(IHostLike host)
+                    {
+                        {
+                            BiDiDriver d = new BiDiDriver();
+                            await d.StartAsync("ws://localhost:9222");
+                            await d.DisposeAsync();
+                        }
+
+                        {
+                            IHostLike d = host;
+                            await d.StartAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a start in a catch is not reported when the try stopped and restarted the driver: the
+    /// catch may be entered after the stop, or after a start that failed and rolled back.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartInCatch_AfterTryThatStopsThenStarts_ReportsNothing()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:9222");
+                        try
+                        {
+                            await driver.StopAsync();
+                            await driver.StartAsync("ws://localhost:9223");
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            await driver.StartAsync("ws://localhost:9224");
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a start in a catch is not reported when the try declares a driver of the same name in
+    /// a nested scope: the name may refer to either driver when the catch is entered.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartInCatch_AfterTryThatRedeclaresTheName_ReportsNothing()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:9222");
+                        try
+                        {
+                            {
+                                BiDiDriver driver2 = new BiDiDriver();
+                                driver = driver2;
+                            }
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            await driver.StartAsync("ws://localhost:9223");
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a name reused for a non-driver local in an inner scope drops the tracked driver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NameRedeclaredAsNonDriverInSameMethod_ReportsNothing()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver d = new BiDiDriver();
+                        await d.StartAsync("ws://localhost:9222");
+                        {
+                            string d2 = "not a driver";
+                            System.Console.WriteLine(d2);
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a driver constructed from a transport the calling code holds is not tracked: the
+    /// transport can be connected directly, which is a start this walk cannot see.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DriverConstructedFromTransport_TwoStarts_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(Connection connection)
+                    {
+                        Transport transport = new Transport(connection);
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10), transport);
+                        await driver.StartAsync("ws://localhost:9222");
+                        await driver.StartAsync("ws://localhost:9223");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
 }

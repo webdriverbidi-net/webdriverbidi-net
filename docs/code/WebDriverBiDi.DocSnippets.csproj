@@ -21,7 +21,7 @@
          so a sample that receives an already-started driver as a parameter is not reported at all —
          that shape needs no suppression.)
 
-         The remaining Error-level rules (BIDI001/002/003/010/020/024/026/027/029) stay active so a
+         The remaining Error-level rules (BIDI001/002/003/010/020/024/026/027/029/033/035) stay active so a
          genuine lifecycle mistake in a sample still fails the build, as do BIDI012, BIDI025, BIDI028
          and BIDI030, whose subjects — disposing without stopping, an async void handler, a value
          outside the specification range, and starting a capture session twice — a sample has no

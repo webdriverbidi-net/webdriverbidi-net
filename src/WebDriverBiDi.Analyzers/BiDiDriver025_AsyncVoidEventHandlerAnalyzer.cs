@@ -83,7 +83,7 @@ public class BiDiDriver025_AsyncVoidEventHandlerAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        ArgumentSyntax? handlerArgument = invocation.ArgumentList.Arguments.FirstOrDefault();
+        ArgumentSyntax? handlerArgument = AnalyzerSymbolHelpers.GetArgumentForParameter(invocation, methodSymbol, "handler");
         if (handlerArgument == null)
         {
             return;

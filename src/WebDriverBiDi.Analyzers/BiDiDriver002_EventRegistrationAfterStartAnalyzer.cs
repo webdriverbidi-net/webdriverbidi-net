@@ -64,7 +64,8 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
         // declare a method of the same name, and calling that is not a registration on the driver.
         DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsCommandExecutorType, (invocation, method, driverVariableName, isStarted, isDirectDriverCall) =>
         {
-            if (method.Name == "RegisterEvent" && isStarted && isDirectDriverCall)
+            if (method.Name == "RegisterEvent" && isStarted && isDirectDriverCall
+                && AnalyzerSymbolHelpers.IsCommandExecutorType(method.ContainingType))
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), GetEventName(context, invocation)));
             }

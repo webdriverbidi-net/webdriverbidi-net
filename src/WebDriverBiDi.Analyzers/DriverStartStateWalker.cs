@@ -402,6 +402,17 @@ internal sealed class DriverStartStateWalker
             ITypeSymbol? initializerType = this.context.SemanticModel.GetTypeInfo(variable.Initializer.Value).Type;
             if (!this.isDriverType(initializerType))
             {
+                // A sibling scope may declare something else of the same name; leaving the previous
+                // entry in place would judge calls on it against the old driver's state.
+                driverStartedStatus.Remove(variable.Identifier.ValueText);
+                continue;
+            }
+
+            // A driver handed a Transport is started by connecting that transport, which this walk
+            // never sees, so its state is not known here.
+            if (AnalyzerSymbolHelpers.IsDriverConstructedFromTransport(this.context.SemanticModel, variable.Initializer.Value))
+            {
+                driverStartedStatus.Remove(variable.Identifier.ValueText);
                 continue;
             }
 
@@ -658,10 +669,10 @@ internal sealed class DriverStartStateWalker
 
         // A catch clause (or a finally block) may begin executing after any prefix of the try
         // block has run, so inside one a driver counts as started only when every partial
-        // execution of the try leaves it started. That is the conjunction of the state at try
-        // entry and the state after the full try walk: a StartAsync inside the try may not
-        // have run yet (started at entry is false), and a StopAsync inside the try may
-        // already have run (started after the try is false). Judging catch and finally code
+        // execution of the try leaves it started: it was started at entry and nothing in the try
+        // could have made it otherwise. Reading the state after the full try walk instead would
+        // miss a try that stops and restarts the driver, whose end state says nothing about the
+        // moment a catch is entered. Judging catch and finally code
         // against this conjunction keeps an Error-severity diagnostic to statically certain
         // cases: a registration or a StartAsync retry in a catch after a failed StartAsync in
         // the try is not reported (the library rolls the driver back to not-started when a
@@ -674,9 +685,11 @@ internal sealed class DriverStartStateWalker
         Dictionary<string, bool> conservativeStatus = [];
         foreach (string driverName in entryStatus.Keys)
         {
-            if (tryStatus.TryGetValue(driverName, out bool startedAfterTryBlock))
+            if (tryStatus.ContainsKey(driverName))
             {
-                conservativeStatus[driverName] = entryStatus[driverName] && startedAfterTryBlock;
+                bool everNotStarted = AnalyzerSymbolHelpers.ContainsCallOnVariable(tryStatement.Block, driverName, "StopAsync")
+                    || AnalyzerSymbolHelpers.ContainsRebinding(tryStatement.Block, driverName);
+                conservativeStatus[driverName] = entryStatus[driverName] && !everNotStarted;
             }
         }
 

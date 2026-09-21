@@ -66,6 +66,76 @@ public class BiDiDriver005CodeFixProviderTests
     }
 
     /// <summary>
+    /// Tests that fixing all diagnostics in a document adds every missing event, rather than one.
+    /// </summary>
+    /// <remarks>
+    /// Each diagnostic rewrites the same events argument. The batch fixer computes both fixes against
+    /// the original document and drops the second as an intersecting change, so this test fails for a
+    /// provider that uses it. The test framework runs the fix-all scopes automatically for a source
+    /// with more than one diagnostic.
+    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FixAll_WithTwoMissingSubscriptions_AddsBothEventNames()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+                        {|#1:driver.Network.OnBeforeRequestSent.AddObserver(async (e) => { })|};
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "browsingContext.load" }));
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        driver.Network.OnBeforeRequestSent.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "browsingContext.load", driver.Log.OnEntryAdded.EventName, driver.Network.OnBeforeRequestSent.EventName }));
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded"));
+        testState.ExpectedDiagnostics.Add(new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("network.beforeRequestSent"));
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that the code fix adds the missing event name to SubscribeAsync.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

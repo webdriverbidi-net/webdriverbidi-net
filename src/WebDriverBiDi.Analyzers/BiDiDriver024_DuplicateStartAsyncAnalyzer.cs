@@ -61,7 +61,8 @@ public class BiDiDriver024_DuplicateStartAsyncAnalyzer : DiagnosticAnalyzer
         {
             // The call must be on the driver itself: a module reached through the driver may declare
             // a command of the same name, and calling that is not a second start of the driver.
-            if (method.Name == "StartAsync" && isStarted && isDirectDriverCall)
+            if (method.Name == "StartAsync" && isStarted && isDirectDriverCall
+                && AnalyzerSymbolHelpers.IsCommandExecutorType(method.ContainingType))
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
             }

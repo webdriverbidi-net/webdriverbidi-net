@@ -52,6 +52,42 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
+    /// Determines whether a construction creates a <c>BiDiDriver</c> with the default transport: the
+    /// library's own driver type, through a constructor that takes no <c>Transport</c>.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the expression.</param>
+    /// <param name="creation">The construction to test.</param>
+    /// <returns><see langword="true"/> if the driver uses the default WebSocket transport; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A type deriving from <c>BiDiDriver</c> may hand its base a transport of its own, so only the
+    /// library's type is judged.
+    /// </remarks>
+    internal static bool IsDefaultTransportConstruction(SemanticModel semanticModel, BaseObjectCreationExpressionSyntax creation)
+    {
+        return semanticModel.GetSymbolInfo(creation).Symbol is IMethodSymbol { ContainingType: { Name: "BiDiDriver" } driverType } constructor
+            && IsInWebDriverBiDiNamespace(driverType)
+            && constructor.Parameters.All(parameter => parameter.Type.Name != "Transport");
+    }
+
+    /// <summary>
+    /// Determines whether an expression constructs a driver from a transport the calling code holds.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the expression.</param>
+    /// <param name="expression">The expression to test.</param>
+    /// <returns><see langword="true"/> when the construction passes a <c>Transport</c>.</returns>
+    /// <remarks>
+    /// <c>BiDiDriver.StartAsync</c> is <c>transport.ConnectAsync</c>, so such a driver is started by
+    /// connecting that transport directly, which a walk of the driver variable never sees. A rule that
+    /// tracks the started state must not treat it as known to be not started.
+    /// </remarks>
+    internal static bool IsDriverConstructedFromTransport(SemanticModel semanticModel, ExpressionSyntax expression)
+    {
+        return expression is BaseObjectCreationExpressionSyntax creation
+            && semanticModel.GetSymbolInfo(creation).Symbol is IMethodSymbol constructor
+            && constructor.Parameters.Any(parameter => IsLibraryTypeNamed(parameter.Type, "Transport"));
+    }
+
+    /// <summary>
     /// Determines whether the symbol represents a driver configuration capability.
     /// </summary>
     /// <param name="type">The symbol to inspect.</param>
@@ -194,6 +230,128 @@ internal static class AnalyzerSymbolHelpers
             });
 
         return isRebound ? null : anonymousFunction;
+    }
+
+    /// <summary>
+    /// Determines whether a node's source contains an identifier of the given name.
+    /// </summary>
+    /// <param name="node">The node to scan.</param>
+    /// <param name="identifierName">The identifier to look for.</param>
+    /// <returns><see langword="true"/> when the name appears anywhere in the node.</returns>
+    /// <remarks>
+    /// A prefilter for a rule that cannot report without a particular call: scanning tokens costs
+    /// nothing next to the binds the rule's walk would otherwise perform on every member it sees.
+    /// </remarks>
+    internal static bool ContainsIdentifier(SyntaxNode node, string identifierName)
+    {
+        foreach (SyntaxToken token in node.DescendantTokens())
+        {
+            if (token.IsKind(SyntaxKind.IdentifierToken) && token.ValueText == identifierName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Determines whether a block contains a call of the given name made directly on the given variable.
+    /// </summary>
+    /// <param name="block">The block to scan.</param>
+    /// <param name="variableName">The variable the call must be made on.</param>
+    /// <param name="methodName">The method name to look for.</param>
+    /// <returns><see langword="true"/> when the block contains such a call.</returns>
+    /// <remarks>
+    /// A <c>catch</c> or <c>finally</c> may begin after any prefix of the <c>try</c> has run, so what
+    /// matters there is whether the state could have been changed at all, not what it is at the end of
+    /// the block: a <c>try</c> that stops and restarts a driver leaves it started, yet a <c>catch</c>
+    /// can be entered between the two. The scan does not descend into a nested function, whose body
+    /// runs only when that delegate is invoked.
+    /// </remarks>
+    internal static bool ContainsCallOnVariable(SyntaxNode block, string variableName, string methodName)
+    {
+        foreach (InvocationExpressionSyntax invocation in block.DescendantNodes(DoesNotBeginNestedFunction).OfType<InvocationExpressionSyntax>())
+        {
+            if (invocation.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax receiver } memberAccess
+                && receiver.Identifier.ValueText == variableName
+                && memberAccess.Name.Identifier.ValueText == methodName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Determines whether a block assigns to the given variable.
+    /// </summary>
+    /// <param name="block">The block to scan.</param>
+    /// <param name="variableName">The variable name.</param>
+    /// <returns><see langword="true"/> when the block assigns to the name.</returns>
+    /// <remarks>
+    /// Rebinding replaces the object the name refers to, so any state accumulated for it stops
+    /// holding from that point on; a <c>catch</c> entered after the assignment sees the new object.
+    /// </remarks>
+    internal static bool ContainsRebinding(SyntaxNode block, string variableName)
+    {
+        foreach (SyntaxNode node in block.DescendantNodes(DoesNotBeginNestedFunction))
+        {
+            if (node is AssignmentExpressionSyntax { Left: IdentifierNameSyntax assigned } && assigned.Identifier.ValueText == variableName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets the argument bound to a parameter of the given name, whether it is written positionally or
+    /// by name.
+    /// </summary>
+    /// <param name="invocation">The invocation whose arguments to search.</param>
+    /// <param name="method">The method the invocation binds to.</param>
+    /// <param name="parameterName">The parameter's name.</param>
+    /// <returns>The argument, or <see langword="null"/> when the call passes none.</returns>
+    /// <remarks>
+    /// <c>AddObserver(handlerOptions: …, handler: …)</c> is the same call as the positional form, so a
+    /// rule that reads <c>Arguments[0]</c> analyzes the wrong expression, or none.
+    /// </remarks>
+    internal static ArgumentSyntax? GetArgumentForParameter(InvocationExpressionSyntax invocation, IMethodSymbol method, string parameterName)
+    {
+        SeparatedSyntaxList<ArgumentSyntax> arguments = invocation.ArgumentList.Arguments;
+        ArgumentSyntax? namedArgument = arguments.FirstOrDefault(argument => argument.NameColon?.Name.Identifier.ValueText == parameterName);
+        if (namedArgument is not null)
+        {
+            return namedArgument;
+        }
+
+        // Written without a name, an argument sits at its parameter's position: C# permits a positional
+        // argument only there. The parameter may be absent, or optional and omitted.
+        IParameterSymbol? parameter = method.Parameters.FirstOrDefault(candidate => candidate.Name == parameterName);
+        if (parameter is null || parameter.Ordinal >= arguments.Count)
+        {
+            return null;
+        }
+
+        return arguments[parameter.Ordinal];
+    }
+
+    /// <summary>
+    /// Determines whether a method waits with a timeout, by taking one.
+    /// </summary>
+    /// <param name="method">The method the invocation binds to.</param>
+    /// <returns><see langword="true"/> if the method declares a timeout parameter; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// <c>Monitor.TryEnter(object)</c> takes the lock or returns immediately, so it never blocks; the
+    /// overloads that take <c>millisecondsTimeout</c> or <c>timeout</c> do. The parameter names are the
+    /// framework's own, the same ones <see cref="HasZeroTimeoutArgument"/> reads.
+    /// </remarks>
+    internal static bool HasTimeoutParameter(IMethodSymbol method)
+    {
+        return method.Parameters.Any(parameter => parameter.Name is "millisecondsTimeout" or "timeout");
     }
 
     /// <summary>
@@ -340,6 +498,15 @@ internal static class AnalyzerSymbolHelpers
     /// another file: a partial-class part, a base class, or a static helper. A semantic model answers only
     /// for nodes of its own tree — asking it about a node from another tree throws — so a rule that walks
     /// a body obtained that way must query the model for the body's tree rather than its own.
+    /// <para>
+    /// <c>Compilation.GetSemanticModel</c> inside a syntax-node action is the pattern RS1030 warns about,
+    /// because the model it returns is not the cached one the driver holds. It is used deliberately here.
+    /// The alternative, a compilation-start dictionary of models, keeps a model alive for every tree that
+    /// has a cross-file handler until the compilation ends, and nothing may hold a model for a tree the
+    /// driver has finished with. The call happens only for an <c>AddObserver</c> whose method-group
+    /// handler is declared in another file, which is rare, and the model it builds is discarded with the
+    /// walk.
+    /// </para>
     /// </remarks>
     internal static SemanticModel GetSemanticModelFor(SyntaxNodeAnalysisContext context, SyntaxNode node)
     {
