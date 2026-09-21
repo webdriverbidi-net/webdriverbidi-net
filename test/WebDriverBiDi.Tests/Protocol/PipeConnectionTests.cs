@@ -27,6 +27,28 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestCanSendDataLargerThanTheRemoteEndReadBuffer()
+    {
+        // The peer reads in 16 KB chunks, so this message arrives in more than one read and is only
+        // echoed intact if the bytes after the last terminator in a read are carried forward.
+        string message = new string('a', (16 * 1024) + 512);
+        using TestPipeServer testPipeServer = new();
+
+        await using PipeConnection connection = new(testPipeServer);
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes(message), TestContext.Current.CancellationToken);
+
+        using CancellationTokenSource readCancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        readCancellation.CancelAfter(DataEchoSafetyBound);
+        string output = await testPipeServer.ReadSentDataAsync(message.Length, readCancellation.Token);
+        testPipeServer.Stop();
+
+        Assert.Equal(message, output);
+    }
+
+    [Fact]
     public async Task TestCanSendData()
     {
         using TestPipeServer testPipeServer = new();

@@ -7,6 +7,8 @@ public class TestPipeServer : IPipeServerProcessProvider, IDisposable
 {
     private static readonly string TestPipeServerPath = GetTestPipeServerPath();
 
+    private static readonly TimeSpan ChildExitSafetyBound = TimeSpan.FromSeconds(30);
+
     private bool disposed;
 
     public Process? ServerProcess { get; private set; }
@@ -62,10 +64,14 @@ public class TestPipeServer : IPipeServerProcessProvider, IDisposable
         if (this.ServerProcess is not null)
         {
             this.ServerProcess.StandardInput.Write('\n');
-            bool exited = this.ServerProcess.WaitForExit(TimeSpan.FromSeconds(5));
+
+            // A safety bound, not a timing expectation: the wait ends when the child exits, so only a
+            // hang is slowed by it. The child is a cold `dotnet <dll>` start, which this file already
+            // allows 30 seconds for elsewhere.
+            bool exited = this.ServerProcess.WaitForExit(ChildExitSafetyBound);
             if (!exited)
             {
-                throw new WebDriverBiDiException("Test pipe server did not exit within 5 seconds");
+                throw new WebDriverBiDiException($"Test pipe server did not exit within {ChildExitSafetyBound.TotalSeconds} seconds");
             }
         }
     }

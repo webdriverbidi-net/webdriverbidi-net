@@ -33,6 +33,12 @@ _ = Task.Run(async () =>
         try
         {
             int bytesRead = await pipeReader.ReadAsync(buffer, cancellationSource.Token);
+            if (bytesRead == 0)
+            {
+                // The pipe is at end of file; reading it again returns immediately and spins.
+                break;
+            }
+
             int startIndex = 0;
             for (int byteIndex = 0; byteIndex < bytesRead; byteIndex++)
             {
@@ -52,6 +58,14 @@ _ = Task.Run(async () =>
 
                     startIndex = byteIndex + 1;
                 }
+            }
+
+            // Bytes after the last terminator belong to a message this read did not finish; without
+            // this, a message spanning two reads is echoed with everything before its last terminator
+            // missing.
+            if (startIndex < bytesRead)
+            {
+                memoryStream.Write(buffer, startIndex, bytesRead - startIndex);
             }
         }
         catch (Exception)
