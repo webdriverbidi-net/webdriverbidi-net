@@ -18,11 +18,12 @@ public record RemoteObjectReference : RemoteReference
     /// Initializes a new instance of the <see cref="RemoteObjectReference"/> class.
     /// </summary>
     /// <param name="handle">The handle of the remote object.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handle"/> is <see langword="null"/>.</exception>
     [JsonConstructor]
     public RemoteObjectReference(string handle)
         : base()
     {
-        this.handle = handle;
+        this.handle = handle ?? throw new ArgumentNullException(nameof(handle));
     }
 
     /// <summary>
@@ -30,7 +31,6 @@ public record RemoteObjectReference : RemoteReference
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown if setting the value to <see langword="null"/>.</exception>
     [JsonPropertyName("handle")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonRequired]
     public string Handle
     {

@@ -101,7 +101,7 @@ public class PendingCommandCollectionTests
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
         await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
-        Assert.Equal("Cannot fail commands while the collection can accept new incoming commands; close it with the Close method first", Assert.ThrowsAny<InvalidOperationException>(() => collection.FailAllPendingCommands(() => new Exception("connection lost"))).Message);
+        Assert.Equal("Cannot fail commands while the collection can accept new incoming commands; close it with CloseAsync first", Assert.ThrowsAny<InvalidOperationException>(() => collection.FailAllPendingCommands(() => new Exception("connection lost"))).Message);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class PendingCommandCollectionTests
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
         await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
-        Assert.Equal("Cannot clear the collection while it can accept new incoming commands; close it with the Close method first", Assert.ThrowsAny<InvalidOperationException>(() => collection.Clear()).Message);
+        Assert.Equal("Cannot clear the collection while it can accept new incoming commands; close it with CloseAsync first", Assert.ThrowsAny<InvalidOperationException>(() => collection.Clear()).Message);
     }
 
     [Fact]

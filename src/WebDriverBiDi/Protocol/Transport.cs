@@ -1523,11 +1523,10 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         // value is scoped to this method's flow, and is restored when the method returns.
         this.sessionId.Value = session.Id;
 
-        // In theory, we could accomplish this with an `await foreach` using
-        // IAsyncEnumerable, but this would require additional dependencies,
-        // which is challenging. Initial experiments has shown that simply
-        // adding a reference to the Microsoft.Bcl.AsyncInterfaces assembly
-        // is not enough by itself to enable compilation using that construct.
+        // Dequeuing goes through the session rather than over the channel directly, so an
+        // `await foreach` on ChannelReader.ReadAllAsync() is not available here: the pair of methods
+        // this loop calls is what keeps the session's queued-message count accurate, and reading the
+        // channel behind them would leave the count reporting messages that have already been handled.
         while (await session.WaitToDequeueMessageAsync().ConfigureAwait(false))
         {
             while (session.TryDequeueMessage(out IncomingMessage? packet))

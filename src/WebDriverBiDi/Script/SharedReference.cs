@@ -18,11 +18,12 @@ public record SharedReference : RemoteReference
     /// Initializes a new instance of the <see cref="SharedReference"/> class.
     /// </summary>
     /// <param name="sharedId">The shared ID of the remote object.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="sharedId"/> is <see langword="null"/>.</exception>
     [JsonConstructor]
     public SharedReference(string sharedId)
         : base()
     {
-        this.sharedId = sharedId;
+        this.sharedId = sharedId ?? throw new ArgumentNullException(nameof(sharedId));
     }
 
     /// <summary>
@@ -30,7 +31,6 @@ public record SharedReference : RemoteReference
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown if setting the value to <see langword="null"/>.</exception>
     [JsonPropertyName("sharedId")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonRequired]
     public string SharedId
     {

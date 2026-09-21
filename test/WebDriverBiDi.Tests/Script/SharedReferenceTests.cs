@@ -89,6 +89,15 @@ public class SharedReferenceTests
     }
 
     [Fact]
+    public void TestConstructingSharedReferenceWithNullSharedIdThrows()
+    {
+        // As RemoteObjectReference: the setter's guard is only half a guard while the constructor
+        // accepts null and leaves the reference without the shared ID the protocol requires.
+        ArgumentNullException exception = Assert.ThrowsAny<ArgumentNullException>(() => new SharedReference(null!));
+        Assert.Equal("sharedId", exception.ParamName);
+    }
+
+    [Fact]
     public void TestDeserializingSharedReferenceThrowsWhenSharedIdIsMissing()
     {
         string json = "{}";

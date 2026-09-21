@@ -50,9 +50,18 @@ public static class ObservableEventExtensions
     /// completes when that has happened.
     /// </para>
     /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="source"/> is <see langword="null"/>.</exception>
     public static IObservable<T> ToObservable<T>(this ObservableEvent<T> source)
         where T : WebDriverBiDiEventArgs
     {
+        if (source is null)
+        {
+            // Guarded here rather than left to the first use: an adapter over a null source fails at
+            // Subscribe, several calls away from the mistake, and the rest of the event API -- AddObserver
+            // above all -- rejects a null eagerly.
+            throw new ArgumentNullException(nameof(source));
+        }
+
         return new ObservableEventAdapter<T>(source);
     }
 
@@ -90,8 +99,19 @@ public static class ObservableEventExtensions
         /// and triggers <see cref="IObserver{T}.OnCompleted"/>, and whose
         /// <see cref="ObservableEventSubscription{T}.CompletionTask"/> completes once delivery has ended.
         /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="observer"/> is <see langword="null"/>.</exception>
         public IDisposable Subscribe(IObserver<T> observer)
         {
+            if (observer is null)
+            {
+                // IObservable<T>.Subscribe conventionally rejects a null observer. Without this, the
+                // subscription is created and counts against MaxObserverCount, and the failure surfaces
+                // only when the first event is delivered: the NullReferenceException is caught by the
+                // delivery loop, reported to the null observer's OnError, swallowed, and the collector
+                // disposed, leaving a caller with a subscription that silently delivers nothing.
+                throw new ArgumentNullException(nameof(observer));
+            }
+
             EventDataCollector<T> collector = this.source.AddDataCollector();
             Task deliveryTask = Task.Run(async () =>
             {

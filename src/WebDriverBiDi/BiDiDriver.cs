@@ -567,7 +567,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
         this.ThrowIfDisposed();
         if (commandParameters is null)
         {
-            throw new ArgumentNullException(nameof(commandParameters), $"Command parameters may not be null; must be a parameters object expecting a results of type {typeof(T)}");
+            throw new ArgumentNullException(nameof(commandParameters), $"Command parameters may not be null; must be a parameters object expecting a result of type {typeof(T)}");
         }
 
         commandTimeout ??= this.DefaultCommandTimeout;
@@ -632,7 +632,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
         {
             if (result is not ErrorResult errorResponse)
             {
-                throw new WebDriverBiDiException("Could not convert error response from transport for SendCommandAndWait to ErrorResult");
+                throw new WebDriverBiDiException($"Could not convert error response from transport for {nameof(this.ExecuteCommandAsync)} to ErrorResult");
             }
 
             throw new WebDriverBiDiCommandException($"Received {errorResponse.ErrorCode} '{errorResponse.ErrorType}' error executing command {commandParameters.MethodName}: {errorResponse.ErrorMessage}", errorResponse);
@@ -640,7 +640,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
 
         if (result is not T convertedResult)
         {
-            throw new WebDriverBiDiException($"Could not convert response from transport for SendCommandAndWait to {typeof(T)}");
+            throw new WebDriverBiDiException($"Could not convert response from transport for {nameof(this.ExecuteCommandAsync)} to {typeof(T)}");
         }
 
         return convertedResult;
