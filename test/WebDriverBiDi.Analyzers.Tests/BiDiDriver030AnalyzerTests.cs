@@ -1067,6 +1067,43 @@ public class BiDiDriver030AnalyzerTests
     }
 
     [Fact]
+    public async Task AssignmentToField_DoesNotResetSession()
+    {
+        // An assignment whose target is not a plain name cannot rebind the observer variable.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private int count;
+
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        this.count = 1;
+                        {|#0:observer.StartCapturingTasks()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver030_DuplicateCaptureSessionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
     public async Task AssignmentToOtherVariable_DoesNotResetSession()
     {
         // Only an assignment to the tracked observer variable itself replaces the observer.
@@ -1101,4 +1138,79 @@ public class BiDiDriver030AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
     }
+    /// <summary>
+    /// Tests that a start in a catch is not reported when the try stopped and restarted the session:
+    /// the catch may be entered after the stop, with no session open.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartInCatch_AfterTryThatStopsThenStartsCapturing_ReportsNothing()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(e => { });
+                        observer.StartCapturingTasks();
+                        try
+                        {
+                            observer.StopCapturingTasks();
+                            observer.StartCapturingTasks();
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            observer.StartCapturingTasks();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a start in a catch is not reported when the try rebinds the observer: the catch may
+    /// be entered after the assignment, when the name holds an observer with no session.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartInCatch_AfterTryThatRebindsTheObserver_ReportsNothing()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(e => { });
+                        observer.StartCapturingTasks();
+                        try
+                        {
+                            observer = driver.Log.OnEntryAdded.AddObserver(e => { });
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            observer.StartCapturingTasks();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
 }

@@ -266,15 +266,15 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         ProcessNode(tryStatement.Block, context, reportDiagnostics, tryState, untrackableNames);
 
         // A catch clause may begin after any prefix of the try block has run, so inside one an observer
-        // counts as capturing when any partial execution of the try could leave it capturing: the
-        // disjunction of the state at try entry and the state after the whole try block. A
-        // StartCapturingTasks in the try may already have run, and a StopCapturingTasks in it may not have
-        // run yet. This is the polarity of BIDI009's walk, for the same reason: this rule reports a wait
+        // counts as capturing when any partial execution of the try could leave it capturing: it was
+        // capturing at entry, or the try contains a StartCapturingTasks that may already have run. The
+        // state after the whole block would miss a try that starts and then stops a session. This is the polarity of BIDI009's walk, for the same reason: this rule reports a wait
         // only when no path can have opened a session.
         Dictionary<string, bool> partialTryState = [];
         foreach (string observerName in capturingState.Keys)
         {
-            partialTryState[observerName] = capturingState[observerName] || tryState[observerName];
+            partialTryState[observerName] = capturingState[observerName]
+                || AnalyzerSymbolHelpers.ContainsCallOnVariable(tryStatement.Block, observerName, "StartCapturingTasks");
         }
 
         // The try block and each catch clause are the ways the statement can complete normally, and after it

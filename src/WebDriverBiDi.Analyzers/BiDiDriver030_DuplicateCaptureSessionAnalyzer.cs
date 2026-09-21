@@ -64,6 +64,13 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
+        // A member that never names StartCapturingTasks cannot produce this diagnostic, and the test
+        // costs a token scan rather than a bind per local declaration.
+        if (!AnalyzerSymbolHelpers.ContainsIdentifier(context.Node, "StartCapturingTasks"))
+        {
+            return;
+        }
+
         // Tracks, for each local EventObserver<T> variable, whether a capture session is certainly
         // active at the current point of the walk. Only locally-declared variables are tracked.
         Dictionary<string, bool> capturingState = [];
@@ -218,7 +225,9 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         Dictionary<string, bool> partialTryState = [];
         foreach (string observerName in capturingState.Keys)
         {
-            partialTryState[observerName] = capturingState[observerName] && tryState[observerName];
+            bool everNotCapturing = AnalyzerSymbolHelpers.ContainsCallOnVariable(tryStatement.Block, observerName, "StopCapturingTasks")
+                || AnalyzerSymbolHelpers.ContainsRebinding(tryStatement.Block, observerName);
+            partialTryState[observerName] = capturingState[observerName] && !everNotCapturing;
         }
 
         // The try block and each catch clause are the ways the statement can complete normally, and after it a

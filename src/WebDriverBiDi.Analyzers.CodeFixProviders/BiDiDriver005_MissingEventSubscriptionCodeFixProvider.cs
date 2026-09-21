@@ -31,7 +31,9 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
     /// <inheritdoc/>
     public sealed override FixAllProvider GetFixAllProvider()
     {
-        return WellKnownFixAllProviders.BatchFixer;
+        // Every diagnostic in a member extends the same events argument, so the batch fixer, which
+        // computes each fix against the original document, would keep one and drop the rest.
+        return SequentialDocumentFixAllProvider.Create(this);
     }
 
     /// <inheritdoc/>

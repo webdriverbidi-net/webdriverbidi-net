@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -32,6 +33,8 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
 
     private static readonly LocalizableString Description = "Synchronization primitives like lock statements, Monitor.Enter, SemaphoreSlim.Wait(), WaitHandle.WaitOne(), or SynchronizationContext.Send() in async event handlers can cause deadlocks. Use async alternatives (SemaphoreSlim.WaitAsync, async/await patterns) or configure the handler to run asynchronously with RunHandlerAsynchronously option.";
 
+    private static readonly LocalizableString BeforeFirstAwaitMessageFormat = "Deadlock-prone pattern '{0}' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         Title,
@@ -42,8 +45,20 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
         description: Description,
         helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi016");
 
+    // Same ID, category and severity as Rule, so release tracking is unchanged; used when the option is
+    // present and the pattern still runs on the dispatching thread.
+    private static readonly DiagnosticDescriptor BeforeFirstAwaitRule = new(
+        DiagnosticId,
+        Title,
+        BeforeFirstAwaitMessageFormat,
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: Description,
+        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi016");
+
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, BeforeFirstAwaitRule);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -79,12 +94,15 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             return;
         }
 
-        if (AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation))
+        // The library runs a Func<T, Task> handler on the dispatching thread up to its first await
+        // whatever the option says; only an Action<T> handler is queued whole.
+        bool optionPresent = AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation);
+        if (optionPresent && AnalyzerSymbolHelpers.IsBoundToActionOverload(methodSymbol))
         {
             return;
         }
 
-        ArgumentSyntax? handlerArgument = invocation.ArgumentList.Arguments.FirstOrDefault();
+        ArgumentSyntax? handlerArgument = AnalyzerSymbolHelpers.GetArgumentForParameter(invocation, methodSymbol, "handler");
         if (handlerArgument == null)
         {
             return;
@@ -100,10 +118,17 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
         // always non-null, so GetHandlerBody is guaranteed to return a non-null body here.
         SyntaxNode handlerBody = AnalyzerSymbolHelpers.GetHandlerBody(context, handlerArgument.Expression)!;
 
+        Func<SyntaxNode, bool> runsBeforeFirstYield = AnalyzerSymbolHelpers.GetRunsBeforeFirstYield(handlerBody);
         IEnumerable<(SyntaxNode Node, string Pattern)> deadlockPatterns = FindDeadlockPronePatterns(context, handlerBody);
         foreach ((SyntaxNode node, string pattern) in deadlockPatterns)
         {
-            Diagnostic diagnostic = Diagnostic.Create(Rule, node.GetLocation(), pattern);
+            bool beforeFirstYield = runsBeforeFirstYield(node);
+            if (optionPresent && !beforeFirstYield)
+            {
+                continue;
+            }
+
+            Diagnostic diagnostic = Diagnostic.Create(optionPresent ? BeforeFirstAwaitRule : Rule, node.GetLocation(), pattern);
             context.ReportDiagnostic(diagnostic);
         }
     }
@@ -168,7 +193,17 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
         string containingTypeName = methodSymbol.ContainingType.Name;
         string methodName = methodSymbol.Name;
 
-        if (containingTypeName == "Monitor" && (methodName == "Enter" || methodName == "TryEnter"))
+        // As for BIDI007: these are framework primitives, and a user type of the same name is not one.
+        string containingNamespace = methodSymbol.ContainingType.ContainingNamespace.ToDisplayString();
+        if (containingNamespace is not ("System.Threading" or "System.Threading.Tasks"))
+        {
+            return null;
+        }
+
+        // TryEnter(object) takes the lock or returns at once, so only the overloads that wait for a
+        // timeout can deadlock.
+        if (containingTypeName == "Monitor"
+            && (methodName == "Enter" || (methodName == "TryEnter" && AnalyzerSymbolHelpers.HasTimeoutParameter(methodSymbol))))
         {
             return $"Monitor.{methodName}";
         }

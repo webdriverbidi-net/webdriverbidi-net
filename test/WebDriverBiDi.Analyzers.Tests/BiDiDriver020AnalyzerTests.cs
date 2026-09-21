@@ -1663,4 +1663,42 @@ public class BiDiDriver020AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
     }
+    /// <summary>
+    /// Tests that a wait in a catch is not reported when the try started and then stopped a capture
+    /// session: the catch may be entered between the two, with the session open.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task WaitInCatch_AfterTryThatStartsThenStopsCapturing_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(e => { });
+                        try
+                        {
+                            observer.StartCapturingTasks();
+                            observer.StopCapturingTasks();
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1));
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
 }

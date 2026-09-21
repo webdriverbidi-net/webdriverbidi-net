@@ -106,6 +106,13 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 continue;
             }
 
+            // A driver handed a Transport is started by connecting that transport, which this walk
+            // never sees, so its state is not known here.
+            if (AnalyzerSymbolHelpers.IsDriverConstructedFromTransport(semanticModel, variable.Initializer.Value))
+            {
+                continue;
+            }
+
             ITypeSymbol? typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value).Type;
             if (AnalyzerSymbolHelpers.IsCommandExecutorType(typeInfo) && !escapedNames.Value.Contains(variable.Identifier.ValueText))
             {
@@ -328,9 +335,10 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
 
         // A catch clause (or a finally block) may begin executing after any prefix of the try block
         // has run, so inside one a driver counts as started when *any* partial execution of the try
-        // could leave it started: the disjunction of the state at try entry and the state after the
-        // full try walk. A StartAsync inside the try may already have run (started after the try is
-        // true), and a StopAsync inside the try may not have run yet (started at entry is true).
+        // could leave it started: it was started at entry, or the try contains a StartAsync that may
+        // already have run. Reading the state after the full try walk instead would miss a try that
+        // starts and then stops the driver, whose end state says nothing about the moment a catch is
+        // entered.
         //
         // This is the mirror image of the same walk in BIDI024, which conjoins the two instead. The
         // polarity follows from what each rule reports: BIDI024 reports a *duplicate* start, so it
@@ -344,9 +352,10 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         Dictionary<string, bool> mightBeStartedStatus = [];
         foreach (string driverName in entryStatus.Keys)
         {
-            if (tryStatus.TryGetValue(driverName, out bool startedAfterTryBlock))
+            if (tryStatus.ContainsKey(driverName))
             {
-                mightBeStartedStatus[driverName] = entryStatus[driverName] || startedAfterTryBlock;
+                bool everStarted = AnalyzerSymbolHelpers.ContainsCallOnVariable(tryStatement.Block, driverName, "StartAsync");
+                mightBeStartedStatus[driverName] = entryStatus[driverName] || everStarted;
             }
         }
 

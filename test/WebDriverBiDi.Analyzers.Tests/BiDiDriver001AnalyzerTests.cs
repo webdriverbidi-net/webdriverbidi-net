@@ -579,12 +579,16 @@ public class BiDiDriver001AnalyzerTests
     /// Tests that GetFixAllProvider returns the correct provider.
     /// </summary>
     [Fact]
-    public void GetFixAllProvider_ReturnsBatchFixer()
+    public void GetFixAllProvider_ReturnsSequentialFixer()
     {
+        // This fix inserts at the same statement for every diagnostic in a member, so the batch fixer,
+        // which computes each fix against the original document and drops intersecting edits, would
+        // apply one and silently discard the others.
         BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider provider = new BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider();
         FixAllProvider fixAllProvider = provider.GetFixAllProvider();
 
-        Assert.Equal(WellKnownFixAllProviders.BatchFixer, fixAllProvider);
+        Assert.NotEqual(WellKnownFixAllProviders.BatchFixer, fixAllProvider);
+        Assert.Equal("SequentialDocumentFixAllProvider", fixAllProvider.GetType().Name);
     }
 
     /// <summary>

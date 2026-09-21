@@ -123,7 +123,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        ArgumentSyntax? handlerArgument = invocation.ArgumentList.Arguments.FirstOrDefault();
+        ArgumentSyntax? handlerArgument = AnalyzerSymbolHelpers.GetArgumentForParameter(invocation, methodSymbol, "handler");
         if (handlerArgument == null)
         {
             return;
@@ -244,8 +244,10 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             if (memberAccess.Name.Identifier.ValueText == "Result")
             {
                 // Task<T>.Result and ValueTask<T>.Result both block until the operation completes.
+                // The namespace is part of the test: a user type named Task has a Result too.
                 ITypeSymbol? expressionType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
-                if (expressionType is { Name: "Task" or "ValueTask" })
+                if (expressionType is { Name: "Task" or "ValueTask" } awaitableType
+                    && awaitableType.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks")
                 {
                     blockingOps.Add((memberAccess, memberAccess.Name.Identifier.Text));
                 }
@@ -261,11 +263,21 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         // Semaphore, ManualResetEvent, AutoResetEvent, ...) binds to a method whose containing type
         // is WaitHandle. ManualResetEventSlim and CountdownEvent are not WaitHandles and declare
         // their own blocking Wait methods.
+        // The containing type is matched with its namespace: a user type named Task or Monitor
+        // declares methods of these names just as readily, and this rule's message would then accuse
+        // code that blocks nothing.
+        string containingNamespace = method.ContainingType.ContainingNamespace.ToDisplayString();
+        if (containingNamespace is not ("System.Threading" or "System.Threading.Tasks"))
+        {
+            return false;
+        }
+
         return (method.ContainingType.Name, method.Name) switch
         {
             ("Thread", "Sleep") or ("Thread", "Join") or ("Task", "Wait") => true,
             ("Task", "WaitAll") or ("Task", "WaitAny") => includeSynchronizationPrimitives,
-            ("Monitor", "Enter") or ("Monitor", "TryEnter") => includeSynchronizationPrimitives,
+            ("Monitor", "Enter") => includeSynchronizationPrimitives,
+            ("Monitor", "TryEnter") => includeSynchronizationPrimitives && AnalyzerSymbolHelpers.HasTimeoutParameter(method),
             ("SemaphoreSlim", "Wait") or ("ManualResetEventSlim", "Wait") or ("CountdownEvent", "Wait") => includeSynchronizationPrimitives,
             ("WaitHandle", "WaitOne") => includeSynchronizationPrimitives,
             _ => false,

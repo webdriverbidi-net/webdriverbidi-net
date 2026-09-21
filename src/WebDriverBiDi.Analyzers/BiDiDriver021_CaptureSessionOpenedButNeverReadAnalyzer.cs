@@ -59,6 +59,13 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
+        // A member that never names StartCapturingTasks cannot produce this diagnostic, and the test
+        // costs a token scan rather than a bind per local declaration.
+        if (!AnalyzerSymbolHelpers.ContainsIdentifier(context.Node, "StartCapturingTasks"))
+        {
+            return;
+        }
+
         SemanticModel semanticModel = context.SemanticModel;
 
         // For each local EventObserver<T> variable, record the location of the most recent

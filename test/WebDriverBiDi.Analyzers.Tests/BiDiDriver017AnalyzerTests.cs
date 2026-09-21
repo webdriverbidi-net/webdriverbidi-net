@@ -1533,4 +1533,37 @@ public class BiDiDriver017AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver017_NullableListAddAnalyzer>(test, expected);
     }
+    /// <summary>
+    /// Tests that the rule fires in a nullable-oblivious project, where the compiler itself warns about
+    /// none of this: the annotation is read from the library's metadata rather than from the calling
+    /// code's nullable context.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NullableDisabledContext_AddOnNullableListProperty_ReportsWarning()
+    {
+        string testCode = """
+            #nullable disable
+            using WebDriverBiDi.Network;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ContinueRequestCommandParameters parameters = new ContinueRequestCommandParameters("requestId");
+                        {|#0:parameters.Headers|}.Add(new Header("name", "value"));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver017_NullableListAddAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Header", "Headers");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver017_NullableListAddAnalyzer>(testCode, expected);
+    }
+
 }

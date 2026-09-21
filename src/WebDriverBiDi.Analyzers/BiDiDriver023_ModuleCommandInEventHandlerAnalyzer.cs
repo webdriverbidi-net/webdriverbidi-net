@@ -123,7 +123,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
-        ArgumentSyntax? handlerArgument = invocation.ArgumentList.Arguments.FirstOrDefault();
+        ArgumentSyntax? handlerArgument = AnalyzerSymbolHelpers.GetArgumentForParameter(invocation, methodSymbol, "handler");
         if (handlerArgument == null)
         {
             return;

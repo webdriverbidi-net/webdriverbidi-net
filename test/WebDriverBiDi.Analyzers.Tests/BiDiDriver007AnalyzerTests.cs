@@ -1209,6 +1209,73 @@ public class BiDiDriver007AnalyzerTests
     }
 
     /// <summary>
+    /// Tests that an <c>AddObserver</c> whose handler parameter is optional and omitted is not analyzed.
+    /// </summary>
+    /// <remarks>
+    /// Synthetic for the same reason as the parameterless stub below: no real overload makes the handler
+    /// optional, and a declared-but-absent handler argument is reachable no other way.
+    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OptionalHandlerOmitted_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task>? handler = null) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver();
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that AddObserver with no arguments is not analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
@@ -2442,7 +2509,7 @@ public class BiDiDriver007AnalyzerTests
     [InlineData("CountdownEvent gate = new(1);", "gate.Wait()", "Wait()")]
     [InlineData("ManualResetEvent gate = new(false);", "gate.WaitOne()", "WaitOne()")]
     [InlineData("object gate = new();", "Monitor.Enter(gate)", "Enter()")]
-    [InlineData("object gate = new();", "Monitor.TryEnter(gate)", "TryEnter()")]
+    [InlineData("object gate = new();", "Monitor.TryEnter(gate, 100)", "TryEnter()")]
     [InlineData("Task[] tasks = new Task[0];", "Task.WaitAll(tasks)", "WaitAll()")]
     [InlineData("Task[] tasks = new Task[0];", "Task.WaitAny(tasks)", "WaitAny()")]
     public async Task EventHandler_WithSynchronizationPrimitive_InNonAsyncHandler_ReportsWarning(string setup, string blockingCall, string operationName)
@@ -2481,6 +2548,51 @@ public class BiDiDriver007AnalyzerTests
             TestCode = test,
         };
         testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that the <c>TryEnter</c> overload without a timeout is not reported in a
+    /// non-<c>async</c> handler. It takes the lock or returns at once, so it never blocks.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WithMonitorTryEnterWithoutTimeout_InNonAsyncHandler_ReportsNothing()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        object gate = new();
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(e =>
+                            {
+                                if (Monitor.TryEnter(gate))
+                                {
+                                    Monitor.Exit(gate);
+                                }
+
+                                return Task.CompletedTask;
+                            });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -2564,6 +2676,11 @@ public class BiDiDriver007AnalyzerTests
                             {
                                 semaphore.Wait();
                                 Task.WaitAll(new Task[0]);
+                                if (Monitor.TryEnter(this.gate, 100))
+                                {
+                                    Monitor.Exit(this.gate);
+                                }
+
                                 lock (this.gate)
                                 {
                                     Console.WriteLine(e);
@@ -3658,4 +3775,116 @@ public class BiDiDriver007AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+    /// <summary>
+    /// Tests that a user type named <c>Task</c> is not mistaken for the framework's: reading its
+    /// <c>Result</c> blocks nothing.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task UserTypeNamedTask_ResultRead_ReportsNothing()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class MyTask
+                {
+                    public string Result { get; set; } = string.Empty;
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, MyTask work)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(e =>
+                        {
+                            string value = work.Result;
+                            return Task.CompletedTask;
+                        });
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that the handler is analyzed when it is passed by name rather than positionally.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NamedHandlerArgument_WithBlockingCall_ReportsWarning()
+    {
+        string testCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(
+                            handlerOptions: ObservableEventHandlerOptions.RunHandlerSynchronously,
+                            handler: e =>
+                            {
+                                {|#0:Thread.Sleep(1000)|};
+                                return Task.CompletedTask;
+                            });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a user type named <c>Monitor</c> with an <c>Enter</c> method is not mistaken for the
+    /// framework's synchronization primitive.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task UserTypeNamedMonitor_EnterCall_ReportsNothing()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public static class Monitor
+                {
+                    public static void Enter(object value)
+                    {
+                    }
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        object gate = new object();
+                        driver.Log.OnEntryAdded.AddObserver(e =>
+                        {
+                            Monitor.Enter(gate);
+                            return Task.CompletedTask;
+                        });
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer>(testCode);
+    }
+
 }

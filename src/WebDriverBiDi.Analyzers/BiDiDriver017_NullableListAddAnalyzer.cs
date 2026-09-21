@@ -97,12 +97,10 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Get the type of the receiver (e.g., params.Contexts)
-        ITypeSymbol? receiverType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
-
-        // Check if this is a nullable list/collection type
-        (bool isNullableList, ITypeSymbol? elementType) = GetNullableListElementType(receiverType);
-        if (!isNullableList || elementType == null)
+        // The fix emits ??=, which is C# 8. Reporting below that would offer a fix that does not
+        // compile; until this rule read the declared type, the missing annotations hid the case. The
+        // tree is one this C# analyzer was handed, so its options are always CSharpParseOptions.
+        if (((CSharpParseOptions)memberAccess.SyntaxTree.Options).LanguageVersion < LanguageVersion.CSharp8)
         {
             return;
         }
@@ -115,6 +113,16 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         // (Contexts) is a property. GetSymbolInfo on memberAccess gives us the property symbol.
         ISymbol? receiverSymbol = semanticModel.GetSymbolInfo(memberAccess.Expression).Symbol;
         if (receiverSymbol is not IPropertySymbol propertySymbol)
+        {
+            return;
+        }
+
+        // The property's own declared type decides this, not the type of the expression here: the
+        // expression's annotation comes from the calling code's nullable context, which is off in a
+        // nullable-oblivious project -- the one place the compiler warns about none of this itself.
+        // The declaration's annotation is read from the library's metadata either way.
+        (bool isNullableList, ITypeSymbol? elementType) = GetNullableListElementType(propertySymbol.Type);
+        if (!isNullableList || elementType == null)
         {
             return;
         }

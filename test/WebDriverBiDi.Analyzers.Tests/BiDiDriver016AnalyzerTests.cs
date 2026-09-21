@@ -245,11 +245,13 @@ public class BiDiDriver016AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that deadlock patterns with RunHandlerAsynchronously do not report a diagnostic.
+    /// Tests that a lock before the handler's first await is reported even with
+    /// RunHandlerAsynchronously: the library runs a Func&lt;T, Task&gt; handler on the dispatching
+    /// thread up to that await, and the option offloads only what follows it.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task LockStatement_WithRunHandlerAsynchronously_NoDiagnostic()
+    public async Task LockStatementBeforeFirstAwait_WithRunHandlerAsynchronously_ReportsWarning()
     {
         string test = """
             using System.Threading.Tasks;
@@ -264,12 +266,56 @@ public class BiDiDriver016AnalyzerTests
                         object lockObj = new object();
                         driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
+                            {|#0:lock (lockObj)
+                            {
+                                var x = 1 + 1;
+                            }|}
+                            await Task.Delay(100);
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("lock statement");
+
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that the same lock after the handler's first await is not reported with the option: that
+    /// part of the handler does run off the dispatching thread.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task LockStatementAfterFirstAwait_WithRunHandlerAsynchronously_ReportsNothing()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        object lockObj = new object();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
+                        {
+                            await Task.Delay(100);
                             lock (lockObj)
                             {
-                                // Safe with RunHandlerAsynchronously
                                 var x = 1 + 1;
                             }
-                            await Task.Delay(100);
                         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
                     }
                 }
@@ -430,11 +476,11 @@ public class BiDiDriver016AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that Monitor.TryEnter in async event handler reports a warning.
+    /// Tests that the waiting <c>TryEnter</c> overload in an async event handler reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task MonitorTryEnter_InAsyncEventHandler_ReportsWarning()
+    public async Task MonitorTryEnterWithTimeout_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
             using System.Threading;
@@ -450,7 +496,7 @@ public class BiDiDriver016AnalyzerTests
                         object lockObj = new();
                         driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
-                            if ({|#0:Monitor.TryEnter(lockObj)|})
+                            if ({|#0:Monitor.TryEnter(lockObj, 100)|})
                             {
                                 try { await Task.Delay(1); }
                                 finally { Monitor.Exit(lockObj); }
@@ -470,6 +516,47 @@ public class BiDiDriver016AnalyzerTests
             TestCode = test,
         };
         testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that the <c>TryEnter</c> overload without a timeout, which takes the lock or returns at
+    /// once, is not reported: it cannot wait, so it cannot deadlock.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task MonitorTryEnterWithoutTimeout_InAsyncEventHandler_ReportsNothing()
+    {
+        string test = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        object lockObj = new();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
+                        {
+                            if (Monitor.TryEnter(lockObj))
+                            {
+                                try { await Task.Delay(1); }
+                                finally { Monitor.Exit(lockObj); }
+                            }
+                        });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -1212,13 +1299,13 @@ public class BiDiDriver016AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that AddObserver with a non-constant RunHandlerAsynchronously option does not report
-    /// diagnostics — exercises the non-constant option path of HasRunHandlerAsynchronouslyOption,
-    /// where the argument cannot be resolved to a compile-time constant and is treated as present.
+    /// Tests the non-constant option path of HasRunHandlerAsynchronouslyOption, where the argument
+    /// cannot be resolved to a compile-time constant and is treated as present: the lock before the
+    /// handler's first await is still reported.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task AddObserver_WithRunHandlerAsynchronously_NoDiagnostic()
+    public async Task AddObserver_WithNonConstantRunHandlerAsynchronously_ReportsBeforeFirstAwaitWarning()
     {
         string test = """
             using System.Threading.Tasks;
@@ -1234,7 +1321,7 @@ public class BiDiDriver016AnalyzerTests
                         ObservableEventHandlerOptions options = ObservableEventHandlerOptions.RunHandlerAsynchronously;
                         driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
-                            lock (lockObj) { }
+                            {|#0:lock (lockObj) { }|}
                             await Task.Delay(1);
                         }, options);
                     }
@@ -1242,10 +1329,15 @@ public class BiDiDriver016AnalyzerTests
             }
             """;
 
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("lock statement");
+
         RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
         };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -1861,4 +1953,85 @@ public class BiDiDriver016AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+    /// <summary>
+    /// Tests that an Action handler with RunHandlerAsynchronously reports nothing: the library queues
+    /// such a handler to the thread pool whole, so none of it runs on the dispatching thread.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ActionHandler_WithRunHandlerAsynchronously_ReportsNothing()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        object lockObj = new object();
+                        driver.Log.OnEntryAdded.AddObserver((e) =>
+                        {
+                            lock (lockObj)
+                            {
+                                var x = 1 + 1;
+                            }
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a user type named <c>SemaphoreSlim</c> is not mistaken for the framework's.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task UserTypeNamedSemaphoreSlim_WaitCall_ReportsNothing()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class SemaphoreSlim
+                {
+                    public void Wait()
+                    {
+                    }
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, SemaphoreSlim gate)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
+                        {
+                            gate.Wait();
+                            await Task.Delay(1);
+                        });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

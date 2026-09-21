@@ -26,6 +26,8 @@ internal static class CodeFixHelpers
     private const string OptionsTypeName = "ObservableEventHandlerOptions";
     private const string RunHandlerAsynchronouslyName = "RunHandlerAsynchronously";
 
+    private const string HandlerOptionsParameterName = "handlerOptions";
+
     // The diagnostic property BIDI007 and BIDI023 set for an operation that runs before an async handler's
     // first await (AnalyzerSymbolHelpers.RunsBeforeFirstAwaitPropertyName, which is internal to the analyzer
     // assembly).
@@ -86,7 +88,10 @@ internal static class CodeFixHelpers
         SemanticModel semanticModel,
         InvocationExpressionSyntax invocation)
     {
-        if (invocation.ArgumentList.Arguments[0].Expression is not AnonymousFunctionExpressionSyntax lambda)
+        // The handler need not be written first: AddObserver(handlerOptions: …, handler: …) binds the
+        // same overload, and reading Arguments[0] would inspect the option instead.
+        ArgumentSyntax lambdaArgument = GetHandlerArgument(invocation);
+        if (lambdaArgument.Expression is not AnonymousFunctionExpressionSyntax lambda)
         {
             return;
         }
@@ -125,6 +130,25 @@ internal static class CodeFixHelpers
             diagnostic);
     }
 
+    /// <summary>
+    /// Gets the argument holding the handler, whether it is written positionally or by name.
+    /// </summary>
+    /// <param name="invocation">The <c>AddObserver</c> invocation.</param>
+    /// <returns>The handler argument. A reported <c>AddObserver</c> always has one.</returns>
+    private static ArgumentSyntax GetHandlerArgument(InvocationExpressionSyntax invocation)
+    {
+        SeparatedSyntaxList<ArgumentSyntax> arguments = invocation.ArgumentList.Arguments;
+        ArgumentSyntax? named = arguments.FirstOrDefault(argument => argument.NameColon?.Name.Identifier.ValueText == "handler");
+        if (named is not null)
+        {
+            return named;
+        }
+
+        // Without a name, the handler is the first positional argument: the parameter it binds to is
+        // the first, and a named argument earlier in the list would have named it.
+        return arguments.First(argument => argument.NameColon is null);
+    }
+
     private static async Task<Document> ApplyHandlerFixAsync(
         Document document,
         InvocationExpressionSyntax invocation,
@@ -140,6 +164,13 @@ internal static class CodeFixHelpers
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName(OptionsTypeName),
                 SyntaxFactory.IdentifierName(RunHandlerAsynchronouslyName)));
+
+        // A positional argument cannot follow a named one (CS8323), and AddObserver's description
+        // parameter is commonly passed by name, so the option is named whenever any argument is.
+        if (invocation.ArgumentList.Arguments.Any(argument => argument.NameColon is not null))
+        {
+            optionsArgument = optionsArgument.WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName(HandlerOptionsParameterName)));
+        }
 
         ArgumentSyntax? existingOptionsArgument = invocation.ArgumentList.Arguments.FirstOrDefault(argument =>
         {
@@ -161,8 +192,9 @@ internal static class CodeFixHelpers
 
             // The indentation of the line the lambda starts on is likewise read from the original,
             // attached lambda: in the detached tree the first line has none.
-            string lambdaLineIndentation = GetLineIndentation(invocation.ArgumentList.Arguments[0].Expression);
-            ArgumentSyntax handlerArgument = newArgumentList.Arguments[0];
+            ArgumentSyntax originalHandlerArgument = GetHandlerArgument(invocation);
+            string lambdaLineIndentation = GetLineIndentation(originalHandlerArgument.Expression);
+            ArgumentSyntax handlerArgument = newArgumentList.Arguments[invocation.ArgumentList.Arguments.IndexOf(originalHandlerArgument)];
             AnonymousFunctionExpressionSyntax lambda = (AnonymousFunctionExpressionSyntax)handlerArgument.Expression;
             AnonymousFunctionExpressionSyntax rewrittenLambda = convertToAsync
                 ? ConvertToAsyncLambda(lambda, endOfLine, lambdaLineIndentation)

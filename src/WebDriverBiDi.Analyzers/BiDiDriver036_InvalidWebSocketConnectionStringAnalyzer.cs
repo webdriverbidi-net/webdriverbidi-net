@@ -85,7 +85,7 @@ public class BiDiDriver036_InvalidWebSocketConnectionStringAnalyzer : Diagnostic
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method
             || !AnalyzerSymbolHelpers.IsCommandExecutorType(method.ContainingType)
             || GetDriverCreation(context.SemanticModel, memberAccess.Expression) is not { } creation
-            || !IsDefaultTransportConstruction(context.SemanticModel, creation))
+            || !AnalyzerSymbolHelpers.IsDefaultTransportConstruction(context.SemanticModel, creation))
         {
             return;
         }
@@ -138,21 +138,4 @@ public class BiDiDriver036_InvalidWebSocketConnectionStringAnalyzer : Diagnostic
         return isRebound ? null : initializer;
     }
 
-    /// <summary>
-    /// Determines whether a construction creates a <c>BiDiDriver</c> with the default transport: the library's own driver
-    /// type, through a constructor that takes no <c>Transport</c>.
-    /// </summary>
-    /// <param name="semanticModel">The semantic model.</param>
-    /// <param name="creation">The construction.</param>
-    /// <returns><see langword="true"/> if the driver uses the default WebSocket transport; otherwise <see langword="false"/>.</returns>
-    /// <remarks>
-    /// A type deriving from <c>BiDiDriver</c> may hand its base a transport of its own, so only the library's type is
-    /// judged.
-    /// </remarks>
-    private static bool IsDefaultTransportConstruction(SemanticModel semanticModel, BaseObjectCreationExpressionSyntax creation)
-    {
-        return semanticModel.GetSymbolInfo(creation).Symbol is IMethodSymbol { ContainingType: { Name: "BiDiDriver" } driverType } constructor
-            && AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(driverType)
-            && constructor.Parameters.All(parameter => parameter.Type.Name != "Transport");
-    }
 }
