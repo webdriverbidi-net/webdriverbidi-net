@@ -664,4 +664,39 @@ public class PartialCookieTests
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             properties.Expires = new DateTime(1969, 12, 31, 23, 59, 59, DateTimeKind.Utc));
     }
+
+    [Theory]
+    [InlineData(DateTimeKind.Local)]
+    [InlineData(DateTimeKind.Unspecified)]
+    public void TestSettingPartialCookieExpirationDateNormalizesToUtc(DateTimeKind kind)
+    {
+        // A Local DateTime names a wall-clock reading, not an instant, and ToUniversalTime treats an
+        // Unspecified one the same way; the setter converts before computing epoch seconds, so that the
+        // remote end is told the instant the caller meant rather than one a UTC offset away. The
+        // expectation is computed with the same conversion, keeping the test independent of the machine
+        // time zone, and the property always reads back UTC.
+        DateTime expirationDate = new(2030, 1, 1, 12, 0, 0, kind);
+        DateTime expectedUtc = expirationDate.ToUniversalTime();
+        ulong expectedEpochSeconds = (ulong)(expectedUtc.Subtract(DateTime.UnixEpoch).Ticks / TimeSpan.TicksPerSecond);
+
+        PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
+        {
+            Expires = expirationDate,
+        };
+
+        Assert.Equal(expectedUtc, properties.Expires);
+        Assert.Equal(DateTimeKind.Utc, properties.Expires!.Value.Kind);
+
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(properties));
+        Assert.Equal(expectedEpochSeconds, serialized["expiry"]?.Value<ulong>());
+
+        // The same instant, given as UTC, must reach the wire as the same value: the two differ only in
+        // how the caller spelled the time.
+        PartialCookie fromUtc = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
+        {
+            Expires = expectedUtc,
+        };
+        Assert.Equal(serialized["expiry"]?.Value<ulong>(), JObject.Parse(JsonSerializer.Serialize(fromUtc))["expiry"]?.Value<ulong>());
+    }
+
 }
