@@ -75,8 +75,22 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         description: Description,
         helpLinkUri: HelpLinkUri);
 
+    private static readonly LocalizableString CollectorFilterMessageFormat = "Blocking operation '{0}' detected in a data collector filter. The filter decides whether to keep an event and runs on the thread dispatching it; it takes no handler options, so the work cannot be offloaded. Keep the filter to a test of the event data and do the work where the collected data is read.";
+
+    // Same ID, category and severity as Rule; used for the filter of AddDataCollector, which the library
+    // invokes synchronously on the dispatching thread and which has no RunHandlerAsynchronously to offer.
+    private static readonly DiagnosticDescriptor CollectorFilterRule = new(
+        DiagnosticId,
+        Title,
+        CollectorFilterMessageFormat,
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: Description,
+        helpLinkUri: HelpLinkUri);
+
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, SynchronousBodyRule, BeforeFirstAwaitRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, SynchronousBodyRule, BeforeFirstAwaitRule, CollectorFilterRule);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -96,7 +110,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        if (memberAccess.Name.Identifier.ValueText != "AddObserver")
+        if (memberAccess.Name.Identifier.ValueText is not ("AddObserver" or "AddDataCollector"))
         {
             return;
         }
@@ -107,7 +121,10 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        if (!AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver"))
+        // A collector's filter runs on the dispatching thread exactly as a synchronous handler does: the
+        // collector registers it through an observer of its own with RunHandlerSynchronously.
+        bool collectorFilter = AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventDataCollector");
+        if (!collectorFilter && !AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver"))
         {
             return;
         }
@@ -117,13 +134,13 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         // Task-returning handler never yields, so everything in it is reported, with a message saying the
         // option cannot help; an async handler (an async lambda or an async method group) is reported for
         // what runs before its first await.
-        bool optionPresent = AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation);
+        bool optionPresent = !collectorFilter && AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation);
         if (optionPresent && AnalyzerSymbolHelpers.IsBoundToActionOverload(methodSymbol))
         {
             return;
         }
 
-        ArgumentSyntax? handlerArgument = AnalyzerSymbolHelpers.GetArgumentForParameter(invocation, methodSymbol, "handler");
+        ArgumentSyntax? handlerArgument = AnalyzerSymbolHelpers.GetArgumentForParameter(invocation, methodSymbol, collectorFilter ? "filter" : "handler");
         if (handlerArgument == null)
         {
             return;
@@ -154,7 +171,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         // whole handler is part of the dispatch and every blocking operation in it is reported, but the ones
         // before that await are still marked, because the code fix has to await first to move them.
         Func<SyntaxNode, bool> runsBeforeFirstYield = asyncHandler ? AnalyzerSymbolHelpers.GetRunsBeforeFirstYield(handlerBody) : static _ => true;
-        DiagnosticDescriptor rule = !optionPresent ? Rule : asyncHandler ? BeforeFirstAwaitRule : SynchronousBodyRule;
+        DiagnosticDescriptor rule = collectorFilter ? CollectorFilterRule : !optionPresent ? Rule : asyncHandler ? BeforeFirstAwaitRule : SynchronousBodyRule;
         IEnumerable<(SyntaxNode Node, string Name)> blockingOperations = FindBlockingOperations(semanticModel, handlerBody, includeSynchronizationPrimitives);
         foreach ((SyntaxNode node, string operationName) in blockingOperations)
         {

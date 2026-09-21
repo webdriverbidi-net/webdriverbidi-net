@@ -47,8 +47,22 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
     /// </summary>
     public const string EventsArgumentSpanKey = "EventsArgumentSpan";
 
+    private static readonly LocalizableString OtherShapeMessageFormat = "A subscription to event '{0}' is registered with {1}() but '{0}' is not included in Session.SubscribeAsync() call. Protocol events require both a local subscription and Session.SubscribeAsync() with matching event names.";
+
+    // Same ID, category and severity as Rule (release tracking is unchanged); used for the two
+    // subscription shapes that are not AddObserver, whose remedy is the same but whose call is not.
+    private static readonly DiagnosticDescriptor OtherShapeRule = new(
+        DiagnosticId,
+        Title,
+        OtherShapeMessageFormat,
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: Description,
+        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi005");
+
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, OtherShapeRule);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -62,7 +76,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
         // Find all AddObserver calls on module events of a driver this body creates
-        System.Collections.Generic.List<(InvocationExpressionSyntax Invocation, string EventName)> addObserverCalls = [];
+        System.Collections.Generic.List<(InvocationExpressionSyntax Invocation, string EventName, string MethodName)> subscriptionCalls = [];
         System.Collections.Generic.HashSet<string>? escapedNames = null;
 
         // GetBodyDescendantNodes covers block bodies, expression bodies, and top-level programs alike.
@@ -74,9 +88,10 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
             }
 
             // Cheap syntactic pre-filter before the expensive semantic bind: skip any invocation
-            // whose member name is not the one this pass cares about. The bound symbol's name is
+            // whose member name is not one this pass cares about. The bound symbol's name is
             // therefore already known, so only the null (unresolved) case needs re-checking.
-            if (memberAccess.Name.Identifier.ValueText != "AddObserver")
+            string methodName = memberAccess.Name.Identifier.ValueText;
+            if (methodName is not ("AddObserver" or "AddDataCollector" or "Subscribe"))
             {
                 continue;
             }
@@ -87,8 +102,21 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // Check if AddObserver is being called on a Module's ObservableEvent
-            if (!IsModuleObservableEvent(context, memberAccess.Expression, out string? eventName, out ExpressionSyntax? driverExpression))
+            // Every one of the three shapes needs the same remote subscription. Subscribe is reached
+            // through the IObservable<T> adapter, so the event is the receiver of that ToObservable call.
+            ExpressionSyntax eventExpression = memberAccess.Expression;
+            if (methodName == "Subscribe")
+            {
+                if (eventExpression is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToObservable" } adapterAccess })
+                {
+                    continue;
+                }
+
+                eventExpression = adapterAccess.Expression;
+            }
+
+            // Check that the subscription is made on a Module's ObservableEvent
+            if (!IsModuleObservableEvent(context, eventExpression, out string? eventName, out ExpressionSyntax? driverExpression))
             {
                 continue;
             }
@@ -102,11 +130,11 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
             escapedNames ??= FindDriversThatMayBeSubscribedElsewhere(context.Node, context.SemanticModel);
             if (IsDriverCreatedInBody(context.SemanticModel, driverExpression!, escapedNames))
             {
-                addObserverCalls.Add((invocation, eventName!));
+                subscriptionCalls.Add((invocation, eventName!, methodName));
             }
         }
 
-        if (addObserverCalls.Count == 0)
+        if (subscriptionCalls.Count == 0)
         {
             return;
         }
@@ -124,12 +152,14 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         // shapes can be amended.
         ImmutableDictionary<string, string?> properties = CreateDiagnosticProperties(amendableEventsArgument);
 
-        // Report diagnostics for AddObserver calls without matching Subscribe
-        foreach ((InvocationExpressionSyntax invocation, string eventName) in addObserverCalls)
+        // Report diagnostics for local subscriptions without a matching remote one
+        foreach ((InvocationExpressionSyntax invocation, string eventName, string methodName) in subscriptionCalls)
         {
             if (!IsEventSubscribed(eventName, subscribedEvents))
             {
-                Diagnostic diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), properties, eventName);
+                Diagnostic diagnostic = methodName == "AddObserver"
+                    ? Diagnostic.Create(Rule, invocation.GetLocation(), properties, eventName)
+                    : Diagnostic.Create(OtherShapeRule, invocation.GetLocation(), properties, eventName, methodName);
                 context.ReportDiagnostic(diagnostic);
             }
         }

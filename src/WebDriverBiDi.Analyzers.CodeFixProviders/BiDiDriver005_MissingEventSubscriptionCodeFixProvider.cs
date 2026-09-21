@@ -105,11 +105,20 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
     /// <remarks>
     /// The event is referenced through its ObservableEvent's EventName property rather than by inserting
     /// a hardcoded string literal, so the added argument does not itself trigger BIDI015. The receiver of
-    /// the AddObserver call is exactly that ObservableEvent (for example driver.Log.OnEntryAdded).
+    /// the AddObserver or AddDataCollector call is exactly that ObservableEvent (for example
+    /// driver.Log.OnEntryAdded); a Subscribe call is made on the adapter that ToObservable returns.
     /// </remarks>
     private static ExpressionSyntax BuildEventNameExpression(InvocationExpressionSyntax addObserverCall)
     {
         ExpressionSyntax observableEvent = ((MemberAccessExpressionSyntax)addObserverCall.Expression).Expression;
+
+        // A Subscribe call is made on the IObservable<T> adapter, so the event is one step further back.
+        // The analyzer reports Subscribe only for a receiver of exactly that shape.
+        if (observableEvent is InvocationExpressionSyntax adapterCall)
+        {
+            observableEvent = ((MemberAccessExpressionSyntax)adapterCall.Expression).Expression;
+        }
+
         return SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
             observableEvent.WithoutTrivia(),

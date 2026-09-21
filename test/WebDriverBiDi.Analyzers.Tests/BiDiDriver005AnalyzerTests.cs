@@ -670,6 +670,138 @@ public class BiDiDriver005AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    [Fact]
+    public async Task AddDataCollectorWithoutSubscription_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:1234");
+                        var collector = {|#0:driver.Log.OnEntryAdded.AddDataCollector()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded", "AddDataCollector");
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task ObservableSubscribeWithoutSubscription_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IObserver<EntryAddedEventArgs> observer)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:1234");
+                        IDisposable subscription = {|#0:driver.Log.OnEntryAdded.ToObservable().Subscribe(observer)|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded", "Subscribe");
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AddDataCollectorWithSubscription_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:1234");
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName));
+                        var collector = driver.Log.OnEntryAdded.AddDataCollector();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task SubscribeOnSomethingOtherThanTheAdapter_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class Feed
+                {
+                    public IDisposable Subscribe(Action handler) => null!;
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(Feed feed)
+                    {
+                        IDisposable subscription = feed.Subscribe(() => { });
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode);
+    }
+
     /// <summary>
     /// Tests SupportedDiagnostics property.
     /// </summary>
@@ -679,8 +811,10 @@ public class BiDiDriver005AnalyzerTests
         BiDiDriver005_MissingEventSubscriptionAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        Assert.Single(diagnostics);
-        Assert.Equal(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, diagnostics[0].Id);
+        // Two descriptors share the ID: the AddObserver message, and the one for the other two
+        // subscription shapes, which names the call that made the subscription.
+        Assert.Equal(2, diagnostics.Length);
+        Assert.All(diagnostics, descriptor => Assert.Equal(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, descriptor.Id));
     }
 
     /// <summary>

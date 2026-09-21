@@ -66,6 +66,54 @@ public class BiDiDriver005CodeFixProviderTests
     }
 
     /// <summary>
+    /// Tests that the fix names the event correctly for a subscription made through the
+    /// <c>IObservable&lt;T&gt;</c> adapter, whose <c>Subscribe</c> call sits one step past the event.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObservableSubscribe_FixAddsTheEventBehindTheAdapter()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+            using WebDriverBiDi.Session;
+
+            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+            IObserver<EntryAddedEventArgs> observer = null!;
+            IDisposable subscription = {|#0:driver.Log.OnEntryAdded.ToObservable().Subscribe(observer)|};
+            await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "network.beforeRequestSent" }));
+            """;
+
+        string fixedCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+            using WebDriverBiDi.Session;
+
+            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+            IObserver<EntryAddedEventArgs> observer = null!;
+            IDisposable subscription = driver.Log.OnEntryAdded.ToObservable().Subscribe(observer);
+            await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "network.beforeRequestSent", driver.Log.OnEntryAdded.EventName }));
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded", "Subscribe");
+
+        RealAssemblyCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            TestState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+            FixedState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that fixing all diagnostics in a document adds every missing event, rather than one.
     /// </summary>
     /// <remarks>
