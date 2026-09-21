@@ -23,13 +23,19 @@ public record ErrorResult : CommandResult
     /// Initializes a new instance of the <see cref="ErrorResult"/> class.
     /// </summary>
     /// <param name="response">The error response containing the error data.</param>
+    /// <remarks>
+    /// An error response carries no <c>result</c> object: its specified members sit on the envelope beside
+    /// <c>type</c> and <c>id</c>, and so does every extension member. They are therefore exposed through
+    /// <see cref="CommandResult.AdditionalResponseProperties"/>, where the extension members of the envelope of a
+    /// successful response are exposed, and <see cref="CommandResult.AdditionalData"/> is empty for every error.
+    /// </remarks>
     internal ErrorResult(ErrorResponseMessage response)
     {
         this.ErrorType = response.ErrorType;
         this.ErrorCode = response.ErrorCode;
         this.ErrorMessage = response.ErrorMessage;
         this.StackTrace = response.StackTrace;
-        this.AdditionalData = response.AdditionalData;
+        this.AdditionalResponseProperties = response.AdditionalData;
     }
 
     /// <summary>

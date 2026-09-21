@@ -22,7 +22,8 @@ public record CommandResult
     /// <remarks>
     /// This is the receiving-side counterpart of <see cref="CommandParameters.AdditionalData"/>, which
     /// places properties inside the <c>params</c> object of a command. Properties found on the
-    /// response envelope instead are exposed through <see cref="AdditionalResponseProperties"/>.
+    /// response envelope instead are exposed through <see cref="AdditionalResponseProperties"/>. It is always
+    /// empty for an <see cref="ErrorResult"/>, whose response has no <c>result</c> object at all.
     /// </remarks>
     public ReceivedDataDictionary AdditionalData { get; internal set; } = ReceivedDataDictionary.EmptyDictionary;
 
@@ -31,7 +32,8 @@ public record CommandResult
     /// <c>type</c>, <c>id</c> and <c>result</c>, such as Chromium's <c>goog:channel</c>.
     /// </summary>
     /// <remarks>
-    /// This is the receiving-side counterpart of <see cref="Protocol.Command.AdditionalCommandProperties"/>.
+    /// This is the receiving-side counterpart of <see cref="Protocol.Command.AdditionalCommandProperties"/>. An error
+    /// response has no <c>result</c> object, so every extension member of an error is exposed here.
     /// </remarks>
     public ReceivedDataDictionary AdditionalResponseProperties { get; internal set; } = ReceivedDataDictionary.EmptyDictionary;
 }

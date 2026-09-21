@@ -119,6 +119,8 @@ properties are exposed where they were found and are never merged across positio
 | **Payload root** — beside the specified members of `result`/`params` | `CommandParameters.AdditionalData` | `CommandResult.AdditionalData` | event args `AdditionalData` |
 | **Nested object** | e.g. `CookieFilter.AdditionalData` | e.g. `Cookie.AdditionalData` | e.g. `RequestData.AdditionalData` |
 
+An error response has no `result` object: its specified members, and any extension members, are all on the envelope. Every extension member of an error therefore appears in `ErrorResult.AdditionalResponseProperties`, and `ErrorResult.AdditionalData` is always empty. A consumer reading a vendor member from `AdditionalResponseProperties` finds it whether the command succeeded or failed.
+
 The envelope and payload-root positions are captured by the transport for *every* command result and
 event — built-in or custom, under reflection or native AOT — with no attribute on the type: any property
 of the `result`/`params` object that the type does not define is extension data. (A member marked

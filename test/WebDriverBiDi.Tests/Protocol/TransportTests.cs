@@ -5463,6 +5463,26 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestErrorResponseExposesEnvelopeExtensionData()
+    {
+        // The same vendor member is read from AdditionalResponseProperties whether the command succeeded or failed.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync($$"""{ "type": "error", "id": {{command.CommandId}}, "error": "unknown error", "message": "error message", "goog:channel": "channelValue" }""");
+
+        Assert.True(await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), cancellationToken));
+        Assert.True(command.TryGetResult(out CommandResult? result));
+        ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
+        Assert.Equal("channelValue", errorResult.AdditionalResponseProperties["goog:channel"]);
+        Assert.Empty(errorResult.AdditionalData);
+        await transport.DisconnectAsync(cancellationToken);
+    }
+
+    [Fact]
     public async Task TestPreviousSessionReaderDoesNotCompleteNewSessionCommand()
     {
         // A reconnect that gives up waiting for a stuck handler leaves the previous session's reader
