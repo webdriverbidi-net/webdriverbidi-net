@@ -54,6 +54,7 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
     // which window a plain field read yields null.
     private readonly Lazy<ILogger>? logger;
     private readonly EventLevel minimumLevel;
+    private readonly bool isMinimumLevelAssigned;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverBiDiEventSourceLogger"/> class.
@@ -94,8 +95,25 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         // WebDriverBiDiLoggingExtensions.AddWebDriverBiDi), so no null guard is needed.
         this.logger = logger;
         this.minimumLevel = minimumLevel;
+        this.isMinimumLevelAssigned = true;
         this.EnableConfiguredEvents();
     }
+
+    /// <summary>
+    /// Gets the level this listener subscribes at, which is not the level it filters at.
+    /// </summary>
+    /// <remarks>
+    /// A source reports itself enabled up to the highest level any listener asked for, and
+    /// <see cref="EventLevel.LogAlways"/> is the lowest value, so subscribing at it lets a second
+    /// listener's concrete level stop verbose events from being raised at all. Verbose is the maximum,
+    /// which no later subscription can lower; "capture everything" is then enforced in
+    /// <see cref="OnEventWritten"/>. Before the constructor body assigns the configured level, the field
+    /// reads as <see cref="EventLevel.LogAlways"/> without having been configured as such, and
+    /// subscribing at Verbose for it would raise a level the constructor cannot lower again.
+    /// </remarks>
+    private EventLevel SubscriptionLevel => this.isMinimumLevelAssigned && this.minimumLevel == EventLevel.LogAlways
+        ? EventLevel.Verbose
+        : this.minimumLevel;
 
     /// <summary>
     /// Called when an EventSource is created. Enables the WebDriverBiDi EventSource.
@@ -111,7 +129,7 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
     {
         if (eventSource.Name == "WebDriverBiDi")
         {
-            this.EnableEvents(eventSource, this.minimumLevel);
+            this.EnableEvents(eventSource, this.SubscriptionLevel);
         }
     }
 
@@ -352,7 +370,7 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
     /// </remarks>
     private void EnableConfiguredEvents()
     {
-        this.EnableEvents(WebDriverBiDiEventSource.RaiseEvent, this.minimumLevel);
+        this.EnableEvents(WebDriverBiDiEventSource.RaiseEvent, this.SubscriptionLevel);
     }
 
     /// <summary>

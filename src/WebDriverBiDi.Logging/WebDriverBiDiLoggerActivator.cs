@@ -15,11 +15,18 @@ using Microsoft.Extensions.Logging.Abstractions;
 /// without the application having to resolve the listener itself.
 /// </summary>
 /// <remarks>
-/// The logging infrastructure constructs every registered <see cref="ILoggerProvider"/> when the
-/// <see cref="ILoggerFactory"/> is built. Because this provider takes the
-/// <see cref="WebDriverBiDiEventSourceLogger"/> as a constructor dependency, resolving this provider
-/// resolves (and therefore constructs and subscribes) the listener. The provider itself contributes
-/// nothing to application logging; <see cref="CreateLogger"/> returns a no-op logger.
+/// The default <see cref="ILoggerFactory"/> constructs every registered <see cref="ILoggerProvider"/> when
+/// it is built. Because this provider takes the <see cref="WebDriverBiDiEventSourceLogger"/> as a
+/// constructor dependency, resolving this provider resolves (and therefore constructs and subscribes) the
+/// listener. The provider itself contributes nothing to application logging; <see cref="CreateLogger"/>
+/// returns a no-op logger.
+/// <para>
+/// Activation therefore depends on the provider list surviving and on the default factory being the one in
+/// use: a <c>ClearProviders()</c> call after <c>AddWebDriverBiDi()</c> removes this provider, and a replaced
+/// <see cref="ILoggerFactory"/> never constructs it. In either case the listener is never created and
+/// nothing is forwarded; the application must resolve
+/// <see cref="WebDriverBiDiEventSourceLogger"/> itself.
+/// </para>
 /// </remarks>
 internal sealed class WebDriverBiDiLoggerActivator : ILoggerProvider
 {

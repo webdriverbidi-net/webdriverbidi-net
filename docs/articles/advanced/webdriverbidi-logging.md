@@ -52,11 +52,16 @@ The `EventLevel` → `LogLevel` mapping applied by `WebDriverBiDiEventSourceLogg
 
 | `EventLevel` | `LogLevel` |
 |---|---|
+| `LogAlways` | `Information` |
 | `Verbose` | `Debug` |
 | `Informational` | `Information` |
 | `Warning` | `Warning` |
 | `Error` | `Error` |
 | `Critical` | `Critical` |
+| anything else | `Trace` |
+
+As the `minimumLevel` argument, `LogAlways` means "capture every event whatever its level"; as an event's
+own level it maps to `Information`, because an event that must always be logged is not an error.
 
 **Call `AddWebDriverBiDi` once.** The listener is registered with `TryAddSingleton`, so the first call on
 a given service collection is the one that takes effect. A later call is silently ignored, including the
@@ -117,6 +122,25 @@ The listener subscribes to the event source when the logging pipeline is built. 
 builds it at startup. A `ServiceProvider` you build yourself builds it the first time `ILoggerFactory`,
 or an `ILogger`, is resolved from it. Until then no event is forwarded, so a provider that is built and
 never resolved from logs nothing. Disposing the provider unsubscribes the listener.
+
+Activation rides on an `ILoggerProvider`: `AddWebDriverBiDi` registers one whose only job is to take the
+listener as a dependency, so building the pipeline constructs the listener. Two shapes therefore start
+nothing, silently:
+
+- **`ClearProviders()` after `AddWebDriverBiDi()`.** `ClearProviders` removes every registered
+  `ILoggerProvider`, including the one that activates the bridge. Call `AddWebDriverBiDi()` *after* any
+  `ClearProviders()`.
+- **A replaced `ILoggerFactory`.** Only `Microsoft.Extensions.Logging.LoggerFactory` resolves
+  `IEnumerable<ILoggerProvider>`. A factory registration that replaces it — Serilog's `UseSerilog()` or
+  `AddSerilog()` with the default `writeToProviders: false`, for instance — never constructs the
+  providers, so the bridge never subscribes. Resolve it yourself once at startup instead:
+
+<!-- inline-csharp: one line of a startup sequence, resolving the listener the container already holds -->
+```csharp
+_ = serviceProvider.GetRequiredService<WebDriverBiDiEventSourceLogger>();
+```
+
+Neither case reports an error; nothing is forwarded.
 
 `WebDriverBiDiEventSourceLogger` extends `System.Diagnostics.Tracing.EventListener`. When
 registered via `AddWebDriverBiDi()`:

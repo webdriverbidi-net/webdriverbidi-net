@@ -68,11 +68,13 @@ public static class WebDriverBiDiLoggingExtensions
     /// <strong>Event Level Mapping:</strong>
     /// </para>
     /// <list type="bullet">
+    /// <item><description><see cref="EventLevel.LogAlways"/> → <see cref="LogLevel.Information"/>; as <paramref name="minimumLevel"/> it captures every event</description></item>
     /// <item><description><see cref="EventLevel.Verbose"/> → <see cref="LogLevel.Debug"/></description></item>
     /// <item><description><see cref="EventLevel.Informational"/> → <see cref="LogLevel.Information"/></description></item>
     /// <item><description><see cref="EventLevel.Warning"/> → <see cref="LogLevel.Warning"/></description></item>
     /// <item><description><see cref="EventLevel.Error"/> → <see cref="LogLevel.Error"/></description></item>
     /// <item><description><see cref="EventLevel.Critical"/> → <see cref="LogLevel.Critical"/></description></item>
+    /// <item><description>any other value → <see cref="LogLevel.Trace"/></description></item>
     /// </list>
     /// <para>
     /// <strong>Example:</strong>

@@ -42,6 +42,13 @@ await driver.StartAsync("ws://localhost:9222");
 A `ServiceProvider` that is built but never resolved from logs nothing. Disposing the provider stops
 the bridge.
 
+Activation rides on an `ILoggerProvider` that `AddWebDriverBiDi` registers, so two shapes start nothing
+and report no error: calling `ClearProviders()` *after* `AddWebDriverBiDi()`, which removes that provider
+along with the rest; and replacing `ILoggerFactory` (Serilog's `UseSerilog()`/`AddSerilog()` with the
+default `writeToProviders: false`), because only the default factory constructs registered providers. Call
+`AddWebDriverBiDi()` after any `ClearProviders()`, and with a replaced factory resolve
+`WebDriverBiDiEventSourceLogger` from the provider once at startup.
+
 ### What the Bridge Does Not Forward
 
 The bridge forwards `WebDriverBiDiEventSource` events only. The driver's `OnLogMessage` event is a
@@ -98,11 +105,16 @@ WebDriver BiDi EventSource levels are mapped to ILogger levels as follows:
 
 | EventSource Level | ILogger Level |
 |-------------------|---------------|
+| `LogAlways` | `Information` |
 | `Verbose` | `Debug` |
 | `Informational` | `Information` |
 | `Warning` | `Warning` |
 | `Error` | `Error` |
 | `Critical` | `Critical` |
+| anything else | `Trace` |
+
+As the `minimumLevel` argument, `LogAlways` means "capture every event whatever its level"; as an event's own
+level it maps to `Information`.
 
 ## Structured Logging
 
@@ -194,8 +206,8 @@ See the [observability documentation](https://github.com/webdriverbidi-net/webdr
 
 When publishing with `PublishAot`, the ILCompiler sets `EventSourceSupport` to `false` by default. That
 makes `EventSource.IsEnabled()` permanently false, so the library raises no diagnostic events and this
-bridge forwards nothing to `ILogger`. Nothing throws and nothing is written to explain the silence. Opt
-back in from your project file:
+bridge forwards nothing to `ILogger`. Nothing throws and nothing is written to explain the silence.
+The Web SDK (`Microsoft.NET.Sdk.Web`) sets it to `true` when the property is empty, so an ASP.NET Core application already has it; every other SDK needs the opt-in. Opt back in from your project file:
 
 ```xml
 <PropertyGroup>
