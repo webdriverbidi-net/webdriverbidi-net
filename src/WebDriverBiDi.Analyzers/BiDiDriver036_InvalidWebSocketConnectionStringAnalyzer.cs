@@ -66,22 +66,8 @@ public class BiDiDriver036_InvalidWebSocketConnectionStringAnalyzer : Diagnostic
             return;
         }
 
-        // StartAsync(string url, CancellationToken cancellationToken) has exactly one string parameter, so the only
-        // constant string argument is the connection string; matching by shape also tolerates named arguments.
-        ExpressionSyntax? connectionString = invocation.ArgumentList.Arguments
-            .Select(argument => argument.Expression)
-            .FirstOrDefault(expression => context.SemanticModel.GetConstantValue(expression) is { HasValue: true, Value: string });
-        if (connectionString is null)
-        {
-            return;
-        }
-
-        string value = (string)context.SemanticModel.GetConstantValue(connectionString).Value!;
-        if (Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) && (uri.Scheme == "ws" || uri.Scheme == "wss"))
-        {
-            return;
-        }
-
+        // Which driver is started decides whether the string matters at all, so it is settled before the
+        // arguments are read: every other StartAsync in the compilation leaves here.
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method
             || !AnalyzerSymbolHelpers.IsCommandExecutorType(method.ContainingType)
             || GetDriverCreation(context.SemanticModel, memberAccess.Expression) is not { } creation
@@ -90,7 +76,22 @@ public class BiDiDriver036_InvalidWebSocketConnectionStringAnalyzer : Diagnostic
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, connectionString.GetLocation(), value));
+        // StartAsync(string url, CancellationToken cancellationToken) has exactly one string parameter, so the only
+        // constant string argument is the connection string; matching by shape also tolerates named arguments.
+        foreach (ExpressionSyntax expression in invocation.ArgumentList.Arguments.Select(argument => argument.Expression))
+        {
+            if (context.SemanticModel.GetConstantValue(expression) is not { HasValue: true, Value: string value })
+            {
+                continue;
+            }
+
+            if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) || (uri.Scheme != "ws" && uri.Scheme != "wss"))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Rule, expression.GetLocation(), value));
+            }
+
+            return;
+        }
     }
 
     /// <summary>

@@ -55,6 +55,12 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
+        // Only a call to RegisterModule is ever reported, and the walk binds every declaration it sees.
+        if (!AnalyzerSymbolHelpers.ContainsIdentifier(context.Node, "RegisterModule"))
+        {
+            return;
+        }
+
         // The call must be on the driver itself: a custom module reached through the driver may
         // declare a method of the same name, and calling that is not a registration on the driver.
         DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsDriverConfigurationType, (invocation, method, driverVariableName, isStarted, isDirectDriverCall) =>
