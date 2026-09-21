@@ -84,19 +84,98 @@ public class WebDriverBiDiLoggingExtensionsTests
         services.AddLogging(b => b.AddWebDriverBiDi(EventLevel.Verbose));
 
         ServiceProvider provider = services.BuildServiceProvider();
-        _ = provider.GetRequiredService<ILoggerFactory>().CreateLogger("disposal-test");
+        try
+        {
+            _ = provider.GetRequiredService<ILoggerFactory>().CreateLogger("disposal-test");
 
-        // Established first so the assertion below means "stopped forwarding" rather than
-        // "never started forwarding", which would pass even if the bridge were inert.
-        WebDriverBiDiEventSource.RaiseEvent.TransportStarted("conn-1", "session-1");
-        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "TransportStarted");
+            // Established first so the assertion below means "stopped forwarding" rather than
+            // "never started forwarding", which would pass even if the bridge were inert.
+            WebDriverBiDiEventSource.RaiseEvent.TransportStarted("conn-1", "session-1");
+            Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "TransportStarted");
+        }
+        finally
+        {
+            provider.Dispose();
+        }
 
-        provider.Dispose();
         fakeLogger.Clear();
 
         WebDriverBiDiEventSource.RaiseEvent.TransportStarted("conn-1", "session-1");
 
         Assert.Empty(fakeLogger.Entries);
+    }
+
+    [Fact]
+    public void AddWebDriverBiDi_BeforeClearProviders_ForwardsNothing()
+    {
+        // Activation rides on an ILoggerProvider, and ClearProviders removes every registered provider,
+        // including that one. Nothing reports the bridge as inert, which is why it is documented and
+        // pinned here.
+        ServiceCollection services = new();
+        TestLogger fakeLogger = new();
+        services.AddSingleton<ILogger<WebDriverBiDiEventSourceLogger>>(fakeLogger);
+        services.AddLogging(b =>
+        {
+            b.AddWebDriverBiDi(EventLevel.Verbose);
+            b.ClearProviders();
+        });
+
+        using (ServiceProvider provider = services.BuildServiceProvider())
+        {
+            _ = provider.GetRequiredService<ILoggerFactory>().CreateLogger("clear-providers-test");
+            WebDriverBiDiEventSource.RaiseEvent.TransportStarted("conn-1", "session-1");
+        }
+
+        Assert.Empty(fakeLogger.Entries);
+    }
+
+    [Fact]
+    public void AddWebDriverBiDi_AfterClearProviders_ForwardsEvents()
+    {
+        // The documented order: the control for the test above, so that its emptiness means "removed by
+        // ClearProviders" rather than "this shape never works".
+        ServiceCollection services = new();
+        TestLogger fakeLogger = new();
+        services.AddSingleton<ILogger<WebDriverBiDiEventSourceLogger>>(fakeLogger);
+        services.AddLogging(b =>
+        {
+            b.ClearProviders();
+            b.AddWebDriverBiDi(EventLevel.Verbose);
+        });
+
+        using (ServiceProvider provider = services.BuildServiceProvider())
+        {
+            _ = provider.GetRequiredService<ILoggerFactory>().CreateLogger("clear-providers-control");
+            WebDriverBiDiEventSource.RaiseEvent.TransportStarted("conn-1", "session-1");
+        }
+
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "TransportStarted");
+    }
+
+    [Fact]
+    public void AddWebDriverBiDi_WithReplacedLoggerFactory_ForwardsNothingUntilTheListenerIsResolved()
+    {
+        // Only the default LoggerFactory resolves IEnumerable<ILoggerProvider>. A replacement -- the
+        // shape of Serilog's UseSerilog()/AddSerilog() with writeToProviders: false -- never constructs
+        // the activator, so the bridge never subscribes.
+        ServiceCollection services = new();
+        TestLogger fakeLogger = new();
+        services.AddSingleton<ILogger<WebDriverBiDiEventSourceLogger>>(fakeLogger);
+        services.AddLogging(b => b.AddWebDriverBiDi(EventLevel.Verbose));
+        services.AddSingleton<ILoggerFactory>(new ProviderIgnoringLoggerFactory(fakeLogger));
+
+        using (ServiceProvider provider = services.BuildServiceProvider())
+        {
+            _ = provider.GetRequiredService<ILoggerFactory>().CreateLogger("replaced-factory-test");
+            WebDriverBiDiEventSource.RaiseEvent.TransportStarted("conn-1", "session-1");
+            Assert.Empty(fakeLogger.Entries);
+
+            // The documented workaround: resolve the listener once at startup.
+            _ = provider.GetRequiredService<WebDriverBiDiEventSourceLogger>();
+            WebDriverBiDiEventSource.RaiseEvent.TransportStarted("conn-1", "session-1");
+        }
+
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "TransportStarted");
     }
 
     [Fact]
@@ -206,4 +285,29 @@ public class WebDriverBiDiLoggingExtensionsTests
 
         public IServiceCollection Services { get; }
     }
+
+    /// <summary>
+    /// An <see cref="ILoggerFactory"/> that never enumerates registered providers, as a replaced factory
+    /// such as Serilog's does not.
+    /// </summary>
+    private sealed class ProviderIgnoringLoggerFactory : ILoggerFactory
+    {
+        private readonly ILogger logger;
+
+        public ProviderIgnoringLoggerFactory(ILogger logger)
+        {
+            this.logger = logger;
+        }
+
+        public void AddProvider(ILoggerProvider provider)
+        {
+        }
+
+        public ILogger CreateLogger(string categoryName) => this.logger;
+
+        public void Dispose()
+        {
+        }
+    }
+
 }

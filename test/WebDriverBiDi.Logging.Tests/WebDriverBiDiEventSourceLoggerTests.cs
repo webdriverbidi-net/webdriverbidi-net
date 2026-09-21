@@ -254,6 +254,28 @@ public class WebDriverBiDiEventSourceLoggerTests
     }
 
     [Fact]
+    public void LogAlways_KeepsCapturingVerboseEventsWhenAnotherListenerEnablesTheSource()
+    {
+        // A source is enabled up to the highest level any listener asked for, and LogAlways is the
+        // lowest value, so a listener configured for "everything" used to stop seeing verbose events as
+        // soon as anything else -- a second bridge, dotnet-counters, a test listener -- enabled the
+        // source at a concrete level.
+        TestLogger fakeLogger = new();
+        using WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.LogAlways);
+
+        WebDriverBiDiEventSource.RaiseEvent.CommandSending("conn-1", "session-1", 1, "before.other.listener");
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
+        fakeLogger.Clear();
+
+        using (LevelEnablingListener other = new(EventLevel.Informational))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending("conn-1", "session-1", 2, "after.other.listener");
+        }
+
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
+    }
+
+    [Fact]
     public void Constructor_LowersEventSourceLevel_WhenEventSourceAlreadyExists()
     {
         // Touch the source first so it is guaranteed to pre-exist, which is the ordering that
@@ -651,4 +673,27 @@ public class WebDriverBiDiEventSourceLoggerTests
             }
         }
     }
+
+    /// <summary>
+    /// A second listener on the same source, enabling it at a concrete level.
+    /// </summary>
+    private sealed class LevelEnablingListener : EventListener
+    {
+        private readonly EventLevel level;
+
+        public LevelEnablingListener(EventLevel level)
+        {
+            this.level = level;
+            this.EnableEvents(WebDriverBiDiEventSource.RaiseEvent, level);
+        }
+
+        protected override void OnEventSourceCreated(EventSource eventSource)
+        {
+            if (eventSource.Name == "WebDriverBiDi")
+            {
+                this.EnableEvents(eventSource, this.level);
+            }
+        }
+    }
+
 }

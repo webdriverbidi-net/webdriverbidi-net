@@ -100,7 +100,8 @@ longer does it either.
 The ILCompiler sets `EventSourceSupport` to `false` by default, so in a Native AOT application
 `EventSource.IsEnabled()` is permanently false. The library's `WebDriverBiDiEventSource` emits nothing, no
 `EventListener` is ever called, and the `WebDriverBiDi.Logging` bridge forwards no entries. Nothing throws
-and nothing is written to say why, so it looks simply like an absence of events. Opt back in:
+and nothing is written to say why, so it looks simply like an absence of events. The Web SDK (`Microsoft.NET.Sdk.Web`) sets it to `true` when the property is empty, so an ASP.NET Core application already has it; every other SDK needs the opt-in. Opt
+back in:
 
 ```xml
 <PropertyGroup>

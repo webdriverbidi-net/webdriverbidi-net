@@ -335,7 +335,8 @@ Always dispose EventListener instances:
    `EventSourceSupport` to `false` by default, which makes `EventSource.IsEnabled()` return false
    permanently: no events are emitted, no listener is ever called, and the
    [Microsoft.Extensions.Logging bridge](webdriverbidi-logging.md) produces nothing. Nothing throws and
-   nothing is logged about it, so it presents exactly as "no events". Opt back in from the project file:
+   nothing is logged about it, so it presents exactly as "no events". The Web SDK (`Microsoft.NET.Sdk.Web`) sets it to `true` when the property is empty, so an ASP.NET Core application already has it; every other SDK needs the opt-in. Opt back in from
+   the project file:
 
    ```xml
    <PropertyGroup>
