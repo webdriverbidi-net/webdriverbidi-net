@@ -49,7 +49,7 @@ Define results that extend `CommandResult`:
 
 [!code-csharp[Command Result](../../code/advanced/CustomModulesSamples.cs#CommandResult)]
 
-A received member needs an accessor the serializer can set. A `private set` is not one: `System.Text.Json` sets only public accessors unless `[JsonInclude]` opts a non-public one in, which is why the members above pair `[JsonInclude]` with an `internal set`. Without both, the member silently keeps its default value, and what the remote end sent for it is diverted to `AdditionalData`. The same applies to the members of your event argument types.
+A received member needs an accessor the serializer can set. A `private set` is not one: `System.Text.Json` sets only public accessors unless `[JsonInclude]` opts a non-public one in, which is why the members above pair `[JsonInclude]` with an `internal set`. Without both, the member silently keeps its default value, and what the remote end sent for it is diverted to `AdditionalData`; the [BIDI037](analyzers.md#bidi037) analyzer reports such a member. The same applies to the members of your event argument types.
 
 ### Command Method
 

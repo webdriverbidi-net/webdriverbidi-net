@@ -529,7 +529,8 @@ public record CustomEventArgs : WebDriverBiDiEventArgs
 public record CustomModulesCustomEventArgs : WebDriverBiDiEventArgs
 {
     [JsonPropertyName("data")]
-    public string Data { get; private set; } = string.Empty;
+    [JsonInclude]
+    public string Data { get; internal set; } = string.Empty;
 }
 
 /// <summary>

@@ -62,6 +62,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI034** | Warning | A `[JsonSerializable]` attribute names one of the library's protocol envelope types (`CommandResponseMessage<T>`, `EventMessage<T>`, `ErrorResponseMessage`, or `Message`). Their members are internal to the library, so a serializer context in your assembly cannot generate working metadata for them, and the transport never asks for it |
 | **BIDI035** | Error | The parameterless `EventInfo<T>.ToEventArgs<TEventArgs>()` is called with a `TEventArgs` other than `T`, including a base or derived type, which always throws `WebDriverBiDiException`. A type parameter on either side is not judged |
 | **BIDI036** | Warning | A constant connection string that is not an absolute `ws://` or `wss://` URL is passed to `StartAsync` on a `BiDiDriver` constructed in the same method without a `Transport` (or constructed in the call itself), so the default WebSocket connection rejects it with `ArgumentException`. A driver of a derived type, one given a transport, or a local that is reassigned or passed by reference is not judged |
+| **BIDI037** | Warning | A property of a `CommandResult` or `WebDriverBiDiEventArgs` type carries `[JsonPropertyName]`, but the property or its setter is not public and it is not marked `[JsonInclude]`, so deserialization never assigns it and it keeps its default value. A property with no setter, one a constructor parameter of the same name fills, or one on a type with its own `[JsonConverter]` is not judged |
 
 The numbering has three gaps, because three rules were removed: BIDI018 in 0.0.48, and BIDI011 and BIDI019 in 0.0.51. None of the three is reported by the current package. The Removed Rules section of `AnalyzerReleases.Shipped.md`, in the analyzer project in the repository, records what each of them checked.
 
@@ -429,6 +430,27 @@ await driver.StartAsync("ws://localhost:9222/session");
 
 It is reported at `Warning` rather than as an error because a test may pass a malformed string on purpose to check the exception. Only a driver of the library's own `BiDiDriver` type, constructed in the same method without a `Transport` and never reassigned, is judged: a driver given a transport may use a connection that accepts other strings.
 
+### BIDI037
+
+**Warning.** A member of a command result or event args type that the deserializer cannot assign, because the property or its setter is not public and the property is not marked `[JsonInclude]`. What the remote end sent is diverted to `AdditionalData` and the member keeps its default. See [Custom Modules — Command Results](custom-modules.md#command-results).
+
+<!-- inline-csharp: written to trip the analyzer under discussion, so it cannot compile in the snippets project -->
+```csharp
+public record ScreenshotResult : CommandResult
+{
+    // Flagged: the deserializer sees no accessor it may use.
+    [JsonPropertyName("data")]
+    public string Data { get; internal set; } = string.Empty;
+
+    // Not flagged: the attribute opts the internal setter in, which is the library's own pattern.
+    [JsonPropertyName("format")]
+    [JsonInclude]
+    public string Format { get; internal set; } = string.Empty;
+}
+```
+
+The rule judges a type that derives from `CommandResult` or `WebDriverBiDiEventArgs`. A type one of their properties names is deserialized just as surely but is not judged, because it is reached only through that property's type.
+
 ## Related Documentation
 
 | Analyzer Topic | See Also |
@@ -448,6 +470,7 @@ It is reported at `Warning` rather than as an error because a test may pass a ma
 | Connection data observers and URLs (BIDI032, BIDI036) | [Connection Management - Inspecting Protocol Traffic](connection-management.md#inspecting-protocol-traffic), [Connection Management - URL Requirements](connection-management.md#url-requirements) |
 | Serializer contexts (BIDI034) | [AOT Compatibility - Create a Source-Generated Serializer Context](aot-compatibility.md#step-2-create-a-source-generated-serializer-context) |
 | Custom module events (BIDI035) | [Custom Modules - What the invoker receives](custom-modules.md#what-the-invoker-receives) |
+| Custom result and event args members (BIDI037) | [Custom Modules - Command Results](custom-modules.md#command-results) |
 
 ## Known Limitations
 
@@ -460,6 +483,7 @@ No analyzer performs whole-program flow analysis; none of them correlate data ac
 | **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI012, BIDI014, BIDI015, BIDI020, BIDI021, BIDI024, BIDI029, BIDI030, BIDI032, BIDI036 |
 | **Per-invocation** — single call site | The analyzer examines each matching invocation in isolation (argument list, surrounding expression). There is no correlation with other statements in the method. | BIDI004, BIDI010, BIDI013, BIDI017, BIDI022, BIDI025, BIDI026, BIDI027, BIDI031, BIDI033, BIDI035 |
 | **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast, an assignment) in isolation. | BIDI008, BIDI022, BIDI028, BIDI033, BIDI034 |
+| **Per-declaration** — single property | The analyzer reads one property declaration together with the attributes, base types and constructors of the type that declares it. It sees no call site and no method body, so it cannot tell whether the type is ever deserialized. | BIDI037 |
 | **Per-invocation with handler-body descent** — call site plus the handler it passes | The analyzer inspects each matching `AddObserver(...)` call and also walks into the handler body to look for patterns. When the handler is an inline lambda, the body is right there. When the handler is passed as a method reference (e.g., `AddObserver(this.HandleEvent)`), BIDI007 and BIDI023 resolve the reference and walk that method body too, in whichever file it is declared (for a partial method, its implementing declaration), and they walk a handler held in a local initialized with a lambda as that lambda; BIDI016 inspects only inline `async` lambda handlers and does not follow method references. None of them continue transitively into further methods that the handler body calls. | BIDI007, BIDI016, BIDI023 |
 
 The five lifecycle rules that track a driver's started state — BIDI001, BIDI002, BIDI003, BIDI009 and BIDI024 — all read an `if (driver.IsStarted)` or `if (!driver.IsStarted)` test as settling that state inside each arm of the branch. Only that exact shape on a tracked local is recognized: a compound condition, a test on a driver reached through a field or a property, or a value captured into another variable first leaves the state as it was before the test, which keeps these Error-severity rules from inventing a state they cannot prove.
