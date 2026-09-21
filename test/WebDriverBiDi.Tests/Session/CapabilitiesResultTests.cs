@@ -128,7 +128,7 @@ public class CapabilitiesResultTests
         Assert.Equal("otherOS", result.PlatformName);
         Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
         Assert.NotNull(result.Proxy);
-        ManualProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
+        ManualProxyConfigurationResult proxyResult = result.Proxy.As<ManualProxyConfigurationResult>();
         Assert.Equal(ProxyType.Manual, proxyResult.ProxyType);
         Assert.Equal("http.proxy", proxyResult.HttpProxy);
         Assert.Equal("ssl.proxy", proxyResult.SslProxy);
@@ -169,7 +169,7 @@ public class CapabilitiesResultTests
         Assert.Equal("otherOS", result.PlatformName);
         Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
         Assert.NotNull(result.Proxy);
-        PacProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
+        PacProxyConfigurationResult proxyResult = result.Proxy.As<PacProxyConfigurationResult>();
         Assert.Equal(ProxyType.ProxyAutoConfig, proxyResult.ProxyType);
         Assert.Equal("proxy.autoconfig.url", proxyResult.ProxyAutoConfigUrl);
         Assert.Empty(proxyResult.AdditionalData);
@@ -204,7 +204,7 @@ public class CapabilitiesResultTests
         Assert.Equal("otherOS", result.PlatformName);
         Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
         Assert.NotNull(result.Proxy);
-        AutoDetectProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
+        AutoDetectProxyConfigurationResult proxyResult = result.Proxy.As<AutoDetectProxyConfigurationResult>();
         Assert.Equal(ProxyType.AutoDetect, proxyResult.ProxyType);
         Assert.Empty(proxyResult.AdditionalData);
         Assert.True(result.SetWindowRect);
@@ -238,7 +238,7 @@ public class CapabilitiesResultTests
         Assert.Equal("otherOS", result.PlatformName);
         Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
         Assert.NotNull(result.Proxy);
-        SystemProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+        SystemProxyConfigurationResult proxyResult = result.Proxy.As<SystemProxyConfigurationResult>();
         Assert.Equal(ProxyType.System, proxyResult.ProxyType);
         Assert.Empty(proxyResult.AdditionalData);
         Assert.True(result.SetWindowRect);
@@ -272,7 +272,7 @@ public class CapabilitiesResultTests
         Assert.Equal("otherOS", result.PlatformName);
         Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
         Assert.NotNull(result.Proxy);
-        DirectProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
+        DirectProxyConfigurationResult proxyResult = result.Proxy.As<DirectProxyConfigurationResult>();
         Assert.Equal(ProxyType.Direct, proxyResult.ProxyType);
         Assert.Empty(proxyResult.AdditionalData);
         Assert.True(result.SetWindowRect);
@@ -307,7 +307,7 @@ public class CapabilitiesResultTests
         Assert.Equal("otherOS", result.PlatformName);
         Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
         Assert.NotNull(result.Proxy);
-        SystemProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+        SystemProxyConfigurationResult proxyResult = result.Proxy.As<SystemProxyConfigurationResult>();
         Assert.Equal(ProxyType.System, proxyResult.ProxyType);
         Assert.Single(proxyResult.AdditionalData);
         Assert.True(proxyResult.AdditionalData.ContainsKey("additionalName"));

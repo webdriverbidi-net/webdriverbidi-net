@@ -27,7 +27,7 @@ public class AutoDetectProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<AutoDetectProxyConfigurationResult>(proxyResult);
-        AutoDetectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
+        AutoDetectProxyConfigurationResult proxyConfig = proxyResult.As<AutoDetectProxyConfigurationResult>();
 
         Assert.Equal(ProxyType.AutoDetect, proxyConfig.ProxyType);
         Assert.Empty(proxyConfig.AdditionalData);
@@ -56,7 +56,7 @@ public class AutoDetectProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<AutoDetectProxyConfigurationResult>(proxyResult);
-        AutoDetectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
+        AutoDetectProxyConfigurationResult proxyConfig = proxyResult.As<AutoDetectProxyConfigurationResult>();
         AutoDetectProxyConfigurationResult copy = proxyConfig with { };
         Assert.Equal(proxyConfig, copy);
     }

@@ -27,7 +27,7 @@ public class DirectProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<DirectProxyConfigurationResult>(proxyResult);
-        DirectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
+        DirectProxyConfigurationResult proxyConfig = proxyResult.As<DirectProxyConfigurationResult>();
 
         Assert.Equal(ProxyType.Direct, proxyConfig.ProxyType);
         Assert.Empty(proxyConfig.AdditionalData);
@@ -56,7 +56,7 @@ public class DirectProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<DirectProxyConfigurationResult>(proxyResult);
-        DirectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
+        DirectProxyConfigurationResult proxyConfig = proxyResult.As<DirectProxyConfigurationResult>();
         DirectProxyConfigurationResult copy = proxyConfig with { };
         Assert.Equal(proxyConfig, copy);
     }

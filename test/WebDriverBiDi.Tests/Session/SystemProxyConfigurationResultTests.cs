@@ -27,7 +27,7 @@ public class SystemProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<SystemProxyConfigurationResult>(proxyResult);
-        SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+        SystemProxyConfigurationResult proxyConfig = proxyResult.As<SystemProxyConfigurationResult>();
 
         Assert.Equal(ProxyType.System, proxyConfig.ProxyType);
         Assert.Empty(proxyConfig.AdditionalData);
@@ -59,7 +59,7 @@ public class SystemProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<SystemProxyConfigurationResult>(proxyResult);
-        SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+        SystemProxyConfigurationResult proxyConfig = proxyResult.As<SystemProxyConfigurationResult>();
         SystemProxyConfigurationResult copy = proxyConfig with { };
         Assert.Equal(proxyConfig, copy);
     }
@@ -88,7 +88,7 @@ public class SystemProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<SystemProxyConfigurationResult>(proxyResult);
-        SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+        SystemProxyConfigurationResult proxyConfig = proxyResult.As<SystemProxyConfigurationResult>();
 
         Assert.Equal(ProxyType.System, proxyConfig.ProxyType);
         Assert.Single(proxyConfig.AdditionalData);
@@ -125,7 +125,7 @@ public class SystemProxyConfigurationResultTests
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.NotNull(proxyResult);
         Assert.IsType<SystemProxyConfigurationResult>(proxyResult);
-        SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+        SystemProxyConfigurationResult proxyConfig = proxyResult.As<SystemProxyConfigurationResult>();
 
         Assert.Equal(ProxyType.System, proxyConfig.ProxyType);
         Assert.Equal(2, proxyConfig.AdditionalData.Count);

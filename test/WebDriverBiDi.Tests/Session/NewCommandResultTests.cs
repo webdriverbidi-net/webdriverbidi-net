@@ -42,7 +42,7 @@ public class NewCommandResultTests
         Assert.NotNull(result.Capabilities.Proxy);
         ProxyConfigurationResult proxyResult = result.Capabilities.Proxy;
         Assert.Equal(ProxyType.Manual, proxyResult.ProxyType);
-        Assert.Equal("http.proxy", proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>().HttpProxy);
+        Assert.Equal("http.proxy", proxyResult.As<ManualProxyConfigurationResult>().HttpProxy);
         Assert.True(result.Capabilities.SetWindowRect);
         Assert.Single(result.Capabilities.AdditionalCapabilities);
         Assert.True(result.Capabilities.AdditionalCapabilities.ContainsKey("capName"));
