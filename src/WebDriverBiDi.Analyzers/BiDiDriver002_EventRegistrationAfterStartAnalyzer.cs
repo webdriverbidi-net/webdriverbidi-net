@@ -56,6 +56,12 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
+        // Only a call to RegisterEvent is ever reported, and the walk binds every declaration it sees.
+        if (!AnalyzerSymbolHelpers.ContainsIdentifier(context.Node, "RegisterEvent"))
+        {
+            return;
+        }
+
         // Adding an observer to an ObservableEvent<T> (AddObserver) is deliberately not reported:
         // observers may be added or removed at any time, including while the driver is running. Only
         // the registration of custom protocol events (RegisterEvent) is locked once the driver has
