@@ -1550,6 +1550,98 @@ public class EventObserverTests
     }
 
     [Fact]
+    public async Task TestAsyncHandlerReturningNullTaskIsReportedAndKeepsTheCounterBalanced()
+    {
+        // A Func<T, Task> handler that returns null used to increment the in-flight counter and then
+        // throw a NullReferenceException attaching the decrement continuation, so the count stayed
+        // raised for the life of the process and the producer saw the failure. It is now treated as a
+        // handler that threw: reported to the observer-error reporter, naming the observer, and counted
+        // by a matched increment/decrement pair rather than an increment alone.
+        EventObserverErrorInfo? reportedErrorInfo = null;
+        TaskCompletionSource reporterInvokedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using TestEventListener listener = new();
+        TestEventSource testEventSource = new();
+        testEventSource.SetObserverErrorReporter(errorInfo =>
+        {
+            reportedErrorInfo = errorInfo with { };
+            reporterInvokedTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            _ => null!,
+            ObservableEventHandlerOptions.RunHandlerAsynchronously,
+            "null task observer");
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+        await reporterInvokedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(reportedErrorInfo);
+        Assert.Equal(observer.Id, reportedErrorInfo.ObserverId);
+        Assert.Equal("null task observer", reportedErrorInfo.ObserverDescription);
+        Assert.True(reportedErrorInfo.IsAsynchronousHandler);
+        InvalidOperationException exception = Assert.IsType<InvalidOperationException>(reportedErrorInfo.Exception);
+        Assert.Contains("returned a null Task", exception.Message);
+        Assert.Contains("null task observer", exception.Message);
+
+        // The failure takes the faulted-task route, so the counter is incremented and decremented as
+        // it is for any other asynchronous handler failure -- the point being that the two are paired.
+        // Before the guard, the increment happened and the decrement could not, because the
+        // continuation carrying it cannot be attached to a null task. This class runs in a serialized
+        // collection, so no other test's counter activity can appear here.
+        List<System.Diagnostics.Tracing.EventWrittenEventArgs> counterEvents = listener.WaitForEventCount("AsyncHandlerTaskCount", 2, CounterEventSafetyBound);
+        Assert.Equal(2, counterEvents.Count);
+        int incrementedValue = Assert.IsType<int>(Assert.IsType<ReadOnlyCollection<object?>>(counterEvents[0].Payload)[0]);
+        int decrementedValue = Assert.IsType<int>(Assert.IsType<ReadOnlyCollection<object?>>(counterEvents[1].Payload)[0]);
+        Assert.Equal(incrementedValue - 1, decrementedValue);
+    }
+
+    [Fact]
+    public async Task TestSynchronousHandlerReturningNullTaskIsReported()
+    {
+        // The synchronously-run path awaited the null task, so the failure was a
+        // NullReferenceException naming nothing. It now carries the observer's identity, as every
+        // other synchronous handler failure does.
+        EventObserverErrorInfo? reportedErrorInfo = null;
+        TestEventSource testEventSource = new();
+        testEventSource.SetObserverErrorReporter(errorInfo =>
+        {
+            reportedErrorInfo = errorInfo with { };
+            return Task.CompletedTask;
+        });
+
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            _ => null!,
+            ObservableEventHandlerOptions.RunHandlerSynchronously,
+            "null task observer");
+
+        // A synchronously-run handler is awaited by the notification, so the reporter has already run
+        // when this returns.
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        Assert.NotNull(reportedErrorInfo);
+        Assert.Equal(observer.Id, reportedErrorInfo.ObserverId);
+        Assert.False(reportedErrorInfo.IsAsynchronousHandler);
+        Assert.IsType<InvalidOperationException>(reportedErrorInfo.Exception);
+    }
+
+    [Fact]
+    public async Task TestSynchronousHandlerReturningNullTaskWithoutAReporterReachesTheProducer()
+    {
+        // Without a reporter there is nowhere to route a synchronously-run handler's failure, so it
+        // reaches the producer -- as a throwing handler's does -- rather than being swallowed.
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(
+            _ => null!,
+            ObservableEventHandlerOptions.RunHandlerSynchronously);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await testEventSource.RaiseTestEventAsync("myValue"));
+        Assert.Contains("returned a null Task", exception.Message);
+    }
+
+    [Fact]
     public async Task TestSynchronousHandlerDoesNotRaiseCounterEvents()
     {
         using TestEventListener listener = new();
