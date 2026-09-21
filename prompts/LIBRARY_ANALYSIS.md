@@ -462,6 +462,40 @@ move it to the Non-Issues section with the job name and script as evidence. Do n
 file "verify X exists" or "run Y to confirm Z" action items for conditions that CI
 already enforces on every PR.
 
+**Before filing a finding whose subject is a constraint the project's own code cannot lift, establish
+what in-repo change would clear it, and file the finding under the category that change belongs to.**
+A library that plugs into a host framework inherits that framework's rules: which services the host
+constructs and when, what an extension point is allowed to do, what a caller may reconfigure
+afterwards. When the behavior you object to follows from those rules, ask what could be changed *in
+this repository* to make the objection go away, and answer in one of three ways:
+* **A code change inside the project's stated constraints exists.** File it normally, in the category
+that change belongs to, and name the change.
+* **The only remedy is to describe the constraint.** The finding is a **documentation** finding: the
+defect is that the docs are silent or, worse, claim the opposite. File it under Documentation with the
+offending sentence as evidence, and deduct from Documentation alone. Do not also deduct from API
+design, code quality or any other category, because no action in those categories exists.
+* **No remedy exists at acceptable cost** — the host would have to behave differently, or the fix
+demands a dependency, an invariant or a public-API break the project has ruled out. The item is not a
+finding. Record it in the Non-Issues section as a limitation, naming the constraint and the cost, and
+deduct nothing.
+
+The three are decided by the remedy, not by where the symptom appears. A silent no-op, a surprising
+default or an ordering requirement *looks* like a defect of the design it appears in, and the reflex is
+to score the design; but a deduction that no permitted change can clear is a phantom deduction, and the
+same false positive as recommending a change that is already implemented. State the rejected remedies
+and their costs in the finding, so that a later reader can see the question was asked rather than
+assumed.
+
+Concretely, and not to be re-filed as an API-design defect: `AddWebDriverBiDi` activates the
+`EventSource`-to-`ILogger` bridge by registering an `ILoggerProvider`, which is the only activation hook
+in the two `Microsoft.Extensions.*.Abstractions` packages the logging library references. Two host
+configurations defeat it — `ClearProviders()` called after it (that method is `RemoveAll<ILoggerProvider>()`),
+and an `ILoggerFactory` replaced wholesale (Serilog's `UseSerilog()`), which constructs nothing from the
+Microsoft.Extensions.Logging pipeline at all. Nothing in this repository fixes the second; the first
+would cost two package references on a package that deliberately has two. Both are documented in the
+article, the README and the activator's XML remark, and pinned by tests. That is the complete, correct
+outcome for this class of finding.
+
 **Proxy signals do not substitute for authoritative state.** Before recommending any "remove
 / clean up / re-add / re-register X" change, verify X's status in the authoritative source
 for that change — not in a proxy. Examples: git tracking is authoritative for "is this in the
@@ -591,6 +625,16 @@ recommendation that justifies the deduction and confirm it appears in the Action
 Plan under the same artifact. If you cannot write that sentence, the score is 100. A category score below
 100 with no corresponding Action Plan entry is a scoring error of the same
 severity as a false positive finding.
+
+**Every deduction must name the in-repo change that clears it, in the category that change belongs
+to.** Before deducting, write the sentence "this score returns to 100 when <someone> changes <file> to
+<do what>." If the change is to a document, the deduction is Documentation's, whatever part of the
+library the symptom appears in. If the sentence can only be completed by changing code the project does
+not own, or by crossing a constraint the project has stated (a dependency it refuses, an invariant it
+keeps, a public-API break it has ruled out), then there is no deduction to take: the item belongs in
+Non-Issues as a limitation. Carrying a "residual" deduction after the available remedy has been applied —
+to express that the underlying behavior is still unfortunate — is a phantom deduction and a false
+positive. A category whose only remaining concern is one no permitted change can address is a 100.
 
 **Style observations do not warrant score deductions.** If the only concern about
 a category is aesthetic (file length, method length, naming-taste disagreements,
