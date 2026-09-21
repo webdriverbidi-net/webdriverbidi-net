@@ -566,8 +566,106 @@ public class EventObserverTests
     }
 
     [Fact]
-    public async Task TestWaitForCapturedTasksCompleteAsyncReturnsFalseWhenTimeExpiredDuringCapture()
+    public async Task TestWaitForCapturedTasksAsyncWithZeroTimeoutReturnsTasksAlreadyCaptured()
     {
+        // A zero timeout means "take whatever is already here", as it does for every other timeout in
+        // the library. The wait used to create an already-canceled token and hand it to the semaphore
+        // and the channel, so it could never return a task it was already holding.
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(2, TimeSpan.Zero, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, tasks.Length);
+        Assert.All(tasks, task => Assert.True(task.IsCompletedSuccessfully));
+
+        // The wait was fulfilled, so the capture session ends as it does for any other fulfilled wait.
+        Assert.False(observer.IsCapturing);
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksAsyncWithZeroTimeoutReturnsFewerTasksThanRequested()
+    {
+        // Fewer buffered than asked for is the timed-out shape of the result: what is there is
+        // returned, and the session stays open for a later call.
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(3, TimeSpan.Zero, TestContext.Current.CancellationToken);
+
+        // The single element is a Task, so its value is discarded explicitly: taking it as a value
+        // would leave a Task unawaited, and asserting on the length instead trips xUnit2013.
+        _ = Assert.Single(tasks);
+        Assert.True(observer.IsCapturing);
+        observer.StopCapturingTasks();
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksAsyncWithZeroTimeoutReturnsNothingWhenNothingIsCaptured()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+
+        observer.StartCapturingTasks();
+
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.Zero, TestContext.Current.CancellationToken);
+
+        Assert.Empty(tasks);
+        Assert.True(observer.IsCapturing);
+        observer.StopCapturingTasks();
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksAsyncWithZeroTimeoutStillHonorsACanceledToken()
+    {
+        // The fast path must not swallow the caller's cancellation: a token canceled before the call
+        // is an instruction not to do the work, not a zero-length budget.
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+
+        using CancellationTokenSource cancellationTokenSource = new();
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.Zero, cancellationTokenSource.Token));
+        observer.StopCapturingTasks();
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncWithZeroTimeoutReportsCompletedHandlers()
+    {
+        // Both phases behave the same way at zero: the capture phase takes what is buffered, and the
+        // completion phase reports what is already true rather than spending a budget it does not have.
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.Zero, TestContext.Current.CancellationToken);
+
+        Assert.True(fulfilled);
+        Assert.False(observer.IsCapturing);
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncReportsCompletedHandlersEvenWhenTimeExpiredDuringCapture()
+    {
+        // The budget is spent by the time the capture phase returns, but the handlers ran
+        // synchronously and are already complete, so there is nothing left to wait for. Answering
+        // false here would report a failure that did not happen, and the caller could not check for
+        // itself: the capture session has been ended and its tasks consumed by this call.
         TimeSpan timeout = TimeSpan.FromSeconds(1);
 
         // AutoAdvanceAmount advances the fake clock on every GetTimestamp() call.
@@ -587,8 +685,59 @@ public class EventObserverTests
 
         bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, timeout, TestContext.Current.CancellationToken);
 
+        Assert.True(fulfilled);
+        Assert.False(observer.IsCapturing);
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncReturnsFalseWhenTimeExpiredWithHandlersStillRunning()
+    {
+        // The same spent budget, but with handlers that have not finished: the completion phase has
+        // no time left to wait for them, so the wait was genuinely not fulfilled.
+        TimeSpan timeout = TimeSpan.FromSeconds(1);
+        FakeTimeProvider fakeTimeProvider = new()
+        {
+            AutoAdvanceAmount = timeout + TimeSpan.FromMilliseconds(1)
+        };
+        TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource bothFinishedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gateTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int startedCount = 0;
+        int finishedCount = 0;
+        TestEventSource testEventSource = new(fakeTimeProvider);
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            async e =>
+            {
+                if (Interlocked.Increment(ref startedCount) == 2)
+                {
+                    bothStartedTaskCompletionSource.TrySetResult();
+                }
+
+                await gateTaskCompletionSource.Task.ConfigureAwait(false);
+                if (Interlocked.Increment(ref finishedCount) == 2)
+                {
+                    bothFinishedTaskCompletionSource.TrySetResult();
+                }
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+
+        // Both handlers are parked on the gate, so the captured tasks are incomplete when the wait
+        // consults the budget.
+        await bothStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, timeout, TestContext.Current.CancellationToken);
+
         Assert.False(fulfilled);
         Assert.False(observer.IsCapturing);
+
+        // Let the handlers finish, so the in-flight counter is settled before the next test in this
+        // serialized collection runs.
+        gateTaskCompletionSource.SetResult();
+        await bothFinishedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
