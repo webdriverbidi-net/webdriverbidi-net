@@ -10,3 +10,4 @@ BIDI033 | Usage       | Error    | BiDiDriver033_ExtensionDataShadowsPropertyAna
 BIDI034 | Usage       | Warning  | BiDiDriver034_EnvelopeTypeInSerializerContextAnalyzer
 BIDI035 | Usage       | Error    | BiDiDriver035_MismatchedToEventArgsTypeAnalyzer
 BIDI036 | Usage       | Warning  | BiDiDriver036_InvalidWebSocketConnectionStringAnalyzer
+BIDI037 | Usage       | Warning  | BiDiDriver037_UnsettableDeserializedPropertyAnalyzer
