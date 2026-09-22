@@ -50,7 +50,7 @@ using WebDriverBiDi.Protocol;
 /// </code>
 /// </example>
 /// </remarks>
-public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<EventObserver<T>>
+public class EventObserver<T> : IDisposable, IAsyncDisposable
     where T : WebDriverBiDiEventArgs
 {
     private readonly object captureLock = new();
@@ -618,26 +618,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     {
         this.Dispose();
         return default;
-    }
-
-    /// <summary>
-    /// Compares this observer to another by execution priority.
-    /// </summary>
-    /// <param name="other">The <see cref="EventObserver{T}"/> to compare against.</param>
-    /// <returns>
-    /// A negative integer if this observer has higher priority than <paramref name="other"/>,
-    /// zero if they have equal priority, or a positive integer if this observer has lower priority.</returns>
-    public int CompareTo(EventObserver<T>? other)
-    {
-        if (other is null)
-        {
-            return 1;
-        }
-
-        // Cast Priority to int to prevent boxing/unboxing with CompareTo for an enum.
-        // This is a microoptimization for performance in memory allocation.
-        int priorityComparison = ((int)this.Priority).CompareTo((int)other.Priority);
-        return priorityComparison != 0 ? priorityComparison : this.Sequence.CompareTo(other.Sequence);
     }
 
     /// <summary>

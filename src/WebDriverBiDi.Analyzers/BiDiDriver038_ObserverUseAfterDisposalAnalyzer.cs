@@ -33,8 +33,8 @@ public class BiDiDriver038_ObserverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
     /// <summary>
     /// The members of <c>EventObserver&lt;T&gt;</c> that throw once the observer is disposed. The
     /// members deliberately absent do not: <c>Unobserve</c> and <c>StopCapturingTasks</c> are no-ops on
-    /// a disposed observer, <c>Dispose</c> and <c>DisposeAsync</c> are idempotent, and
-    /// <c>CompareTo</c> and <c>ToString</c> read state that outlives disposal.
+    /// a disposed observer, <c>Dispose</c> and <c>DisposeAsync</c> are idempotent, and <c>ToString</c>
+    /// reads state that outlives disposal.
     /// </summary>
     private static readonly HashSet<string> DisposalGuardedObserverMethods =
     [

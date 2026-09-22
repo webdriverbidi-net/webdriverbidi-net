@@ -28,6 +28,8 @@ using System.Runtime.ExceptionServices;
 public class ObservableEvent<T>
     where T : WebDriverBiDiEventArgs
 {
+    // Static field for each generic type, so ordering of the observers allocates no additional memory.
+    private static readonly EventObserverComparer ObserverComparer = new();
     private readonly object observerLock = new();
     private readonly Dictionary<string, EventObserver<T>> observers = [];
 
@@ -334,7 +336,7 @@ public class ObservableEvent<T>
         this.observers.Values.CopyTo(updated, 0);
 
         // Data collectors first, then by the sequence in which observers were added.
-        Array.Sort(updated);
+        Array.Sort(updated, ObserverComparer);
         Interlocked.Exchange(ref this.sortedObservers, updated);
     }
 
@@ -352,6 +354,27 @@ public class ObservableEvent<T>
             this.observers.Add(observer.Id, observer);
             this.UpdateSortedObserverList();
             return observer;
+        }
+    }
+
+    /// <summary>
+    /// Orders the observers of this event as they are notified. The keys it compares are internal to this
+    /// library and the sequence is assigned per event, so the order is meaningful only among one event's
+    /// observers; keeping it here rather than on <see cref="EventObserver{T}"/> keeps an ordering a caller
+    /// could not reason about out of the public API.
+    /// </summary>
+    private sealed class EventObserverComparer : IComparer<EventObserver<T>>
+    {
+        public int Compare(EventObserver<T>? x, EventObserver<T>? y)
+        {
+            // Cast Priority to int to prevent boxing/unboxing with CompareTo for an enum.
+            // This is a microoptimization for performance in memory allocation. Additionally,
+            // the elements of the observer array sorted with this comparer will never be null,
+            // so the null-forgiving operators below express an invariant this library owns.
+            // The interface declares the parameters as nullable, so they cannot be declared
+            // otherwise here.
+            int priorityComparison = ((int)x!.Priority).CompareTo((int)y!.Priority);
+            return priorityComparison != 0 ? priorityComparison : x.Sequence.CompareTo(y.Sequence);
         }
     }
 }
