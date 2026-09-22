@@ -73,7 +73,7 @@ Use `SimulateServiceAsync` to add or remove GATT services on a simulated device.
 
 ### Add or Remove Characteristics
 
-Use `SimulateCharacteristicAsync` to add or remove characteristics. Optionally set `CharacteristicProperties` (read, write, notify, indicate, etc.):
+Use `SimulateCharacteristicAsync` to add or remove characteristics. `CharacteristicProperties` (read, write, notify, indicate, etc.) is required when `Type` is `SimulateCharacteristicType.Add`, and must be left `null` when it is `SimulateCharacteristicType.Remove`; a conforming remote end answers with `invalid argument` otherwise:
 
 [!code-csharp[Simulate Characteristic](../../code/modules/BluetoothModuleSamples.cs#SimulateCharacteristic)]
 

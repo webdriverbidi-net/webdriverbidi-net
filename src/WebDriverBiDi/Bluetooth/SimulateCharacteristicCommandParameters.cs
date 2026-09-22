@@ -62,6 +62,12 @@ public class SimulateCharacteristicCommandParameters : CommandParameters<Simulat
     /// <summary>
     /// Gets or sets the properties of the characteristic to simulate.
     /// </summary>
+    /// <remarks>
+    /// This property is required when <see cref="Type"/> is <see cref="SimulateCharacteristicType.Add"/>, and
+    /// must be omitted when it is <see cref="SimulateCharacteristicType.Remove"/>. This property does not
+    /// validate that rule; a conforming remote end answers with an "invalid argument" error when the command
+    /// is executed.
+    /// </remarks>
     [JsonPropertyName("characteristicProperties")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CharacteristicProperties? CharacteristicProperties { get; set; }
