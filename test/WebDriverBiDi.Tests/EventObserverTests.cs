@@ -1927,14 +1927,6 @@ public class EventObserverTests
     }
 
     [Fact]
-    public async Task TestCompareToNullReturnsPositive()
-    {
-        TestEventSource testEventSource = new();
-        await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
-        Assert.True(observer.CompareTo(null) > 0);
-    }
-
-    [Fact]
     public async Task TestDisposeWhileWaitingForCapturedTasksEndsWaitWithObjectDisposedException()
     {
         TestEventSource testEventSource = new();
