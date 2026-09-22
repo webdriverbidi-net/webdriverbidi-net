@@ -64,6 +64,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI036** | Warning | A constant connection string that is not an absolute `ws://` or `wss://` URL is passed to `StartAsync` on a `BiDiDriver` constructed in the same method without a `Transport` (or constructed in the call itself), so the default WebSocket connection rejects it with `ArgumentException`. A driver of a derived type, one given a transport, or a local that is reassigned or passed by reference is not judged |
 | **BIDI037** | Warning | A property of a `CommandResult` or `WebDriverBiDiEventArgs` type carries `[JsonPropertyName]`, but the property or its setter is not public and it is not marked `[JsonInclude]`, so deserialization never assigns it and it keeps its default value. A property with no setter, one a constructor parameter of the same name fills, or one on a type with its own `[JsonConverter]` is not judged |
 | **BIDI038** | Error | A capture member of an `EventObserver<T>` (`StartCapturingTasks`, `WaitForCapturedTasksAsync`, `WaitForCapturedTasksCompleteAsync`, `GetCapturedTasks`) is called after the observer has been disposed, by `Dispose()`, `DisposeAsync()` or the implicit disposal of `using (observer) { ... }`, and throws `ObjectDisposedException`. `Unobserve()`, `StopCapturingTasks()` and a second disposal are not reported, because none of them throws on a disposed observer. Tracked per local variable through the same branches, loops and handlers as BIDI029, and reported only when the observer is disposed on every path that reaches the use |
+| **BIDI039** | Error | `GetCollectedEventData()` is called on an `EventDataCollector<T>` after the collector has been disposed, by `Dispose()`, `DisposeAsync()` or the implicit disposal of an `await using`, and throws `ObjectDisposedException`. The companion of BIDI038 for the handle `AddDataCollector` returns. `ToString()` and a second disposal are not reported, because neither throws on a disposed collector, and neither is the `Events` property, which is not a call and whose sequence ends rather than throwing. Tracked per local variable through the same branches, loops and handlers as BIDI029, and reported only when the collector is disposed on every path that reaches the use |
 
 The numbering has three gaps, because three rules were removed: BIDI018 in 0.0.48, and BIDI011 and BIDI019 in 0.0.51. None of the three is reported by the current package. The Removed Rules section of `AnalyzerReleases.Shipped.md`, in the analyzer project in the repository, records what each of them checked.
 
@@ -502,6 +503,28 @@ observer.Unobserve();
 
 The rule shares BIDI029's walk, so it judges a local observer the same way: the disposal must be certain on every path that reaches the use, an observer disposed or rebound inside a lambda or local function is not tracked at all, and only a call on the observer variable itself is judged.
 
+### BIDI039
+
+**Error.** `GetCollectedEventData()` is called on an `EventDataCollector<T>` after the collector has been disposed. Disposal unsubscribes the collector's observer from the event and completes the channel it collects into, and reading the collected data throws `ObjectDisposedException` from that point on. A collector cannot be resubscribed, so the remedy is a new collector from the event. This is the companion of BIDI038 for the handle `AddDataCollector` returns.
+
+<!-- inline-csharp: written to trip the analyzer under discussion, so it cannot compile in the snippets project -->
+```csharp
+EventDataCollector<EntryAddedEventArgs> collector = driver.Log.OnEntryAdded.AddDataCollector();
+IReadOnlyList<EntryAddedEventArgs> entries = collector.GetCollectedEventData();
+collector.Dispose();
+
+// Flagged: the collector is disposed.
+entries = collector.GetCollectedEventData();
+
+// Not flagged: neither throws on a disposed collector.
+string description = collector.ToString();
+collector.Dispose();
+```
+
+`GetCollectedEventData()` is the collector's only member that throws once it is disposed, so it is the only one reported. The `Events` sequence is not: its channel is completed by the disposal, so an `await foreach` over it simply ends, which the rule cannot express as a call in any case.
+
+The rule shares BIDI029's walk, so it judges a local collector the same way: the disposal must be certain on every path that reaches the use, a collector disposed or rebound inside a lambda or local function is not tracked at all, and only a call on the collector variable itself is judged. Written as the documentation recommends — `await using EventDataCollector<T> collector = ...` — disposal happens at the end of the scope, so nothing inside it can be reported.
+
 ## Related Documentation
 
 | Analyzer Topic | See Also |
@@ -512,7 +535,7 @@ The rule shares BIDI029's walk, so it judges a local observer the same way: the 
 | Module commands in event handlers (BIDI023) | [Common Pitfalls - Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers) |
 | Observer disposal (BIDI006, BIDI031) | [Common Pitfalls - Resource Cleanup](../common-pitfalls.md#resource-cleanup) |
 | Driver lifecycle and disposal (BIDI012) | [Error Handling - Collect Mode](error-handling.md#collect-mode) |
-| Use after disposal (BIDI029, BIDI038) | [Core Concepts - Proper Disposal](../core-concepts.md#proper-disposal) |
+| Use after disposal (BIDI029, BIDI038, BIDI039) | [Core Concepts - Proper Disposal](../core-concepts.md#proper-disposal) |
 | Nullable collections (BIDI017) | [Common Pitfalls - Null vs Empty Collections](../common-pitfalls.md#null-vs-empty-collections) |
 | Reset parameters (BIDI014) | [API Design Guide - Required vs Optional Parameters](api-design.md#required-vs-optional-parameters) |
 | Capture session ordering (BIDI020, BIDI021, BIDI030) | [Events and Observables - Event Synchronization](../events-observables.md#event-synchronization) |
@@ -531,7 +554,7 @@ No analyzer performs whole-program flow analysis; none of them correlate data ac
 
 | Scope | What the analyzer sees | Rules |
 |-------|------------------------|-------|
-| **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI012, BIDI014, BIDI015, BIDI020, BIDI021, BIDI024, BIDI029, BIDI030, BIDI032, BIDI036, BIDI038 |
+| **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI012, BIDI014, BIDI015, BIDI020, BIDI021, BIDI024, BIDI029, BIDI030, BIDI032, BIDI036, BIDI038, BIDI039 |
 | **Per-invocation** — single call site | The analyzer examines each matching invocation in isolation (argument list, surrounding expression). There is no correlation with other statements in the method. | BIDI004, BIDI010, BIDI013, BIDI017, BIDI022, BIDI025, BIDI026, BIDI027, BIDI031, BIDI033, BIDI035 |
 | **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast, an assignment) in isolation. | BIDI008, BIDI022, BIDI028, BIDI033, BIDI034 |
 | **Per-declaration** — single property | The analyzer reads one property declaration together with the attributes, base types and constructors of the type that declares it. It sees no call site and no method body, so it cannot tell whether the type is ever deserialized. | BIDI037 |
@@ -572,7 +595,7 @@ async Task TestAsync() { using EventObserver<EntryAddedEventArgs> observer = dri
 
 BIDI007 and BIDI023 are the exceptions: they will follow a single hop from an `AddObserver(...)` call to a method reference used as the handler, but they will not walk further than that. BIDI016 analyzes only inline `async` handlers; a handler passed as a method reference is not analyzed. All three treat the three spellings of an inline handler alike — a simple lambda, a parenthesized lambda, and an anonymous method written with the `delegate` keyword.
 
-Every intra-procedural rule takes its analysis roots from the statements of a method, a constructor, or a top-level program. The **state-tracking** rules — BIDI001, BIDI002, BIDI003, BIDI009, BIDI020, BIDI024, BIDI029, BIDI030 and BIDI038 — walk those statements in order and do not descend into a lambda, an anonymous method, or a local function, because that code runs when the delegate is invoked rather than where it is written. A driver or an observer *declared inside* one of those is therefore never tracked by them, and they report no diagnostic for it:
+Every intra-procedural rule takes its analysis roots from the statements of a method, a constructor, or a top-level program. The **state-tracking** rules — BIDI001, BIDI002, BIDI003, BIDI009, BIDI020, BIDI024, BIDI029, BIDI030, BIDI038 and BIDI039 — walk those statements in order and do not descend into a lambda, an anonymous method, or a local function, because that code runs when the delegate is invoked rather than where it is written. A driver or an observer *declared inside* one of those is therefore never tracked by them, and they report no diagnostic for it:
 
 <!-- inline-csharp: written to show what the analyzer does not report, so it cannot compile in the snippets project -->
 ```csharp
@@ -618,7 +641,7 @@ BIDI020, BIDI021 and BIDI030 stop tracking an observer on the same terms: one th
 - **Registering a module, event, or type info resolver after `StartAsync()` (BIDI001, BIDI002, BIDI003):** throws `InvalidOperationException`.
 - **Executing a command before `StartAsync()` or after `StopAsync()` (BIDI009):** throws `WebDriverBiDiConnectionException`, because the transport is not connected.
 - **Calling `StartAsync()` a second time (BIDI024):** throws `WebDriverBiDiConnectionException`, because the transport is already connected.
-- **Using a driver after `DisposeAsync()` (BIDI029), or an observer's capture members after disposing it (BIDI038):** throws `ObjectDisposedException`.
+- **Using a driver after `DisposeAsync()` (BIDI029), an observer's capture members after disposing it (BIDI038), or a data collector's `GetCollectedEventData()` after disposing it (BIDI039):** throws `ObjectDisposedException`.
 - **Waiting for captured tasks without a capture session (BIDI020):** throws `InvalidOperationException`.
 - **Starting a capture session while one is active (BIDI030):** throws `WebDriverBiDiException`.
 - **Adding an observer for an event that is never subscribed (BIDI005):** throws nothing. The remote end never sends the event, so the observer is never called.

@@ -15,14 +15,15 @@ your own package only if you ask it to.
 
 ## What it checks
 
-Thirty-five rules, in four groups:
+Thirty-six rules, in four groups:
 
 - **Lifecycle (Error).** Registering modules, events or type-info resolvers after `StartAsync()`; executing a
   command before `StartAsync()` or after `StopAsync()`; using a driver after `DisposeAsync()`; calling
   `StartAsync()` twice; a fire-and-forget module command; reading captured tasks that were never captured; a
   mismatched `ExecuteCommandAsync<T>` result type; registering a custom event under a built-in event name;
   asking `ToEventArgs<T>()` for a type other than the event's own; an extension-data entry named for a property
-  its object already sends; using an observer's task-capture members after the observer has been disposed.
+  its object already sends; using an observer's task-capture members, or reading a data collector's events,
+  after it has been disposed.
 - **Event handling (Warning).** Adding an observer for an event that was never subscribed; leaking an
   `EventObserver`; blocking calls and deadlock-prone synchronization inside a handler; issuing a module
   command from a handler that runs on the dispatching thread; an `async void` handler; opening a capture
