@@ -37,7 +37,6 @@ public record RegExpRemoteValue : ValueHoldingRemoteValue<RegularExpressionValue
     /// </summary>
     [JsonPropertyName("handle")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
@@ -45,7 +44,6 @@ public record RegExpRemoteValue : ValueHoldingRemoteValue<RegularExpressionValue
     /// </summary>
     [JsonPropertyName("internalId")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>

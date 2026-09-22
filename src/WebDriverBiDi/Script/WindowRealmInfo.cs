@@ -33,7 +33,6 @@ public record WindowRealmInfo : RealmInfo
     /// Gets the sandbox name for the realm.
     /// </summary>
     [JsonPropertyName("sandbox")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? Sandbox { get; internal set; }
 
@@ -41,7 +40,6 @@ public record WindowRealmInfo : RealmInfo
     /// Gets the ID of the user context containing this window realm.
     /// </summary>
     [JsonPropertyName("userContext")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? UserContextId { get; internal set; }
 }

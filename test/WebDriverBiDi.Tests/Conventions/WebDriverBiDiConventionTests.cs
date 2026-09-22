@@ -110,6 +110,19 @@ public class WebDriverBiDiConventionTests
         "WebDriverBiDi.WebDriverBiDiLogLevel",
     ];
 
+    /// <summary>
+    /// The received types whose members may still declare <see cref="JsonIgnoreCondition.WhenWritingNull"/>,
+    /// because the library serializes them as well. The sweep below cannot see that for itself: a type reached
+    /// only through an <see cref="object"/>-typed member is invisible to the walk that collects the sent types,
+    /// which follows declared property types. <c>RegularExpressionValue</c> is reached exactly that way, as the
+    /// value <c>LocalValue.RegExp</c> assigns to <c>LocalArgumentValue.Value</c>, so its condition genuinely
+    /// omits the field from an outbound payload.
+    /// </summary>
+    private static readonly HashSet<string> WriteConditionAllowList =
+    [
+        "WebDriverBiDi.Script.RegularExpressionValue",
+    ];
+
     private static readonly NullabilityInfoContext NullabilityContext = new();
 
     [Fact]
@@ -587,6 +600,66 @@ public class WebDriverBiDiConventionTests
         }
 
         Assert.True(offenders.Count == 0, $"A received type must expose collections as read-only projections, not as List<>, Dictionary<,> or HashSet<>. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
+    }
+
+    [Fact]
+    public void TestReceivedTypesDeclareNoWriteOnlyIgnoreCondition()
+    {
+        // JsonIgnoreCondition.WhenWritingNull decides whether a member is written, so on a type the library
+        // only ever reads it does nothing at all, while saying to a reader that the type is sent. The
+        // optional members of received types are otherwise bare, so an attribute that changes nothing is a
+        // copy from a sent type rather than a convention. This is the same rule
+        // TestJsonIncludeIsUsedOnlyWhereNecessary enforces for the other attribute that can be inert.
+        List<string> offenders = [];
+        foreach (Type type in GetReceivedTypes())
+        {
+            // A constructed generic that still carries a type parameter has no full name, so it can match no
+            // allow list entry; its members are examined here all the same, through the open type the walk
+            // reached, exactly as they are for every other received type.
+            if (type.FullName is string typeName && WriteConditionAllowList.Contains(typeName))
+            {
+                continue;
+            }
+
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                if (property.GetCustomAttribute<JsonIgnoreAttribute>() is { Condition: JsonIgnoreCondition.WhenWritingNull })
+                {
+                    offenders.Add(Key(property));
+                }
+            }
+        }
+
+        Assert.True(offenders.Count == 0, $"[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] governs serialization alone, so it is inert on a type the library never sends; remove it. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
+    }
+
+    [Fact]
+    public void TestWriteConditionAllowListedTypesAreReceivedAndStillDeclareIt()
+    {
+        // Keeps the exemption list honest, as the enum and list allow lists are kept: an entry that no longer
+        // names a received type, or one whose members no longer declare the condition, exempts nothing and
+        // must be removed rather than left to hide a member the rule above would otherwise catch.
+        Dictionary<string, Type> receivedTypes = GetReceivedTypes()
+            .Where(type => type.FullName is not null)
+            .ToDictionary(type => type.FullName!);
+        List<string> offenders = [];
+        foreach (string name in WriteConditionAllowList.OrderBy(name => name, StringComparer.Ordinal))
+        {
+            if (!receivedTypes.TryGetValue(name, out Type? type))
+            {
+                offenders.Add($"{name} is not a received type; remove the stale allow list entry");
+                continue;
+            }
+
+            bool declaresWriteCondition = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Any(property => property.GetCustomAttribute<JsonIgnoreAttribute>() is { Condition: JsonIgnoreCondition.WhenWritingNull });
+            if (!declaresWriteCondition)
+            {
+                offenders.Add($"{name} declares no member with JsonIgnoreCondition.WhenWritingNull; remove the stale allow list entry");
+            }
+        }
+
+        Assert.True(offenders.Count == 0, $"Every allow list entry must name a received type that the library also serializes and that still declares the condition. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
     }
 
     private static bool IsOnPrefixed(string propertyName)

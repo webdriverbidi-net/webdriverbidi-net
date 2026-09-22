@@ -47,7 +47,6 @@ public record DateRemoteValue : ValueHoldingRemoteValue<DateTime>, IObjectRefere
     /// </summary>
     [JsonPropertyName("handle")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
@@ -55,7 +54,6 @@ public record DateRemoteValue : ValueHoldingRemoteValue<DateTime>, IObjectRefere
     /// </summary>
     [JsonPropertyName("internalId")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>

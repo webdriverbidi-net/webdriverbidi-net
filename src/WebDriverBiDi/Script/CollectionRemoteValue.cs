@@ -32,7 +32,6 @@ public record CollectionRemoteValue : RemoteValue, IObjectReferenceRemoteValue, 
     /// </remarks>
     [JsonPropertyName("value")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(RemoteValueListJsonConverter))]
     public RemoteValueList? Value { get; internal set; }
 
@@ -41,7 +40,6 @@ public record CollectionRemoteValue : RemoteValue, IObjectReferenceRemoteValue, 
     /// </summary>
     [JsonPropertyName("handle")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
@@ -49,7 +47,6 @@ public record CollectionRemoteValue : RemoteValue, IObjectReferenceRemoteValue, 
     /// </summary>
     [JsonPropertyName("internalId")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>

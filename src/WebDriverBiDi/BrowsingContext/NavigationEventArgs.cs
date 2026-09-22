@@ -57,7 +57,6 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     /// Gets the ID of the user context where the navigation is taking place.
     /// </summary>
     [JsonPropertyName("userContext")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? UserContextId { get; internal set; }
 

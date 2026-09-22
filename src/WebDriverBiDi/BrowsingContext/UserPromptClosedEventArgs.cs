@@ -52,7 +52,6 @@ public record UserPromptClosedEventArgs : WebDriverBiDiEventArgs
     /// Gets the text the user entered into the prompt, if any, rather than the prompt's own message.
     /// </summary>
     [JsonPropertyName("userText")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? UserText { get; internal set; }
 

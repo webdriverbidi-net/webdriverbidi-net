@@ -32,7 +32,6 @@ public record Source
     /// Gets the browsing context ID for a script.
     /// </summary>
     [JsonPropertyName("context")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? BrowsingContextId { get; internal set; }
 
@@ -40,7 +39,6 @@ public record Source
     /// Gets the user context ID for a script.
     /// </summary>
     [JsonPropertyName("userContext")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? UserContextId { get; internal set; }
 }
