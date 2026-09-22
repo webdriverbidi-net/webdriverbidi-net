@@ -14,6 +14,12 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class FixedDoubleJsonConverter : JsonConverter<double>
 {
+#if !NETSTANDARD2_0
+    // The longest "R" representation of a finite double is 24 characters
+    // ("-1.7976931348623157E+308"), and the decimal point suffix adds two more.
+    private const int MaxFormattedLength = 32;
+#endif
+
     /// <summary>
     /// Deserializes the JSON string to a double value.
     /// </summary>
@@ -49,21 +55,39 @@ public class FixedDoubleJsonConverter : JsonConverter<double>
         // specifier produces the shortest exact representation on .NET Core 3.0 and later, but
         // is documented as unreliable for doubles on .NET Framework, so the netstandard2.0
         // build uses "G17", which always round-trips there.
+        //
+        // An integer-valued double must keep a decimal point on the wire so it reads as a JSON
+        // float rather than a JSON int. Exponent notation (e.g., 1E-30) already reads as a float
+        // and needs no suffix; the uppercase format specifiers always emit an uppercase 'E'.
 #if NETSTANDARD2_0
         string numberAsString = value.ToString("G17", CultureInfo.InvariantCulture);
-#else
-        string numberAsString = value.ToString("R", CultureInfo.InvariantCulture);
-#endif
-
-        // An integer-valued double must keep a decimal point on the wire so it reads as a
-        // JSON float rather than a JSON int. Exponent notation (e.g., 1E-30) already reads
-        // as a float and needs no suffix; the uppercase format specifiers above always emit
-        // an uppercase 'E' for the exponent.
         if (numberAsString.IndexOf('.') < 0 && numberAsString.IndexOf('E') < 0)
         {
             numberAsString += ".0";
         }
 
         writer.WriteRawValue(numberAsString);
+#else
+        // Formatting into a stack buffer, rather than to a string, keeps this converter
+        // allocation-free; every double of every command is written through it.
+        Span<byte> buffer = stackalloc byte[MaxFormattedLength];
+        if (!value.TryFormat(buffer, out int written, "R", CultureInfo.InvariantCulture))
+        {
+            // Unreachable for a finite double, which the guard above has established.
+            throw new JsonException($"The value {value} could not be formatted for serialization");
+        }
+
+        ReadOnlySpan<byte> formatted = buffer.Slice(0, written);
+        if (formatted.IndexOf((byte)'.') < 0 && formatted.IndexOf((byte)'E') < 0)
+        {
+            buffer[written] = (byte)'.';
+            buffer[written + 1] = (byte)'0';
+            formatted = buffer.Slice(0, written + 2);
+        }
+
+        // The text was produced here from a finite double, so it is valid JSON already and
+        // needs no second parse to prove it.
+        writer.WriteRawValue(formatted, skipInputValidation: true);
+#endif
     }
 }
