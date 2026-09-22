@@ -74,6 +74,177 @@ public class BiDiDriver010CodeFixProviderTests
     }
 
     /// <summary>
+    /// Tests that a command reached through a null-conditional receiver is awaited as a whole,
+    /// rather than the `await` being spliced into the middle of the conditional access.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FireAndForgetThroughConditionalAccess_IsAwaitedAsAWhole()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        driver?{|#0:.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        // Coalescing is what keeps the null receiver meaning "do nothing", as `?.` asked: awaiting the
+        // conditional access alone would throw a NullReferenceException the discarded call never had.
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        await (driver?.Session.StatusAsync() ?? Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer, BiDiDriver010_FireAndForgetAsyncModuleCommandCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a chain of null-conditional accesses is awaited as a whole, so that the fix climbs
+    /// past every conditional access the call is the right-hand side of, not just the innermost.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FireAndForgetThroughChainedConditionalAccess_IsAwaitedAsAWhole()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        driver?.Session?{|#0:.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        await (driver?.Session?.StatusAsync() ?? Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer, BiDiDriver010_FireAndForgetAsyncModuleCommandCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a <see cref="ValueTask"/>-returning operation reached through a null-conditional
+    /// receiver coalesces to <c>default</c>, since its conditional access yields a nullable value type
+    /// that <c>Task.CompletedTask</c> could not stand in for.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FireAndForgetValueTaskThroughConditionalAccess_CoalescesToDefault()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(Transport transport)
+                    {
+                        transport?{|#0:.DisposeAsync()|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(Transport transport)
+                    {
+                        await (transport?.DisposeAsync() ?? default);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("DisposeAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer, BiDiDriver010_FireAndForgetAsyncModuleCommandCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that no fix is offered in a synchronous method, where <c>await</c> would not compile.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
