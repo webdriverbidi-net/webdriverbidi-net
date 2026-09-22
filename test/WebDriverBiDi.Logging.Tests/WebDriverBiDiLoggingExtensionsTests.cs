@@ -273,6 +273,35 @@ public class WebDriverBiDiLoggingExtensionsTests
         Assert.Single(services, descriptor => descriptor.ServiceType == typeof(ILoggerProvider) && descriptor.ImplementationType?.Name == "WebDriverBiDiLoggerActivator");
     }
 
+    [Fact]
+    public void AddWebDriverBiDi_ForwardsUnderTheDocumentedLogCategory()
+    {
+        // The article, the package README and the observability page all tell users to filter on
+        // "WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger". That string comes from resolving
+        // ILogger<WebDriverBiDiEventSourceLogger> out of the real factory, so every sibling test that
+        // registers a fake ILogger<WebDriverBiDiEventSourceLogger> shadows it. This test registers no
+        // fake, leaving the factory to assign the category, and pins the documented value.
+        ServiceCollection services = new();
+        CategoryCapturingLoggerProvider capturingProvider = new();
+        services.AddLogging(b =>
+        {
+            b.SetMinimumLevel(LogLevel.Trace);
+            b.AddProvider(capturingProvider);
+            b.AddWebDriverBiDi(EventLevel.Verbose);
+        });
+
+        using (ServiceProvider provider = services.BuildServiceProvider())
+        {
+            _ = provider.GetRequiredService<ILoggerFactory>().CreateLogger("log-category-test");
+
+            WebDriverBiDiEventSource.RaiseEvent.TransportStarted("conn-1", "session-1");
+        }
+
+        Assert.Contains(
+            capturingProvider.Entries,
+            entry => entry.Category == "WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger" && entry.EventName == "TransportStarted");
+    }
+
     /// <summary>
     /// Minimal ILoggingBuilder implementation for testing.
     /// </summary>
@@ -310,4 +339,66 @@ public class WebDriverBiDiLoggingExtensionsTests
         }
     }
 
+    /// <summary>
+    /// An <see cref="ILoggerProvider"/> that records the category name each logger it hands out was
+    /// created with, alongside the events written through that logger.
+    /// </summary>
+    private sealed class CategoryCapturingLoggerProvider : ILoggerProvider
+    {
+        private readonly List<CapturedEntry> entries = new();
+
+        public IReadOnlyList<CapturedEntry> Entries
+        {
+            get
+            {
+                lock (this.entries)
+                {
+                    return this.entries.ToList();
+                }
+            }
+        }
+
+        public ILogger CreateLogger(string categoryName) => new CategoryCapturingLogger(this, categoryName);
+
+        public void Dispose()
+        {
+        }
+
+        private void Record(string categoryName, EventId eventId)
+        {
+            lock (this.entries)
+            {
+                this.entries.Add(new CapturedEntry(categoryName, eventId.Name));
+            }
+        }
+
+        /// <summary>
+        /// Represents one captured write, with the category of the logger that made it.
+        /// </summary>
+        /// <param name="Category">The category name the logger was created with.</param>
+        /// <param name="EventName">The name of the event that was written.</param>
+        public sealed record CapturedEntry(string Category, string? EventName);
+
+        private sealed class CategoryCapturingLogger : ILogger
+        {
+            private readonly CategoryCapturingLoggerProvider owner;
+            private readonly string categoryName;
+
+            public CategoryCapturingLogger(CategoryCapturingLoggerProvider owner, string categoryName)
+            {
+                this.owner = owner;
+                this.categoryName = categoryName;
+            }
+
+            public IDisposable? BeginScope<TState>(TState state)
+                where TState : notnull => null;
+
+            public bool IsEnabled(LogLevel logLevel) => true;
+
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            {
+                this.owner.Record(this.categoryName, eventId);
+            }
+        }
+    }
 }
