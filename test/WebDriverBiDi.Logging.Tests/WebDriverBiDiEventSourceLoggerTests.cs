@@ -128,7 +128,7 @@ public class WebDriverBiDiEventSourceLoggerTests
             WebDriverBiDiEventSource.RaiseEvent.TransportStopped("conn-1", "session-1", "Normal shutdown");
         }
 
-        // The template is "Transport stopped: {0}".
+        // The template is "[{0}/{1}] Transport stopped: {2}".
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "TransportStopped");
         Assert.Equal("[conn-1/session-1] Transport stopped: Normal shutdown", entry.Message);
     }
@@ -142,7 +142,7 @@ public class WebDriverBiDiEventSourceLoggerTests
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-456", "session-1", "ws://example.com");
         }
 
-        // The EventSource template "Opening connection {0} to {1}" is carried with its holes named after
+        // The EventSource template "[{0}/{1}] Opening connection to {2}" is carried with its holes named after
         // the payload properties, so a template-aware provider can bind each hole to a state property.
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
         Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
