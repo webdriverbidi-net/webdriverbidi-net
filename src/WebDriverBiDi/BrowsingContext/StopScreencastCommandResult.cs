@@ -29,7 +29,8 @@ public record StopScreencastCommandResult : CommandResult
     public string Path { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets an error message if the screencast could not be ended cleanly.
+    /// Gets a message describing a failure to write the screencast file while recording, which stopped the
+    /// recording early; <see langword="null"/> when the file was written without error.
     /// </summary>
     [JsonPropertyName("error")]
     [JsonInclude]

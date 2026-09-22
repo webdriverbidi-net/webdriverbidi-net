@@ -461,8 +461,9 @@ public class PerformanceMonitor : EventListener
     {
         if (eventData.EventName == "CommandCompleted")
         {
-            string method = eventData.Payload?[1]?.ToString() ?? "unknown";
-            long elapsed = Convert.ToInt64(eventData.Payload?[2]);
+            // Payload is [connectionId, sessionId, commandId, method, elapsedMilliseconds].
+            string method = eventData.Payload?[3]?.ToString() ?? "unknown";
+            long elapsed = Convert.ToInt64(eventData.Payload?[4]);
 
             if (!timings.ContainsKey(method))
             {
@@ -561,11 +562,12 @@ public class CustomWebDriverEventListener : EventListener
         // Custom processing here
         if (eventData.EventName == "CommandCompleted")
         {
-            long elapsedMs = Convert.ToInt64(eventData.Payload?[2]);
+            // Payload is [connectionId, sessionId, commandId, method, elapsedMilliseconds].
+            long elapsedMs = Convert.ToInt64(eventData.Payload?[4]);
             if (elapsedMs > 1000)
             {
                 logger.LogWarning("Slow command detected: {Method} took {ElapsedMs}ms",
-                    eventData.Payload?[1], elapsedMs);
+                    eventData.Payload?[3], elapsedMs);
             }
         }
     }
