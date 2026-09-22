@@ -18,6 +18,9 @@
 #   improvements and small regressions render as ✅
 #   missing-from-baseline benchmarks render as (new)
 #
+# The report opens with a warning when the run and the baseline record different
+# ProcessorName values, because mean times are not comparable across CPUs.
+#
 # Exit codes:
 #   0 — comparison ran; the report is advisory, so a benchmark regression does
 #       not fail the script. Callers decide policy from the report contents.
@@ -173,6 +176,53 @@ render_class_table() {
 
   echo ""
 }
+
+# Collect the distinct processor names recorded in a set of BenchmarkDotNet JSON
+# files, one per line. A file without the field, or one jq cannot parse, simply
+# contributes nothing.
+collect_processor_names() {
+  local file
+  for file in "$@"; do
+    [ -f "$file" ] || continue
+    jq -r '.HostEnvironmentInfo.ProcessorName // empty' "$file" 2>/dev/null || true
+  done | sort -u | paste -sd ', ' -
+}
+
+# Warn when the run and the baseline were measured on different CPUs. GitHub-hosted
+# runners of the same image are not the same machine: the pool mixes CPU models, and
+# the one a job draws is not something the workflow chooses. Absolute times are not
+# comparable across them, so without this the deltas below invite a hunt for a
+# regression that is really a change of hardware.
+render_hardware_banner() {
+  local current_cpus baseline_cpus
+  current_cpus=$(collect_processor_names "$results_dir"/*-report-full-compressed.json)
+  baseline_cpus=$(collect_processor_names "$baselines_dir"/ci-baseline-*.json)
+
+  # Say nothing when either side records no CPU at all: an older baseline predating
+  # the field is not evidence of a mismatch.
+  if [ -z "$current_cpus" ] || [ -z "$baseline_cpus" ]; then
+    return
+  fi
+
+  if [ "$current_cpus" = "$baseline_cpus" ]; then
+    return
+  fi
+
+  echo "> [!WARNING]"
+  echo "> **This run and the baseline were measured on different CPUs, so the mean-time deltas below are not a like-for-like comparison.**"
+  echo ">"
+  echo "> | | CPU |"
+  echo "> |---|---|"
+  echo "> | Baseline | \`$baseline_cpus\` |"
+  echo "> | This run | \`$current_cpus\` |"
+  echo ">"
+  echo "> A swing of tens of percent in either direction is possible from the hardware alone, and it need not move every benchmark the same way."
+  echo "> The **Allocated** column is hardware-independent and remains directly comparable, as is any benchmark that moved against the run's general trend."
+  echo "> Re-seed the baseline (see REPORTING.md) to restore a like-for-like comparison."
+  echo ""
+}
+
+render_hardware_banner
 
 # Main loop: one section per benchmark class file under results_dir.
 # Assumes filenames of the form

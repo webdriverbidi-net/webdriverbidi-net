@@ -50,6 +50,12 @@ variance. Treat sub-20% changes on a single benchmark as noise; treat a
 broad shift (e.g., every benchmark moves ~20% in the same direction) as
 more likely to be real.
 
+A broad shift can also mean the run and the baseline were measured on
+different CPUs, which the pool behind a single runner image mixes freely.
+The comparator opens its report with a warning when it detects that, and
+the deltas below such a warning are not a like-for-like comparison. The
+`Allocated` column is hardware-independent either way.
+
 ## Baselines
 
 ### What is the baseline?
@@ -77,6 +83,13 @@ that compares against it (`ubuntu-latest`).** Absolute benchmark numbers are
 hardware-dependent; a baseline produced on a developer laptop would make
 every subsequent CI run look like a dramatic regression. A dedicated
 workflow enforces this.
+
+The image is not the whole story: the `ubuntu-latest` pool spans more than
+one CPU model, and which one a job draws is not something the workflow can
+choose. Two runs of the same image can therefore differ by tens of percent
+on mean time with no code change at all. The comparator warns when the run's
+`ProcessorName` differs from the baseline's, so the report says so rather
+than leaving it to be inferred.
 
 ### Seeding the baseline (first-time setup)
 
@@ -113,6 +126,8 @@ Update the baseline when:
 - The CI runner image changes (e.g., GitHub retires `ubuntu-22.04` and
   promotes `ubuntu-24.04`), which can shift absolute numbers across the
   board.
+- The comparator reports a CPU mismatch, and the baseline's CPU is no longer
+  one the pool commonly hands out.
 - The benchmark set itself has changed substantially: benchmarks added,
   removed, or renamed. New benchmarks render as `(new)` until the baseline is
   refreshed; a rename produces both a `(new)` row for the new name and a
