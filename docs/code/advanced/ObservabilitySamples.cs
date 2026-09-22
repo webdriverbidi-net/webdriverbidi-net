@@ -228,19 +228,21 @@ public static class ObservabilitySamples
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Logs will show:
-        // connectionId is Connection.Id, a GUID string assigned when the connection is created.
+        // Every message is prefixed with [connectionId/sessionId]. connectionId is Connection.Id, a GUID
+        // assigned when the connection is created; sessionId identifies the transport session, a new GUID
+        // for each connect, left empty on ConnectionOpening, which is raised before that session exists.
         // info: WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger[1]
-        //       Opening connection 3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05 to ws://localhost:9515/session/YOUR-SESSION-ID
+        //       [3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05/] Opening connection to ws://localhost:9515/session/YOUR-SESSION-ID
         // info: WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger[2]
-        //       Connection 3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05 opened to ws://localhost:9515/session/YOUR-SESSION-ID
+        //       [3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05/7b41e0d2-9c35-4a18-8f60-2d7e1b9a3c44] Connection opened to ws://localhost:9515/session/YOUR-SESSION-ID
         // info: WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger[17]
-        //       Transport started
+        //       [3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05/7b41e0d2-9c35-4a18-8f60-2d7e1b9a3c44] Transport started
 
         await driver.Session.StatusAsync();
 
         // Logs will show:
         // info: WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger[7]
-        //       Command 1 (session.status) completed in 42ms
+        //       [3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05/7b41e0d2-9c35-4a18-8f60-2d7e1b9a3c44] Command 1 (session.status) completed in 42ms
         // (CommandSending is a Verbose-level event and is not emitted at EventLevel.Informational;
         //  TransportStarted is raised once, when the transport connects, and is already shown above)
         #endregion

@@ -43,9 +43,9 @@ public static class SerilogObservabilitySamples
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Serilog renders the message from the event's message template. The properties that template uses
-        // (commandId, method, elapsedMilliseconds) are captured on the log event, so {Properties} does not
-        // repeat them:
-        // [12:34:56 INF] Command 1 (session.status) completed in 42ms {"EventId": {"Id": 7, "Name": "CommandCompleted"}, "EventName": "CommandCompleted", "EventSource": "WebDriverBiDi", "SourceContext": "WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger"}
+        // (connectionId, sessionId, commandId, method, elapsedMilliseconds) are captured on the log event,
+        // so {Properties} does not repeat them:
+        // [12:34:56 INF] [3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05/7b41e0d2-9c35-4a18-8f60-2d7e1b9a3c44] Command 1 (session.status) completed in 42ms {"EventId": {"Id": 7, "Name": "CommandCompleted"}, "EventName": "CommandCompleted", "EventSource": "WebDriverBiDi", "SourceContext": "WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger"}
         #endregion
     }
 }

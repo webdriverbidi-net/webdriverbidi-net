@@ -151,10 +151,13 @@ registered via `AddWebDriverBiDi()`:
    The bridge maps the `EventLevel` to a `LogLevel`, collects all payload name/value pairs as
    structured log state, and calls `ILogger.Log`.
 3. The log message is rendered from the message template the `EventSource` declares for the event: for
-   example, `Command 1 (session.status) completed in 42ms` for `CommandCompleted`. The template's holes
-   are positional (`{0}`), so the bridge renames each after the payload property it refers to and adds
-   the result to the state as `{OriginalFormat}`, the key that template-aware providers such as Serilog
-   read. An event that declares no template is logged as `EventName, key1=value1, key2=value2, …`.
+   example, `[<connectionId>/<sessionId>] Command 1 (session.status) completed in 42ms` for
+   `CommandCompleted`. Every template but `AsyncHandlerTaskCount` opens with that identifier pair, and
+   the session identifier is empty on `ConnectionOpening`, which is raised before the transport session
+   exists. The template's holes are positional (`{0}`), so the bridge renames each after the payload
+   property it refers to and adds the result to the state as `{OriginalFormat}`, the key that
+   template-aware providers such as Serilog read. An event that declares no template is logged as
+   `EventName, key1=value1, key2=value2, …`.
 
 Because `OnEventWritten` is synchronous, avoid blocking operations inside logging providers
 attached to this bridge. Queue events for asynchronous processing if the provider is slow.
