@@ -12,3 +12,4 @@ BIDI035 | Usage       | Error    | BiDiDriver035_MismatchedToEventArgsTypeAnalyz
 BIDI036 | Usage       | Warning  | BiDiDriver036_InvalidWebSocketConnectionStringAnalyzer
 BIDI037 | Usage       | Warning  | BiDiDriver037_UnsettableDeserializedPropertyAnalyzer
 BIDI038 | Usage       | Error    | BiDiDriver038_ObserverUseAfterDisposalAnalyzer
+BIDI039 | Usage       | Error    | BiDiDriver039_DataCollectorUseAfterDisposalAnalyzer
