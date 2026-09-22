@@ -1,4 +1,4 @@
-namespace WebDriverBiDi.Session;
+﻿namespace WebDriverBiDi.Session;
 
 using System.Reflection;
 using System.Text.Json;
@@ -316,6 +316,37 @@ public class CapabilitiesResultTests
         Assert.True(result.SetWindowRect);
         Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
         Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
+    }
+
+    [Fact]
+    public void TestCanDeserializeWithProxyContainingNullAdditionalData()
+    {
+        // The serializer stores a JSON null in an object-valued extension data
+        // dictionary, as a proxy configuration declares, as a CLR null.
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "system",
+                          "nullName": null,
+                          "additionalName": "additionalValue"
+                        },
+                        "setWindowRect": true
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
+        Assert.NotNull(result);
+
+        Assert.NotNull(result.Proxy);
+        SystemProxyConfigurationResult proxyResult = result.Proxy.As<SystemProxyConfigurationResult>();
+        Assert.Equal(2, proxyResult.AdditionalData.Count);
+        Assert.True(proxyResult.AdditionalData.ContainsKey("nullName"));
+        Assert.Null(proxyResult.AdditionalData["nullName"]);
+        Assert.Equal("additionalValue", proxyResult.AdditionalData["additionalName"]);
     }
 
     [Fact]
