@@ -33,6 +33,5 @@ public record StopScreencastCommandResult : CommandResult
     /// </summary>
     [JsonPropertyName("error")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Error { get; internal set; }
 }

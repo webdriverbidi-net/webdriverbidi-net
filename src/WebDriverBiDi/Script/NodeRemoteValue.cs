@@ -31,7 +31,6 @@ public record NodeRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeS
     /// </remarks>
     [JsonPropertyName("value")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public NodeProperties? Value { get; internal set; }
 
     /// <summary>
@@ -39,7 +38,6 @@ public record NodeRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeS
     /// </summary>
     [JsonPropertyName("handle")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
@@ -47,7 +45,6 @@ public record NodeRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeS
     /// </summary>
     [JsonPropertyName("internalId")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>
@@ -55,7 +52,6 @@ public record NodeRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeS
     /// </summary>
     [JsonPropertyName("sharedId")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SharedId { get; internal set; }
 
     /// <summary>

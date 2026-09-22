@@ -105,7 +105,6 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     /// Gets or sets the list of intercepts for this request, if any.
     /// </summary>
     [JsonPropertyName("intercepts")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     [JsonConverter(typeof(NonNullElementListJsonConverter<string>))]
     internal List<string>? SerializableIntercepts { get; set; }

@@ -41,7 +41,6 @@ public record FileDialogOpenedEventArgs : WebDriverBiDiEventArgs
     /// Gets the ID of the user context for which the file dialog was opened.
     /// </summary>
     [JsonPropertyName("userContext")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? UserContextId { get; internal set; }
 
@@ -52,6 +51,5 @@ public record FileDialogOpenedEventArgs : WebDriverBiDiEventArgs
     /// </summary>
     [JsonPropertyName("element")]
     [JsonInclude]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SharedReferenceInfo? Element { get; internal set; }
 }

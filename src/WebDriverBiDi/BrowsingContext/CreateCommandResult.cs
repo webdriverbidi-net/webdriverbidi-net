@@ -32,7 +32,6 @@ public record CreateCommandResult : CommandResult
     /// Gets the ID of the user context where the browsing context is created.
     /// </summary>
     [JsonPropertyName("userContext")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? UserContextId { get; internal set; }
 }

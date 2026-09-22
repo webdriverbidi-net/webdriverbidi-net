@@ -41,7 +41,6 @@ public record NodeProperties
     /// Gets the value of the node.
     /// </summary>
     [JsonPropertyName("nodeValue")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? NodeValue { get; internal set; }
 
@@ -49,7 +48,6 @@ public record NodeProperties
     /// Gets the local name of the node.
     /// </summary>
     [JsonPropertyName("localName")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? LocalName { get; internal set; }
 
@@ -57,7 +55,6 @@ public record NodeProperties
     /// Gets the namespace URI of the node.
     /// </summary>
     [JsonPropertyName("namespaceURI")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? NamespaceUri { get; internal set; }
 
@@ -100,7 +97,6 @@ public record NodeProperties
     /// Gets the mode of this node when it is a shadow root; otherwise null.
     /// </summary>
     [JsonPropertyName("mode")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public ShadowRootMode? Mode { get; internal set; }
 
@@ -108,7 +104,6 @@ public record NodeProperties
     /// Gets the RemoteValue representing the shadow root of this node, if available.
     /// </summary>
     [JsonPropertyName("shadowRoot")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     [JsonConverter(typeof(NestedValueJsonConverter<NodeRemoteValue>))]
     public NodeRemoteValue? ShadowRoot { get; internal set; }
@@ -117,7 +112,6 @@ public record NodeProperties
     /// Gets or sets the list of child nodes for serialization purposes.
     /// </summary>
     [JsonPropertyName("children")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     [JsonConverter(typeof(NonNullElementListJsonConverter<NodeRemoteValue>))]
     internal List<NodeRemoteValue>? SerializableChildren { get; set; }
@@ -126,7 +120,6 @@ public record NodeProperties
     /// Gets or sets the dictionary of attributes of this node for serialization purposes.
     /// </summary>
     [JsonPropertyName("attributes")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     [JsonConverter(typeof(NonNullValueDictionaryJsonConverter<string>))]
     internal Dictionary<string, string>? SerializableAttributes { get; set; }
