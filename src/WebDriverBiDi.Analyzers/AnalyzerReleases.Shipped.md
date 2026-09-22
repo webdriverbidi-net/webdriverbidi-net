@@ -95,3 +95,18 @@ Rule ID | Category    | Severity | Notes
 BIDI029 | Usage       | Error    | BiDiDriver029_DriverUseAfterDisposalAnalyzer
 BIDI030 | Usage       | Warning  | BiDiDriver030_DuplicateCaptureSessionAnalyzer
 BIDI031 | Design      | Info     | BiDiDriver031_DiscardedObserverResultAnalyzer
+
+## Release 0.0.62
+
+### New Rules
+
+Rule ID | Category    | Severity | Notes
+--------|-------------|----------|--------------------
+BIDI032 | Usage       | Warning  | BiDiDriver032_ConnectionDataReceivedObserverAnalyzer
+BIDI033 | Usage       | Error    | BiDiDriver033_ExtensionDataShadowsPropertyAnalyzer
+BIDI034 | Usage       | Warning  | BiDiDriver034_EnvelopeTypeInSerializerContextAnalyzer
+BIDI035 | Usage       | Error    | BiDiDriver035_MismatchedToEventArgsTypeAnalyzer
+BIDI036 | Usage       | Warning  | BiDiDriver036_InvalidWebSocketConnectionStringAnalyzer
+BIDI037 | Usage       | Warning  | BiDiDriver037_UnsettableDeserializedPropertyAnalyzer
+BIDI038 | Usage       | Error    | BiDiDriver038_ObserverUseAfterDisposalAnalyzer
+BIDI039 | Usage       | Error    | BiDiDriver039_DataCollectorUseAfterDisposalAnalyzer
