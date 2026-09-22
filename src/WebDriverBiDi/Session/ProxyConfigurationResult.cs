@@ -1,4 +1,4 @@
-// <copyright file="ProxyConfigurationResult.cs" company="WebDriverBiDi.NET Committers">
+﻿// <copyright file="ProxyConfigurationResult.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Session;
 
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using WebDriverBiDi.Internal;
 
 /// <summary>
@@ -14,11 +13,6 @@ using WebDriverBiDi.Internal;
 /// </summary>
 public record ProxyConfigurationResult
 {
-    // A JsonElement whose ValueKind is Null, substituted for entries the serializer
-    // stored as CLR null (see ConvertIncomingExtensionData). The backing document is
-    // deliberately never disposed; this is a single, process-lifetime allocation.
-    private static readonly JsonElement NullJsonElement = JsonDocument.Parse("null").RootElement;
-
     private readonly ProxyConfiguration proxy;
 
     /// <summary>
@@ -45,7 +39,7 @@ public record ProxyConfigurationResult
         {
             if (this.proxy.AdditionalData.Count > 0 && field.Count == 0)
             {
-                field = JsonConverterUtilities.ConvertIncomingExtensionData(this.ConvertIncomingExtensionData());
+                field = JsonConverterUtilities.ConvertIncomingExtensionData(this.proxy.AdditionalData);
             }
 
             return field;
@@ -102,23 +96,5 @@ public record ProxyConfigurationResult
         where T : ProxyConfiguration
     {
         return (T)this.proxy;
-    }
-
-    private Dictionary<string, JsonElement> ConvertIncomingExtensionData()
-    {
-        // Every value in the deserialized ProxyConfiguration's extension data is a
-        // JsonElement, with one exception: for an object-typed extension dictionary,
-        // the serializer stores a JSON null value as a CLR null rather than as a
-        // JsonElement of kind Null. The protocol's Extensible values include null,
-        // so restore such entries as null elements. Any other non-JsonElement value
-        // is impossible for a deserialized instance, so the cast below is expected
-        // to always succeed; if it does not, it will throw.
-        Dictionary<string, JsonElement> convertedData = [];
-        foreach (KeyValuePair<string, object?> pair in this.proxy.AdditionalData)
-        {
-            convertedData[pair.Key] = pair.Value is null ? NullJsonElement : (JsonElement)pair.Value;
-        }
-
-        return convertedData;
     }
 }

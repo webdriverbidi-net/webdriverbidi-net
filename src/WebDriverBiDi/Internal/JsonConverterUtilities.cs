@@ -1,4 +1,4 @@
-// <copyright file="JsonConverterUtilities.cs" company="WebDriverBiDi.NET Committers">
+﻿// <copyright file="JsonConverterUtilities.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -70,6 +70,30 @@ internal static class JsonConverterUtilities
         foreach (KeyValuePair<string, JsonElement> entry in overflowData)
         {
             receivedData[entry.Key] = ProcessJsonElement(entry.Value);
+        }
+
+        return new ReceivedDataDictionary(receivedData);
+    }
+
+    /// <summary>
+    /// Converts overflow JSON data of a type whose extension data is object-valued, as a type that
+    /// is sent as well as received must declare it, into appropriate read-only .NET data structures.
+    /// </summary>
+    /// <param name="overflowData">A dictionary containing JsonElements to be converted.</param>
+    /// <returns>A read-only, immutable data structure of .NET objects.</returns>
+    /// <remarks>
+    /// Deserializing into an object-valued extension dictionary stores a JSON null as a CLR null,
+    /// where deserializing into a JsonElement-valued one stores it as a JsonElement of kind Null.
+    /// The protocol's Extensible values include null, so restore such entries as null. Any other
+    /// non-JsonElement value is impossible for a deserialized instance, so the cast below is
+    /// expected to always succeed; if it does not, it will throw.
+    /// </remarks>
+    public static ReceivedDataDictionary ConvertIncomingExtensionData(Dictionary<string, object?> overflowData)
+    {
+        Dictionary<string, object?> receivedData = [];
+        foreach (KeyValuePair<string, object?> entry in overflowData)
+        {
+            receivedData[entry.Key] = entry.Value is null ? null : ProcessJsonElement((JsonElement)entry.Value);
         }
 
         return new ReceivedDataDictionary(receivedData);
