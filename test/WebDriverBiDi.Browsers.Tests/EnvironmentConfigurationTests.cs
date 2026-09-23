@@ -12,6 +12,7 @@ public class EnvironmentConfigurationTests
 {
     private const string BrowsersPathVariableName = "WEBDRIVERBIDI_BROWSERS_PATH";
     private const string SkipDownloadVariableName = "WEBDRIVERBIDI_SKIP_DOWNLOAD";
+    private const string DownloadManifestVariableName = "WEBDRIVERBIDI_DOWNLOAD_MANIFEST";
 
     [Fact]
     public void BrowsersPathVariableSetsCacheDirectory()
@@ -49,6 +50,34 @@ public class EnvironmentConfigurationTests
         using VariableOverride variable = new(SkipDownloadVariableName, value);
 
         Assert.Equal(expected, new BrowserDownloadOptions().SkipDownload);
+    }
+
+    [Fact]
+    public void DownloadManifestVariableAcceptsUrl()
+    {
+        using VariableOverride variable = new(DownloadManifestVariableName, "https://mirror.example/manifest.json");
+
+        Assert.Equal(new Uri("https://mirror.example/manifest.json"), new BrowserDownloadOptions().ManifestUrl);
+    }
+
+    [Fact]
+    public void DownloadManifestVariableAcceptsRelativeFilePath()
+    {
+        using VariableOverride variable = new(DownloadManifestVariableName, Path.Combine("mirror", "manifest.json"));
+
+        Uri? manifestUrl = new BrowserDownloadOptions().ManifestUrl;
+
+        Assert.NotNull(manifestUrl);
+        Assert.True(manifestUrl.IsFile);
+        Assert.Equal(Path.GetFullPath(Path.Combine("mirror", "manifest.json")), manifestUrl.LocalPath);
+    }
+
+    [Fact]
+    public void ExplicitManifestUrlOverridesVariable()
+    {
+        using VariableOverride variable = new(DownloadManifestVariableName, "https://mirror.example/manifest.json");
+
+        Assert.Null(new BrowserDownloadOptions() { ManifestUrl = null }.ManifestUrl);
     }
 
     [Fact]

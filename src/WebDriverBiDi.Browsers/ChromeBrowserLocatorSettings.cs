@@ -89,6 +89,11 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     public override string DriverVersionRequest => this.Milestone is int milestone ? $"{MilestoneVersionPrefix}{milestone}" : $"{LatestVersionString}-{this.Channel}";
 
     /// <summary>
+    /// Gets a value indicating whether each chromedriver version drives only the Chrome version of the same number, which it does.
+    /// </summary>
+    public override bool DriverVersionFollowsBrowser => true;
+
+    /// <summary>
     /// Gets a message explaining that Windows on Arm runs the x64 build of Chrome under emulation, as
     /// Chrome for Testing publishes no Arm build for Windows.
     /// </summary>

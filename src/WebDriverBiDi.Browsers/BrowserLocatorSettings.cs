@@ -174,6 +174,11 @@ internal abstract class BrowserLocatorSettings
     public virtual string DriverVersionRequest => LatestVersionString;
 
     /// <summary>
+    /// Gets a value indicating whether each driver version drives only the browser version of the same number.
+    /// </summary>
+    public virtual bool DriverVersionFollowsBrowser => false;
+
+    /// <summary>
     /// Gets the description of the browser location behavior, which is used for logging and user-facing messages.
     /// </summary>
     public virtual string BrowserLocationBehaviorDescription

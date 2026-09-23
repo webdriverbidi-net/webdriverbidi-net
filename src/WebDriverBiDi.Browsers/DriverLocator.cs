@@ -145,7 +145,7 @@ public class DriverLocator
             }
 
             this.ThrowIfDownloadSkipped($"{this.settings.DriverName} {requiredVersion}");
-            DriverDownloadInfo requiredDownloadInfo = await this.settings.GetMatchingDriverDownloadInfo(browserVersion, cancellationToken).ConfigureAwait(false);
+            DriverDownloadInfo requiredDownloadInfo = await this.GetDriverDownloadInfoAsync(browserVersion, cancellationToken).ConfigureAwait(false);
             return await this.InstallDriverAsync(cache, requiredDownloadInfo, cancellationToken).ConfigureAwait(false);
         }
 
@@ -163,7 +163,7 @@ public class DriverLocator
         DriverDownloadInfo downloadInfo;
         try
         {
-            downloadInfo = await this.settings.GetMatchingDriverDownloadInfo(browserVersion, cancellationToken).ConfigureAwait(false);
+            downloadInfo = await this.GetDriverDownloadInfoAsync(browserVersion, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (isResolvedVersionInstalled && BrowserLocator.IsUnreachableServiceException(ex) && !cancellationToken.IsCancellationRequested)
         {
@@ -176,6 +176,17 @@ public class DriverLocator
             : await this.InstallDriverAsync(cache, downloadInfo, cancellationToken).ConfigureAwait(false);
         cache.SaveResolvedVersion(request, downloadInfo.Version);
         return executablePath;
+    }
+
+    private async Task<DriverDownloadInfo> GetDriverDownloadInfoAsync(string? browserVersion, CancellationToken cancellationToken)
+    {
+        if (this.settings.DownloadOptions.ManifestUrl is null)
+        {
+            return await this.settings.GetMatchingDriverDownloadInfo(browserVersion, cancellationToken).ConfigureAwait(false);
+        }
+
+        DownloadManifest manifest = await DownloadManifest.LoadAsync(this.settings.DownloadOptions, cancellationToken).ConfigureAwait(false);
+        return manifest.ResolveDriver(this.settings, browserVersion);
     }
 
     private void ThrowIfDownloadSkipped(string description)

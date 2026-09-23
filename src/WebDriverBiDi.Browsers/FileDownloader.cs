@@ -102,16 +102,24 @@ internal sealed class FileDownloader
     // Returns the SHA-256 hash of the downloaded file in hexadecimal.
     private async Task<string> DownloadOnceAsync(HttpClient client, Uri url, string destPath, CancellationToken cancellationToken)
     {
+        if (url.IsFile)
+        {
+            using FileStream source = new(url.LocalPath, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize, true);
+            return await this.CopyAsync(source, source.Length, null, url, destPath, cancellationToken).ConfigureAwait(false);
+        }
+
         using HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         DownloadServiceException.ThrowIfUnsuccessful(response, url);
+        using Stream contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        return await this.CopyAsync(contentStream, response.Content.Headers.ContentLength, GetStorageMd5(response), url, destPath, cancellationToken).ConfigureAwait(false);
+    }
 
-        long? totalBytes = response.Content.Headers.ContentLength;
-        string? expectedMd5 = GetStorageMd5(response);
+    private async Task<string> CopyAsync(Stream contentStream, long? totalBytes, string? expectedMd5, Uri url, string destPath, CancellationToken cancellationToken)
+    {
         using IncrementalHash sha256 = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
 #pragma warning disable CA5351 // Verifies the server's own transfer checksum; not used for security.
         using IncrementalHash? md5 = expectedMd5 is null ? null : IncrementalHash.CreateHash(HashAlgorithmName.MD5);
 #pragma warning restore CA5351
-        using Stream contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
         using FileStream fileStream = new(destPath, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize, true);
 
         byte[] buffer = new byte[BufferSize];

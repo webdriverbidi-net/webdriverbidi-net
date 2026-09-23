@@ -22,6 +22,11 @@ internal static class LauncherEnvironment
     internal const string SkipDownloadVariableName = "WEBDRIVERBIDI_SKIP_DOWNLOAD";
 
     /// <summary>
+    /// The variable naming the download manifest, by URL or file path.
+    /// </summary>
+    internal const string DownloadManifestVariableName = "WEBDRIVERBIDI_DOWNLOAD_MANIFEST";
+
+    /// <summary>
     /// Gets the value of an environment variable.
     /// </summary>
     /// <param name="name">The variable name.</param>

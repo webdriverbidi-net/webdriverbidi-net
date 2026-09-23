@@ -50,6 +50,7 @@ public static class TestDownloadOptions
             Platform = platform ?? DefaultPlatform,
             TimeProvider = timeProvider ?? TimeProvider.System,
             SkipDownload = skipDownload,
+            ManifestUrl = null,
             ChromeForTestingEndpoint = server.UrlFor(ChromeForTestingService.BasePath),
             FirefoxProductEndpoint = server.UrlFor(FirefoxProductPath),
             FirefoxArchiveEndpoint = server.UrlFor(FirefoxArchivePath),

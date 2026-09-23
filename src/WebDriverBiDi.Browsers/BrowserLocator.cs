@@ -335,7 +335,7 @@ public class BrowserLocator
             }
 
             this.ThrowIfDownloadSkipped($"{this.settings.BrowserDisplayName} {this.settings.Version}");
-            BrowserDownloadInfo pinnedDownloadInfo = await this.settings.GetBrowserDownloadInfo(cancellationToken).ConfigureAwait(false);
+            BrowserDownloadInfo pinnedDownloadInfo = await this.GetBrowserDownloadInfoAsync(cancellationToken).ConfigureAwait(false);
             return new LocatedBrowser(await this.InstallBrowserAsync(cache, pinnedDownloadInfo, cancellationToken).ConfigureAwait(false), pinnedDownloadInfo.Version);
         }
 
@@ -352,7 +352,7 @@ public class BrowserLocator
         BrowserDownloadInfo downloadInfo;
         try
         {
-            downloadInfo = await this.settings.GetBrowserDownloadInfo(cancellationToken).ConfigureAwait(false);
+            downloadInfo = await this.GetBrowserDownloadInfoAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (isLatestInstalled && IsUnreachableServiceException(ex) && !cancellationToken.IsCancellationRequested)
         {
@@ -384,6 +384,17 @@ public class BrowserLocator
         return new LocatedBrowser(executablePath, downloadInfo.Version);
     }
 
+    private async Task<BrowserDownloadInfo> GetBrowserDownloadInfoAsync(CancellationToken cancellationToken)
+    {
+        if (this.settings.DownloadOptions.ManifestUrl is null)
+        {
+            return await this.settings.GetBrowserDownloadInfo(cancellationToken).ConfigureAwait(false);
+        }
+
+        DownloadManifest manifest = await DownloadManifest.LoadAsync(this.settings.DownloadOptions, cancellationToken).ConfigureAwait(false);
+        return manifest.ResolveBrowser(this.settings);
+    }
+
     private void ThrowIfDownloadSkipped(string description)
     {
         if (this.settings.DownloadOptions.SkipDownload)
@@ -409,14 +420,14 @@ public class BrowserLocator
             await this.LogAsync(note, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         }
 
-        string? sha256 = await this.settings.GetBrowserSha256Async(downloadInfo, cancellationToken).ConfigureAwait(false);
+        string? sha256 = downloadInfo.Sha256 ?? await this.settings.GetBrowserSha256Async(downloadInfo, cancellationToken).ConfigureAwait(false);
         await this.LogAsync($"Downloading {name}...", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         string relativeExecutablePath = this.settings.ExpectedExecutablePath;
         string executablePath = await cache.InstallAsync(downloadInfo.Version, relativeExecutablePath, async installDirectory =>
         {
             string installerPath = Path.Combine(installDirectory, this.settings.InstallerFileName);
             FileDownloader downloader = new(name, this.settings.DownloadOptions.Progress, message => this.LogAsync(message, WebDriverBiDiLogLevel.Info));
-            await downloader.DownloadFileAsync(DownloadHttpClient.GetClient(this.settings.DownloadOptions), downloadInfo.DownloadUrl, installerPath, sha256, null, cancellationToken).ConfigureAwait(false);
+            await downloader.DownloadFileAsync(DownloadHttpClient.GetClient(this.settings.DownloadOptions), downloadInfo.DownloadUrl, installerPath, sha256, downloadInfo.Size, cancellationToken).ConfigureAwait(false);
             await this.settings.BrowserExtractor.ExtractFileContentsAsync(installerPath, installDirectory, cancellationToken).ConfigureAwait(false);
             if (!File.Exists(Path.Combine(installDirectory, relativeExecutablePath)))
             {

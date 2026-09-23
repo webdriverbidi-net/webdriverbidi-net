@@ -35,4 +35,14 @@ internal record BrowserDownloadInfo
     /// If true, the locator will delete any cached installation and redownload the browser, even if the version matches.
     /// </summary>
     public bool IgnoreVersionMatch { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the SHA-256 hash of the download in hexadecimal, if it is known before downloading.
+    /// </summary>
+    public string? Sha256 { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size of the download in bytes, if it is known before downloading.
+    /// </summary>
+    public long? Size { get; set; }
 }

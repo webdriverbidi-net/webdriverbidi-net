@@ -20,6 +20,7 @@ public class BrowserDownloadOptions
     private Uri firefoxProductEndpoint = new("https://download.mozilla.org/");
     private Uri firefoxArchiveEndpoint = new("https://download-installer.cdn.mozilla.net/pub/");
     private Uri geckoDriverReleasesEndpoint = new("https://api.github.com/repos/mozilla/geckodriver/releases/");
+    private Uri? manifestUrl = ParseManifestLocation(LauncherEnvironment.GetVariable(LauncherEnvironment.DownloadManifestVariableName));
 
     /// <summary>
     /// Gets the platform's cache directory for downloaded browsers and drivers: a "webdriverbidi-net"
@@ -115,6 +116,31 @@ public class BrowserDownloadOptions
     public HttpClient? HttpClient { get; init; }
 
     /// <summary>
+    /// Gets the URL (http, https, or file) of a manifest listing the browser and driver builds to
+    /// download, for a mirror of the vendors' downloads, or <see langword="null"/> to use the vendors'
+    /// services. When set, every browser and driver is resolved through the manifest, and one it
+    /// does not list cannot be downloaded; the vendor endpoints are not used. Defaults to the URL or
+    /// file path in the WEBDRIVERBIDI_DOWNLOAD_MANIFEST environment variable, if set.
+    /// </summary>
+    /// <remarks>
+    /// The manifest is JSON of the form
+    /// <c>{"schemaVersion": 1, "browsers": {"chrome": {"channels": {"stable": "130.0.6723.58"}, "versions": {"130.0.6723.58": {"linux-x64": {"url": "...", "sha256": "...", "size": 123}}}}}, "drivers": {"chromedriver": {"versions": {...}}, "geckodriver": {"latest": "0.36.0", "versions": {...}}}}</c>.
+    /// Browsers are "chrome", "chrome-headless-shell", and "firefox"; channels are "stable", "beta",
+    /// "dev", "canary", "nightly", and "esr"; platforms are "linux-x64", "linux-arm64", "linux-x86",
+    /// "macos-x64", "macos-arm64", "windows-x64", "windows-x86", and "windows-arm64". A milestone
+    /// resolves to the highest version listed for it. Each build is the vendor's archive, unchanged,
+    /// and its SHA-256 hash is verified; its URL may be relative to the manifest.
+    /// </remarks>
+    /// <exception cref="ArgumentException">Thrown when set to a URL that is not an absolute http, https, or file URL.</exception>
+    public Uri? ManifestUrl
+    {
+        get => this.manifestUrl;
+        init => this.manifestUrl = value is null || (value.IsAbsoluteUri && (value.Scheme == Uri.UriSchemeHttp || value.Scheme == Uri.UriSchemeHttps || value.IsFile))
+            ? value
+            : throw new ArgumentException("Manifest URL must be an absolute http, https, or file URL.", nameof(this.ManifestUrl));
+    }
+
+    /// <summary>
     /// Gets the base URL of the Chrome for Testing version information service.
     /// </summary>
     public Uri ChromeForTestingEndpoint
@@ -158,6 +184,18 @@ public class BrowserDownloadOptions
 
     // Relative URLs resolve against a base only below its last '/', so a base without a trailing
     // slash would silently drop its final path segment.
+    private static Uri? ParseManifestLocation(string? location)
+    {
+        if (location is null)
+        {
+            return null;
+        }
+
+        return Uri.TryCreate(location, UriKind.Absolute, out Uri? url) && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps || url.IsFile)
+            ? url
+            : new Uri(Path.GetFullPath(location));
+    }
+
     private static Uri AsBaseUri(Uri value, string propertyName)
     {
         if (value is null)
