@@ -37,6 +37,11 @@ public abstract class BrowserVersion
     internal abstract string Value { get; }
 
     /// <summary>
+    /// Gets a value indicating whether this version is the most recent release of a milestone.
+    /// </summary>
+    internal bool IsMilestone => this is MilestoneVersion;
+
+    /// <summary>
     /// Creates a version specification for a specific browser version number.
     /// </summary>
     /// <param name="version">The specific version number (e.g., "120.0.6099.109").</param>
@@ -50,6 +55,19 @@ public abstract class BrowserVersion
         }
 
         return new SpecificVersion(version);
+    }
+
+    /// <summary>
+    /// Creates a <see cref="BrowserVersion"/> for the most recent release of a milestone, the major
+    /// version number (e.g., 131 for 131.0.6778.204). Like <see cref="Latest"/>, the version it refers
+    /// to changes as releases are published. Only Chrome versions can be requested by milestone.
+    /// </summary>
+    /// <param name="milestone">The milestone.</param>
+    /// <returns>A <see cref="BrowserVersion"/> for the milestone.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when milestone is not positive.</exception>
+    public static BrowserVersion Milestone(int milestone)
+    {
+        return milestone > 0 ? new MilestoneVersion(milestone) : throw new ArgumentOutOfRangeException(nameof(milestone), "Milestone must be positive.");
     }
 
     /// <summary>
@@ -70,6 +88,23 @@ public abstract class BrowserVersion
         internal override string Value => BrowserLocatorSettings.SystemVersionString;
 
         public override string ToString() => "System Installed";
+    }
+
+    /// <summary>
+    /// Represents the most recent release of a milestone.
+    /// </summary>
+    private sealed class MilestoneVersion : BrowserVersion
+    {
+        private readonly int milestone;
+
+        internal MilestoneVersion(int milestone)
+        {
+            this.milestone = milestone;
+        }
+
+        internal override string Value => $"{BrowserLocatorSettings.MilestoneVersionPrefix}{this.milestone}";
+
+        public override string ToString() => $"Milestone {this.milestone}";
     }
 
     /// <summary>

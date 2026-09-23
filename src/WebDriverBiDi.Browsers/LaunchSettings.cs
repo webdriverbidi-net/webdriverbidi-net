@@ -43,6 +43,11 @@ internal sealed class LaunchSettings
     public Dictionary<string, object> FirefoxPreferences { get; } = [];
 
     /// <summary>
+    /// Gets or sets a value indicating whether chrome-headless-shell is launched in place of Chrome.
+    /// </summary>
+    public bool UseHeadlessShell { get; set; }
+
+    /// <summary>
     /// Gets a value indicating whether any setting changes the browser's command line or profile.
     /// </summary>
     public bool ChangesBrowserConfiguration => this.Arguments.Count > 0 || this.OmitAllDefaultArguments || this.OmittedDefaultArguments.Count > 0 || this.UserDataDirectory is not null || this.FirefoxPreferences.Count > 0;
@@ -53,7 +58,7 @@ internal sealed class LaunchSettings
     /// <returns>The copy.</returns>
     public LaunchSettings Copy()
     {
-        LaunchSettings copy = new() { OmitAllDefaultArguments = this.OmitAllDefaultArguments, UserDataDirectory = this.UserDataDirectory };
+        LaunchSettings copy = new() { OmitAllDefaultArguments = this.OmitAllDefaultArguments, UserDataDirectory = this.UserDataDirectory, UseHeadlessShell = this.UseHeadlessShell };
         copy.Arguments.AddRange(this.Arguments);
         copy.OmittedDefaultArguments.AddRange(this.OmittedDefaultArguments);
         foreach (KeyValuePair<string, string?> variable in this.EnvironmentVariables)

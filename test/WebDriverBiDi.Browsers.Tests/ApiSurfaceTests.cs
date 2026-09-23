@@ -41,7 +41,7 @@ public class ApiSurfaceTests
     public async Task FindBrowserRejectsUnsupportedBrowser()
     {
         await Assert.ThrowsAsync<NotSupportedException>(() => BrowserLocator.FindBrowserAsync(BrowserKind.Edge, cancellationToken: TestContext.Current.CancellationToken));
-        await Assert.ThrowsAsync<NotSupportedException>(() => DriverLocator.FindDriverAsync(BrowserKind.Safari, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<NotSupportedException>(() => DriverLocator.FindDriverAsync(BrowserKind.Edge, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]

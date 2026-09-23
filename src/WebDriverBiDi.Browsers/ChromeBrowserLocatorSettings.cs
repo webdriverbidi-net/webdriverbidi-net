@@ -21,6 +21,8 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
 {
     private const string ChannelDownloadInfoFileName = "last-known-good-versions-with-downloads.json";
     private const string AllVersionsDownloadInfoFileName = "known-good-versions-with-downloads.json";
+    private const string MilestoneDownloadInfoFileName = "latest-versions-per-milestone-with-downloads.json";
+    private const string HeadlessShellName = "chrome-headless-shell";
 
     private readonly ChromeChannel channelValue;
 
@@ -32,13 +34,20 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// <param name="downloadOptions">The options controlling where Chrome is cached and downloaded from.</param>
     /// <param name="expectedExecutablePath">The expected path to the Chrome executable.</param>
     /// <param name="version">The version of the Chrome browser to locate or download.</param>
-    public ChromeBrowserLocatorSettings(ChromeChannel channel, FileLocationBehavior locationBehavior, BrowserDownloadOptions downloadOptions, string expectedExecutablePath = "", string version = LatestVersionString)
+    /// <param name="useHeadlessShell">A value indicating whether to download chrome-headless-shell rather than Chrome.</param>
+    public ChromeBrowserLocatorSettings(ChromeChannel channel, FileLocationBehavior locationBehavior, BrowserDownloadOptions downloadOptions, string expectedExecutablePath = "", string version = LatestVersionString, bool useHeadlessShell = false)
         : base(downloadOptions)
     {
+        if (useHeadlessShell && locationBehavior == FileLocationBehavior.UseSystemInstallLocation)
+        {
+            throw new ArgumentException("chrome-headless-shell is available only from Chrome for Testing, not as a system installation.", nameof(useHeadlessShell));
+        }
+
         this.channelValue = channel;
-        this.BrowserName = "chrome";
+        this.UseHeadlessShell = useHeadlessShell;
+        this.BrowserName = useHeadlessShell ? HeadlessShellName : "chrome";
         this.Channel = channel.ToString().ToLowerInvariant();
-        this.BrowserDisplayName = $"Chrome {channel}";
+        this.BrowserDisplayName = useHeadlessShell ? $"Chrome Headless Shell {channel}" : $"Chrome {channel}";
         this.EnvironmentVariableName = "CHROME_EXECUTABLE";
         this.LocationBehavior = locationBehavior;
         this.InstallerFileName = $"{this.BrowserName}-{this.Channel}.zip";
@@ -56,7 +65,12 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// <summary>
     /// Gets the name of the browser (e.g., "chrome").
     /// </summary>
-    public override string BrowserName { get; } = "chrome";
+    public override string BrowserName { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether chrome-headless-shell is located rather than Chrome.
+    /// </summary>
+    public bool UseHeadlessShell { get; }
 
     /// <summary>
     /// Gets the name of the driver executable (e.g., "chromedriver" or "chromedriver.exe").
@@ -72,13 +86,23 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// Gets the version request under which the resolved chromedriver version is cached, which
     /// is per channel, as each channel's latest chromedriver matches that channel's latest Chrome.
     /// </summary>
-    public override string DriverVersionRequest => $"{LatestVersionString}-{this.Channel}";
+    public override string DriverVersionRequest => this.Milestone is int milestone ? $"{MilestoneVersionPrefix}{milestone}" : $"{LatestVersionString}-{this.Channel}";
+
+    /// <summary>
+    /// Gets a message explaining that Windows on Arm runs the x64 build of Chrome under emulation, as
+    /// Chrome for Testing publishes no Arm build for Windows.
+    /// </summary>
+    public override string? PlatformSubstitutionNote => this.Platform.OperatingSystem == OperatingSystemFamily.Windows && this.Platform.Architecture == Architecture.Arm64
+        ? "Chrome for Testing publishes no Windows Arm64 build; downloading the x64 build, which Windows runs under emulation."
+        : null;
 
     private BrowserPlatform Platform => this.DownloadOptions.ResolvedPlatform;
 
     private Uri ChannelDownloadInfoUrl => new(this.DownloadOptions.ChromeForTestingEndpoint, ChannelDownloadInfoFileName);
 
     private Uri AllVersionsDownloadInfoUrl => new(this.DownloadOptions.ChromeForTestingEndpoint, AllVersionsDownloadInfoFileName);
+
+    private Uri MilestoneDownloadInfoUrl => new(this.DownloadOptions.ChromeForTestingEndpoint, MilestoneDownloadInfoFileName);
 
     /// <summary>
     /// Gets the browser download information for the Chrome browser version or channel specified..
@@ -87,11 +111,20 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
     public override async Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
     {
+        string platformIdentifierString = this.GetRequiredPlatformIdentifierString();
         string json = await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.GetBinaryDownloadInfoUrl(), cancellationToken).ConfigureAwait(false);
 
-        BinaryVersionInfo binaryVersionInfo = this.IsLatestChannelVersion
-            ? this.GetChannelBinaryVersionInfo(json)
-            : this.GetSpecificBinaryVersionInfo(json, this.Version);
+        BinaryVersionInfo binaryVersionInfo;
+        if (this.Milestone is int milestone)
+        {
+            binaryVersionInfo = this.GetMilestoneBinaryVersionInfo(json, milestone);
+        }
+        else
+        {
+            binaryVersionInfo = this.IsLatestChannelVersion
+                ? this.GetChannelBinaryVersionInfo(json)
+                : this.GetSpecificBinaryVersionInfo(json, this.Version);
+        }
 
         BrowserDownloadInfo browserDownloadInfo = new()
         {
@@ -100,10 +133,9 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
             Version = binaryVersionInfo.Version,
         };
 
-        string platformIdentifierString = this.GetPlatformIdentifierString();
         if (!binaryVersionInfo.Downloads.TryGetValue(this.BrowserName, out List<FileDownloadInfo>? downloadsForPlatform))
         {
-            throw new InvalidOperationException($"Failed to find download information for Chrome platform.");
+            throw new InvalidOperationException($"Failed to find {this.BrowserName} download information for version {binaryVersionInfo.Version}.");
         }
 
         foreach (FileDownloadInfo download in downloadsForPlatform)
@@ -115,7 +147,7 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
             }
         }
 
-        throw new InvalidOperationException($"Failed to find download URL for Chrome platform {platformIdentifierString}.");
+        throw new InvalidOperationException($"Failed to find {this.BrowserName} download URL for platform {platformIdentifierString} in version {binaryVersionInfo.Version}.");
     }
 
     /// <summary>
@@ -125,7 +157,7 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// <returns>The required driver version, or <see langword="null"/> if the latest driver for the channel is to be used.</returns>
     public override string? GetRequiredDriverVersion(string? browserVersion)
     {
-        string? pinnedBrowserVersion = this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload && this.Version != LatestVersionString ? this.Version : null;
+        string? pinnedBrowserVersion = this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload && this.BrowserVersionRequest is null ? this.Version : null;
         return base.GetRequiredDriverVersion(browserVersion) ?? browserVersion ?? pinnedBrowserVersion;
     }
 
@@ -138,10 +170,21 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
     public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
     {
+        string platformIdentifierString = this.GetRequiredPlatformIdentifierString();
         string? requiredVersion = this.GetRequiredDriverVersion(browserVersion);
-        BinaryVersionInfo binaryVersionInfo = requiredVersion is null
-            ? this.GetChannelBinaryVersionInfo(await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.ChannelDownloadInfoUrl, cancellationToken).ConfigureAwait(false))
-            : this.GetSpecificBinaryVersionInfo(await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.AllVersionsDownloadInfoUrl, cancellationToken).ConfigureAwait(false), requiredVersion);
+        BinaryVersionInfo binaryVersionInfo;
+        if (requiredVersion is not null)
+        {
+            binaryVersionInfo = this.GetSpecificBinaryVersionInfo(await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.AllVersionsDownloadInfoUrl, cancellationToken).ConfigureAwait(false), requiredVersion);
+        }
+        else if (this.Milestone is int milestone)
+        {
+            binaryVersionInfo = this.GetMilestoneBinaryVersionInfo(await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.MilestoneDownloadInfoUrl, cancellationToken).ConfigureAwait(false), milestone);
+        }
+        else
+        {
+            binaryVersionInfo = this.GetChannelBinaryVersionInfo(await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.ChannelDownloadInfoUrl, cancellationToken).ConfigureAwait(false));
+        }
 
         DriverDownloadInfo driverDownloadInfo = new()
         {
@@ -151,7 +194,6 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
             InstallerFileName = $"chromedriver-{this.Channel}.zip",
         };
 
-        string platformIdentifierString = this.GetPlatformIdentifierString();
         if (!binaryVersionInfo.Downloads.TryGetValue("chromedriver", out List<FileDownloadInfo>? downloadsForPlatform))
         {
             throw new InvalidOperationException($"Failed to find chromedriver download information for platform.");
@@ -171,6 +213,11 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
 
     private Uri GetBinaryDownloadInfoUrl()
     {
+        if (this.Milestone is not null)
+        {
+            return this.MilestoneDownloadInfoUrl;
+        }
+
         if (this.IsLatestChannelVersion)
         {
             return this.ChannelDownloadInfoUrl;
@@ -193,6 +240,19 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         return channelInfo;
     }
 
+    private BinaryVersionInfo GetMilestoneBinaryVersionInfo(string json, int milestone)
+    {
+        ChromeMilestoneBinaryDownloadInfo? downloadInfo =
+            JsonSerializer.Deserialize(json, ChromeBrowserLocatorSettingsJsonSerializerContext.Default.ChromeMilestoneBinaryDownloadInfo)
+            ?? throw new InvalidOperationException($"Failed to deserialize Chrome binary download information from {this.MilestoneDownloadInfoUrl}.");
+        if (!downloadInfo.Milestones.TryGetValue(milestone.ToString(System.Globalization.CultureInfo.InvariantCulture), out BinaryVersionInfo? milestoneInfo))
+        {
+            throw new InvalidOperationException($"Failed to find download information for Chrome milestone {milestone}.");
+        }
+
+        return milestoneInfo;
+    }
+
     private BinaryVersionInfo GetSpecificBinaryVersionInfo(string json, string version)
     {
         ChromeAllVersionsBinaryDownloadInfo? downloadInfo =
@@ -209,14 +269,23 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         throw new InvalidOperationException($"Failed to find download information for Chrome version '{version}'.");
     }
 
-    private string GetPlatformIdentifierString()
+    private string? GetPlatformIdentifierString()
     {
-        return this.Platform.OperatingSystem switch
+        return (this.Platform.OperatingSystem, this.Platform.Architecture) switch
         {
-            OperatingSystemFamily.MacOS => this.Platform.Architecture == Architecture.Arm64 ? "mac-arm64" : "mac-x64",
-            OperatingSystemFamily.Windows => this.Platform.Architecture == Architecture.X64 ? "win64" : "win32",
-            _ => "linux64",
+            (OperatingSystemFamily.MacOS, Architecture.Arm64) => "mac-arm64",
+            (OperatingSystemFamily.MacOS, Architecture.X64) => "mac-x64",
+            (OperatingSystemFamily.Windows, Architecture.X64 or Architecture.Arm64) => "win64",
+            (OperatingSystemFamily.Windows, Architecture.X86) => "win32",
+            (OperatingSystemFamily.Linux, Architecture.X64) => "linux64",
+            (OperatingSystemFamily.Linux, Architecture.Arm64) => "linux-arm64",
+            _ => null,
         };
+    }
+
+    private string GetRequiredPlatformIdentifierString()
+    {
+        return this.GetPlatformIdentifierString() ?? throw new PlatformNotSupportedException($"Chrome for Testing publishes no builds for {this.Platform}.");
     }
 
     private string InitializeExpectedExecutablePath(string expectedExecutablePath)
@@ -241,11 +310,18 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
 
     private string GetCachedRelativeLocation()
     {
+        // An unsupported platform fails when download information is requested, before this path is used.
+        string directory = $"{this.BrowserName}-{this.GetPlatformIdentifierString()}";
+        if (this.UseHeadlessShell)
+        {
+            return Path.Combine(directory, this.Platform.OperatingSystem == OperatingSystemFamily.Windows ? $"{HeadlessShellName}.exe" : HeadlessShellName);
+        }
+
         return this.Platform.OperatingSystem switch
         {
-            OperatingSystemFamily.MacOS => Path.Combine($"chrome-{this.GetPlatformIdentifierString()}", "Google Chrome for Testing.app", "Contents", "MacOS", "Google Chrome for Testing"),
-            OperatingSystemFamily.Windows => Path.Combine($"chrome-{this.GetPlatformIdentifierString()}", "chrome.exe"),
-            _ => Path.Combine("chrome-linux64", "chrome"),
+            OperatingSystemFamily.MacOS => Path.Combine(directory, "Google Chrome for Testing.app", "Contents", "MacOS", "Google Chrome for Testing"),
+            OperatingSystemFamily.Windows => Path.Combine(directory, "chrome.exe"),
+            _ => Path.Combine(directory, "chrome"),
         };
     }
 
@@ -286,9 +362,6 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
                 executableName);
         }
 
-        string baseDirectory = this.channelValue == ChromeChannel.Beta || this.channelValue == ChromeChannel.Canary
-            ? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)
-            : Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
         string applicationSubdirectory = this.channelValue switch
         {
             ChromeChannel.Dev => "Chrome Dev",
@@ -296,7 +369,10 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
             ChromeChannel.Canary => "Chrome SxS",
             _ => "Chrome",
         };
-        return Path.Combine(baseDirectory, "Google", applicationSubdirectory, "Application", "chrome.exe");
+        string relativePath = Path.Combine("Google", applicationSubdirectory, "Application", "chrome.exe");
+        return this.channelValue == ChromeChannel.Beta || this.channelValue == ChromeChannel.Canary
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), relativePath)
+            : GetWindowsProgramFilesPath(relativePath);
     }
 
     /// <summary>
@@ -356,6 +432,28 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         [JsonPropertyName("channels")]
         [JsonInclude]
         public Dictionary<string, BinaryVersionInfo> Channels { get; set; } = [];
+    }
+
+    /// <summary>
+    /// Represents the results of a query to the Chrome for Testing service for the latest version
+    /// of each Chrome milestone.
+    /// </summary>
+    internal record ChromeMilestoneBinaryDownloadInfo
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ChromeMilestoneBinaryDownloadInfo"/> class.
+        /// </summary>
+        [JsonConstructor]
+        public ChromeMilestoneBinaryDownloadInfo()
+        {
+        }
+
+        /// <summary>
+        /// Gets or sets the information about the latest binaries of each milestone, keyed by milestone.
+        /// </summary>
+        [JsonPropertyName("milestones")]
+        [JsonInclude]
+        public Dictionary<string, BinaryVersionInfo> Milestones { get; set; } = [];
     }
 
     /// <summary>
@@ -444,6 +542,7 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(ChromeBrowserLocatorSettings.ChromeAllVersionsBinaryDownloadInfo))]
 [JsonSerializable(typeof(ChromeBrowserLocatorSettings.ChromeChannelBinaryDownloadInfo))]
+[JsonSerializable(typeof(ChromeBrowserLocatorSettings.ChromeMilestoneBinaryDownloadInfo))]
 [JsonSerializable(typeof(Dictionary<string, List<ChromeBrowserLocatorSettings.FileDownloadInfo>>))]
 [JsonSerializable(typeof(Dictionary<string, ChromeBrowserLocatorSettings.BinaryVersionInfo>))]
 internal partial class ChromeBrowserLocatorSettingsJsonSerializerContext : JsonSerializerContext

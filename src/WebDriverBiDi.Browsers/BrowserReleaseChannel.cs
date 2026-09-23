@@ -37,4 +37,12 @@ public enum BrowserReleaseChannel
     /// browsers (e.g., "canary" for Chrome, "nightly" for Firefox).
     /// </summary>
     Alpha,
+
+    /// <summary>
+    /// The extended support release channel, which receives security fixes over a longer period
+    /// than the stable channel, for organizations that update less often ("ESR" for Firefox).
+    /// Chrome for Testing does not publish extended stable builds, so Chrome cannot be downloaded
+    /// from this channel.
+    /// </summary>
+    ExtendedSupport,
 }

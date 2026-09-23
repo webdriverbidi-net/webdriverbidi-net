@@ -18,7 +18,7 @@ public class BrowserDownloadOptions
     private TimeSpan lockTimeout = TimeSpan.FromMinutes(10);
     private Uri chromeForTestingEndpoint = new("https://googlechromelabs.github.io/chrome-for-testing/");
     private Uri firefoxProductEndpoint = new("https://download.mozilla.org/");
-    private Uri firefoxReleaseArchiveEndpoint = new("https://download-installer.cdn.mozilla.net/pub/firefox/releases/");
+    private Uri firefoxArchiveEndpoint = new("https://download-installer.cdn.mozilla.net/pub/");
     private Uri geckoDriverReleasesEndpoint = new("https://api.github.com/repos/mozilla/geckodriver/releases/");
 
     /// <summary>
@@ -133,12 +133,13 @@ public class BrowserDownloadOptions
     }
 
     /// <summary>
-    /// Gets the base URL of the Mozilla archive of specific Firefox releases.
+    /// Gets the base URL of the Mozilla archive, from which specific Firefox releases are downloaded:
+    /// Firefox from its "firefox/releases/" path, and Firefox Developer Edition from "devedition/releases/".
     /// </summary>
-    public Uri FirefoxReleaseArchiveEndpoint
+    public Uri FirefoxArchiveEndpoint
     {
-        get => this.firefoxReleaseArchiveEndpoint;
-        init => this.firefoxReleaseArchiveEndpoint = AsBaseUri(value, nameof(this.FirefoxReleaseArchiveEndpoint));
+        get => this.firefoxArchiveEndpoint;
+        init => this.firefoxArchiveEndpoint = AsBaseUri(value, nameof(this.FirefoxArchiveEndpoint));
     }
 
     /// <summary>

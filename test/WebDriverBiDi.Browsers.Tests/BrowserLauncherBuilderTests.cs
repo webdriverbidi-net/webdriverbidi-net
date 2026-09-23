@@ -132,4 +132,71 @@ public class BrowserLauncherBuilderTests
         Assert.Equal(1, server.RequestCount(ChromeForTestingService.ChannelDocumentPath));
         Assert.True(Directory.Exists(Path.Combine(cache.Path, "chrome", "stable", "130.0.6723.58")));
     }
+
+    [Fact]
+    public async Task BuildPassesHeadlessShellAndMilestoneToLocator()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ChromeForTestingService.Serve(server, "Stable", "130.0.6723.58", "129.0.6668.100");
+        using TemporaryDirectory cache = new();
+        BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, BrowserPlatform.Current);
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
+            .WithVersion(BrowserVersion.Milestone(129))
+            .WithBrowserOptions(new ChromeLaunchOptions() { UseHeadlessShell = true })
+            .WithDownloadOptions(options)
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        // The downloaded "browser" is a text file, so starting it fails once it has been located.
+        await Assert.ThrowsAnyAsync<Exception>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(1, server.RequestCount(ChromeForTestingService.MilestoneDocumentPath));
+        Assert.True(Directory.Exists(Path.Combine(cache.Path, "chrome-headless-shell", "stable", "129.0.6668.100")));
+    }
+
+    [Fact]
+    public void BuildRejectsHeadlessShellAtDefaultInstallationLocation()
+    {
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Chrome).AtDefaultInstallationLocation().WithBrowserOptions(new ChromeLaunchOptions() { UseHeadlessShell = true });
+
+        Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
+    }
+
+    [Fact]
+    public void BuildRejectsMilestoneForFirefox()
+    {
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Firefox).WithVersion(BrowserVersion.Milestone(131));
+
+        Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
+    }
+
+    [Fact]
+    public void BuildRejectsPinnedFirefoxNightly()
+    {
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Firefox).WithReleaseChannel(BrowserReleaseChannel.Alpha).WithVersion(BrowserVersion.Specific("133.0a1"));
+
+        Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
+    }
+
+    [Theory]
+    [InlineData(BrowserKind.Chrome)]
+    [InlineData(BrowserKind.Safari)]
+    public void BuildRejectsExtendedSupportChannelWithoutExtendedSupportReleases(BrowserKind browser)
+    {
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(browser).WithReleaseChannel(BrowserReleaseChannel.ExtendedSupport);
+        if (browser == BrowserKind.Safari)
+        {
+            builder.LaunchUsingDriver().AtDefaultInstallationLocation();
+        }
+
+        Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
+    }
+
+    [Fact]
+    public async Task BuildAcceptsFirefoxExtendedSupportChannel()
+    {
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Firefox).WithReleaseChannel(BrowserReleaseChannel.ExtendedSupport).Build();
+
+        Assert.IsType<FirefoxLauncher>(launcher);
+    }
 }

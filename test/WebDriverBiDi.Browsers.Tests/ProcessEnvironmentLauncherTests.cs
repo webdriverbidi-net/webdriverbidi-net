@@ -173,6 +173,25 @@ public class ProcessEnvironmentLauncherTests
         Assert.False(launcher.IsRunning);
     }
 
+    [Fact]
+    public async Task HeadlessShellIsLaunchedThroughDriverWithoutHeadlessArgument()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        using DriverOverride driverOverride = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome))
+            .LaunchUsingDriver()
+            .WithHeadlessOption()
+            .WithBrowserOptions(new ChromeLaunchOptions() { UseHeadlessShell = true })
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        JsonNode chromeOptions = fakeBrowser.SessionRequests.Single()["capabilities"]!["firstMatch"]![0]!["goog:chromeOptions"]!;
+        string[] arguments = chromeOptions["args"]!.Deserialize<string[]>()!;
+        Assert.DoesNotContain(arguments, argument => argument.StartsWith("--headless", StringComparison.Ordinal));
+    }
+
     // Makes the fake browser the browser and driver found through the environment.
     private sealed class DriverOverride : IDisposable
     {

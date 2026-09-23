@@ -23,6 +23,11 @@ internal abstract class BrowserLocatorSettings
     public const string SystemVersionString = "system";
 
     /// <summary>
+    /// The prefix of the version property's value when the most recent release of a milestone is requested.
+    /// </summary>
+    public const string MilestoneVersionPrefix = "milestone-";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLocatorSettings"/> class.
     /// </summary>
     /// <param name="downloadOptions">The options controlling where the browser and driver are cached and downloaded from.</param>
@@ -81,6 +86,28 @@ internal abstract class BrowserLocatorSettings
     /// is the most recently published version for the channel.
     /// </summary>
     public bool IsLatestChannelVersion => this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload && this.Version == LatestVersionString;
+
+    /// <summary>
+    /// Gets the requested milestone, or <see langword="null"/> if a milestone was not requested.
+    /// </summary>
+    public int? Milestone => this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload
+        && this.Version.StartsWith(MilestoneVersionPrefix, StringComparison.Ordinal)
+        && int.TryParse(this.Version.Substring(MilestoneVersionPrefix.Length), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int milestone)
+        ? milestone
+        : null;
+
+    /// <summary>
+    /// Gets the version request whose resolved version is cached and periodically rechecked ("latest"
+    /// or a milestone), or <see langword="null"/> when a specific version is requested or the browser
+    /// is not downloaded.
+    /// </summary>
+    public string? BrowserVersionRequest => this.IsLatestChannelVersion || this.Milestone is not null ? this.Version : null;
+
+    /// <summary>
+    /// Gets a message explaining a substitute download for the platform, or <see langword="null"/> if
+    /// the download is built for the platform.
+    /// </summary>
+    public virtual string? PlatformSubstitutionNote => null;
 
     /// <summary>
     /// Gets or sets the location behavior for the browser, which determines how the browser is located and downloaded.
@@ -189,4 +216,17 @@ internal abstract class BrowserLocatorSettings
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
     public abstract Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets the path, within the 64-bit or else the 32-bit Program Files directory, at which a
+    /// Windows application is installed.
+    /// </summary>
+    /// <param name="relativePath">The path of the executable relative to the Program Files directory.</param>
+    /// <returns>The path of the installed executable, or its 64-bit path if it is installed in neither.</returns>
+    protected static string GetWindowsProgramFilesPath(string relativePath)
+    {
+        string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), relativePath);
+        string x86Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), relativePath);
+        return !File.Exists(path) && File.Exists(x86Path) ? x86Path : path;
+    }
 }

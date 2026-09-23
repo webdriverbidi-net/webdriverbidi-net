@@ -19,7 +19,7 @@ public static class TestDownloadOptions
     public const string FirefoxProductPath = "/mozilla/";
 
     /// <summary>
-    /// The base path of the fake Mozilla release archive.
+    /// The base path of the fake Mozilla archive.
     /// </summary>
     public const string FirefoxArchivePath = "/archive/";
 
@@ -52,7 +52,7 @@ public static class TestDownloadOptions
             SkipDownload = skipDownload,
             ChromeForTestingEndpoint = server.UrlFor(ChromeForTestingService.BasePath),
             FirefoxProductEndpoint = server.UrlFor(FirefoxProductPath),
-            FirefoxReleaseArchiveEndpoint = server.UrlFor(FirefoxArchivePath),
+            FirefoxArchiveEndpoint = server.UrlFor(FirefoxArchivePath),
             GeckoDriverReleasesEndpoint = server.UrlFor(GeckoDriverReleasesPath),
         };
     }

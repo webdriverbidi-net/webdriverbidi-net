@@ -130,6 +130,12 @@ public class FirefoxLauncher : BrowserLauncher
 
         string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync(cancellationToken).ConfigureAwait(false);
         await this.LogAsync($"Launching Firefox browser from {browserExecutableLocation}").ConfigureAwait(false);
+        if (this.LaunchSettings.UserDataDirectory is null && ConfinedExecutable.IsConfined(browserExecutableLocation))
+        {
+            throw new BrowserLaunchException(
+                $"Firefox at {browserExecutableLocation} runs in a Snap or Flatpak sandbox, which cannot read a profile in the temporary directory. " +
+                "Use a downloaded Firefox, or specify a profile directory the sandbox can read with WithUserDataDirectory().");
+        }
 
         // With port 0, Firefox chooses a free port itself and reports it when its endpoint is ready.
         this.ConnectionString = string.Empty;

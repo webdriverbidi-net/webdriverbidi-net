@@ -19,6 +19,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
 {
+    // Firefox for Linux has been distributed as .tar.xz, rather than .tar.bz2, since version 135.
+    private const int FirstXzCompressedLinuxVersion = 135;
+
     private readonly FirefoxChannel channelValue;
 
     /// <summary>
@@ -29,9 +32,23 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     /// <param name="downloadOptions">The options controlling where Firefox is cached and downloaded from.</param>
     /// <param name="expectedExecutablePath">The expected path to the Firefox executable.</param>
     /// <param name="version">The version of the Firefox browser to locate or download.</param>
+    /// <exception cref="ArgumentException">Thrown when the version is a milestone, or a specific Nightly version.</exception>
     public FirefoxBrowserLocatorSettings(FirefoxChannel channel, FileLocationBehavior locationBehavior, BrowserDownloadOptions downloadOptions, string expectedExecutablePath = "", string version = LatestVersionString)
         : base(downloadOptions)
     {
+        if (locationBehavior == FileLocationBehavior.AutoLocateAndDownload)
+        {
+            if (version.StartsWith(MilestoneVersionPrefix, StringComparison.Ordinal))
+            {
+                throw new ArgumentException("Only Chrome versions can be requested by milestone.", nameof(version));
+            }
+
+            if (channel == FirefoxChannel.Nightly && version != LatestVersionString)
+            {
+                throw new ArgumentException("Firefox Nightly builds are not archived by version, so only the latest can be downloaded.", nameof(version));
+            }
+        }
+
         this.channelValue = channel;
         this.BrowserName = "firefox";
         this.Channel = channel.ToString().ToLowerInvariant();
@@ -89,7 +106,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
             return downloadInfo;
         }
 
-        Uri downloadServiceUrl = this.GetDownloadServiceUrl();
+        Uri downloadServiceUrl = this.GetDownloadServiceUrl(this.GetRequiredPlatformIdentifiers().ProductOs);
         Uri redirectTarget = await DownloadHttpClient.GetRedirectTargetAsync(this.DownloadOptions, downloadServiceUrl, cancellationToken).ConfigureAwait(false);
         if (redirectTarget != downloadServiceUrl)
         {
@@ -127,20 +144,9 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
         }
 
         string platformIdentifier = this.GetDriverPlatformIdentifier();
-        GeckoDriverAsset? matchingAsset = null;
-        foreach (GeckoDriverAsset asset in release.Assets)
-        {
-            if (asset.Name.Contains(platformIdentifier, StringComparison.OrdinalIgnoreCase))
-            {
-                matchingAsset = asset;
-                break;
-            }
-        }
-
-        if (matchingAsset is null)
-        {
-            throw new InvalidOperationException($"Failed to find geckodriver asset for platform {platformIdentifier}.");
-        }
+        string assetName = $"geckodriver-{release.TagName}-{platformIdentifier}{(this.Platform.OperatingSystem == OperatingSystemFamily.Windows ? ".zip" : ".tar.gz")}";
+        GeckoDriverAsset matchingAsset = release.Assets.FirstOrDefault(asset => asset.Name.Equals(assetName, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Failed to find geckodriver asset {assetName} for platform {this.Platform}.");
 
         DriverDownloadInfo driverDownloadInfo = new()
         {
@@ -154,13 +160,46 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
         return driverDownloadInfo;
     }
 
+    private static int GetMajorVersion(string version)
+    {
+        int digits = 0;
+        while (digits < version.Length && char.IsDigit(version[digits]))
+        {
+            digits++;
+        }
+
+        return digits > 0 ? int.Parse(version.Substring(0, digits), System.Globalization.CultureInfo.InvariantCulture) : throw new FormatException($"'{version}' is not a Firefox version.");
+    }
+
     private string GetDriverPlatformIdentifier()
     {
-        return this.Platform.OperatingSystem switch
+        return (this.Platform.OperatingSystem, this.Platform.Architecture) switch
         {
-            OperatingSystemFamily.MacOS => this.Platform.Architecture == Architecture.Arm64 ? "macos-aarch64" : "macos",
-            OperatingSystemFamily.Windows => this.Platform.Architecture == Architecture.X64 ? "win64" : "win32",
-            _ => "linux64",
+            (OperatingSystemFamily.MacOS, Architecture.Arm64) => "macos-aarch64",
+            (OperatingSystemFamily.MacOS, Architecture.X64) => "macos",
+            (OperatingSystemFamily.Windows, Architecture.X64) => "win64",
+            (OperatingSystemFamily.Windows, Architecture.X86) => "win32",
+            (OperatingSystemFamily.Windows, Architecture.Arm64) => "win-aarch64",
+            (OperatingSystemFamily.Linux, Architecture.X64) => "linux64",
+            (OperatingSystemFamily.Linux, Architecture.X86) => "linux32",
+            (OperatingSystemFamily.Linux, Architecture.Arm64) => "linux-aarch64",
+            _ => throw new PlatformNotSupportedException($"geckodriver is not published for {this.Platform}."),
+        };
+    }
+
+    // The download service's "os" value, and the name of the archive's platform directory.
+    private (string ProductOs, string ArchiveDirectory) GetRequiredPlatformIdentifiers()
+    {
+        return (this.Platform.OperatingSystem, this.Platform.Architecture) switch
+        {
+            (OperatingSystemFamily.MacOS, Architecture.X64 or Architecture.Arm64) => ("osx", "mac"),
+            (OperatingSystemFamily.Windows, Architecture.X64) => ("win64", "win64"),
+            (OperatingSystemFamily.Windows, Architecture.X86) => ("win", "win32"),
+            (OperatingSystemFamily.Windows, Architecture.Arm64) => ("win64-aarch64", "win64-aarch64"),
+            (OperatingSystemFamily.Linux, Architecture.X64) => ("linux64", "linux-x86_64"),
+            (OperatingSystemFamily.Linux, Architecture.X86) => ("linux", "linux-i686"),
+            (OperatingSystemFamily.Linux, Architecture.Arm64) => ("linux64-aarch64", "linux-aarch64"),
+            _ => throw new PlatformNotSupportedException($"Firefox is not published for {this.Platform}."),
         };
     }
 
@@ -193,7 +232,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
         {
             OperatingSystemFamily.MacOS => $"{baseName}.dmg",
             OperatingSystemFamily.Windows => $"{baseName}-installer.exe",
-            _ => $"{baseName}.tar.xz",
+            _ => $"{baseName}.tar",
         };
     }
 
@@ -222,38 +261,40 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
         string versionStartMarker = this.channelValue == FirefoxChannel.Nightly ? "firefox-" : "releases/";
         string versionEndMarker = this.channelValue == FirefoxChannel.Nightly ? ".en-US" : "/";
 
-        int versionStartIndex = downloadUrl.IndexOf(versionStartMarker) + versionStartMarker.Length;
-        int versionEndIndex = downloadUrl.IndexOf(versionEndMarker, versionStartIndex);
+        int versionStartIndex = downloadUrl.IndexOf(versionStartMarker, StringComparison.Ordinal);
+        int versionEndIndex = versionStartIndex < 0 ? -1 : downloadUrl.IndexOf(versionEndMarker, versionStartIndex + versionStartMarker.Length, StringComparison.Ordinal);
+        if (versionEndIndex < 0)
+        {
+            throw new FormatException($"Could not determine the Firefox version from the download URL {downloadUrl}.");
+        }
+
+        versionStartIndex += versionStartMarker.Length;
         return downloadUrl.Substring(versionStartIndex, versionEndIndex - versionStartIndex);
     }
 
     private Uri GetDirectDownloadUrl()
     {
-        (string osMarker, string fileName) = this.Platform.OperatingSystem switch
+        string archiveDirectory = this.GetRequiredPlatformIdentifiers().ArchiveDirectory;
+        string fileName = this.Platform.OperatingSystem switch
         {
-            OperatingSystemFamily.MacOS => ("mac", $"Firefox {this.Version}.dmg"),
-            OperatingSystemFamily.Windows => ("win64", $"Firefox Setup {this.Version}.exe"),
-            _ => ("linux-x86_64", $"firefox-{this.Version}.tar.xz"),
+            OperatingSystemFamily.MacOS => $"Firefox {this.Version}.dmg",
+            OperatingSystemFamily.Windows => $"Firefox Setup {this.Version}.exe",
+            _ => GetMajorVersion(this.Version) >= FirstXzCompressedLinuxVersion ? $"firefox-{this.Version}.tar.xz" : $"firefox-{this.Version}.tar.bz2",
         };
 
-        return new Uri(this.DownloadOptions.FirefoxReleaseArchiveEndpoint, $"{this.Version}/{osMarker}/en-US/{fileName}");
+        string product = this.channelValue == FirefoxChannel.Dev ? "devedition" : "firefox";
+        return new Uri(this.DownloadOptions.FirefoxArchiveEndpoint, $"{product}/releases/{this.Version}/{archiveDirectory}/en-US/{fileName}");
     }
 
-    private Uri GetDownloadServiceUrl()
+    private Uri GetDownloadServiceUrl(string osMarker)
     {
-        string osMarker = this.Platform.OperatingSystem switch
-        {
-            OperatingSystemFamily.MacOS => "osx",
-            OperatingSystemFamily.Windows => "win64",
-            _ => "linux64",
-        };
-
         string product = this.channelValue switch
         {
             FirefoxChannel.Stable => "firefox-latest",
             FirefoxChannel.Beta => "firefox-beta-latest",
             FirefoxChannel.Dev => "firefox-devedition-latest",
             FirefoxChannel.Nightly => "firefox-nightly-latest",
+            FirefoxChannel.Esr => "firefox-esr-latest",
             _ => throw new InvalidOperationException($"Unsupported Firefox channel: {this.channelValue}."),
         };
 
@@ -308,6 +349,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
             {
                 FirefoxChannel.Beta => "firefox-beta",
                 FirefoxChannel.Nightly => "firefox-nightly",
+                FirefoxChannel.Esr => "firefox-esr",
                 _ => "firefox",
             };
             return Path.Combine(
@@ -325,10 +367,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
             FirefoxChannel.Nightly => "Mozilla Firefox Nightly",
             _ => "Mozilla Firefox",
         };
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            applicationSubdirectory,
-            "firefox.exe");
+        return GetWindowsProgramFilesPath(Path.Combine(applicationSubdirectory, "firefox.exe"));
     }
 
     /// <summary>

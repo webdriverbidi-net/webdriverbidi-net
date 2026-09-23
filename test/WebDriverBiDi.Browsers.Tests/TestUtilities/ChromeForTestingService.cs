@@ -29,13 +29,20 @@ public static class ChromeForTestingService
     public const string AllVersionsDocumentPath = BasePath + "known-good-versions-with-downloads.json";
 
     /// <summary>
-    /// The platform identifiers Chrome for Testing publishes.
+    /// The path of the document listing the latest version of each milestone.
     /// </summary>
-    public static readonly string[] PlatformIdentifiers = ["linux64", "mac-arm64", "mac-x64", "win32", "win64"];
+    public const string MilestoneDocumentPath = BasePath + "latest-versions-per-milestone-with-downloads.json";
 
     /// <summary>
-    /// Serves both version documents, listing <paramref name="version"/> as the latest release of
-    /// <paramref name="channel"/>, and the Chrome and chromedriver archives for every platform.
+    /// The platform identifiers Chrome for Testing publishes.
+    /// </summary>
+    public static readonly string[] PlatformIdentifiers = ["linux64", "linux-arm64", "mac-arm64", "mac-x64", "win32", "win64"];
+
+    /// <summary>
+    /// Serves the version documents, listing <paramref name="version"/> as the latest release of
+    /// <paramref name="channel"/>, and the Chrome, chrome-headless-shell, and chromedriver archives
+    /// for every platform. Each version is listed as the latest of its milestone, the later of two
+    /// versions of the same milestone taking precedence.
     /// </summary>
     /// <param name="server">The server.</param>
     /// <param name="channel">The channel name, as Chrome for Testing spells it (e.g., "Stable").</param>
@@ -47,7 +54,7 @@ public static class ChromeForTestingService
     }
 
     /// <summary>
-    /// Serves both version documents, listing <paramref name="version"/> as the latest release of
+    /// Serves the version documents, listing <paramref name="version"/> as the latest release of
     /// <paramref name="channel"/>, and archives for every platform, serving
     /// <paramref name="chromeArchiveContent"/> in place of each Chrome archive.
     /// </summary>
@@ -64,13 +71,19 @@ public static class ChromeForTestingService
             ["channels"] = new JsonObject() { [channel] = CreateVersionEntry(server, version, channel, chromeArchiveContent) },
         };
         JsonArray versions = [];
+        JsonObject milestones = [];
         foreach (string listedVersion in otherVersions.Append(version))
         {
             versions.Add(CreateVersionEntry(server, listedVersion, null, chromeArchiveContent));
+            string milestone = listedVersion.Split('.')[0];
+            JsonObject milestoneEntry = CreateVersionEntry(server, listedVersion, null, chromeArchiveContent);
+            milestoneEntry["milestone"] = milestone;
+            milestones[milestone] = milestoneEntry;
         }
 
         server.AddText(ChannelDocumentPath, channelDocument.ToJsonString());
         server.AddText(AllVersionsDocumentPath, new JsonObject() { ["timestamp"] = "2026-09-23T00:00:00.000Z", ["versions"] = versions }.ToJsonString());
+        server.AddText(MilestoneDocumentPath, new JsonObject() { ["timestamp"] = "2026-09-23T00:00:00.000Z", ["milestones"] = milestones }.ToJsonString());
     }
 
     /// <summary>
@@ -90,13 +103,30 @@ public static class ChromeForTestingService
     public static string DriverArchivePath(string version, string platformIdentifier) => $"{BasePath}{version}/{platformIdentifier}/chromedriver-{platformIdentifier}.zip";
 
     /// <summary>
+    /// Gets the path of the chrome-headless-shell archive for a version and platform.
+    /// </summary>
+    /// <param name="version">The version.</param>
+    /// <param name="platformIdentifier">The platform identifier.</param>
+    /// <returns>The archive path.</returns>
+    public static string HeadlessShellArchivePath(string version, string platformIdentifier) => $"{BasePath}{version}/{platformIdentifier}/chrome-headless-shell-{platformIdentifier}.zip";
+
+    /// <summary>
+    /// Gets the path, relative to the version's install directory, at which the chrome-headless-shell executable is extracted.
+    /// </summary>
+    /// <param name="platformIdentifier">The platform identifier.</param>
+    /// <returns>The '/'-separated relative path.</returns>
+    public static string HeadlessShellExecutablePath(string platformIdentifier) => platformIdentifier.StartsWith("win", StringComparison.Ordinal)
+        ? $"chrome-headless-shell-{platformIdentifier}/chrome-headless-shell.exe"
+        : $"chrome-headless-shell-{platformIdentifier}/chrome-headless-shell";
+
+    /// <summary>
     /// Gets the path, relative to the version's install directory, at which the Chrome executable is extracted.
     /// </summary>
     /// <param name="platformIdentifier">The platform identifier.</param>
     /// <returns>The '/'-separated relative path.</returns>
     public static string ChromeExecutablePath(string platformIdentifier) => platformIdentifier switch
     {
-        "linux64" => "chrome-linux64/chrome",
+        "linux64" or "linux-arm64" => $"chrome-{platformIdentifier}/chrome",
         "mac-arm64" or "mac-x64" => $"chrome-{platformIdentifier}/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
         _ => $"chrome-{platformIdentifier}/chrome.exe",
     };
@@ -105,6 +135,7 @@ public static class ChromeForTestingService
     {
         JsonArray chromeDownloads = [];
         JsonArray driverDownloads = [];
+        JsonArray headlessShellDownloads = [];
         foreach (string platformIdentifier in PlatformIdentifiers)
         {
             string driverFileName = platformIdentifier.StartsWith("win", StringComparison.Ordinal) ? "chromedriver.exe" : "chromedriver";
@@ -112,13 +143,15 @@ public static class ChromeForTestingService
             server.AddFile(DriverArchivePath(version, platformIdentifier), TestArchives.Zip($"chromedriver-{platformIdentifier}/{driverFileName}"));
             chromeDownloads.Add(new JsonObject() { ["platform"] = platformIdentifier, ["url"] = server.UrlFor(ChromeArchivePath(version, platformIdentifier)).AbsoluteUri });
             driverDownloads.Add(new JsonObject() { ["platform"] = platformIdentifier, ["url"] = server.UrlFor(DriverArchivePath(version, platformIdentifier)).AbsoluteUri });
+            server.AddFile(HeadlessShellArchivePath(version, platformIdentifier), TestArchives.Zip(HeadlessShellExecutablePath(platformIdentifier)));
+            headlessShellDownloads.Add(new JsonObject() { ["platform"] = platformIdentifier, ["url"] = server.UrlFor(HeadlessShellArchivePath(version, platformIdentifier)).AbsoluteUri });
         }
 
         JsonObject entry = new()
         {
             ["version"] = version,
             ["revision"] = "1000000",
-            ["downloads"] = new JsonObject() { ["chrome"] = chromeDownloads, ["chromedriver"] = driverDownloads },
+            ["downloads"] = new JsonObject() { ["chrome"] = chromeDownloads, ["chromedriver"] = driverDownloads, ["chrome-headless-shell"] = headlessShellDownloads },
         };
         if (channel is not null)
         {

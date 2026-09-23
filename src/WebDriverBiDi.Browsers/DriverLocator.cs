@@ -50,7 +50,7 @@ public class DriverLocator
     /// <param name="downloadOptions">The options controlling where the driver is cached and downloaded from, or <see langword="null"/> for the defaults.</param>
     /// <param name="cancellationToken">A token that cancels locating the driver.</param>
     /// <returns>The path to the driver executable, or null if not found.</returns>
-    /// <exception cref="NotSupportedException">Thrown when the specified browser's driver cannot be located by this method.</exception>
+    /// <exception cref="NotSupportedException">Thrown when the specified browser's driver cannot be located by this method, or not on this platform.</exception>
     /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
     /// <exception cref="BrowserDownloadException">Thrown when the driver cannot be located or downloaded.</exception>
     public static async Task<string?> FindDriverAsync(
@@ -68,7 +68,8 @@ public class DriverLocator
         {
             BrowserKind.Chrome => BrowserLocator.CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions),
             BrowserKind.Firefox => BrowserLocator.CreateFirefoxSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            _ => throw new NotSupportedException($"The driver for {browser} cannot be located; this method supports Chrome and Firefox."),
+            BrowserKind.Safari => BrowserLocator.CreateSafariSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            _ => throw new NotSupportedException($"The driver for {browser} cannot be located; this method supports Chrome, Firefox, and Safari."),
         };
 
         settings.IncludeDriver = true;
@@ -95,12 +96,6 @@ public class DriverLocator
         {
             await this.LogAsync($"Using environment variable '{this.settings.DriverEnvironmentVariableName}': {envDriverPath}", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
             return envDriverPath;
-        }
-
-        if (this.settings.DriverLocationBehavior == FileLocationBehavior.UseSystemInstallLocation)
-        {
-            await this.LogAsync($"Using system-installed {this.settings.DriverExecutableName} from PATH", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-            return this.settings.DriverExecutableName;
         }
 
         if (this.settings.DriverLocationBehavior == FileLocationBehavior.UseCustomLocation)

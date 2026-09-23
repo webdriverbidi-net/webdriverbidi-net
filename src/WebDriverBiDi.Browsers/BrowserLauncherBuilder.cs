@@ -38,6 +38,8 @@ public class BrowserLauncherBuilder
         this.browser = browser;
     }
 
+    private bool UseHeadlessShell => this.browserOptions is ChromeLaunchOptions { UseHeadlessShell: true };
+
     /// <summary>
     /// Specifies the release channel to use for the browser (e.g., Stable, Beta, Alpha).
     /// </summary>
@@ -249,7 +251,8 @@ public class BrowserLauncherBuilder
 
     /// <summary>
     /// Specifies settings that apply only to the browser being launched, such as
-    /// <see cref="FirefoxLaunchOptions"/> for Firefox. Specifying options again replaces them.
+    /// <see cref="ChromeLaunchOptions"/> for Chrome or <see cref="FirefoxLaunchOptions"/> for Firefox.
+    /// Specifying options again replaces them.
     /// </summary>
     /// <param name="options">The browser-specific options, which must be for the browser being launched.</param>
     /// <returns>The current builder instance for method chaining.</returns>
@@ -391,6 +394,8 @@ public class BrowserLauncherBuilder
             }
         }
 
+        launcher.LaunchSettings.UseHeadlessShell = this.UseHeadlessShell;
+
         if (this.launchTimeout is TimeSpan timeout)
         {
             launcher.InitializationTimeout = timeout;
@@ -517,6 +522,21 @@ public class BrowserLauncherBuilder
         if (this.browserOptions is FirefoxLaunchOptions firefoxOptions)
         {
             ValidateFirefoxPreferences(firefoxOptions);
+        }
+
+        if (this.UseHeadlessShell && this.locationBehavior == FileLocationBehavior.UseSystemInstallLocation)
+        {
+            throw new BrowserLauncherConfigurationException("chrome-headless-shell is available only from Chrome for Testing; it cannot be used with .AtDefaultInstallationLocation().");
+        }
+
+        if (this.version.IsMilestone && this.browser != BrowserKind.Chrome)
+        {
+            throw new BrowserLauncherConfigurationException($"Only Chrome versions can be requested by milestone, not {this.browser} versions.");
+        }
+
+        if (this.browser == BrowserKind.Firefox && this.channel == BrowserReleaseChannel.Alpha && this.locationBehavior == FileLocationBehavior.AutoLocateAndDownload && this.version != BrowserVersion.Latest)
+        {
+            throw new BrowserLauncherConfigurationException("Firefox Nightly builds are not archived by version, so only the latest can be downloaded.");
         }
 
         if (this.launchStrategy != LaunchStrategy.UsingRemoteGrid && this.downloadOptions?.Platform is BrowserPlatform platform && platform != BrowserPlatform.Current)
@@ -646,7 +666,7 @@ public class BrowserLauncherBuilder
         string versionString = this.version.Value;
         string browserLocation = this.customBrowserLocation ?? string.Empty;
 
-        ChromeBrowserLocatorSettings settings = new(chromeChannel, this.locationBehavior, this.downloadOptions ?? new BrowserDownloadOptions(), browserLocation, versionString);
+        ChromeBrowserLocatorSettings settings = new(chromeChannel, this.locationBehavior, this.downloadOptions ?? new BrowserDownloadOptions(), browserLocation, versionString, this.UseHeadlessShell);
 
         if (this.launchStrategy == LaunchStrategy.UsingDriver)
         {
@@ -684,6 +704,7 @@ public class BrowserLauncherBuilder
             BrowserReleaseChannel.Beta => FirefoxChannel.Beta,
             BrowserReleaseChannel.DeveloperPreview => FirefoxChannel.Dev,
             BrowserReleaseChannel.Alpha => FirefoxChannel.Nightly,
+            BrowserReleaseChannel.ExtendedSupport => FirefoxChannel.Esr,
             _ => throw new BrowserLauncherConfigurationException($"Invalid browser release channel for Firefox: {this.channel}"),
         };
 

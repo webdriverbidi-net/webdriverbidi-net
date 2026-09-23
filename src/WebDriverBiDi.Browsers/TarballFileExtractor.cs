@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browsers;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// File extractor for files distributed as tar.xz files on Linux. This extractor uses the 'tar' command-line tool
+/// File extractor for files distributed as compressed tarballs. This extractor uses the 'tar' command-line tool
 /// to extract the file from the downloaded tarball to the specified directory, and then deletes the tarball file.
 /// </summary>
 [ExcludeFromCodeCoverage]
@@ -26,8 +26,8 @@ public class TarballFileExtractor : FileExtractor
     {
         try
         {
-            string extractFlags = tarFilePath.EndsWith(".tar.xz", StringComparison.OrdinalIgnoreCase) ? "xJf" : "xzf";
-            await this.RunProcessAsync("tar", $"-{extractFlags} \"{tarFilePath}\" -C \"{extractDirectory}\"", cancellationToken: cancellationToken).ConfigureAwait(false);
+            // tar detects the compression (gzip, bzip2, or xz) from the file's contents.
+            await this.RunProcessAsync("tar", $"-xf \"{tarFilePath}\" -C \"{extractDirectory}\"", cancellationToken: cancellationToken).ConfigureAwait(false);
         }
         finally
         {

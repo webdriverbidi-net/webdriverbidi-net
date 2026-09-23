@@ -20,7 +20,7 @@ public class BrowserDownloadOptionsTests
         Assert.Null(options.HttpClient);
         Assert.Equal("https://googlechromelabs.github.io/chrome-for-testing/", options.ChromeForTestingEndpoint.AbsoluteUri);
         Assert.Equal("https://download.mozilla.org/", options.FirefoxProductEndpoint.AbsoluteUri);
-        Assert.Equal("https://download-installer.cdn.mozilla.net/pub/firefox/releases/", options.FirefoxReleaseArchiveEndpoint.AbsoluteUri);
+        Assert.Equal("https://download-installer.cdn.mozilla.net/pub/", options.FirefoxArchiveEndpoint.AbsoluteUri);
         Assert.Equal("https://api.github.com/repos/mozilla/geckodriver/releases/", options.GeckoDriverReleasesEndpoint.AbsoluteUri);
     }
 
@@ -31,13 +31,13 @@ public class BrowserDownloadOptionsTests
         {
             ChromeForTestingEndpoint = new Uri("https://mirror.example/cft"),
             FirefoxProductEndpoint = new Uri("https://mirror.example/mozilla"),
-            FirefoxReleaseArchiveEndpoint = new Uri("https://mirror.example/archive"),
+            FirefoxArchiveEndpoint = new Uri("https://mirror.example/archive"),
             GeckoDriverReleasesEndpoint = new Uri("https://mirror.example/gecko"),
         };
 
         Assert.Equal("https://mirror.example/cft/", options.ChromeForTestingEndpoint.AbsoluteUri);
         Assert.Equal("https://mirror.example/mozilla/", options.FirefoxProductEndpoint.AbsoluteUri);
-        Assert.Equal("https://mirror.example/archive/", options.FirefoxReleaseArchiveEndpoint.AbsoluteUri);
+        Assert.Equal("https://mirror.example/archive/", options.FirefoxArchiveEndpoint.AbsoluteUri);
         Assert.Equal("https://mirror.example/gecko/", options.GeckoDriverReleasesEndpoint.AbsoluteUri);
     }
 

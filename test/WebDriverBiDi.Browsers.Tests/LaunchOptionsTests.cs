@@ -206,6 +206,22 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public async Task HeadlessShellIsLaunchedWithoutHeadlessArgument()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome))
+            .AtLocation(FakeBrowserSetup.ExecutablePath)
+            .WithHeadlessOption()
+            .WithBrowserOptions(new ChromeLaunchOptions() { UseHeadlessShell = true })
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(fakeBrowser.Launches.Single().Arguments, argument => argument.StartsWith("--headless", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task SettingsAddedAfterBuildDoNotReachBuiltLauncher()
     {
         using FakeBrowserSetup fakeBrowser = new();

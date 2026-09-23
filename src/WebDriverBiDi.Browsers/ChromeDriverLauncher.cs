@@ -42,7 +42,9 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
         }
 
         List<string> chromeCommandLineArgs = [.. this.LaunchSettings.FilterDefaultArguments(defaultArguments)];
-        if (this.IsBrowserHeadless)
+
+        // chrome-headless-shell is always headless.
+        if (this.IsBrowserHeadless && !this.LaunchSettings.UseHeadlessShell)
         {
             chromeCommandLineArgs.Add("--headless=new");
             chromeCommandLineArgs.Add("--disable-gpu");

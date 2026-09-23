@@ -40,4 +40,10 @@ public enum FirefoxChannel
     /// are not recommended for general use.
     /// </summary>
     Nightly,
+
+    /// <summary>
+    /// The Extended Support Release (ESR) channel, which receives security fixes over a longer
+    /// period than the Stable channel.
+    /// </summary>
+    Esr,
 }

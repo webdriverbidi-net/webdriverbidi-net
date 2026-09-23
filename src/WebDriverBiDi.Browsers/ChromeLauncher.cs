@@ -136,7 +136,8 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
                 args.Add($"--remote-debugging-port={this.Port}");
             }
 
-            if (this.IsBrowserHeadless)
+            // chrome-headless-shell is always headless.
+            if (this.IsBrowserHeadless && !this.LaunchSettings.UseHeadlessShell)
             {
                 args.Add("--headless=new");
                 args.Add("--disable-gpu");

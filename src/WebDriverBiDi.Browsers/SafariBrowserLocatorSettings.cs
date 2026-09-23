@@ -15,6 +15,8 @@ namespace WebDriverBiDi.Browsers;
 /// </summary>
 internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
 {
+    private const string ApplicationsDirectory = "/Applications";
+
     private readonly SafariChannel channelValue;
 
     /// <summary>
@@ -29,19 +31,21 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
     /// Initializes a new instance of the <see cref="SafariBrowserLocatorSettings"/> class.
     /// </summary>
     /// <param name="channel">The distribution channel of the Safari browser.</param>
-    internal SafariBrowserLocatorSettings(SafariChannel channel)
-        : base(new BrowserDownloadOptions())
+    /// <param name="downloadOptions">The download options, or <see langword="null"/> for the defaults; Safari is never downloaded.</param>
+    /// <param name="customPath">The path to the Safari executable, or <see langword="null"/> for the system installation.</param>
+    internal SafariBrowserLocatorSettings(SafariChannel channel, BrowserDownloadOptions? downloadOptions = null, string? customPath = null)
+        : base(downloadOptions ?? new BrowserDownloadOptions())
     {
         this.channelValue = channel;
         this.BrowserName = "safari";
         this.Channel = channel.ToString().ToLowerInvariant();
-        this.BrowserDisplayName = $"Safari{(channel == SafariChannel.TechnologyPreview ? "Technology Preview" : string.Empty)}";
+        this.BrowserDisplayName = channel == SafariChannel.TechnologyPreview ? "Safari Technology Preview" : "Safari";
         this.EnvironmentVariableName = "SAFARI_EXECUTABLE";
-        this.LocationBehavior = FileLocationBehavior.UseSystemInstallLocation;
+        this.LocationBehavior = customPath is null ? FileLocationBehavior.UseSystemInstallLocation : FileLocationBehavior.UseCustomLocation;
         this.InstallerFileName = string.Empty;
-        this.ExpectedExecutablePath = this.GetDefaultSystemInstalledLocation();
+        this.ExpectedExecutablePath = customPath ?? this.GetDefaultSystemInstalledLocation();
         this.IncludeDriver = true;
-        this.DriverLocationBehavior = FileLocationBehavior.UseSystemInstallLocation;
+        this.DriverLocationBehavior = FileLocationBehavior.UseCustomLocation;
         this.DriverExecutableLocation = this.GetDriverLocation();
         this.Version = SystemVersionString;
         this.InitializeExtractors();
@@ -116,12 +120,12 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
 
     private string GetDriverLocation()
     {
-        return this.channelValue == SafariChannel.Stable ? Path.Combine("usr", "bin") : this.GetInstallLocation();
+        return this.channelValue == SafariChannel.Stable ? "/usr/bin/safaridriver" : $"{this.GetInstallLocation()}/safaridriver";
     }
 
     private string GetDefaultSystemInstalledLocation()
     {
-        return Path.Combine(this.GetInstallLocation(), this.GetAppBundleName());
+        return $"{this.GetInstallLocation()}/{this.GetAppBundleName()}";
     }
 
     private string GetAppBundleName()
@@ -136,10 +140,7 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
 
     private string GetInstallLocation()
     {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            $"{this.GetAppBundleName()}.app",
-            "Contents",
-            "MacOS");
+        // Safari exists only on macOS, so these are macOS paths wherever the settings are created.
+        return $"{ApplicationsDirectory}/{this.GetAppBundleName()}.app/Contents/MacOS";
     }
 }

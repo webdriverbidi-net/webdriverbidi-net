@@ -72,10 +72,11 @@ public class BrowserLocator
     /// <param name="locationBehavior">The strategy for locating the browser.</param>
     /// <param name="customPath">The custom path to the browser executable (only used when locationBehavior is UseCustomLocation).</param>
     /// <param name="downloadOptions">The options controlling where the browser is cached and downloaded from, or <see langword="null"/> for the defaults.</param>
+    /// <param name="browserOptions">Browser-specific options that affect which executable is located, such as <see cref="ChromeLaunchOptions.UseHeadlessShell"/>, or <see langword="null"/> for none.</param>
     /// <param name="cancellationToken">A token that cancels locating the browser.</param>
     /// <returns>The path to the browser executable.</returns>
-    /// <exception cref="NotSupportedException">Thrown when the specified browser cannot be located by this method.</exception>
-    /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
+    /// <exception cref="NotSupportedException">Thrown when the specified browser cannot be located by this method, or not on this platform.</exception>
+    /// <exception cref="ArgumentException">Thrown when customPath is required but not provided, or the channel, version, or browser options cannot be used with the browser.</exception>
     /// <exception cref="BrowserDownloadException">Thrown when the browser cannot be located or downloaded.</exception>
     public static async Task<string> FindBrowserAsync(
         BrowserKind browser,
@@ -84,15 +85,22 @@ public class BrowserLocator
         FileLocationBehavior locationBehavior = FileLocationBehavior.AutoLocateAndDownload,
         string? customPath = null,
         BrowserDownloadOptions? downloadOptions = null,
+        BrowserLaunchOptions? browserOptions = null,
         CancellationToken cancellationToken = default)
     {
         downloadOptions ??= new BrowserDownloadOptions();
         version ??= BrowserVersion.Latest;
+        if (browserOptions is not null && browserOptions.Browser != browser)
+        {
+            throw new ArgumentException($"{browserOptions.GetType().Name} cannot be used to locate {browser}.", nameof(browserOptions));
+        }
+
         BrowserLocatorSettings settings = browser switch
         {
-            BrowserKind.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            BrowserKind.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions, browserOptions is ChromeLaunchOptions { UseHeadlessShell: true }),
             BrowserKind.Firefox => CreateFirefoxSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            _ => throw new NotSupportedException($"{browser} cannot be located; this method supports Chrome and Firefox."),
+            BrowserKind.Safari => CreateSafariSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            _ => throw new NotSupportedException($"{browser} cannot be located; this method supports Chrome, Firefox, and Safari."),
         };
 
         BrowserLocator locator = new(settings);
@@ -141,6 +149,7 @@ public class BrowserLocator
     /// <param name="locationBehavior">The location behavior strategy.</param>
     /// <param name="customPath">Optional custom path to the browser executable.</param>
     /// <param name="downloadOptions">The options controlling where the browser is cached and downloaded from.</param>
+    /// <param name="useHeadlessShell">A value indicating whether to locate chrome-headless-shell rather than Chrome.</param>
     /// <returns>Configured Chrome browser locator settings.</returns>
     /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
     internal static BrowserLocatorSettings CreateChromeSettings(
@@ -148,7 +157,8 @@ public class BrowserLocator
         BrowserVersion version,
         FileLocationBehavior locationBehavior,
         string? customPath,
-        BrowserDownloadOptions downloadOptions)
+        BrowserDownloadOptions downloadOptions,
+        bool useHeadlessShell = false)
     {
         ChromeChannel chromeChannel = channel switch
         {
@@ -167,7 +177,7 @@ public class BrowserLocator
             throw new ArgumentException("customPath must be provided when locationBehavior is UseCustomLocation.", nameof(customPath));
         }
 
-        return new ChromeBrowserLocatorSettings(chromeChannel, locationBehavior, downloadOptions, browserLocation, versionString);
+        return new ChromeBrowserLocatorSettings(chromeChannel, locationBehavior, downloadOptions, browserLocation, versionString, useHeadlessShell);
     }
 
     /// <summary>
@@ -193,6 +203,7 @@ public class BrowserLocator
             BrowserReleaseChannel.Beta => FirefoxChannel.Beta,
             BrowserReleaseChannel.DeveloperPreview => FirefoxChannel.Dev,
             BrowserReleaseChannel.Alpha => FirefoxChannel.Nightly,
+            BrowserReleaseChannel.ExtendedSupport => FirefoxChannel.Esr,
             _ => throw new ArgumentException($"Invalid browser release channel for Firefox: {channel}", nameof(channel)),
         };
 
@@ -205,6 +216,50 @@ public class BrowserLocator
         }
 
         return new FirefoxBrowserLocatorSettings(firefoxChannel, locationBehavior, downloadOptions, browserLocation, versionString);
+    }
+
+    /// <summary>
+    /// Creates browser locator settings for Safari, which is never downloaded: the system
+    /// installation, or the executable at a custom location, is used.
+    /// </summary>
+    /// <param name="channel">The release channel.</param>
+    /// <param name="version">The browser version, which must be the latest or the system-installed version.</param>
+    /// <param name="locationBehavior">The location behavior strategy.</param>
+    /// <param name="customPath">Optional custom path to the browser executable.</param>
+    /// <param name="downloadOptions">The download options, whose platform must be macOS.</param>
+    /// <returns>Configured Safari browser locator settings.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the platform is not macOS.</exception>
+    /// <exception cref="ArgumentException">Thrown when the channel or version cannot be used with Safari, or customPath is required but not provided.</exception>
+    internal static BrowserLocatorSettings CreateSafariSettings(
+        BrowserReleaseChannel channel,
+        BrowserVersion version,
+        FileLocationBehavior locationBehavior,
+        string? customPath,
+        BrowserDownloadOptions downloadOptions)
+    {
+        if (downloadOptions.ResolvedPlatform.OperatingSystem != OperatingSystemFamily.MacOS)
+        {
+            throw new NotSupportedException($"Safari is available only on macOS, not {downloadOptions.ResolvedPlatform}.");
+        }
+
+        SafariChannel safariChannel = channel switch
+        {
+            BrowserReleaseChannel.Stable => SafariChannel.Stable,
+            BrowserReleaseChannel.DeveloperPreview => SafariChannel.TechnologyPreview,
+            _ => throw new ArgumentException($"Invalid browser release channel for Safari: {channel}", nameof(channel)),
+        };
+
+        if (version != BrowserVersion.Latest && version != BrowserVersion.SystemInstalled)
+        {
+            throw new ArgumentException("Safari cannot be downloaded, so only its installed version can be located.", nameof(version));
+        }
+
+        if (locationBehavior == FileLocationBehavior.UseCustomLocation && string.IsNullOrWhiteSpace(customPath))
+        {
+            throw new ArgumentException("customPath must be provided when locationBehavior is UseCustomLocation.", nameof(customPath));
+        }
+
+        return new SafariBrowserLocatorSettings(safariChannel, downloadOptions, locationBehavior == FileLocationBehavior.UseCustomLocation ? customPath : null);
     }
 
     /// <summary>
@@ -265,7 +320,8 @@ public class BrowserLocator
         InstallCache cache = new(Path.Combine(this.CacheDirectory, this.settings.BrowserName, this.settings.Channel), this.settings.DownloadOptions);
         using IDisposable lockHandle = await cache.LockAsync(cancellationToken).ConfigureAwait(false);
         string relativeExecutablePath = this.settings.ExpectedExecutablePath;
-        if (!this.settings.IsLatestChannelVersion)
+        string? versionRequest = this.settings.BrowserVersionRequest;
+        if (versionRequest is null)
         {
             // A specific version never changes, so once installed it needs no network request.
             if (cache.TryGetInstalledExecutable(this.settings.Version, relativeExecutablePath, out string? installedPath))
@@ -280,7 +336,7 @@ public class BrowserLocator
         }
 
         string? cachedPath = null;
-        bool isLatestInstalled = cache.TryGetResolvedVersion(BrowserLocatorSettings.LatestVersionString, out string? latestVersion, out bool isFresh)
+        bool isLatestInstalled = cache.TryGetResolvedVersion(versionRequest, out string? latestVersion, out bool isFresh)
             && cache.TryGetInstalledExecutable(latestVersion, relativeExecutablePath, out cachedPath);
         if (isLatestInstalled && (isFresh || this.settings.DownloadOptions.SkipDownload))
         {
@@ -303,7 +359,7 @@ public class BrowserLocator
         // A channel whose builds share a version number (Firefox Nightly) is reinstalled whenever it is rechecked.
         if (!downloadInfo.IgnoreVersionMatch && cache.TryGetInstalledExecutable(downloadInfo.Version, relativeExecutablePath, out string? currentPath))
         {
-            cache.SaveResolvedVersion(BrowserLocatorSettings.LatestVersionString, downloadInfo.Version);
+            cache.SaveResolvedVersion(versionRequest, downloadInfo.Version);
             await this.LogUsingCachedBrowserAsync().ConfigureAwait(false);
             return new LocatedBrowser(currentPath, downloadInfo.Version);
         }
@@ -320,7 +376,7 @@ public class BrowserLocator
             return new LocatedBrowser(inUsePath, downloadInfo.Version);
         }
 
-        cache.SaveResolvedVersion(BrowserLocatorSettings.LatestVersionString, downloadInfo.Version);
+        cache.SaveResolvedVersion(versionRequest, downloadInfo.Version);
         return new LocatedBrowser(executablePath, downloadInfo.Version);
     }
 
@@ -344,6 +400,11 @@ public class BrowserLocator
     private async Task<string> InstallBrowserAsync(InstallCache cache, BrowserDownloadInfo downloadInfo, CancellationToken cancellationToken)
     {
         string name = $"{this.settings.BrowserDisplayName} {downloadInfo.Version}";
+        if (this.settings.PlatformSubstitutionNote is string note)
+        {
+            await this.LogAsync(note, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+        }
+
         await this.LogAsync($"Downloading {name}...", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         string relativeExecutablePath = this.settings.ExpectedExecutablePath;
         string executablePath = await cache.InstallAsync(downloadInfo.Version, relativeExecutablePath, async installDirectory =>
