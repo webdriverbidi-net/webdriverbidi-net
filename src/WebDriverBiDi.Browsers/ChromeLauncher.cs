@@ -101,6 +101,12 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     public Process? PipeServerProcess => this.browserProcess;
 
     /// <summary>
+    /// Gets a value indicating whether the process runs as root on Linux, where Chrome's sandbox is
+    /// unavailable and Chrome refuses to start without the --no-sandbox argument.
+    /// </summary>
+    internal static bool IsSandboxUnavailable => RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.UserName == "root";
+
+    /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
     /// </summary>
     protected override ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new("chromeLauncher.logMessage");
@@ -109,10 +115,16 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     {
         get
         {
-            List<string> args = [.. this.chromeArguments];
-            args.Add($"--disable-features={string.Join(",", this.disabledFeatures)}");
-            args.Add($"--enable-features={string.Join(",", this.enabledFeatures)}");
-            args.Add($"--user-data-dir={this.profile?.Path}");
+            List<string> defaultArguments = [.. this.chromeArguments];
+            defaultArguments.Add($"--disable-features={string.Join(",", this.disabledFeatures)}");
+            defaultArguments.Add($"--enable-features={string.Join(",", this.enabledFeatures)}");
+            if (IsSandboxUnavailable)
+            {
+                defaultArguments.Add("--no-sandbox");
+            }
+
+            List<string> args = [.. this.LaunchSettings.FilterDefaultArguments(defaultArguments)];
+            args.Add($"--user-data-dir={this.LaunchSettings.UserDataDirectory ?? this.profile?.Path}");
             if (this.ConnectionType == ConnectionKind.Pipes)
             {
                 args.Add("--remote-debugging-pipe");
@@ -125,11 +137,11 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             if (this.IsBrowserHeadless)
             {
                 args.Add("--headless=new");
-                args.Add("--no-sandbox");
                 args.Add("--disable-gpu");
             }
 
-            args.Add("about:blank");
+            args.AddRange(this.LaunchSettings.Arguments);
+            args.AddRange(this.LaunchSettings.FilterDefaultArguments(["about:blank"]));
             return args.AsReadOnly();
         }
     }
@@ -160,7 +172,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
 
         // With port 0, Chrome chooses a free port itself and reports it with its DevTools endpoint.
         this.ConnectionString = string.Empty;
-        this.profile = TemporaryProfile.Create("chrome");
+        this.profile = this.LaunchSettings.UserDataDirectory is null ? TemporaryProfile.Create("chrome") : null;
         try
         {
             Process process = new()
@@ -171,7 +183,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             process.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
             process.Start();
             this.browserProcess = process;
-            this.profile.SetOwner(this.browserProcess);
+            this.profile?.SetOwner(this.browserProcess);
             this.browserProcess.BeginOutputReadLine();
             this.browserProcess.BeginErrorReadLine();
             bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
@@ -332,7 +344,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             }
         }
 
-        return new ProcessStartInfo()
+        ProcessStartInfo startInfo = new()
         {
             FileName = fileName,
             Arguments = CommandLine.JoinArguments(arguments),
@@ -341,6 +353,8 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             RedirectStandardError = true,
             CreateNoWindow = true,
         };
+        this.LaunchSettings.ApplyEnvironmentVariables(startInfo);
+        return startInfo;
     }
 
     private async Task<bool> WaitForInitializationAsync()

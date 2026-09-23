@@ -31,6 +31,22 @@ public static class CacheSeeder
     }
 
     /// <summary>
+    /// Records the version a request, such as "latest", resolved to.
+    /// </summary>
+    /// <param name="cache">The cache directory.</param>
+    /// <param name="scope">The '/'-separated directory of the browser channel or driver, such as "firefox/stable".</param>
+    /// <param name="request">The version request.</param>
+    /// <param name="version">The version it resolved to.</param>
+    /// <param name="resolvedAt">When it was resolved.</param>
+    public static void SeedResolvedVersion(TemporaryDirectory cache, string scope, string request, string version, DateTimeOffset resolvedAt)
+    {
+        string scopeDirectory = Path.Combine(cache.Path, TestDownloadOptions.ToLocalPath(scope));
+        Directory.CreateDirectory(scopeDirectory);
+        System.Text.Json.Nodes.JsonObject record = new() { [request] = new System.Text.Json.Nodes.JsonObject() { ["version"] = version, ["resolvedAt"] = resolvedAt } };
+        File.WriteAllText(Path.Combine(scopeDirectory, "resolved-versions.json"), record.ToJsonString());
+    }
+
+    /// <summary>
     /// Creates a version's files without the marker, as an interrupted installation leaves them.
     /// </summary>
     /// <param name="cache">The cache directory.</param>

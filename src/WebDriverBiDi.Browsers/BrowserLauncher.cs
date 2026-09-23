@@ -103,6 +103,11 @@ public abstract class BrowserLauncher : IAsyncDisposable
     internal BrowserLocator BrowserLocator { get; set; }
 
     /// <summary>
+    /// Gets or sets the settings for the launched browser process.
+    /// </summary>
+    internal LaunchSettings LaunchSettings { get; set; } = new();
+
+    /// <summary>
     /// Gets an ObservableEventInvocable that subclasses can use to raise the OnLogMessage event.
     /// </summary>
     protected abstract ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; }

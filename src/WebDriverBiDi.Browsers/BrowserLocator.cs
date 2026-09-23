@@ -266,8 +266,8 @@ public class BrowserLocator
     private async Task<LocatedBrowser> LocateBrowserPathAsync()
     {
         // Check environment variable first
-        string? envBrowserPath = Environment.GetEnvironmentVariable(this.settings.EnvironmentVariableName);
-        if (!string.IsNullOrEmpty(envBrowserPath))
+        string? envBrowserPath = LauncherEnvironment.GetVariable(this.settings.EnvironmentVariableName);
+        if (envBrowserPath is not null)
         {
             await this.LogAsync($"Using environment variable '{this.settings.EnvironmentVariableName}': {envBrowserPath}", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
             return new LocatedBrowser(envBrowserPath, null);
@@ -296,6 +296,7 @@ public class BrowserLocator
                 return new LocatedBrowser(installedPath, this.settings.Version);
             }
 
+            this.ThrowIfDownloadSkipped($"{this.settings.BrowserDisplayName} {this.settings.Version}");
             BrowserDownloadInfo pinnedDownloadInfo = await this.settings.GetBrowserDownloadInfo().ConfigureAwait(false);
             return new LocatedBrowser(await this.InstallBrowserAsync(cache, pinnedDownloadInfo).ConfigureAwait(false), pinnedDownloadInfo.Version);
         }
@@ -303,12 +304,13 @@ public class BrowserLocator
         string? cachedPath = null;
         bool isLatestInstalled = cache.TryGetResolvedVersion(BrowserLocatorSettings.LatestVersionString, out string? latestVersion, out bool isFresh)
             && cache.TryGetInstalledExecutable(latestVersion, relativeExecutablePath, out cachedPath);
-        if (isLatestInstalled && isFresh)
+        if (isLatestInstalled && (isFresh || this.settings.DownloadOptions.SkipDownload))
         {
             await this.LogUsingCachedBrowserAsync().ConfigureAwait(false);
             return new LocatedBrowser(cachedPath!, latestVersion);
         }
 
+        this.ThrowIfDownloadSkipped(this.settings.BrowserDisplayName);
         BrowserDownloadInfo downloadInfo;
         try
         {
@@ -342,6 +344,14 @@ public class BrowserLocator
 
         cache.SaveResolvedVersion(BrowserLocatorSettings.LatestVersionString, downloadInfo.Version);
         return new LocatedBrowser(executablePath, downloadInfo.Version);
+    }
+
+    private void ThrowIfDownloadSkipped(string description)
+    {
+        if (this.settings.DownloadOptions.SkipDownload)
+        {
+            throw new InvalidOperationException($"{description} is not installed in {this.CacheDirectory}, and downloads are disabled by {nameof(BrowserDownloadOptions.SkipDownload)} (or {LauncherEnvironment.SkipDownloadVariableName}).");
+        }
     }
 
     private async Task LogUsingCachedBrowserAsync()

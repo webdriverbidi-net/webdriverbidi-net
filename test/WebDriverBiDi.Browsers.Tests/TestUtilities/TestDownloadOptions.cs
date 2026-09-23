@@ -40,14 +40,16 @@ public static class TestDownloadOptions
     /// <param name="cacheDirectory">The test's cache directory.</param>
     /// <param name="platform">The platform, or <see langword="null"/> for <see cref="DefaultPlatform"/>.</param>
     /// <param name="timeProvider">The time provider, or <see langword="null"/> for the system clock.</param>
+    /// <param name="skipDownload">A value indicating whether to use only what is already in the cache.</param>
     /// <returns>The download options.</returns>
-    public static BrowserDownloadOptions Create(DownloadServer server, TemporaryDirectory cacheDirectory, BrowserPlatform? platform = null, TimeProvider? timeProvider = null)
+    public static BrowserDownloadOptions Create(DownloadServer server, TemporaryDirectory cacheDirectory, BrowserPlatform? platform = null, TimeProvider? timeProvider = null, bool skipDownload = false)
     {
         return new BrowserDownloadOptions()
         {
             CacheDirectory = cacheDirectory.Path,
             Platform = platform ?? DefaultPlatform,
             TimeProvider = timeProvider ?? TimeProvider.System,
+            SkipDownload = skipDownload,
             ChromeForTestingEndpoint = server.UrlFor(ChromeForTestingService.BasePath),
             FirefoxProductEndpoint = server.UrlFor(FirefoxProductPath),
             FirefoxReleaseArchiveEndpoint = server.UrlFor(FirefoxArchivePath),

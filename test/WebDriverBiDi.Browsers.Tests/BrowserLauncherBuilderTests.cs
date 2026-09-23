@@ -41,6 +41,82 @@ public class BrowserLauncherBuilderTests
     }
 
     [Fact]
+    public void BuildRejectsLaunchOptionsWithRemoteGrid()
+    {
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithArguments("--custom").Build);
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithEnvironmentVariable("NAME", "value").Build);
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithoutDefaultArguments().Build);
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithUserDataDirectory("/profile").Build);
+    }
+
+    [Fact]
+    public void BuildAllowsLaunchTimeoutWithRemoteGrid()
+    {
+        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithLaunchTimeout(TimeSpan.FromSeconds(3)).Build();
+
+        Assert.Equal(TimeSpan.FromSeconds(3), launcher.InitializationTimeout);
+    }
+
+    [Fact]
+    public void BuildRejectsBrowserOptionsWithRemoteGrid()
+    {
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Firefox).LaunchUsingRemoteGrid("grid.example").WithBrowserOptions(new FirefoxLaunchOptions());
+
+        Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
+    }
+
+    [Theory]
+    [InlineData(BrowserKind.Chrome)]
+    [InlineData(BrowserKind.Safari)]
+    public void BuildRejectsBrowserOptionsForAnotherBrowser(BrowserKind browser)
+    {
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(browser).LaunchUsingDriver().WithBrowserOptions(new FirefoxLaunchOptions());
+        if (browser == BrowserKind.Safari)
+        {
+            builder.AtDefaultInstallationLocation();
+        }
+
+        Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
+    }
+
+    [Fact]
+    public void BuildRejectsArgumentsForSafari()
+    {
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Safari).LaunchUsingDriver().AtDefaultInstallationLocation().WithArguments("--custom");
+
+        Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
+    }
+
+    [Fact]
+    public void LaunchOptionMethodsRejectInvalidValues()
+    {
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Firefox);
+
+        Assert.Throws<ArgumentNullException>(() => builder.WithArguments(null!));
+        Assert.Throws<ArgumentNullException>(() => builder.WithArguments("--valid", null!));
+        Assert.Throws<ArgumentNullException>(() => builder.WithoutDefaultArguments(null!));
+        Assert.Throws<ArgumentException>(() => builder.WithEnvironmentVariable(string.Empty, "value"));
+        Assert.Throws<ArgumentException>(() => builder.WithEnvironmentVariable("NAME=VALUE", "value"));
+        Assert.Throws<ArgumentException>(() => builder.WithUserDataDirectory(" "));
+        Assert.Throws<ArgumentNullException>(() => builder.WithBrowserOptions(null!));
+        Assert.Throws<ArgumentOutOfRangeException>(() => builder.WithLaunchTimeout(TimeSpan.Zero));
+    }
+
+    [Theory]
+    [InlineData("some.preference", 1.5)]
+    [InlineData("some.preference", 5L)]
+    [InlineData("some.preference", null)]
+    [InlineData(" ", true)]
+    public void BuildRejectsFirefoxPreferencesOfUnsupportedTypesOrNames(string name, object? value)
+    {
+        FirefoxLaunchOptions options = new();
+        options.Preferences[name] = value!;
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Firefox).WithBrowserOptions(options);
+
+        Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
+    }
+
+    [Fact]
     public async Task BuildPassesDownloadOptionsToLauncher()
     {
         await using DownloadServer server = await DownloadServer.StartAsync();

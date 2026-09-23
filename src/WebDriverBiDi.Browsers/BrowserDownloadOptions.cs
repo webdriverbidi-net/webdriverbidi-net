@@ -5,13 +5,15 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Runtime.InteropServices;
+
 /// <summary>
 /// Options controlling where browsers and drivers are cached, which platform they are
 /// located for, and where they are downloaded from.
 /// </summary>
 public class BrowserDownloadOptions
 {
-    private string cacheDirectory = DefaultCacheDirectory;
+    private string cacheDirectory = LauncherEnvironment.GetVariable(LauncherEnvironment.BrowsersPathVariableName) ?? DefaultCacheDirectory;
     private TimeProvider timeProvider = TimeProvider.System;
     private TimeSpan lockTimeout = TimeSpan.FromMinutes(10);
     private Uri chromeForTestingEndpoint = new("https://googlechromelabs.github.io/chrome-for-testing/");
@@ -20,16 +22,39 @@ public class BrowserDownloadOptions
     private Uri geckoDriverReleasesEndpoint = new("https://api.github.com/repos/mozilla/geckodriver/releases/");
 
     /// <summary>
-    /// Gets the default cache directory: a "webdriverbidi-net" subdirectory of a ".cache"
-    /// directory in the user's profile directory.
+    /// Gets the platform's cache directory for downloaded browsers and drivers: a "webdriverbidi-net"
+    /// subdirectory of the local application data directory on Windows, of ~/Library/Caches on
+    /// macOS, and of $XDG_CACHE_HOME (or ~/.cache) on Linux.
     /// </summary>
-    public static string DefaultCacheDirectory { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-        ".cache",
-        "webdriverbidi-net");
+    public static string DefaultCacheDirectory
+    {
+        get
+        {
+            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string cacheRoot;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                cacheRoot = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                cacheRoot = Path.Combine(userProfile, "Library", "Caches");
+            }
+            else
+            {
+                // The XDG specification requires a relative value to be ignored.
+                string? xdgCacheHome = LauncherEnvironment.GetVariable("XDG_CACHE_HOME");
+                cacheRoot = xdgCacheHome is not null && Path.IsPathRooted(xdgCacheHome) ? xdgCacheHome : Path.Combine(userProfile, ".cache");
+            }
+
+            return Path.Combine(cacheRoot, "webdriverbidi-net");
+        }
+    }
 
     /// <summary>
-    /// Gets the directory in which downloaded browsers and drivers are cached.
+    /// Gets the directory in which downloaded browsers and drivers are cached. Defaults to the
+    /// value of the WEBDRIVERBIDI_BROWSERS_PATH environment variable if set, or to
+    /// <see cref="DefaultCacheDirectory"/> otherwise.
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when set to a null or empty value.</exception>
     public string CacheDirectory
@@ -39,6 +64,14 @@ public class BrowserDownloadOptions
             ? throw new ArgumentException("Cache directory cannot be null or empty.", nameof(this.CacheDirectory))
             : value;
     }
+
+    /// <summary>
+    /// Gets a value indicating whether to use only what is already in the cache, making no network
+    /// requests: an installed version is used however old its version information is, and locating
+    /// a browser or driver that is not installed fails. Defaults to <see langword="true"/> if the
+    /// WEBDRIVERBIDI_SKIP_DOWNLOAD environment variable is set to "1" or "true".
+    /// </summary>
+    public bool SkipDownload { get; init; } = LauncherEnvironment.IsEnabled(LauncherEnvironment.SkipDownloadVariableName);
 
     /// <summary>
     /// Gets the platform for which browsers and drivers are located and downloaded,

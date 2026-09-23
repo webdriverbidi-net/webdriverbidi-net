@@ -5,26 +5,15 @@
 
 namespace WebDriverBiDi.Browsers;
 
-// The fake browser reads its failure mode from an environment variable it inherits, so these
-// tests must not run alongside each other.
-[Collection("NonParallel")]
-public sealed class LauncherReadinessTests : IDisposable
+using WebDriverBiDi.Browsers.TestUtilities;
+
+public class LauncherReadinessTests
 {
-    private const string ModeVariableName = "WEBDRIVERBIDI_FAKE_BROWSER_MODE";
-
-    private static readonly string FakeBrowserPath = Path.Combine(
-        AppContext.BaseDirectory,
-        OperatingSystem.IsWindows() ? "WebDriverBiDi.FakeBrowser.exe" : "WebDriverBiDi.FakeBrowser");
-
-    public void Dispose()
-    {
-        Environment.SetEnvironmentVariable(ModeVariableName, null);
-    }
-
     [Fact]
     public async Task ChromeLaunchReportsDevToolsEndpoint()
     {
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).AtLocation(FakeBrowserPath).Build();
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
         await launcher.StartAsync();
 
         BrowserInstance instance = await launcher.LaunchBrowserAsync();
@@ -38,8 +27,8 @@ public sealed class LauncherReadinessTests : IDisposable
     [Fact]
     public async Task ChromeLaunchReportsExitCodeWhenBrowserExitsBeforeReady()
     {
-        Environment.SetEnvironmentVariable(ModeVariableName, "exit:3");
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).AtLocation(FakeBrowserPath).Build();
+        using FakeBrowserSetup fakeBrowser = new(mode: "exit:3");
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
         await launcher.StartAsync();
 
         BrowserNotLaunchedException exception = await Assert.ThrowsAsync<BrowserNotLaunchedException>(launcher.LaunchBrowserAsync);
@@ -50,8 +39,8 @@ public sealed class LauncherReadinessTests : IDisposable
     [Fact]
     public async Task ChromeLaunchTimesOutWhenBrowserNeverReportsReady()
     {
-        Environment.SetEnvironmentVariable(ModeVariableName, "silent");
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).AtLocation(FakeBrowserPath).Build();
+        using FakeBrowserSetup fakeBrowser = new(mode: "silent");
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
         launcher.InitializationTimeout = TimeSpan.FromSeconds(1);
         await launcher.StartAsync();
 
@@ -63,7 +52,8 @@ public sealed class LauncherReadinessTests : IDisposable
     [Fact]
     public async Task FirefoxLaunchReportsSessionEndpoint()
     {
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Firefox).AtLocation(FakeBrowserPath).Build();
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Firefox)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
         await launcher.StartAsync();
 
         BrowserInstance instance = await launcher.LaunchBrowserAsync();
@@ -77,8 +67,8 @@ public sealed class LauncherReadinessTests : IDisposable
     [Fact]
     public async Task FirefoxLaunchReportsExitCodeWhenBrowserExitsBeforeReady()
     {
-        Environment.SetEnvironmentVariable(ModeVariableName, "exit:3");
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Firefox).AtLocation(FakeBrowserPath).Build();
+        using FakeBrowserSetup fakeBrowser = new(mode: "exit:3");
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Firefox)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
         await launcher.StartAsync();
 
         BrowserNotLaunchedException exception = await Assert.ThrowsAsync<BrowserNotLaunchedException>(launcher.LaunchBrowserAsync);

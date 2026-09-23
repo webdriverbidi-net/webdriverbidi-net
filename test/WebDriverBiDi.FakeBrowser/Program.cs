@@ -1,12 +1,14 @@
 // Stands in for a browser or driver executable in launcher tests, then waits to be killed:
 // - Given Chrome's "--remote-debugging-port=<port>" or Firefox's "--remote-debugging-port <port>",
 //   it reports readiness the way that browser does, choosing a free port if given port 0.
-// - Given a driver's "--port=<port>", it answers HTTP requests on that port as a ready driver,
-//   exiting with code 1 if the port is in use.
+// - Given a driver's "--port=<port>", it answers HTTP requests on that port as a ready driver that
+//   creates sessions, exiting with code 1 if the port is in use.
 // Environment variables:
 // - WEBDRIVERBIDI_FAKE_BROWSER_MODE: "exit:<code>" exits at once with that code; "silent" never
 //   reports readiness; "ignore-term" ignores SIGTERM.
-// - WEBDRIVERBIDI_FAKE_BROWSER_LOG: a file to which each launch appends its arguments as a JSON line.
+// - WEBDRIVERBIDI_FAKE_BROWSER_LOG: a file to which each launch appends a JSON line with its arguments
+//   and the value of WEBDRIVERBIDI_FAKE_BROWSER_ECHO, and a driver appends one with each new session
+//   request body.
 // - WEBDRIVERBIDI_FAKE_BROWSER_CHILD_PID_FILE: starts a child process that never exits, writing its
 //   ID to this file; a graceful exit kills the child, as a real browser ends its own processes.
 // - WEBDRIVERBIDI_FAKE_BROWSER_EXIT_FILE: a file written with "graceful" when asked to exit.
@@ -22,7 +24,8 @@ string? mode = Environment.GetEnvironmentVariable(VariablePrefix + "MODE");
 string? logFile = Environment.GetEnvironmentVariable(VariablePrefix + "LOG");
 if (logFile is not null)
 {
-    File.AppendAllText(logFile, JsonSerializer.Serialize(args) + "\n");
+    string? echo = Environment.GetEnvironmentVariable(VariablePrefix + "ECHO");
+    File.AppendAllText(logFile, JsonSerializer.Serialize(new Dictionary<string, object?>() { ["arguments"] = args, ["echo"] = echo }) + "\n");
 }
 
 if (mode is not null && mode.StartsWith("exit:", StringComparison.Ordinal))
@@ -77,7 +80,7 @@ if (driverPort is not null)
 
     if (mode != "silent")
     {
-        _ = Task.Run(() => AnswerStatusRequestsAsync(listener));
+        _ = Task.Run(() => AnswerDriverRequestsAsync(listener, logFile));
     }
 }
 else if (mode != "silent")
@@ -112,29 +115,61 @@ static int ChoosePort(string requestedPort)
     return port;
 }
 
-// Answers every request as a WebDriver classic "status" request from a ready driver.
-static async Task AnswerStatusRequestsAsync(TcpListener listener)
+// Answers requests as a ready WebDriver classic driver: a POST creates a session, recording the
+// request body, a DELETE ends one, and anything else is answered as a "status" request.
+static async Task AnswerDriverRequestsAsync(TcpListener listener, string? logFile)
 {
-    byte[] body = Encoding.UTF8.GetBytes("{\"value\":{\"ready\":true,\"message\":\"fake driver ready\"}}");
-    byte[] headers = Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
     while (true)
     {
         using TcpClient client = await listener.AcceptTcpClientAsync();
         NetworkStream stream = client.GetStream();
-        byte[] buffer = new byte[4096];
-        StringBuilder request = new();
-        while (!request.ToString().Contains("\r\n\r\n"))
+        byte[] buffer = new byte[65536];
+        int length = 0;
+        int headerEnd;
+        while ((headerEnd = Encoding.ASCII.GetString(buffer, 0, length).IndexOf("\r\n\r\n", StringComparison.Ordinal)) < 0)
         {
-            int read = await stream.ReadAsync(buffer);
+            int read = await stream.ReadAsync(buffer.AsMemory(length));
             if (read == 0)
             {
                 break;
             }
 
-            request.Append(Encoding.ASCII.GetString(buffer, 0, read));
+            length += read;
         }
 
-        await stream.WriteAsync(headers);
+        string headers = Encoding.ASCII.GetString(buffer, 0, Math.Max(headerEnd, 0));
+        int contentLength = headers.Split("\r\n")
+            .Where(line => line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
+            .Select(line => int.Parse(line["Content-Length:".Length..].Trim()))
+            .FirstOrDefault();
+        int bodyStart = headerEnd + 4;
+        while (headerEnd >= 0 && length < bodyStart + contentLength)
+        {
+            length += await stream.ReadAsync(buffer.AsMemory(length));
+        }
+
+        string response;
+        if (headers.StartsWith("POST", StringComparison.Ordinal))
+        {
+            if (logFile is not null)
+            {
+                string requestBody = Encoding.UTF8.GetString(buffer, bodyStart, contentLength);
+                File.AppendAllText(logFile, JsonSerializer.Serialize(new Dictionary<string, object?>() { ["sessionRequest"] = requestBody }) + "\n");
+            }
+
+            response = "{\"value\":{\"sessionId\":\"fake-session\",\"capabilities\":{\"webSocketUrl\":\"ws://127.0.0.1:9/session/fake-session\"}}}";
+        }
+        else if (headers.StartsWith("DELETE", StringComparison.Ordinal))
+        {
+            response = "{\"value\":null}";
+        }
+        else
+        {
+            response = "{\"value\":{\"ready\":true,\"message\":\"fake driver ready\"}}";
+        }
+
+        byte[] body = Encoding.UTF8.GetBytes(response);
+        await stream.WriteAsync(Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n"));
         await stream.WriteAsync(body);
     }
 }

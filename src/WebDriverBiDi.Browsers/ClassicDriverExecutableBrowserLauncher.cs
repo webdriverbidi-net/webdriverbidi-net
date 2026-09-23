@@ -236,6 +236,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         process.StartInfo.RedirectStandardInput = this.CaptureBrowserLauncherOutput;
         process.StartInfo.RedirectStandardOutput = this.CaptureBrowserLauncherOutput;
         process.StartInfo.RedirectStandardError = this.CaptureBrowserLauncherOutput;
+        this.LaunchSettings.ApplyEnvironmentVariables(process.StartInfo);
 
         BrowserLauncherProcessStartingEventArgs eventArgs = new(process.StartInfo);
         await this.OnLauncherProcessStartingAsync(eventArgs).ConfigureAwait(false);

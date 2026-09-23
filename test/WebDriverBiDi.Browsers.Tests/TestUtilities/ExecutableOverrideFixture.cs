@@ -8,7 +8,8 @@
 namespace WebDriverBiDi.Browsers.TestUtilities;
 
 /// <summary>
-/// Clears the environment variables that override browser and driver locations for the whole
+/// Clears the environment variables that override browser and driver locations, and the cache
+/// settings, for the whole
 /// test run, restoring them afterwards. Left set (as they are on a machine that runs the
 /// integration tests), they would silently replace the executables the tests arrange.
 /// </summary>
@@ -22,6 +23,8 @@ public sealed class ExecutableOverrideFixture : IDisposable
         "GECKODRIVER_EXECUTABLE",
         "SAFARI_EXECUTABLE",
         "SAFARIDRIVER_EXECUTABLE",
+        "WEBDRIVERBIDI_BROWSERS_PATH",
+        "WEBDRIVERBIDI_SKIP_DOWNLOAD",
     ];
 
     private readonly Dictionary<string, string?> originalValues = [];

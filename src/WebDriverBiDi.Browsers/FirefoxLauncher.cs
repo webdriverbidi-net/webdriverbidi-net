@@ -29,8 +29,6 @@ public class FirefoxLauncher : BrowserLauncher
       "--no-remote",
     ];
 
-    private readonly Dictionary<string, object> userPreferences = [];
-
     private Process? browserProcess;
     private TemporaryProfile? profile;
 
@@ -61,19 +59,20 @@ public class FirefoxLauncher : BrowserLauncher
     {
         get
         {
-            List<string> args = [.. this.firefoxArguments];
+            List<string> defaultArguments = [.. this.firefoxArguments];
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                args.Add("--foreground");
+                defaultArguments.Add("--foreground");
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                args.Add("--wait-for-browser");
+                defaultArguments.Add("--wait-for-browser");
             }
 
+            List<string> args = [.. this.LaunchSettings.FilterDefaultArguments(defaultArguments)];
             args.Add("--profile");
-            args.Add(this.profile?.Path ?? string.Empty);
+            args.Add(this.ProfileDirectory);
             args.Add($"--remote-debugging-port");
             args.Add($"{this.Port}");
             if (this.IsBrowserHeadless)
@@ -81,9 +80,12 @@ public class FirefoxLauncher : BrowserLauncher
                 args.Add("--headless");
             }
 
+            args.AddRange(this.LaunchSettings.Arguments);
             return args.AsReadOnly();
         }
     }
+
+    private string ProfileDirectory => this.LaunchSettings.UserDataDirectory ?? this.profile?.Path ?? string.Empty;
 
     // The port Firefox reported its WebDriver BiDi endpoint listening on, or 0 before it has.
     // Set from the browser process's output handler, which runs on a thread pool thread, and
@@ -123,10 +125,10 @@ public class FirefoxLauncher : BrowserLauncher
         // With port 0, Firefox chooses a free port itself and reports it when its endpoint is ready.
         this.ConnectionString = string.Empty;
         this.ReportedPort = 0;
-        this.profile = TemporaryProfile.Create("firefox");
+        this.profile = this.LaunchSettings.UserDataDirectory is null ? TemporaryProfile.Create("firefox") : null;
         try
         {
-            this.CreateProfile(this.profile.Path);
+            this.CreateProfile(this.ProfileDirectory, isTemporary: this.profile is not null);
             Process process = new()
             {
                 StartInfo = this.CreateProcessStartInfo(browserExecutableLocation),
@@ -135,7 +137,7 @@ public class FirefoxLauncher : BrowserLauncher
             process.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
             process.Start();
             this.browserProcess = process;
-            this.profile.SetOwner(this.browserProcess);
+            this.profile?.SetOwner(this.browserProcess);
             this.browserProcess.BeginOutputReadLine();
             this.browserProcess.BeginErrorReadLine();
             bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
@@ -233,7 +235,7 @@ public class FirefoxLauncher : BrowserLauncher
         }
     }
 
-    private static Dictionary<string, object> GetDefaultPreferences(Dictionary<string, object> preferences)
+    private static Dictionary<string, object> GetPreferences(Dictionary<string, object> preferences)
     {
         const string server = "dummy.test";
         Dictionary<string, object> prefs = new()
@@ -250,8 +252,7 @@ public class FirefoxLauncher : BrowserLauncher
             // Increase the APZ content response timeout to 1 minute
             ["apz.content_response_timeout"] = 60000,
 
-            // Prevent various error message on the console
-            // jest-puppeteer asserts that no error message is emitted by the console
+            // Prevent various error messages on the console
             ["browser.contentblocking.features.standard"] = "-tp,tpPrivate,cookieBehavior0,-cm,-fp",
 
             // Enable the dump function: which sends messages to the system
@@ -329,15 +330,15 @@ public class FirefoxLauncher : BrowserLauncher
             ["datareporting.policy.dataSubmissionEnabled"] = false,
             ["datareporting.policy.dataSubmissionPolicyBypassNotification"] = true,
 
-            // DevTools JSONViewer sometimes fails to load dependencies with its require.js.
-            // This doesn"t affect Puppeteer but spams console (Bug 1424372)
+            // DevTools JSONViewer sometimes fails to load dependencies with its require.js,
+            // which spams the console (Bug 1424372)
             ["devtools.jsonview.enabled"] = false,
 
             // Disable popup-blocker
             ["dom.disable_open_during_load"] = false,
 
-            // Enable the support for File object creation in the content process
-            // Required for |Page.setFileInputFiles| protocol method.
+            // Enable the support for File object creation in the content process,
+            // which setting the files of a file input requires
             ["dom.file.createInChild"] = true,
 
             // Disable the ProcessHangMonitor
@@ -401,8 +402,7 @@ public class FirefoxLauncher : BrowserLauncher
             // Disable the GFX sanity window
             ["media.sanity-test.disabled"] = true,
 
-            // Prevent various error message on the console
-            // jest-puppeteer asserts that no error message is emitted by the console
+            // Prevent various error messages on the console
             ["network.cookie.cookieBehavior"] = 0,
 
             // Disable experimental feature that is only available in Nightly
@@ -421,8 +421,6 @@ public class FirefoxLauncher : BrowserLauncher
             // Make sure SNTP requests do not hit the network
             ["network.sntp.pools"] = server,
 
-            // Disable Flash.
-            ["plugin.state.flash"] = 0,
             ["privacy.trackingprotection.enabled"] = false,
 
             // Enable Remote Agent
@@ -505,13 +503,16 @@ public class FirefoxLauncher : BrowserLauncher
             RedirectStandardError = true,
             CreateNoWindow = true,
         };
-
+        this.LaunchSettings.ApplyEnvironmentVariables(startInfo);
         return startInfo;
     }
 
-    private void CreateProfile(string profileDirectory)
+    // Preferences go in user.js, which Firefox applies at every start. A temporary profile also gets
+    // an empty prefs.js; a caller's profile keeps its own, so its other settings survive.
+    private void CreateProfile(string profileDirectory, bool isTemporary)
     {
-        Dictionary<string, object> defaultPreferences = GetDefaultPreferences(this.userPreferences);
+        Directory.CreateDirectory(profileDirectory);
+        Dictionary<string, object> defaultPreferences = GetPreferences(this.LaunchSettings.FirefoxPreferences);
         List<string> preferenceList = [];
         foreach (KeyValuePair<string, object> preferencePair in defaultPreferences)
         {
@@ -519,7 +520,10 @@ public class FirefoxLauncher : BrowserLauncher
         }
 
         File.WriteAllText(Path.Combine(profileDirectory, "user.js"), string.Join("\n", preferenceList));
-        File.WriteAllText(Path.Combine(profileDirectory, "prefs.js"), string.Empty);
+        if (isTemporary)
+        {
+            File.WriteAllText(Path.Combine(profileDirectory, "prefs.js"), string.Empty);
+        }
     }
 
     /// <summary>

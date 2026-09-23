@@ -7,10 +7,11 @@ namespace WebDriverBiDi.Browsers.TestUtilities;
 
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 /// <summary>
-/// Configures the fake browser for one test through the environment variables it inherits, and
-/// reads back what it recorded. Tests using this must not run in parallel with each other.
+/// Configures the fake browser for one launch through the environment variables a launcher sets,
+/// and reads back what it recorded.
 /// </summary>
 public sealed class FakeBrowserSetup : IDisposable
 {
@@ -21,10 +22,15 @@ public sealed class FakeBrowserSetup : IDisposable
         AppContext.BaseDirectory,
         OperatingSystem.IsWindows() ? "WebDriverBiDi.FakeBrowser.exe" : "WebDriverBiDi.FakeBrowser");
 
+    /// <summary>
+    /// The variable whose value the fake browser records with each launch.
+    /// </summary>
+    public const string EchoVariableName = VariablePrefix + "ECHO";
+
     private const string VariablePrefix = "WEBDRIVERBIDI_FAKE_BROWSER_";
-    private static readonly string[] VariableNames = ["MODE", "LOG", "CHILD_PID_FILE", "EXIT_FILE"];
 
     private readonly TemporaryDirectory recordingDirectory = new();
+    private readonly Dictionary<string, string?> variables = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FakeBrowserSetup"/> class.
@@ -33,18 +39,21 @@ public sealed class FakeBrowserSetup : IDisposable
     /// <param name="startChild">A value indicating whether the fake browser starts a child process.</param>
     public FakeBrowserSetup(string? mode = null, bool startChild = false)
     {
-        SetVariable("MODE", mode);
-        SetVariable("LOG", this.LogFile);
-        SetVariable("CHILD_PID_FILE", startChild ? this.ChildProcessIdFile : null);
-        SetVariable("EXIT_FILE", this.ExitFile);
+        this.variables[VariablePrefix + "MODE"] = mode;
+        this.variables[VariablePrefix + "LOG"] = this.LogFile;
+        this.variables[VariablePrefix + "CHILD_PID_FILE"] = startChild ? this.ChildProcessIdFile : null;
+        this.variables[VariablePrefix + "EXIT_FILE"] = this.ExitFile;
     }
 
     /// <summary>
-    /// Gets the arguments of each launch of the fake browser, in order.
+    /// Gets each launch of the fake browser, in order.
     /// </summary>
-    public IReadOnlyList<string[]> Launches => File.Exists(this.LogFile)
-        ? [.. File.ReadAllLines(this.LogFile).Select(line => JsonSerializer.Deserialize<string[]>(line)!)]
-        : [];
+    public IReadOnlyList<FakeBrowserLaunch> Launches => [.. this.ReadLog("arguments").Select(entry => new FakeBrowserLaunch(entry["arguments"]!.Deserialize<string[]>()!, (string?)entry["echo"]))];
+
+    /// <summary>
+    /// Gets the body of each new session request the fake browser, acting as a driver, received.
+    /// </summary>
+    public IReadOnlyList<JsonNode> SessionRequests => [.. this.ReadLog("sessionRequest").Select(entry => JsonNode.Parse((string)entry["sessionRequest"]!)!)];
 
     /// <summary>
     /// Gets a value indicating whether the fake browser exited because it was asked to.
@@ -58,11 +67,26 @@ public sealed class FakeBrowserSetup : IDisposable
     private string ExitFile => Path.Combine(this.recordingDirectory.Path, "exit");
 
     /// <summary>
+    /// Configures a launcher to launch the fake browser with this setup.
+    /// </summary>
+    /// <param name="builder">The launcher builder.</param>
+    /// <returns>The builder.</returns>
+    public BrowserLauncherBuilder Apply(BrowserLauncherBuilder builder)
+    {
+        foreach (KeyValuePair<string, string?> variable in this.variables)
+        {
+            builder.WithEnvironmentVariable(variable.Key, variable.Value);
+        }
+
+        return builder;
+    }
+
+    /// <summary>
     /// Waits for the fake browser to record a launch.
     /// </summary>
-    /// <returns>The arguments of the most recent launch.</returns>
+    /// <returns>The most recent launch.</returns>
     /// <exception cref="TimeoutException">Thrown when no launch is recorded within 10 seconds.</exception>
-    public async Task<string[]> WaitForLaunchAsync()
+    public async Task<FakeBrowserLaunch> WaitForLaunchAsync()
     {
         Stopwatch waitStopwatch = Stopwatch.StartNew();
         while (this.Launches.Count == 0)
@@ -95,7 +119,7 @@ public sealed class FakeBrowserSetup : IDisposable
     /// <returns>The argument value.</returns>
     public string GetLastLaunchArgument(string name)
     {
-        string[] arguments = this.Launches[^1];
+        string[] arguments = this.Launches[^1].Arguments;
         int index = Array.IndexOf(arguments, name);
         return index >= 0 ? arguments[index + 1] : arguments.Single(argument => argument.StartsWith(name + "=", StringComparison.Ordinal))[(name.Length + 1)..];
     }
@@ -103,16 +127,20 @@ public sealed class FakeBrowserSetup : IDisposable
     /// <inheritdoc/>
     public void Dispose()
     {
-        foreach (string name in VariableNames)
-        {
-            SetVariable(name, null);
-        }
-
         this.recordingDirectory.Dispose();
     }
 
-    private static void SetVariable(string name, string? value)
+    private IEnumerable<JsonObject> ReadLog(string entryKind)
     {
-        Environment.SetEnvironmentVariable(VariablePrefix + name, value);
+        return File.Exists(this.LogFile)
+            ? File.ReadAllLines(this.LogFile).Select(line => JsonNode.Parse(line)!.AsObject()).Where(entry => entry.ContainsKey(entryKind))
+            : [];
     }
 }
+
+/// <summary>
+/// A launch of the fake browser.
+/// </summary>
+/// <param name="Arguments">The command line arguments.</param>
+/// <param name="Echo">The value of <see cref="FakeBrowserSetup.EchoVariableName"/> in the launched process.</param>
+public sealed record FakeBrowserLaunch(string[] Arguments, string? Echo);

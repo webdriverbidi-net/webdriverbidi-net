@@ -45,9 +45,24 @@ public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
             { "level", "error" },
         };
 
-        if (this.IsBrowserHeadless)
+        List<string> firefoxCommandLineArgs = this.IsBrowserHeadless ? ["--headless"] : [];
+        if (this.LaunchSettings.UserDataDirectory is not null)
         {
-            firefoxOptions["args"] = new List<string>() { "--headless" };
+            // geckodriver uses a profile named by "-profile" in place, rather than a temporary copy.
+            Directory.CreateDirectory(this.LaunchSettings.UserDataDirectory);
+            firefoxCommandLineArgs.Add("-profile");
+            firefoxCommandLineArgs.Add(this.LaunchSettings.UserDataDirectory);
+        }
+
+        firefoxCommandLineArgs.AddRange(this.LaunchSettings.Arguments);
+        if (firefoxCommandLineArgs.Count > 0)
+        {
+            firefoxOptions["args"] = firefoxCommandLineArgs;
+        }
+
+        if (this.LaunchSettings.FirefoxPreferences.Count > 0)
+        {
+            firefoxOptions["prefs"] = new Dictionary<string, object>(this.LaunchSettings.FirefoxPreferences);
         }
 
         // CONSIDER: This is a very naive and simple set of capabilities.

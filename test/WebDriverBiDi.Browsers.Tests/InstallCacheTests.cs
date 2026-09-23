@@ -254,6 +254,65 @@ public class InstallCacheTests
         Assert.Equal(installedPath, path);
     }
 
+    [Fact]
+    public async Task SkipDownloadUsesInstalledVersionWithoutChecking()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        using TemporaryDirectory cache = new();
+        string installedPath = CacheSeeder.SeedInstallation(cache, "chrome/stable", OlderVersion, ChromeExecutablePath("linux64"));
+        CacheSeeder.SeedResolvedVersion(cache, "chrome/stable", "latest", OlderVersion, DateTimeOffset.UtcNow.AddDays(-30));
+
+        string path = await FindChromeAsync(TestDownloadOptions.Create(server, cache, skipDownload: true));
+
+        Assert.Equal(installedPath, path);
+        Assert.Empty(server.RequestedUrls);
+    }
+
+    [Fact]
+    public async Task SkipDownloadWithNothingInstalledFailsWithoutNetworkRequests()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        Serve(server, "Stable", LatestVersion);
+        using TemporaryDirectory cache = new();
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => FindChromeAsync(TestDownloadOptions.Create(server, cache, skipDownload: true)));
+
+        Assert.Contains("SkipDownload", exception.Message);
+        Assert.Empty(server.RequestedUrls);
+    }
+
+    [Fact]
+    public async Task SkipDownloadUsesInstalledSpecificVersion()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        using TemporaryDirectory cache = new();
+        string installedPath = CacheSeeder.SeedInstallation(cache, "chrome/stable", OlderVersion, ChromeExecutablePath("linux64"));
+        BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, skipDownload: true);
+
+        string path = await FindChromeAsync(options, BrowserVersion.Specific(OlderVersion));
+
+        Assert.Equal(installedPath, path);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FindChromeAsync(options, BrowserVersion.Specific(LatestVersion)));
+        Assert.Empty(server.RequestedUrls);
+    }
+
+    [Fact]
+    public async Task SkipDownloadUsesInstalledDriverWithoutChecking()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        using TemporaryDirectory cache = new();
+        string installedPath = CacheSeeder.SeedInstallation(cache, "drivers/chromedriver", OlderVersion, "chromedriver");
+        CacheSeeder.SeedResolvedVersion(cache, "drivers/chromedriver", "latest-stable", OlderVersion, DateTimeOffset.UtcNow.AddDays(-30));
+        BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, skipDownload: true);
+
+        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options);
+
+        Assert.Equal(installedPath, path);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Beta, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Specific(LatestVersion), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options));
+        Assert.Empty(server.RequestedUrls);
+    }
+
     private static Task<string> FindChromeAsync(BrowserDownloadOptions options, BrowserVersion? version = null)
     {
         return BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, version ?? BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);

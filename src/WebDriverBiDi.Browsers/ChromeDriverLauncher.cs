@@ -35,15 +35,27 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
             chromeOptions["binary"] = this.BrowserExecutableLocation;
         }
 
+        List<string> defaultArguments = this.IsBrowserHeadless ? ["--disable-dev-shm-usage"] : [];
+        if (ChromeLauncher.IsSandboxUnavailable)
+        {
+            defaultArguments.Add("--no-sandbox");
+        }
+
+        List<string> chromeCommandLineArgs = [.. this.LaunchSettings.FilterDefaultArguments(defaultArguments)];
         if (this.IsBrowserHeadless)
         {
-            List<string> chromeCommandLineArgs =
-            [
-                "--headless=new",
-                "--disable-dev-shm-usage",
-                "--no-sandbox",
-                "--disable-gpu",
-            ];
+            chromeCommandLineArgs.Add("--headless=new");
+            chromeCommandLineArgs.Add("--disable-gpu");
+        }
+
+        if (this.LaunchSettings.UserDataDirectory is not null)
+        {
+            chromeCommandLineArgs.Add($"--user-data-dir={this.LaunchSettings.UserDataDirectory}");
+        }
+
+        chromeCommandLineArgs.AddRange(this.LaunchSettings.Arguments);
+        if (chromeCommandLineArgs.Count > 0)
+        {
             chromeOptions["args"] = chromeCommandLineArgs;
         }
 

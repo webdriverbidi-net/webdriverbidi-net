@@ -127,8 +127,8 @@ public class DriverLocator
         }
 
         // Check environment variable first
-        string? envDriverPath = Environment.GetEnvironmentVariable(this.settings.DriverEnvironmentVariableName);
-        if (!string.IsNullOrEmpty(envDriverPath))
+        string? envDriverPath = LauncherEnvironment.GetVariable(this.settings.DriverEnvironmentVariableName);
+        if (envDriverPath is not null)
         {
             await this.LogAsync($"Using environment variable '{this.settings.DriverEnvironmentVariableName}': {envDriverPath}", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
             return envDriverPath;
@@ -163,6 +163,7 @@ public class DriverLocator
                 return installedPath;
             }
 
+            this.ThrowIfDownloadSkipped($"{this.settings.DriverName} {requiredVersion}");
             DriverDownloadInfo requiredDownloadInfo = await this.settings.GetMatchingDriverDownloadInfo(browserVersion).ConfigureAwait(false);
             return await this.InstallDriverAsync(cache, requiredDownloadInfo).ConfigureAwait(false);
         }
@@ -171,12 +172,13 @@ public class DriverLocator
         string? cachedPath = null;
         bool isResolvedVersionInstalled = cache.TryGetResolvedVersion(request, out string? resolvedVersion, out bool isFresh)
             && cache.TryGetInstalledExecutable(resolvedVersion, relativeExecutablePath, out cachedPath);
-        if (isResolvedVersionInstalled && isFresh)
+        if (isResolvedVersionInstalled && (isFresh || this.settings.DownloadOptions.SkipDownload))
         {
             await this.LogAsync($"Using cached {this.settings.DriverName} {resolvedVersion}.", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
             return cachedPath;
         }
 
+        this.ThrowIfDownloadSkipped(this.settings.DriverName);
         DriverDownloadInfo downloadInfo;
         try
         {
@@ -204,6 +206,14 @@ public class DriverLocator
     internal async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
         await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+    }
+
+    private void ThrowIfDownloadSkipped(string description)
+    {
+        if (this.settings.DownloadOptions.SkipDownload)
+        {
+            throw new InvalidOperationException($"{description} is not installed in {this.CacheDirectory}, and downloads are disabled by {nameof(BrowserDownloadOptions.SkipDownload)} (or {LauncherEnvironment.SkipDownloadVariableName}).");
+        }
     }
 
     private async Task<string> InstallDriverAsync(InstallCache cache, DriverDownloadInfo downloadInfo)

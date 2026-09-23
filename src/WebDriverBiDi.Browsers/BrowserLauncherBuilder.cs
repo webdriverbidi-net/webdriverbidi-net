@@ -13,6 +13,7 @@ using WebDriverBiDi.Protocol;
 public class BrowserLauncherBuilder
 {
     private readonly BrowserKind browser;
+    private readonly LaunchSettings launchSettings = new();
     private BrowserReleaseChannel channel = BrowserReleaseChannel.Stable;
     private BrowserVersion version = BrowserVersion.Latest;
     private FileLocationBehavior locationBehavior = FileLocationBehavior.AutoLocateAndDownload;
@@ -25,6 +26,8 @@ public class BrowserLauncherBuilder
     private string? remoteGridHostName = null;
     private bool remoteGridUseSsl = false;
     private Dictionary<string, object>? capabilities = null;
+    private TimeSpan? launchTimeout = null;
+    private BrowserLaunchOptions? browserOptions = null;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncherBuilder"/> class for the specified browser.
@@ -173,6 +176,103 @@ public class BrowserLauncherBuilder
     }
 
     /// <summary>
+    /// Adds arguments to the browser's command line, after the launcher's own. When launching through
+    /// a driver, they are passed in the driver's browser options capability.
+    /// </summary>
+    /// <param name="arguments">The arguments.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when arguments or any of its elements is null.</exception>
+    public BrowserLauncherBuilder WithArguments(params string[] arguments)
+    {
+        this.launchSettings.Arguments.AddRange(ValidateArguments(arguments, nameof(arguments)));
+        return this;
+    }
+
+    /// <summary>
+    /// Omits default arguments the launcher adds to the browser's command line. Arguments the launch
+    /// depends on, such as the profile directory and the remote debugging port, are not defaults.
+    /// </summary>
+    /// <param name="arguments">
+    /// The default arguments to omit, each matching an argument either exactly or by name, so that
+    /// "--disable-features" omits "--disable-features=...". If none are given, every default argument is omitted.
+    /// </param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when arguments or any of its elements is null.</exception>
+    public BrowserLauncherBuilder WithoutDefaultArguments(params string[] arguments)
+    {
+        string[] omitted = ValidateArguments(arguments, nameof(arguments));
+        if (omitted.Length == 0)
+        {
+            this.launchSettings.OmitAllDefaultArguments = true;
+        }
+
+        this.launchSettings.OmittedDefaultArguments.AddRange(omitted);
+        return this;
+    }
+
+    /// <summary>
+    /// Sets an environment variable for the launched browser, or, when launching through a driver,
+    /// for the driver, from which the browser inherits it.
+    /// </summary>
+    /// <param name="name">The variable name.</param>
+    /// <param name="value">The value, or <see langword="null"/> to remove a variable the launched process would otherwise inherit.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    /// <exception cref="ArgumentException">Thrown when name is null, empty, or contains '='.</exception>
+    public BrowserLauncherBuilder WithEnvironmentVariable(string name, string? value)
+    {
+        if (string.IsNullOrEmpty(name) || name.IndexOf('=') >= 0)
+        {
+            throw new ArgumentException("Environment variable name cannot be null or empty, or contain '='.", nameof(name));
+        }
+
+        this.launchSettings.EnvironmentVariables[name] = value;
+        return this;
+    }
+
+    /// <summary>
+    /// Specifies a profile directory owned by the caller, which is used in place of a temporary one and
+    /// is never deleted. For Firefox, the automation preferences are written to the profile's user.js file.
+    /// </summary>
+    /// <param name="path">The profile directory, which is created if it does not exist.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    /// <exception cref="ArgumentException">Thrown when path is null or empty.</exception>
+    public BrowserLauncherBuilder WithUserDataDirectory(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException("User data directory cannot be null or empty.", nameof(path));
+        }
+
+        this.launchSettings.UserDataDirectory = path;
+        return this;
+    }
+
+    /// <summary>
+    /// Specifies settings that apply only to the browser being launched, such as
+    /// <see cref="FirefoxLaunchOptions"/> for Firefox. Specifying options again replaces them.
+    /// </summary>
+    /// <param name="options">The browser-specific options, which must be for the browser being launched.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when options is null.</exception>
+    public BrowserLauncherBuilder WithBrowserOptions(BrowserLaunchOptions options)
+    {
+        this.browserOptions = options ?? throw new ArgumentNullException(nameof(options));
+        return this;
+    }
+
+    /// <summary>
+    /// Specifies how long to wait for the browser, or the driver, to become ready. Defaults to 20 seconds.
+    /// </summary>
+    /// <param name="timeout">The timeout.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when timeout is not positive.</exception>
+    public BrowserLauncherBuilder WithLaunchTimeout(TimeSpan timeout)
+    {
+        this.launchTimeout = timeout > TimeSpan.Zero ? timeout : throw new ArgumentOutOfRangeException(nameof(timeout), "Launch timeout must be positive.");
+        return this;
+    }
+
+    /// <summary>
     /// Specifies to launch the browser via a WebDriver Classic driver executable (e.g., chromedriver, geckodriver).
     /// Uses default settings, automatically downloading the driver if needed.
     /// </summary>
@@ -281,7 +381,48 @@ public class BrowserLauncherBuilder
             _ => throw new WebDriverBiDiException($"Unknown browser type: {this.browser}"),
         };
 
+        // Copied, so settings added to this builder after Build() do not reach an already-built launcher.
+        launcher.LaunchSettings = this.launchSettings.Copy();
+        if (this.browserOptions is FirefoxLaunchOptions firefoxLaunchOptions)
+        {
+            foreach (KeyValuePair<string, object> preference in firefoxLaunchOptions.Preferences)
+            {
+                launcher.LaunchSettings.FirefoxPreferences[preference.Key] = preference.Value;
+            }
+        }
+
+        if (this.launchTimeout is TimeSpan timeout)
+        {
+            launcher.InitializationTimeout = timeout;
+        }
+
         return launcher;
+    }
+
+    private static string[] ValidateArguments(string[] arguments, string parameterName)
+    {
+        if (arguments is null || arguments.Any(argument => argument is null))
+        {
+            throw new ArgumentNullException(parameterName, "Arguments cannot be null.");
+        }
+
+        return arguments;
+    }
+
+    private static void ValidateFirefoxPreferences(FirefoxLaunchOptions options)
+    {
+        foreach (KeyValuePair<string, object> preference in options.Preferences)
+        {
+            if (string.IsNullOrWhiteSpace(preference.Key))
+            {
+                throw new BrowserLauncherConfigurationException("Firefox preference names cannot be null or empty.");
+            }
+
+            if (preference.Value is not (string or bool or int))
+            {
+                throw new BrowserLauncherConfigurationException($"Firefox preference '{preference.Key}' has a value of type {preference.Value?.GetType().Name ?? "null"}; preferences must be strings, Booleans, or integers.");
+            }
+        }
     }
 
     private void ValidateLocationBehaviorNotSet(FileLocationBehavior newBehavior)
@@ -359,8 +500,23 @@ public class BrowserLauncherBuilder
 
             if (this.locationBehavior != FileLocationBehavior.UseSystemInstallLocation)
             {
-                throw new BrowserLauncherConfigurationException("Safari cannot be launched from a custom lcoation; you must use the .AtDefaultInstallLocation() method.");
+                throw new BrowserLauncherConfigurationException("Safari cannot be launched from a custom location; you must use the .AtDefaultInstallationLocation() method.");
             }
+
+            if (this.launchSettings.ChangesBrowserConfiguration)
+            {
+                throw new BrowserLauncherConfigurationException("Safari cannot be launched with arguments, omitted default arguments, or a user data directory.");
+            }
+        }
+
+        if (this.browserOptions is not null && this.browserOptions.Browser != this.browser)
+        {
+            throw new BrowserLauncherConfigurationException($"{this.browserOptions.GetType().Name} cannot be used to launch {this.browser}.");
+        }
+
+        if (this.browserOptions is FirefoxLaunchOptions firefoxOptions)
+        {
+            ValidateFirefoxPreferences(firefoxOptions);
         }
 
         if (this.launchStrategy != LaunchStrategy.UsingRemoteGrid && this.downloadOptions?.Platform is BrowserPlatform platform && platform != BrowserPlatform.Current)
@@ -413,6 +569,13 @@ public class BrowserLauncherBuilder
             throw new BrowserLauncherConfigurationException(
                 "Cannot specify download options with LaunchUsingRemoteGrid. " +
                 "The remote grid manages its own browser installations.");
+        }
+
+        if (this.launchSettings.ChangesBrowserConfiguration || this.launchSettings.EnvironmentVariables.Count > 0 || this.browserOptions is not null)
+        {
+            throw new BrowserLauncherConfigurationException(
+                "Cannot specify arguments, omitted default arguments, environment variables, a user data directory, or browser options with LaunchUsingRemoteGrid. " +
+                "Use capabilities to configure the browser on the remote grid.");
         }
 
         if (this.headless)
