@@ -740,8 +740,10 @@ public static class DemoScenarios
         // It encapsulates the logic for collecting the network traffic. All of the concepts
         // used by that class are demonstrated in standalone form by other scenarios in this
         // class, so they are not explicitly performed here.
-        NetworkTrafficMonitor monitor = new(driver);
-        await monitor.StartMonitoringAsync(contextId);
+        NetworkTrafficMonitorOptions monitorOptions = new();
+        monitorOptions.BrowsingContextIds.Add(contextId);
+        await using NetworkTrafficMonitor monitor = new(driver, monitorOptions);
+        await monitor.StartMonitoringAsync();
 
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/inputForm.html")
         {
@@ -780,7 +782,7 @@ public static class DemoScenarios
                     Console.WriteLine("Navigation completion not detected within three seconds");
                 }
 
-                List<NetworkRequest> postRequests = await monitor.GetCapturedTrafficAsync();
+                IReadOnlyList<NetworkRequest> postRequests = await monitor.GetCapturedTrafficAsync();
                 Console.WriteLine($"Captured {postRequests.Count} requests");
                 foreach (NetworkRequest request in postRequests)
                 {
@@ -810,7 +812,7 @@ public static class DemoScenarios
         };
         navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
-        List<NetworkRequest> navigationRequests = await monitor.GetCapturedTrafficAsync();
+        IReadOnlyList<NetworkRequest> navigationRequests = await monitor.GetCapturedTrafficAsync();
         Console.WriteLine($"Captured {navigationRequests.Count} requests");
         foreach (NetworkRequest request in navigationRequests)
         {

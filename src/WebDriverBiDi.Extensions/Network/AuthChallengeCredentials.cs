@@ -57,4 +57,13 @@ public class AuthChallengeCredentials
             (this.Scheme is null || string.Equals(this.Scheme, challenge.Scheme, StringComparison.OrdinalIgnoreCase)) &&
             (this.Realm is null || string.Equals(this.Realm, challenge.Realm, StringComparison.Ordinal)));
     }
+
+    /// <summary>
+    /// Creates a copy of these credentials, so that changes to these do not reach monitoring in progress.
+    /// </summary>
+    /// <returns>The copy.</returns>
+    internal AuthChallengeCredentials Clone()
+    {
+        return new AuthChallengeCredentials(this.Credentials.UserName, this.Credentials.Password) { Scheme = this.Scheme, Realm = this.Realm };
+    }
 }

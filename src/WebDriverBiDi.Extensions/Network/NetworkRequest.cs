@@ -12,13 +12,9 @@ using System.Text;
 /// </summary>
 public class NetworkRequest
 {
-    private static readonly List<string> HttpMethodsWithBodies = [
-        "POST",
-        "PUT",
-        "PATCH"
-    ];
-
     private readonly string requestId;
+    private readonly ulong redirectCount;
+    private readonly string? browsingContextId;
     private readonly string requestUrl;
     private readonly string requestMethod;
     private readonly List<ReadOnlyHeader> requestHeaders = [];
@@ -52,10 +48,14 @@ public class NetworkRequest
     /// </summary>
     /// <param name="requestData">The data describing the HTTP request.</param>
     /// <param name="startedDateTime">The date and time the request was initiated.</param>
+    /// <param name="redirectCount">The number of redirects that led to this request.</param>
+    /// <param name="browsingContextId">The ID of the browsing context that made the request, if any.</param>
     /// <param name="requestBodyRetrieveTask">A <see cref="Task"/> object that will be fulfilled once the request body has been retrieved.</param>
-    public NetworkRequest(RequestData requestData, DateTime startedDateTime, Task<GetDataCommandResult>? requestBodyRetrieveTask = null)
+    internal NetworkRequest(RequestData requestData, DateTime startedDateTime, ulong redirectCount, string? browsingContextId, Task<GetDataCommandResult>? requestBodyRetrieveTask)
     {
         this.requestId = requestData.RequestId;
+        this.redirectCount = redirectCount;
+        this.browsingContextId = browsingContextId;
         this.requestUrl = requestData.Url;
         this.requestMethod = requestData.Method;
         this.requestHeaders.AddRange(requestData.Headers);
@@ -73,6 +73,18 @@ public class NetworkRequest
     /// Gets the ID of the network request.
     /// </summary>
     public string RequestId => this.requestId;
+
+    /// <summary>
+    /// Gets the number of redirects that led to this request. Each hop of a redirect chain is a request of its own,
+    /// sharing the chain's <see cref="RequestId"/>.
+    /// </summary>
+    public ulong RedirectCount => this.redirectCount;
+
+    /// <summary>
+    /// Gets the ID of the browsing context that made the request, or <see langword="null"/> if none did, as for a
+    /// request made by a worker.
+    /// </summary>
+    public string? BrowsingContextId => this.browsingContextId;
 
     /// <summary>
     /// Gets the URL of the network request.
@@ -322,7 +334,7 @@ public class NetworkRequest
     /// A request has one outcome: whichever of this method and <see cref="SetFailed"/> is called first stands, and a
     /// later call to either is ignored.
     /// </remarks>
-    public void SetResponseReceived(ResponseData responseData, Task<GetDataCommandResult>? responseBodyRetrieveTask = null)
+    internal void SetResponseReceived(ResponseData responseData, Task<GetDataCommandResult>? responseBodyRetrieveTask = null)
     {
         if (!this.TryClaimOutcome())
         {
@@ -352,7 +364,7 @@ public class NetworkRequest
     /// A request has one outcome: whichever of this method and <see cref="SetResponseReceived"/> is called first
     /// stands, and a later call to either is ignored.
     /// </remarks>
-    public void SetFailed(string errorText)
+    internal void SetFailed(string errorText)
     {
         if (!this.TryClaimOutcome())
         {
@@ -362,13 +374,6 @@ public class NetworkRequest
         this.fetchErrorText = errorText;
         this.responseReceivedTaskCompletionSource.SetResult(false);
     }
-
-    /// <summary>
-    /// Returns whether this request method may carry a body.
-    /// </summary>
-    /// <param name="method">The HTTP method to check.</param>
-    /// <returns><see langword="true"/> if the HTTP method may carry a request body.</returns>
-    internal static bool MethodMayHaveBody(string method) => HttpMethodsWithBodies.Contains(method.ToUpperInvariant());
 
     /// <summary>
     /// Asynchronously waits for the request to have an outcome, and for every body it can have to be captured or to

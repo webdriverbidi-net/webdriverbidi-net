@@ -44,4 +44,24 @@ public class NetworkRequestModification
     /// Gets the headers to add or overwrite on the intercepted request.
     /// </summary>
     public Dictionary<string, string> AdditionalHeaders { get; } = [];
+
+    /// <summary>
+    /// Creates a copy of this modification, so that changes to this one do not reach monitoring in progress.
+    /// </summary>
+    /// <returns>The copy.</returns>
+    internal NetworkRequestModification Clone()
+    {
+        NetworkRequestModification copy = new(this.UrlPattern)
+        {
+            ReplacementUrl = this.ReplacementUrl,
+            ReplacementMethod = this.ReplacementMethod,
+            ReplacementBody = this.ReplacementBody,
+        };
+        foreach (KeyValuePair<string, string> header in this.AdditionalHeaders)
+        {
+            copy.AdditionalHeaders[header.Key] = header.Value;
+        }
+
+        return copy;
+    }
 }

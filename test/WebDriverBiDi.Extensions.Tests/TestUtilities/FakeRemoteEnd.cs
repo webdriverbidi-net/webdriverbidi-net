@@ -19,6 +19,7 @@ using WebDriverBiDi.Protocol;
 public sealed class FakeRemoteEnd : Connection
 {
     private readonly ConcurrentQueue<JsonObject> sentCommands = new();
+    private readonly ConcurrentQueue<(string Method, JsonNode Result)> sentResults = new();
     private readonly ConcurrentDictionary<string, Func<JsonObject, JsonNode>> results = new();
     private readonly ConcurrentDictionary<string, (string Error, string Message)> errors = new();
     private readonly ConcurrentDictionary<string, bool> unansweredMethods = new();
@@ -101,6 +102,40 @@ public sealed class FakeRemoteEnd : Connection
     }
 
     /// <summary>
+    /// Gets the successful results returned for a command's method, in order.
+    /// </summary>
+    /// <param name="method">The command's method.</param>
+    /// <returns>The results.</returns>
+    public IReadOnlyList<JsonNode> ResultsFor(string method)
+    {
+        return [.. this.sentResults.Where(entry => entry.Method == method).Select(entry => entry.Result)];
+    }
+
+    /// <summary>
+    /// Waits for a command to have been sent, for work a handler does after its first await.
+    /// </summary>
+    /// <param name="method">The command's method.</param>
+    /// <param name="occurrence">Which sending of the command to wait for, counting from 1.</param>
+    /// <returns>The command.</returns>
+    /// <exception cref="TimeoutException">Thrown when the command is not sent within ten seconds.</exception>
+    public async Task<JsonObject> WaitForCommandAsync(string method, int occurrence = 1)
+    {
+        DateTime deadline = DateTime.UtcNow.AddSeconds(10);
+        while (DateTime.UtcNow < deadline)
+        {
+            IReadOnlyList<JsonObject> commands = this.CommandsFor(method);
+            if (commands.Count >= occurrence)
+            {
+                return commands[occurrence - 1];
+            }
+
+            await Task.Delay(10);
+        }
+
+        throw new TimeoutException($"Command {method} was not sent {occurrence} time(s).");
+    }
+
+    /// <summary>
     /// Delivers an event, as the remote end would.
     /// </summary>
     /// <param name="method">The event's method, such as "network.beforeRequestSent".</param>
@@ -149,7 +184,9 @@ public sealed class FakeRemoteEnd : Connection
         {
             JsonObject parameters = command["params"]?.AsObject() ?? [];
             response["type"] = "success";
-            response["result"] = this.results.TryGetValue(method, out Func<JsonObject, JsonNode>? createResult) ? createResult(parameters) : this.CreateDefaultResult(method);
+            JsonNode result = this.results.TryGetValue(method, out Func<JsonObject, JsonNode>? createResult) ? createResult(parameters) : this.CreateDefaultResult(method);
+            this.sentResults.Enqueue((method, result.DeepClone()));
+            response["result"] = result;
         }
 
         // Answered asynchronously, as a remote end would, rather than within the send.
@@ -188,6 +225,7 @@ public sealed class FakeRemoteEnd : Connection
             "network.addDataCollector" => new JsonObject() { ["collector"] = NextId("collector") },
             "script.addPreloadScript" => new JsonObject() { ["script"] = NextId("preload-script") },
             "browsingContext.getTree" => new JsonObject() { ["contexts"] = new JsonArray() },
+            "session.status" => new JsonObject() { ["ready"] = true, ["message"] = "fake" },
             _ => [],
         };
     }
