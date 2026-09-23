@@ -6,8 +6,8 @@
 namespace WebDriverBiDi.Browsers;
 
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using WebDriverBiDi;
@@ -22,8 +22,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
 {
     private readonly HttpClient httpClient = new();
 
-    private bool useSsl = false;
-    private string launcherHostName = "localhost";
+    private Uri? remoteEndUrl;
     private string sessionId = string.Empty;
 
     /// <summary>
@@ -50,21 +49,6 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     public override bool IsRunning => !string.IsNullOrEmpty(this.sessionId);
 
     /// <summary>
-    /// Gets or sets the host name of the launcher. Defaults to "localhost".
-    /// </summary>
-    /// <remarks>
-    /// Most browser launcher executables do not allow connections from remote
-    /// (non-local) machines. This property can be used as a workaround so
-    /// that an IP address (like "127.0.0.1" or "::1") can be used instead.
-    /// </remarks>
-    public string HostName { get => this.launcherHostName; set => this.launcherHostName = value; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the launcher should communicate over SSL.
-    /// </summary>
-    public bool UseSsl { get => this.useSsl; set => this.useSsl = value; }
-
-    /// <summary>
     /// Gets a value indicating whether the browser can be closed using WebDriver BiDi's browser.close command.
     /// </summary>
     public override bool IsBrowserCloseAllowed => this.BrowserLocator.BrowserName != "firefox";
@@ -74,7 +58,26 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <c>browserVersion</c> or vendor-specific options for a remote grid. When a key also appears
     /// in the result of <see cref="CreateBrowserLaunchCapabilities"/>, that value takes precedence.
     /// </summary>
-    internal Dictionary<string, object> AdditionalCapabilities { get; set; } = [];
+    internal Dictionary<string, object?> AdditionalCapabilities { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the URL of a remote end not started by this launcher, such as a grid (e.g.,
+    /// "https://grid.example/wd/hub"), or <see langword="null"/> for a driver on this machine's
+    /// <see cref="BrowserLauncher.Port"/>. Credentials in the URL are sent as Basic authorization.
+    /// </summary>
+    internal Uri? RemoteEndUrl
+    {
+        get => this.remoteEndUrl;
+        set
+        {
+            this.remoteEndUrl = value is null ? null : new UriBuilder(value) { UserName = string.Empty, Password = string.Empty }.Uri;
+            if (value is not null && !string.IsNullOrEmpty(value.UserInfo))
+            {
+                byte[] credentials = Encoding.UTF8.GetBytes(Uri.UnescapeDataString(value.UserInfo));
+                this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(credentials));
+            }
+        }
+    }
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
@@ -95,7 +98,9 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <summary>
     /// Gets the Uri of the service.
     /// </summary>
-    protected string ServiceUrl => $"{(this.useSsl ? "https" : "http")}://{this.launcherHostName}{(this.Port == 0 ? string.Empty : $":{this.Port}")}";
+    protected string ServiceUrl => this.remoteEndUrl is null
+        ? $"http://localhost{(this.Port == 0 ? string.Empty : $":{this.Port}")}"
+        : this.remoteEndUrl.AbsoluteUri.TrimEnd('/');
 
     /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
@@ -130,19 +135,6 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
     /// <exception cref="BrowserLaunchException">Thrown when the browser cannot be launched.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
-    /// <remarks>
-    /// The IL2026/IL3050 suppressions on this method cover the serialization of the
-    /// <see cref="Dictionary{TKey, TValue}"/> returned by
-    /// <see cref="CreateBrowserLaunchCapabilities"/>. Those capabilities are typed as
-    /// <c>Dictionary&lt;string, object&gt;</c> by design — subclasses override
-    /// <see cref="CreateBrowserLaunchCapabilities"/> to return vendor-specific payloads
-    /// (e.g. <c>goog:chromeOptions</c>, <c>moz:firefoxOptions</c>) whose shapes are not
-    /// known at library build time — so the reflection-based serialization path is the
-    /// only correct choice. The trade-off is documented on
-    /// <see cref="CreateBrowserLaunchCapabilities"/>.
-    /// </remarks>
-    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = "Classic capabilities are typed as Dictionary<string, object> by design; see CreateBrowserLaunchCapabilities remarks.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = "Classic capabilities are typed as Dictionary<string, object> by design; see CreateBrowserLaunchCapabilities remarks.")]
     public override async Task<BrowserInstance> LaunchBrowserAsync(CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
@@ -155,23 +147,13 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
 
         // The launcher's own capabilities are applied last, so an added capability can never replace
         // browserName or turn off webSocketUrl, without which no BiDi session is created.
-        Dictionary<string, object> sessionCapabilities = new(this.AdditionalCapabilities);
-        foreach (KeyValuePair<string, object> capability in this.CreateBrowserLaunchCapabilities())
+        Dictionary<string, object?> sessionCapabilities = new(this.AdditionalCapabilities);
+        foreach (KeyValuePair<string, object?> capability in this.CreateBrowserLaunchCapabilities())
         {
             sessionCapabilities[capability.Key] = capability.Value;
         }
 
-        Dictionary<string, object> classicCapabilities = new()
-        {
-            ["capabilities"] = new Dictionary<string, object>()
-            {
-                ["firstMatch"] = new List<object>()
-                {
-                    sessionCapabilities,
-                },
-            },
-        };
-        string json = JsonSerializer.Serialize(classicCapabilities);
+        string json = CapabilityWriter.WriteNewSessionRequest(sessionCapabilities);
         await this.LogAsync("Launching browser", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         await this.LogAsync($"Sending classic new session command. JSON:\n{json}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         StringContent content = new(json, Encoding.UTF8, "application/json");
@@ -240,25 +222,30 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     }
 
     /// <summary>
+    /// Adds a header sent with every request to the remote end.
+    /// </summary>
+    /// <param name="name">The header name.</param>
+    /// <param name="value">The header value.</param>
+    /// <returns><see langword="true"/> if the header was added; <see langword="false"/> if it cannot be sent as a request header.</returns>
+    internal bool TryAddRequestHeader(string name, string value)
+    {
+        try
+        {
+            return this.httpClient.DefaultRequestHeaders.TryAddWithoutValidation(name, value);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Creates the WebDriver Classic capabilities used to launch the browser.
     /// </summary>
-    /// <returns>A dictionary containing the capabilities.</returns>
-    /// <remarks>
-    /// <para>
-    /// <strong>AOT / trimming note:</strong> the returned values are typed as
-    /// <see cref="object"/> so subclasses can supply vendor-specific payloads (e.g.
-    /// <c>goog:chromeOptions</c>, <c>moz:firefoxOptions</c>) whose shapes are not known
-    /// at library build time. Serialization of this dictionary by the base class relies
-    /// on reflection-based <see cref="JsonSerializer"/> overloads that are not
-    /// compatible with trimming or native AOT. Consumers that publish with
-    /// <c>PublishAot=true</c> must ensure every value's runtime type is discoverable by
-    /// the default resolver, or the launcher will fail at browser-launch time with a
-    /// <see cref="NotSupportedException"/>.
-    /// </para>
-    /// </remarks>
-    protected virtual Dictionary<string, object> CreateBrowserLaunchCapabilities()
+    /// <returns>A dictionary containing the capabilities, whose values are those <see cref="CapabilityWriter"/> can write.</returns>
+    protected virtual Dictionary<string, object?> CreateBrowserLaunchCapabilities()
     {
-        Dictionary<string, object> capabilities = new()
+        Dictionary<string, object?> capabilities = new()
         {
             ["browserName"] = this.BrowserLocator.BrowserName.ToLowerInvariant(),
             ["webSocketUrl"] = true,

@@ -27,7 +27,7 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
     /// Creates the WebDriver Classic capabilities used to launch the browser.
     /// </summary>
     /// <returns>A dictionary containing the capabilities.</returns>
-    protected override Dictionary<string, object> CreateBrowserLaunchCapabilities()
+    protected override Dictionary<string, object?> CreateBrowserLaunchCapabilities()
     {
         Dictionary<string, object> chromeOptions = [];
         if (!string.IsNullOrEmpty(this.BrowserExecutableLocation))
@@ -64,7 +64,7 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
         // CONSIDER: This is a very naive and simple set of capabilities.
         // A future implementation could create a more fully-featured
         // generation of capabilities.
-        Dictionary<string, object> capabilities = new()
+        Dictionary<string, object?> capabilities = new()
         {
             ["browserName"] = "chrome",
             ["webSocketUrl"] = true,

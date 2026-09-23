@@ -18,15 +18,14 @@ internal class RemoteBrowserLocatorSettings : BrowserLocatorSettings
     /// Initializes a new instance of the <see cref="RemoteBrowserLocatorSettings"/> class.
     /// </summary>
     /// <param name="browserName">The name of the browser used in the WebDriver Classic session creation capabilities object (e.g., "chrome", "firefox").</param>
-    /// <param name="hostName">The hostname where the remote browser is running.</param>
-    /// <param name="useSsl">A value indicating whether to use SSL for the connection.</param>
-    public RemoteBrowserLocatorSettings(string browserName, string hostName, bool useSsl = false)
+    /// <param name="endpoint">The URL of the grid or browser endpoint.</param>
+    public RemoteBrowserLocatorSettings(string browserName, Uri endpoint)
         : base(new BrowserDownloadOptions())
     {
         this.browserName = browserName;
         this.BrowserDisplayName = $"remote {browserName}";
         this.LocationBehavior = FileLocationBehavior.UseCustomLocation;
-        this.ExpectedExecutablePath = $"{(useSsl ? "https" : "http")}://{hostName}";
+        this.ExpectedExecutablePath = new UriBuilder(endpoint) { UserName = string.Empty, Password = string.Empty }.Uri.AbsoluteUri;
     }
 
     /// <summary>

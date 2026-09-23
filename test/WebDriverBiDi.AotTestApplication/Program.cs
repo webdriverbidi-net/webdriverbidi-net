@@ -51,8 +51,46 @@ switch (browser)
         }
         launcher = chromeBuilder.Build();
         break;
+    case "chrome-driver":
+    case "firefox-driver":
+        BrowserLauncherBuilder driverBuilder = BrowserLauncher.Configure(browser == "chrome-driver" ? BrowserKind.Chrome : BrowserKind.Firefox)
+            .WithReleaseChannel(BrowserReleaseChannel.Alpha)
+            .WithHeadlessOption()
+            .LaunchUsingDriver();
+        if (!string.IsNullOrEmpty(browserExecutable))
+        {
+            driverBuilder.AtLocation(browserExecutable);
+        }
+
+        launcher = driverBuilder.Build();
+        break;
+    case "chrome-grid":
+    case "firefox-grid":
+        // The third argument is the grid URL, and the optional fourth the browser binary on the grid; any
+        // WebDriver remote end, such as a driver started by hand, serves as a grid.
+        Dictionary<string, object?> vendorOptions = new()
+        {
+            ["args"] = new[] { browser == "chrome-grid" ? "--headless=new" : "--headless" },
+        };
+        if (args.Length > 3)
+        {
+            vendorOptions["binary"] = args[3];
+        }
+
+        RemoteGridOptions gridOptions = new()
+        {
+            Capabilities =
+            {
+                [browser == "chrome-grid" ? "goog:chromeOptions" : "moz:firefoxOptions"] = vendorOptions,
+                ["timeouts"] = new Dictionary<string, object?>() { ["pageLoad"] = 30000L, ["script"] = 10000 },
+            },
+        };
+        launcher = BrowserLauncher.Configure(browser == "chrome-grid" ? BrowserKind.Chrome : BrowserKind.Firefox)
+            .LaunchUsingRemoteGrid(new Uri(browserExecutable), gridOptions)
+            .Build();
+        break;
     default:
-        Console.Error.WriteLine($"Unknown browser: {browser}. Use 'firefox' or 'chrome'.");
+        Console.Error.WriteLine($"Unknown browser: {browser}. Use 'firefox', 'chrome', 'firefox-driver', 'chrome-driver', 'firefox-grid', or 'chrome-grid'.");
         return 1;
 }
 
@@ -79,8 +117,11 @@ try
     await driver.StartAsync(launcher.ConnectionString);
     Console.WriteLine("BiDi connection established.");
 
-    await driver.Session.NewSessionAsync(new NewCommandParameters());
-    Console.WriteLine("Session created.");
+    if (!launcher.IsBiDiSessionInitialized)
+    {
+        await driver.Session.NewSessionAsync(new NewCommandParameters());
+        Console.WriteLine("Session created.");
+    }
 
     // log.entryAdded is subscribed alongside the load event so that the run below can deserialize a
     // log.LogLevel. That is the one enum in the library reached only through EnumValueJsonConverter<T>

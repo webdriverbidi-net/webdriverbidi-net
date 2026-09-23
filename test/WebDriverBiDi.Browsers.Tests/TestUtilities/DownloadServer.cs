@@ -18,6 +18,7 @@ public sealed class DownloadServer : IAsyncDisposable
 {
     private readonly Server server = new();
     private readonly ConcurrentQueue<string> requestedUrls = new();
+    private readonly ConcurrentQueue<ReceivedRequest> requests = new();
 
     private DownloadServer()
     {
@@ -27,6 +28,11 @@ public sealed class DownloadServer : IAsyncDisposable
     /// Gets the path and query of each request received, in order.
     /// </summary>
     public IReadOnlyList<string> RequestedUrls => [.. this.requestedUrls];
+
+    /// <summary>
+    /// Gets each request received, in order.
+    /// </summary>
+    public IReadOnlyList<ReceivedRequest> Requests => [.. this.requests];
 
     /// <summary>
     /// Starts a new server.
@@ -95,7 +101,18 @@ public sealed class DownloadServer : IAsyncDisposable
     /// <param name="responses">The responses.</param>
     public void AddResponses(string path, params ServedResponse[] responses)
     {
-        this.server.RegisterHandler(path, new ScriptedHandler(responses, this.Record));
+        this.AddResponses(path, HttpRequestMethod.Get, responses);
+    }
+
+    /// <summary>
+    /// Responds to successive requests with a method for a path with successive responses, repeating the last.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="method">The request method.</param>
+    /// <param name="responses">The responses.</param>
+    public void AddResponses(string path, HttpRequestMethod method, params ServedResponse[] responses)
+    {
+        this.server.RegisterHandler(path, method, new ScriptedHandler(responses, this.Record));
     }
 
     /// <summary>
@@ -117,7 +134,15 @@ public sealed class DownloadServer : IAsyncDisposable
     private void Record(HttpRequest request)
     {
         Uri? uri = request.Uri;
-        this.requestedUrls.Enqueue(uri is null ? string.Empty : uri.IsAbsoluteUri ? uri.PathAndQuery : uri.OriginalString);
+        string pathAndQuery = uri is null ? string.Empty : uri.IsAbsoluteUri ? uri.PathAndQuery : uri.OriginalString;
+        this.requestedUrls.Enqueue(pathAndQuery);
+        Dictionary<string, string> headers = new(StringComparer.OrdinalIgnoreCase);
+        foreach (KeyValuePair<string, List<string>> header in request.Headers)
+        {
+            headers[header.Key] = string.Join(", ", header.Value);
+        }
+
+        this.requests.Enqueue(new ReceivedRequest(request.Method.ToString().ToUpperInvariant(), pathAndQuery, headers, request.Body));
     }
 
     private sealed class RecordingResourceHandler(byte[] content, Action<HttpRequest> record) : WebResourceRequestHandler(content)
@@ -146,6 +171,7 @@ public sealed class DownloadServer : IAsyncDisposable
         {
             record(request);
             ServedResponse served = responses[Math.Min(Interlocked.Increment(ref this.requestCount), responses.Length) - 1];
+            this.MimeType = served.ContentType;
             HttpResponse response = this.CreateHttpResponse(request.Id, served.StatusCode);
             response.SetBodyContent(served.Body ?? []);
             this.AddStandardResponseHeaders(response);
@@ -174,4 +200,14 @@ public sealed class DownloadServer : IAsyncDisposable
 /// <param name="StatusCode">The status.</param>
 /// <param name="Body">The body, or <see langword="null"/> for none.</param>
 /// <param name="Headers">Headers added to the response, or <see langword="null"/> for none.</param>
-public sealed record ServedResponse(HttpStatusCode StatusCode, byte[]? Body = null, IReadOnlyDictionary<string, string>? Headers = null);
+/// <param name="ContentType">The media type of the body.</param>
+public sealed record ServedResponse(HttpStatusCode StatusCode, byte[]? Body = null, IReadOnlyDictionary<string, string>? Headers = null, string ContentType = "text/html;charset=utf-8");
+
+/// <summary>
+/// A request received by a <see cref="DownloadServer"/>.
+/// </summary>
+/// <param name="Method">The request method, in upper case.</param>
+/// <param name="PathAndQuery">The path and query.</param>
+/// <param name="Headers">The request headers.</param>
+/// <param name="Body">The request body.</param>
+public sealed record ReceivedRequest(string Method, string PathAndQuery, IReadOnlyDictionary<string, string> Headers, string Body);

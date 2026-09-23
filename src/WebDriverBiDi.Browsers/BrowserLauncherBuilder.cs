@@ -23,9 +23,8 @@ public class BrowserLauncherBuilder
     private ConnectionKind connectionType = ConnectionKind.WebSocket;
     private int port = 0;
     private bool headless = false;
-    private string? remoteGridHostName = null;
-    private bool remoteGridUseSsl = false;
-    private Dictionary<string, object>? capabilities = null;
+    private Uri? remoteUrl = null;
+    private RemoteGridOptions? remoteGridOptions = null;
     private TimeSpan? launchTimeout = null;
     private BrowserLaunchOptions? browserOptions = null;
 
@@ -39,6 +38,8 @@ public class BrowserLauncherBuilder
     }
 
     private bool UseHeadlessShell => this.browserOptions is ChromeLaunchOptions { UseHeadlessShell: true };
+
+    private bool IsRemote => this.launchStrategy == LaunchStrategy.UsingRemoteGrid || this.launchStrategy == LaunchStrategy.ConnectToExisting;
 
     /// <summary>
     /// Specifies the release channel to use for the browser (e.g., Stable, Beta, Alpha).
@@ -289,77 +290,53 @@ public class BrowserLauncherBuilder
     }
 
     /// <summary>
-    /// Specifies to connect to a browser on a remote WebDriver grid (e.g., Selenium Grid, cloud service).
-    /// Use <see cref="WithPort"/> to specify the port (default is 4444 for standard Selenium Grid).
+    /// Specifies to create the browser session on a remote WebDriver grid (e.g., Selenium Grid or a cloud service).
     /// </summary>
-    /// <param name="hostName">The hostname of the remote grid endpoint (e.g., "selenium-hub", "localhost").</param>
-    /// <param name="useSsl">A value indicating whether to connect using HTTPS instead of HTTP. Use <see langword="true"/> to use HTTPS; <see langword="false"/> to use HTTP. If omitted, defaults to <see langword="false"/>.</param>
+    /// <param name="gridUrl">
+    /// The http or https URL of the grid, including any port and path prefix (e.g., "http://selenium-hub:4444"
+    /// or "https://user:key@hub.example.com/wd/hub"). Credentials in the URL are sent as Basic authorization.
+    /// </param>
+    /// <param name="options">Capabilities and headers for the session, or <see langword="null"/> for none.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    /// <exception cref="ArgumentException">Thrown when hostName is null or empty.</exception>
+    /// <exception cref="ArgumentException">Thrown when gridUrl is not an absolute http or https URL.</exception>
     /// <exception cref="BrowserLauncherConfigurationException">Thrown when a conflicting launch strategy has already been specified.</exception>
-    public BrowserLauncherBuilder LaunchUsingRemoteGrid(string hostName, bool useSsl = false)
+    public BrowserLauncherBuilder LaunchUsingRemoteGrid(Uri gridUrl, RemoteGridOptions? options = null)
     {
-        if (string.IsNullOrWhiteSpace(hostName))
+        if (gridUrl is null || !gridUrl.IsAbsoluteUri || (gridUrl.Scheme != Uri.UriSchemeHttp && gridUrl.Scheme != Uri.UriSchemeHttps))
         {
-            throw new ArgumentException("Remote grid hostname cannot be null or empty.", nameof(hostName));
+            throw new ArgumentException("Remote grid URL must be an absolute http or https URL.", nameof(gridUrl));
         }
 
         this.ValidateLaunchStrategyNotSet(LaunchStrategy.UsingRemoteGrid);
         this.launchStrategy = LaunchStrategy.UsingRemoteGrid;
-        this.remoteGridHostName = hostName;
-        this.remoteGridUseSsl = useSsl;
-
-        // Set default port for Selenium Grid if not already set
-        if (this.port == 0)
-        {
-            this.port = 4444;
-        }
-
+        this.remoteUrl = gridUrl;
+        this.remoteGridOptions = options;
         return this;
     }
 
     /// <summary>
-    /// Adds a capability to be used when creating a remote session on a WebDriver grid.
-    /// Only applicable when using <see cref="LaunchUsingRemoteGrid"/>.
+    /// Specifies to connect to a browser that is already running and listening on a WebSocket URL,
+    /// rather than launching one. Launching attaches to the browser, and closing the
+    /// <see cref="BrowserInstance"/> only detaches from it; the browser keeps running.
     /// </summary>
-    /// <param name="name">The capability name.</param>
-    /// <param name="value">The capability value.</param>
+    /// <param name="webSocketUrl">
+    /// The ws or wss URL of the browser: its WebDriver BiDi endpoint (e.g., "ws://127.0.0.1:9222/session"
+    /// for Firefox), or, for Chrome, its DevTools endpoint (e.g., "ws://127.0.0.1:9222/devtools/browser/…"),
+    /// which is reached through the WebDriver BiDi mapper.
+    /// </param>
     /// <returns>The current builder instance for method chaining.</returns>
-    /// <exception cref="ArgumentException">Thrown when name is null or empty.</exception>
-    /// <remarks>
-    /// The <c>browserName</c> and <c>webSocketUrl</c> capabilities are set by the launcher and cannot be overridden.
-    /// </remarks>
-    public BrowserLauncherBuilder WithCapability(string name, object value)
+    /// <exception cref="ArgumentException">Thrown when webSocketUrl is not an absolute ws or wss URL.</exception>
+    /// <exception cref="BrowserLauncherConfigurationException">Thrown when a conflicting launch strategy has already been specified.</exception>
+    public BrowserLauncherBuilder ConnectToExisting(Uri webSocketUrl)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (webSocketUrl is null || !webSocketUrl.IsAbsoluteUri || (webSocketUrl.Scheme != "ws" && webSocketUrl.Scheme != "wss"))
         {
-            throw new ArgumentException("Capability name cannot be null or empty.", nameof(name));
+            throw new ArgumentException("Browser URL must be an absolute ws or wss URL.", nameof(webSocketUrl));
         }
 
-        this.capabilities ??= new Dictionary<string, object>();
-        this.capabilities[name] = value;
-        return this;
-    }
-
-    /// <summary>
-    /// Configures multiple capabilities to be used when creating a remote session on a WebDriver grid.
-    /// Only applicable when using <see cref="LaunchUsingRemoteGrid"/>.
-    /// </summary>
-    /// <param name="configure">Action to configure the capabilities dictionary.</param>
-    /// <returns>The current builder instance for method chaining.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when configure is null.</exception>
-    /// <remarks>
-    /// The <c>browserName</c> and <c>webSocketUrl</c> capabilities are set by the launcher and cannot be overridden.
-    /// </remarks>
-    public BrowserLauncherBuilder WithCapabilities(Action<Dictionary<string, object>> configure)
-    {
-        if (configure is null)
-        {
-            throw new ArgumentNullException(nameof(configure));
-        }
-
-        this.capabilities ??= new Dictionary<string, object>();
-        configure(this.capabilities);
+        this.ValidateLaunchStrategyNotSet(LaunchStrategy.ConnectToExisting);
+        this.launchStrategy = LaunchStrategy.ConnectToExisting;
+        this.remoteUrl = webSocketUrl;
         return this;
     }
 
@@ -459,7 +436,8 @@ public class BrowserLauncherBuilder
             string current = this.launchStrategy switch
             {
                 LaunchStrategy.UsingDriver => "launch via driver executable",
-                LaunchStrategy.UsingRemoteGrid => $"connect to remote grid ({this.remoteGridHostName})",
+                LaunchStrategy.UsingRemoteGrid => $"connect to remote grid ({this.remoteUrl})",
+                LaunchStrategy.ConnectToExisting => $"connect to an existing browser ({this.remoteUrl})",
                 _ => "launch directly",
             };
 
@@ -467,6 +445,7 @@ public class BrowserLauncherBuilder
             {
                 LaunchStrategy.UsingDriver => "launch via driver executable",
                 LaunchStrategy.UsingRemoteGrid => "connect to remote grid",
+                LaunchStrategy.ConnectToExisting => "connect to an existing browser",
                 _ => "launch directly",
             };
 
@@ -476,10 +455,9 @@ public class BrowserLauncherBuilder
 
     private void ValidateConfiguration()
     {
-        // Validate remote grid specific requirements
-        if (this.launchStrategy == LaunchStrategy.UsingRemoteGrid)
+        if (this.IsRemote)
         {
-            this.ValidateRemoteGridConfiguration();
+            this.ValidateRemoteConfiguration();
         }
 
         // Validate pipe connection requirements
@@ -496,7 +474,7 @@ public class BrowserLauncherBuilder
             }
         }
 
-        if (this.browser == BrowserKind.Safari)
+        if (this.browser == BrowserKind.Safari && !this.IsRemote)
         {
             if (this.launchStrategy == LaunchStrategy.Direct)
             {
@@ -539,89 +517,63 @@ public class BrowserLauncherBuilder
             throw new BrowserLauncherConfigurationException("Firefox Nightly builds are not archived by version, so only the latest can be downloaded.");
         }
 
-        if (this.launchStrategy != LaunchStrategy.UsingRemoteGrid && this.downloadOptions?.Platform is BrowserPlatform platform && platform != BrowserPlatform.Current)
+        if (this.downloadOptions?.Platform is BrowserPlatform platform && platform != BrowserPlatform.Current)
         {
             throw new BrowserLauncherConfigurationException($"Cannot launch a browser for platform {platform} on platform {BrowserPlatform.Current}.");
         }
-
-        // Validate capabilities are only used with remote grid
-        if (this.capabilities is not null && this.capabilities.Count > 0 && this.launchStrategy != LaunchStrategy.UsingRemoteGrid)
-        {
-            throw new BrowserLauncherConfigurationException("Capabilities can only be specified when using LaunchUsingRemoteGrid.");
-        }
     }
 
-    private void ValidateRemoteGridConfiguration()
+    // A browser on a grid, or one already running, was not started by this library, so settings for starting one do not apply.
+    private void ValidateRemoteConfiguration()
     {
-        if (string.IsNullOrWhiteSpace(this.remoteGridHostName))
+        string method = this.launchStrategy == LaunchStrategy.UsingRemoteGrid ? "LaunchUsingRemoteGrid" : "ConnectToExisting";
+        string remedy = this.launchStrategy == LaunchStrategy.UsingRemoteGrid
+            ? "Use RemoteGridOptions.Capabilities to configure the browser on the grid."
+            : "Configure the browser when starting it.";
+        if (this.locationBehavior != FileLocationBehavior.AutoLocateAndDownload || this.downloadOptions is not null)
         {
-            throw new BrowserLauncherConfigurationException("Remote grid hostname must be specified when using LaunchUsingRemoteGrid.");
+            throw new BrowserLauncherConfigurationException($"Cannot specify a browser location or download options with {method}; no browser is located or downloaded on this machine.");
+        }
+
+        if (this.launchSettings.ChangesBrowserConfiguration || this.launchSettings.EnvironmentVariables.Count > 0 || this.browserOptions is not null || this.headless)
+        {
+            throw new BrowserLauncherConfigurationException($"Cannot specify arguments, omitted default arguments, environment variables, a user data directory, browser options, or headless mode with {method}. {remedy}");
+        }
+
+        if (this.version != BrowserVersion.Latest || this.channel != BrowserReleaseChannel.Stable)
+        {
+            throw new BrowserLauncherConfigurationException($"Cannot specify a browser version or release channel with {method}. {remedy}");
+        }
+
+        if (this.port != 0)
+        {
+            throw new BrowserLauncherConfigurationException($"Cannot specify a port with {method}; the port is part of the URL.");
         }
 
         if (this.connectionType == ConnectionKind.Pipes)
         {
-            throw new BrowserLauncherConfigurationException("Pipe connections are not supported with remote grid launch strategy.");
+            throw new BrowserLauncherConfigurationException($"Pipe connections are not supported with {method}.");
         }
 
-        // Validate that local browser configuration options are not used with remote grid
-        if (this.locationBehavior != FileLocationBehavior.AutoLocateAndDownload)
+        if (this.remoteGridOptions is not null)
         {
-            string locationMethod = this.locationBehavior switch
+            foreach (KeyValuePair<string, object?> capability in this.remoteGridOptions.Capabilities)
             {
-                FileLocationBehavior.UseSystemInstallLocation => "AtDefaultInstallationLocation()",
-                FileLocationBehavior.UseCustomLocation => "AtLocation()",
-                _ => "a browser location method",
-            };
-            throw new BrowserLauncherConfigurationException(
-                $"Cannot use {locationMethod} with LaunchUsingRemoteGrid. " +
-                "The remote grid manages its own browser installations.");
-        }
-
-        if (this.customBrowserLocation is not null)
-        {
-            throw new BrowserLauncherConfigurationException(
-                "Cannot specify custom browser location with LaunchUsingRemoteGrid. " +
-                "The remote grid manages its own browser installations.");
-        }
-
-        if (this.downloadOptions is not null)
-        {
-            throw new BrowserLauncherConfigurationException(
-                "Cannot specify download options with LaunchUsingRemoteGrid. " +
-                "The remote grid manages its own browser installations.");
-        }
-
-        if (this.launchSettings.ChangesBrowserConfiguration || this.launchSettings.EnvironmentVariables.Count > 0 || this.browserOptions is not null)
-        {
-            throw new BrowserLauncherConfigurationException(
-                "Cannot specify arguments, omitted default arguments, environment variables, a user data directory, or browser options with LaunchUsingRemoteGrid. " +
-                "Use capabilities to configure the browser on the remote grid.");
-        }
-
-        if (this.headless)
-        {
-            throw new BrowserLauncherConfigurationException(
-                "Cannot specify headless mode with LaunchUsingRemoteGrid. " +
-                "Use capabilities to configure browser options on the remote grid.");
-        }
-
-        if (this.version != BrowserVersion.Latest)
-        {
-            throw new BrowserLauncherConfigurationException(
-                "Cannot specify browser version with LaunchUsingRemoteGrid. " +
-                "Use capabilities (e.g., 'browserVersion') to specify version on the remote grid.");
-        }
-
-        if (this.channel != BrowserReleaseChannel.Stable)
-        {
-            throw new BrowserLauncherConfigurationException(
-                "Cannot specify release channel with LaunchUsingRemoteGrid. " +
-                "Use capabilities to configure browser options on the remote grid.");
+                if (CapabilityWriter.FindUnsupportedValue(capability.Value, capability.Key) is string unsupported)
+                {
+                    throw new BrowserLauncherConfigurationException($"Capability {unsupported}.");
+                }
+            }
         }
     }
 
     private BrowserLauncher CreateSafariLauncher()
     {
+        if (this.launchStrategy == LaunchStrategy.ConnectToExisting)
+        {
+            return this.CreateExistingBrowserLauncher("safari");
+        }
+
         if (this.launchStrategy == LaunchStrategy.UsingRemoteGrid)
         {
             // Safari enables BiDi only when this capability accompanies webSocketUrl. It is a default rather
@@ -649,6 +601,11 @@ public class BrowserLauncherBuilder
 
     private BrowserLauncher CreateChromeLauncher()
     {
+        if (this.launchStrategy == LaunchStrategy.ConnectToExisting)
+        {
+            return this.CreateExistingBrowserLauncher("chrome");
+        }
+
         if (this.launchStrategy == LaunchStrategy.UsingRemoteGrid)
         {
             return this.CreateRemoteLauncher("chrome");
@@ -693,6 +650,11 @@ public class BrowserLauncherBuilder
 
     private BrowserLauncher CreateFirefoxLauncher()
     {
+        if (this.launchStrategy == LaunchStrategy.ConnectToExisting)
+        {
+            return this.CreateExistingBrowserLauncher("firefox");
+        }
+
         if (this.launchStrategy == LaunchStrategy.UsingRemoteGrid)
         {
             return this.CreateRemoteLauncher("firefox");
@@ -737,23 +699,32 @@ public class BrowserLauncherBuilder
 
     private WebDriverClassicBrowserLauncher CreateRemoteLauncher(string browserName)
     {
-        // remoteGridHostName is guaranteed non-null by ValidateConfiguration() called in Build()
-        string hostName = this.remoteGridHostName!;
-        RemoteBrowserLocatorSettings settings = new(browserName, hostName, this.remoteGridUseSsl);
-
-        WebDriverClassicBrowserLauncher launcher = new(settings, this.port)
+        Uri gridUrl = this.remoteUrl!;
+        WebDriverClassicBrowserLauncher launcher = new(new RemoteBrowserLocatorSettings(browserName, gridUrl))
         {
-            HostName = hostName,
-            UseSsl = this.remoteGridUseSsl,
+            RemoteEndUrl = gridUrl,
         };
 
-        if (this.capabilities is not null)
+        if (this.remoteGridOptions is not null)
         {
-            // Copied, so capabilities added to this builder after Build() do not reach an already-built
-            // launcher. The copy is shallow: a nested value such as an options dictionary is still shared.
-            launcher.AdditionalCapabilities = new Dictionary<string, object>(this.capabilities);
+            // Copied, so options changed after Build() do not reach an already-built launcher. The copy
+            // is shallow: a nested value such as an options dictionary is still shared.
+            launcher.AdditionalCapabilities = new Dictionary<string, object?>(this.remoteGridOptions.Capabilities);
+            foreach (KeyValuePair<string, string> header in this.remoteGridOptions.Headers)
+            {
+                if (!launcher.TryAddRequestHeader(header.Key, header.Value))
+                {
+                    throw new BrowserLauncherConfigurationException($"Remote grid header '{header.Key}' cannot be sent as a request header.");
+                }
+            }
         }
 
         return launcher;
+    }
+
+    private ExistingBrowserLauncher CreateExistingBrowserLauncher(string browserName)
+    {
+        Uri webSocketUrl = this.remoteUrl!;
+        return new ExistingBrowserLauncher(new RemoteBrowserLocatorSettings(browserName, webSocketUrl), webSocketUrl);
     }
 }

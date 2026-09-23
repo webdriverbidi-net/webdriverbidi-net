@@ -32,4 +32,9 @@ internal enum LaunchStrategy
     /// Creates a session on the remote endpoint and connects to its BiDi WebSocket URL.
     /// </summary>
     UsingRemoteGrid,
+
+    /// <summary>
+    /// Connect to a browser already listening on a WebSocket URL, which this library did not start.
+    /// </summary>
+    ConnectToExisting,
 }

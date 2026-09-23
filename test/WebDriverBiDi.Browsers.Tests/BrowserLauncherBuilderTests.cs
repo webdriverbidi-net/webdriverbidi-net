@@ -10,6 +10,8 @@ using WebDriverBiDi.Browsers.TestUtilities;
 
 public class BrowserLauncherBuilderTests
 {
+    private static readonly Uri GridUrl = new("http://grid.example:4444/");
+
     [Fact]
     public void WithDownloadOptionsRejectsNull()
     {
@@ -20,7 +22,7 @@ public class BrowserLauncherBuilderTests
     public void BuildRejectsDownloadOptionsWithRemoteGrid()
     {
         BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Chrome)
-            .LaunchUsingRemoteGrid("grid.example")
+            .LaunchUsingRemoteGrid(GridUrl)
             .WithDownloadOptions(new BrowserDownloadOptions());
 
         Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
@@ -43,16 +45,16 @@ public class BrowserLauncherBuilderTests
     [Fact]
     public void BuildRejectsLaunchOptionsWithRemoteGrid()
     {
-        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithArguments("--custom").Build);
-        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithEnvironmentVariable("NAME", "value").Build);
-        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithoutDefaultArguments().Build);
-        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithUserDataDirectory("/profile").Build);
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(GridUrl).WithArguments("--custom").Build);
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(GridUrl).WithEnvironmentVariable("NAME", "value").Build);
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(GridUrl).WithoutDefaultArguments().Build);
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(GridUrl).WithUserDataDirectory("/profile").Build);
     }
 
     [Fact]
     public void BuildAllowsLaunchTimeoutWithRemoteGrid()
     {
-        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid("grid.example").WithLaunchTimeout(TimeSpan.FromSeconds(3)).Build();
+        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(GridUrl).WithLaunchTimeout(TimeSpan.FromSeconds(3)).Build();
 
         Assert.Equal(TimeSpan.FromSeconds(3), launcher.InitializationTimeout);
     }
@@ -60,7 +62,7 @@ public class BrowserLauncherBuilderTests
     [Fact]
     public void BuildRejectsBrowserOptionsWithRemoteGrid()
     {
-        BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Firefox).LaunchUsingRemoteGrid("grid.example").WithBrowserOptions(new FirefoxLaunchOptions());
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(BrowserKind.Firefox).LaunchUsingRemoteGrid(GridUrl).WithBrowserOptions(new FirefoxLaunchOptions());
 
         Assert.Throws<BrowserLauncherConfigurationException>(builder.Build);
     }

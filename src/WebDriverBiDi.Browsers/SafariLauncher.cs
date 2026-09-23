@@ -40,7 +40,7 @@ public class SafariLauncher : ClassicDriverExecutableBrowserLauncher
     /// Creates the WebDriver Classic capabilities used to launch the browser.
     /// </summary>
     /// <returns>A dictionary containing the capabilities.</returns>
-    protected override Dictionary<string, object> CreateBrowserLaunchCapabilities()
+    protected override Dictionary<string, object?> CreateBrowserLaunchCapabilities()
     {
         // CONSIDER: This is a very naive and simple set of capabilities.
         // A future implementation could create a more fully-featured
@@ -48,7 +48,7 @@ public class SafariLauncher : ClassicDriverExecutableBrowserLauncher
         // Note carefully the addition of the "safari:experimentalWebSocketUrl"
         // capability. This is mandatory to enable WebDriverBiDi for now, but
         // should not be necessary in the future.
-        Dictionary<string, object> capabilities = new()
+        Dictionary<string, object?> capabilities = new()
         {
             ["browserName"] = "safari",
             ["webSocketUrl"] = true,
