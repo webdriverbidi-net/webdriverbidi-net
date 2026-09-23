@@ -34,14 +34,8 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// </summary>
     /// <param name="browserLocatorSettings">The <see cref="BrowserLocatorSettings"/> settings to use for locating the browser executable.</param>
     /// <param name="port">The port on which the browser should listen for connections.</param>
-    /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
     internal BrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port)
     {
-        if (browserLocatorSettings is null)
-        {
-            throw new ArgumentNullException(nameof(browserLocatorSettings));
-        }
-
         this.Port = port;
         this.BrowserLocator = new BrowserLocator(browserLocatorSettings);
         this.BrowserLocator.OnLogMessage.AddObserver(this.OnLocatorLogAsync);

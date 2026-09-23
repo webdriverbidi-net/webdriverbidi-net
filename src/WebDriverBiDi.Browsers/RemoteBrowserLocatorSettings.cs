@@ -47,27 +47,4 @@ internal class RemoteBrowserLocatorSettings : BrowserLocatorSettings
     /// Gets the name of the environment variable that can be used to override the driver executable path. Not implemented for this locator.
     /// </summary>
     public override string DriverEnvironmentVariableName => throw new NotSupportedException();
-
-    /// <summary>
-    /// Gets the browser download information.
-    /// </summary>
-    /// <param name="cancellationToken">A token that cancels the request.</param>
-    /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
-    /// <exception cref="NotSupportedException">Thrown because browser download is not supported for remote browsers.</exception>
-    public override Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException();
-    }
-
-    /// <summary>
-    /// Gets the driver download information for a driver that is compatible with this browser.
-    /// </summary>
-    /// <param name="browserVersion">The version of the located browser; not used.</param>
-    /// <param name="cancellationToken">A token that cancels the request.</param>
-    /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    /// <exception cref="NotSupportedException">Thrown because driver download is not supported for remote browsers.</exception>
-    public override Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException();
-    }
 }

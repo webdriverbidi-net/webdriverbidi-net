@@ -53,7 +53,7 @@ public class DownloadManifestTests
     {
         await using DownloadServer server = await DownloadServer.StartAsync();
         ManifestBuilder manifest = new(server);
-        foreach (string version in new[] { "129.0.6668.9", "129.0.6668.100", "130.0.6723.58" })
+        foreach (string version in new[] { "129.0.6668.9", "129.0.6668.100", "130.0.6723.58", "129-custom-build" })
         {
             manifest.AddBuild("browsers", "chrome", version, "linux-x64", $"chrome/{version}.zip", TestArchives.Zip(ChromeExecutable));
         }
@@ -110,6 +110,24 @@ public class DownloadManifestTests
         string? path = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, downloadOptions: CreateOptions(server, cache), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(Path.Combine(cache.Path, "drivers", "chromedriver", ChromeVersion, "chromedriver"), path);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ChromeDriverFollowsRequestedBrowserVersion(bool byMilestone)
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ManifestBuilder manifest = new(server);
+        manifest.AddBuild("browsers", "chrome", "129.0.6668.100", "linux-x64", "chrome-129.zip", TestArchives.Zip(ChromeExecutable));
+        manifest.AddBuild("drivers", "chromedriver", "129.0.6668.100", "linux-x64", "chromedriver-129.zip", TestArchives.Zip("chromedriver-linux64/chromedriver"));
+        manifest.Serve();
+        using TemporaryDirectory cache = new();
+        BrowserVersion version = byMilestone ? BrowserVersion.Milestone(129) : BrowserVersion.Specific("129.0.6668.100");
+
+        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, version: version, downloadOptions: CreateOptions(server, cache), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(Path.Combine(cache.Path, "drivers", "chromedriver", "129.0.6668.100", "chromedriver"), path);
     }
 
     [Fact]
@@ -203,6 +221,10 @@ public class DownloadManifestTests
     }
 
     [Theory]
+    [InlineData("null", "only 1 is supported")]
+    [InlineData("{\"schemaVersion\": 1, \"browsers\": {\"chrome\": {\"channels\": {\"stable\": \"1.0\"}, \"versions\": {\"1.0\": {\"linux-x64\": {\"url\": \"\", \"sha256\": \"0000000000000000000000000000000000000000000000000000000000000000\"}}}}}}", "without a URL and a 64-digit hexadecimal sha256")]
+    [InlineData("{\"schemaVersion\": 1, \"browsers\": {\"chrome\": {\"channels\": {\"stable\": \"1.0\"}, \"versions\": {\"1.0\": {\"linux-x64\": {\"url\": \"chrome.zip\", \"sha256\": \"zz00000000000000000000000000000000000000000000000000000000000000\"}}}}}}", "without a URL and a 64-digit hexadecimal sha256")]
+    [InlineData("{\"schemaVersion\": 1, \"browsers\": {\"chrome\": {\"channels\": {\"stable\": \"1.0\"}, \"versions\": {}}}}", "lists no chrome 1.0.")]
     [InlineData("{\"schemaVersion\": 2}", "only 1 is supported")]
     [InlineData("{\"browsers\": {}}", "only 1 is supported")]
     [InlineData("not json", "is not valid JSON")]

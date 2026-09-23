@@ -21,7 +21,6 @@ internal static class CapabilityWriter
     /// </summary>
     /// <param name="capabilities">The capabilities.</param>
     /// <returns>The request body as JSON.</returns>
-    /// <exception cref="ArgumentException">Thrown when a value is not a capability value.</exception>
     public static string WriteNewSessionRequest(IDictionary<string, object?> capabilities)
     {
         using MemoryStream stream = new();
@@ -108,7 +107,8 @@ internal static class CapabilityWriter
                 writer.WriteStartObject();
                 foreach (DictionaryEntry entry in dictionary)
                 {
-                    string key = entry.Key as string ?? throw new ArgumentException(FindUnsupportedValue(dictionary, path));
+                    // Values are validated by FindUnsupportedValue before they are written.
+                    string key = (string)entry.Key;
                     writer.WritePropertyName(key);
                     WriteValue(writer, entry.Value, $"{path}.{key}");
                 }
@@ -138,7 +138,7 @@ internal static class CapabilityWriter
                 writer.WriteNumberValue(unsignedLong);
                 break;
             default:
-                writer.WriteNumberValue(IsNumber(value) ? Convert.ToInt64(value, CultureInfo.InvariantCulture) : throw new ArgumentException(FindUnsupportedValue(value, path)));
+                writer.WriteNumberValue(Convert.ToInt64(value, CultureInfo.InvariantCulture));
                 break;
         }
     }

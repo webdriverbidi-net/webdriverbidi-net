@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Browsers;
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
@@ -106,7 +107,8 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// Gets a value indicating whether the process runs as root on Linux, where Chrome's sandbox is
     /// unavailable and Chrome refuses to start without the --no-sandbox argument.
     /// </summary>
-    internal static bool IsSandboxUnavailable => RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.UserName == "root";
+    [ExcludeFromCodeCoverage] // Depends on the operating system and user the tests run as.
+    internal static IEnumerable<string> SandboxArguments => RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.UserName == "root" ? ["--no-sandbox"] : [];
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
@@ -120,10 +122,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             List<string> defaultArguments = [.. this.chromeArguments];
             defaultArguments.Add($"--disable-features={string.Join(",", this.disabledFeatures)}");
             defaultArguments.Add($"--enable-features={string.Join(",", this.enabledFeatures)}");
-            if (IsSandboxUnavailable)
-            {
-                defaultArguments.Add("--no-sandbox");
-            }
+            defaultArguments.AddRange(SandboxArguments);
 
             List<string> args = [.. this.LaunchSettings.FilterDefaultArguments(defaultArguments)];
             args.Add($"--user-data-dir={this.LaunchSettings.UserDataDirectory ?? this.profile?.Path}");
@@ -325,6 +324,22 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         return this.browserProcess?.Id ?? 0;
     }
 
+    [ExcludeFromCodeCoverage] // Takes only the branch for the operating system it runs on.
+    private static (string FileName, List<string> Arguments) GetPipeLaunchCommand(string browserExecutableLocation, List<string> arguments, string readHandle, string writeHandle)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return (browserExecutableLocation, [.. arguments, $"--remote-debugging-io-pipes={readHandle},{writeHandle}"]);
+        }
+
+        // Chrome reads commands from file descriptor 3 and writes responses to 4, so a shell
+        // duplicates the inherited pipe descriptors onto those, closes the originals, and
+        // then replaces itself with the browser.
+        string browserCommand = string.Join(" ", new[] { browserExecutableLocation }.Concat(arguments).Select(CommandLine.QuotePosixShellArgument));
+        return (GetShellPath(), ["-c", $"exec 3<&{readHandle} 4>&{writeHandle} {readHandle}<&- {writeHandle}>&-; exec {browserCommand}"]);
+    }
+
+    [ExcludeFromCodeCoverage] // Depends on where the machine has a shell.
     private static string GetShellPath()
     {
         // Try common shell locations
@@ -346,23 +361,9 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     {
         string fileName = browserExecutableLocation;
         List<string> arguments = [.. this.CommandLineArguments];
-        if (this.connection is PipeConnection pipeConnection && pipeConnection.ConnectionKind == ConnectionKind.Pipes)
+        if (this.connection is PipeConnection pipeConnection)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                arguments.Add($"--remote-debugging-io-pipes={pipeConnection.ReadPipeHandle},{pipeConnection.WritePipeHandle}");
-            }
-            else
-            {
-                // Chrome reads commands from file descriptor 3 and writes responses to 4, so a shell
-                // duplicates the inherited pipe descriptors onto those, closes the originals, and
-                // then replaces itself with the browser.
-                string readHandle = pipeConnection.ReadPipeHandle;
-                string writeHandle = pipeConnection.WritePipeHandle;
-                string browserCommand = string.Join(" ", new[] { browserExecutableLocation }.Concat(arguments).Select(CommandLine.QuotePosixShellArgument));
-                fileName = GetShellPath();
-                arguments = ["-c", $"exec 3<&{readHandle} 4>&{writeHandle} {readHandle}<&- {writeHandle}>&-; exec {browserCommand}"];
-            }
+            (fileName, arguments) = GetPipeLaunchCommand(browserExecutableLocation, arguments, pipeConnection.ReadPipeHandle, pipeConnection.WritePipeHandle);
         }
 
         ProcessStartInfo startInfo = new()

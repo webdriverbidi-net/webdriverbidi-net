@@ -82,14 +82,9 @@ public class DriverLocator
     /// </summary>
     /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
     /// <param name="cancellationToken">A token that cancels locating the driver.</param>
-    /// <returns>The path to the driver executable, or null if driver is not included.</returns>
+    /// <returns>The path to the driver executable.</returns>
     internal async Task<string?> LocateDriverAsync(string? browserVersion, CancellationToken cancellationToken)
     {
-        if (!this.settings.IncludeDriver)
-        {
-            return null;
-        }
-
         // Check environment variable first
         string? envDriverPath = LauncherEnvironment.GetVariable(this.settings.DriverEnvironmentVariableName);
         if (envDriverPath is not null)
@@ -100,11 +95,6 @@ public class DriverLocator
 
         if (this.settings.DriverLocationBehavior == FileLocationBehavior.UseCustomLocation)
         {
-            if (string.IsNullOrEmpty(this.settings.DriverExecutableLocation))
-            {
-                throw new ArgumentException("DriverExecutableLocation must be set when DriverLocationBehavior is UseCustomLocation.", nameof(this.settings.DriverExecutableLocation));
-            }
-
             await this.LogAsync($"Using custom {this.settings.DriverExecutableName} at: {this.settings.DriverExecutableLocation}", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
             return this.settings.DriverExecutableLocation;
         }

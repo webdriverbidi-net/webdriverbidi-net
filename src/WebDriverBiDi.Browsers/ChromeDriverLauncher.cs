@@ -16,8 +16,6 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
     /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
     /// <param name="settings">The Chrome browser locator settings to use for locating the browser and driver executables.</param>
-    /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
     internal ChromeDriverLauncher(ChromeBrowserLocatorSettings settings)
         : base(settings, 0)
     {
@@ -36,10 +34,7 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
         }
 
         List<string> defaultArguments = this.IsBrowserHeadless ? ["--disable-dev-shm-usage"] : [];
-        if (ChromeLauncher.IsSandboxUnavailable)
-        {
-            defaultArguments.Add("--no-sandbox");
-        }
+        defaultArguments.AddRange(ChromeLauncher.SandboxArguments);
 
         List<string> chromeCommandLineArgs = [.. this.LaunchSettings.FilterDefaultArguments(defaultArguments)];
 

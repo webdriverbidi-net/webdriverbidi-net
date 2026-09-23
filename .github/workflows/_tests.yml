@@ -99,9 +99,15 @@ jobs:
       - name: Enforce logging coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-logging.*.info
 
-      - name: Test browser management library
-        # Not yet coverage-gated; the gate is added once the library reaches the 95% threshold.
-        run: dotnet test --project test/WebDriverBiDi.Browsers.Tests --configuration Release --no-build --verbosity normal
+      - name: Test browser management library (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Browsers.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Browsers]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-browsers
+
+      - name: Enforce browser management coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-browsers.*.info
 
       - name: Enforce combined coverage thresholds
         # Perform an aggregate threshold check
@@ -110,6 +116,7 @@ jobs:
           test/coverage/lcov-library.*.info
           test/coverage/lcov-analyzers.*.info
           test/coverage/lcov-logging.*.info
+          test/coverage/lcov-browsers.*.info
 
       # The analyzer package's shipped layout is produced entirely by a pack target that nothing else
       # runs: the Roslyn 5.9 variant is compiled only inside it, every other CI build and test uses the
@@ -195,7 +202,7 @@ jobs:
           # A coveralls.io outage must not fail the job that gates pull requests and the tag release.
           fail-on-error: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info
+          files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info test/coverage/lcov-browsers.*.info
           format: lcov
 
   # Deliberately a job of its own rather than a `configuration` matrix on unit-tests; see the
@@ -253,12 +260,23 @@ jobs:
       - name: Enforce logging coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-logging.*.info
 
+      - name: Test browser management library (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Browsers.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Browsers]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-browsers
+
+      - name: Enforce browser management coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-browsers.*.info
+
       - name: Enforce combined coverage thresholds
         run: >
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
           test/coverage-debug/lcov-library.*.info
           test/coverage-debug/lcov-analyzers.*.info
           test/coverage-debug/lcov-logging.*.info
+          test/coverage-debug/lcov-browsers.*.info
 
   unit-tests-windows:
     name: Unit tests (Windows)

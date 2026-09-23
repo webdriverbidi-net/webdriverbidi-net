@@ -24,6 +24,53 @@ public class ApiSurfaceTests
     }
 
     [Fact]
+    public void EveryPublicExceptionHasStandardConstructors()
+    {
+        InvalidOperationException inner = new("inner");
+        foreach (Type type in typeof(BrowserLauncher).Assembly.GetExportedTypes().Where(type => typeof(Exception).IsAssignableFrom(type)))
+        {
+            Exception withoutMessage = (Exception)Activator.CreateInstance(type)!;
+            Exception withMessage = (Exception)Activator.CreateInstance(type, "message")!;
+            Exception withInner = (Exception)Activator.CreateInstance(type, "message", inner)!;
+
+            Assert.NotNull(withoutMessage.Message);
+            Assert.Equal("message", withMessage.Message);
+            Assert.Same(inner, withInner.InnerException);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CreateMakesLauncherWithDefaults(bool headless)
+    {
+        await using BrowserLauncher launcher = BrowserLauncher.Create(BrowserKind.Firefox, headless);
+
+        Assert.Equal(headless, launcher.IsBrowserHeadless);
+        Assert.IsType<FirefoxLauncher>(launcher);
+    }
+
+    [Fact]
+    public async Task DisposedLauncherRejectsUseAndDisposesOnce()
+    {
+        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).Build();
+        await launcher.DisposeAsync();
+        await launcher.DisposeAsync();
+
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => launcher.StartAsync(TestContext.Current.CancellationToken));
+        Assert.Throws<ObjectDisposedException>(() => launcher.CreateTransport());
+    }
+
+    [Fact]
+    public void SpecificVersionMustBeNamed()
+    {
+        Assert.Throws<ArgumentException>(() => BrowserVersion.Specific(" "));
+        Assert.Equal("Latest", BrowserVersion.Latest.ToString());
+        Assert.Equal("System Installed", BrowserVersion.SystemInstalled.ToString());
+        Assert.Equal("130.0", BrowserVersion.Specific("130.0").ToString());
+    }
+
+    [Fact]
     public async Task LaunchFailureReportsExitCodeAndProcessOutput()
     {
         using FakeBrowserSetup fakeBrowser = new(mode: "exit:3");
@@ -63,8 +110,7 @@ public class ApiSurfaceTests
 
         Assert.False(launcher.IsRunning);
         Assert.False(Directory.Exists(fakeBrowser.GetLastLaunchArgument("--user-data-dir")));
-        using Process child = fakeBrowser.GetChildProcess();
-        Assert.True(child.WaitForExit(ProcessExitTimeout));
+        Assert.True(fakeBrowser.WaitForChildExit(ProcessExitTimeout));
     }
 
     [Fact]

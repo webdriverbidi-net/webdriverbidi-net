@@ -7,6 +7,7 @@ namespace WebDriverBiDi.Browsers;
 
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 /// <summary>
@@ -120,6 +121,7 @@ internal static class ProcessTermination
     /// </summary>
     /// <param name="process">The process.</param>
     /// <returns><see langword="true"/> if the request was delivered; otherwise, <see langword="false"/>.</returns>
+    [ExcludeFromCodeCoverage] // Takes only the branch for the operating system it runs on.
     public static bool RequestExit(Process process)
     {
         try

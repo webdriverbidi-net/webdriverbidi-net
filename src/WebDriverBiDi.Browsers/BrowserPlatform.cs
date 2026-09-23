@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 /// <summary>
@@ -18,6 +19,7 @@ public sealed record BrowserPlatform(OperatingSystemFamily OperatingSystem, Arch
     /// Gets the platform of the current process.
     /// </summary>
     /// <exception cref="PlatformNotSupportedException">Thrown when the current operating system is not Windows, macOS, or Linux.</exception>
+    [ExcludeFromCodeCoverage] // Takes only the branch for the operating system it runs on.
     public static BrowserPlatform Current
     {
         get

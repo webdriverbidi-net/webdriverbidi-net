@@ -163,7 +163,7 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     public override string? GetRequiredDriverVersion(string? browserVersion)
     {
         string? pinnedBrowserVersion = this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload && this.BrowserVersionRequest is null ? this.Version : null;
-        return base.GetRequiredDriverVersion(browserVersion) ?? browserVersion ?? pinnedBrowserVersion;
+        return browserVersion ?? pinnedBrowserVersion;
     }
 
     /// <summary>
@@ -302,11 +302,6 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
 
         if (this.LocationBehavior == FileLocationBehavior.UseCustomLocation)
         {
-            if (string.IsNullOrEmpty(expectedExecutablePath))
-            {
-                throw new ArgumentException("Executable path must be provided when using custom location behavior.", nameof(expectedExecutablePath));
-            }
-
             return expectedExecutablePath;
         }
 

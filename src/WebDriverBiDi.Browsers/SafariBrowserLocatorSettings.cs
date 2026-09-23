@@ -22,14 +22,6 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
     /// <summary>
     /// Initializes a new instance of the <see cref="SafariBrowserLocatorSettings"/> class.
     /// </summary>
-    public SafariBrowserLocatorSettings()
-        : this(SafariChannel.Stable)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SafariBrowserLocatorSettings"/> class.
-    /// </summary>
     /// <param name="channel">The distribution channel of the Safari browser.</param>
     /// <param name="downloadOptions">The download options, or <see langword="null"/> for the defaults; Safari is never downloaded.</param>
     /// <param name="customPath">The path to the Safari executable, or <see langword="null"/> for the system installation.</param>
@@ -48,7 +40,6 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
         this.DriverLocationBehavior = FileLocationBehavior.UseCustomLocation;
         this.DriverExecutableLocation = this.GetDriverLocation();
         this.Version = SystemVersionString;
-        this.InitializeExtractors();
     }
 
     /// <summary>
@@ -71,53 +62,6 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
     /// </summary>
     public bool IsTechnologyPreview => this.channelValue == SafariChannel.TechnologyPreview;
 
-    /// <summary>
-    /// Gets the browser download information for the Safari browser version or channel specified.
-    /// For Safari, the browser cannot be downloaded independently, so this hard-codes no download
-    /// information.
-    /// </summary>
-    /// <param name="cancellationToken">A token that cancels the request.</param>
-    /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
-    public override async Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
-    {
-        BrowserDownloadInfo downloadInfo = new()
-        {
-            BrowserName = this.BrowserName,
-            Channel = this.Channel,
-            Version = this.Version,
-        };
-
-        return downloadInfo;
-    }
-
-    /// <summary>
-    /// Gets the driver download information for the safaridriver that is compatible with the Safari browser.
-    /// For Safari, this is hard-coded, as the user can only use the system-installed version of Safari and
-    /// its accompanying driver.
-    /// </summary>
-    /// <param name="browserVersion">The version of the located browser; not used.</param>
-    /// <param name="cancellationToken">A token that cancels the request.</param>
-    /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
-    {
-        DriverDownloadInfo driverDownloadInfo = new()
-        {
-            DriverName = "safaridriver",
-            Version = string.Empty,
-            BrowserVersion = this.Version,
-            DownloadUrl = string.Empty,
-            InstallerFileName = string.Empty,
-        };
-
-        return driverDownloadInfo;
-    }
-
-    private void InitializeExtractors()
-    {
-        this.BrowserExtractor = new DiskImageFileExtractor();
-        this.DriverExtractor = new DiskImageFileExtractor();
-    }
-
     private string GetDriverLocation()
     {
         return this.channelValue == SafariChannel.Stable ? "/usr/bin/safaridriver" : $"{this.GetInstallLocation()}/safaridriver";
@@ -130,12 +74,7 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
 
     private string GetAppBundleName()
     {
-        return this.channelValue switch
-        {
-            SafariChannel.Stable => "Safari",
-            SafariChannel.TechnologyPreview => "Safari Technology Preview",
-            _ => "Safari",
-        };
+        return this.channelValue == SafariChannel.TechnologyPreview ? "Safari Technology Preview" : "Safari";
     }
 
     private string GetInstallLocation()

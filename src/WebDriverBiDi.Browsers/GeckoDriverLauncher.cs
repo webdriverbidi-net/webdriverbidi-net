@@ -16,8 +16,6 @@ public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
     /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
     /// <param name="settings">The Firefox browser locator settings to use for locating the browser and driver executables.</param>
-    /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
     internal GeckoDriverLauncher(FirefoxBrowserLocatorSettings settings)
         : base(settings, 0)
     {

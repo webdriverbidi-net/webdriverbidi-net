@@ -23,22 +23,12 @@ public class BrowserLocator
     /// Initializes a new instance of the <see cref="BrowserLocator"/> class.
     /// </summary>
     /// <param name="settings">The <see cref="BrowserLocatorSettings"/> for the browser locator used by the launcher.</param>
-    /// <param name="driverLocator">Optional <see cref="DriverLocator"/> to use for locating driver executables. If null and settings.IncludeDriver is true, a new instance will be created.</param>
-    internal BrowserLocator(BrowserLocatorSettings settings, DriverLocator? driverLocator = null)
+    internal BrowserLocator(BrowserLocatorSettings settings)
     {
         this.settings = settings;
-
-        // If IncludeDriver is true and no driver locator provided, create one
-        if (settings.IncludeDriver && driverLocator is null)
+        if (settings.IncludeDriver)
         {
-            driverLocator = new DriverLocator(settings);
-        }
-
-        this.driverLocator = driverLocator;
-
-        // Wire up driver locator logging to forward through browser locator's event
-        if (this.driverLocator is not null)
-        {
+            this.driverLocator = new DriverLocator(settings);
             this.driverLocator.OnLogMessage.AddObserver(this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync);
         }
     }

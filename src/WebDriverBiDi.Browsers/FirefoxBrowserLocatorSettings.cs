@@ -170,18 +170,14 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     }
 
     /// <summary>
-    /// Gets the driver download information for the geckodriver that is compatible with the Firefox browser.
-    /// Uses the <see cref="BrowserLocatorSettings.DriverVersion"/> property to determine which driver version to download,
-    /// or uses the latest version if <see cref="BrowserLocatorSettings.DriverVersion"/> is null.
+    /// Gets the driver download information for the latest geckodriver, whose releases are independent of Firefox's.
     /// </summary>
     /// <param name="browserVersion">The version of the located browser; not used, as geckodriver releases are independent of Firefox releases.</param>
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
     public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
     {
-        Uri apiUrl = new(
-            this.DownloadOptions.GeckoDriverReleasesEndpoint,
-            string.IsNullOrEmpty(this.DriverVersion) || this.DriverVersion == LatestVersionString ? "latest" : $"tags/v{this.DriverVersion}");
+        Uri apiUrl = new(this.DownloadOptions.GeckoDriverReleasesEndpoint, "latest");
 
         string json = await DownloadHttpClient.GetStringAsync(this.DownloadOptions, apiUrl, cancellationToken).ConfigureAwait(false);
 
@@ -318,11 +314,6 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
 
         if (this.LocationBehavior == FileLocationBehavior.UseCustomLocation)
         {
-            if (string.IsNullOrEmpty(expectedExecutablePath))
-            {
-                throw new ArgumentException("Executable path must be provided when using custom location behavior.", nameof(expectedExecutablePath));
-            }
-
             return expectedExecutablePath;
         }
 

@@ -29,7 +29,7 @@ public class RemoteLaunchTests
                 ["browserVersion"] = "130",
                 ["vendor:options"] = new Dictionary<string, object?>()
                 {
-                    ["numbers"] = new object[] { 1, 2L, 2.5, 3.25m, 1.5f, ulong.MaxValue },
+                    ["numbers"] = new object[] { 1, 2L, 2.5, 3.25m, 1.5f, ulong.MaxValue, (sbyte)-1, (byte)2, (short)3, (ushort)4, 5u },
                     ["flags"] = new List<bool> { true, false },
                     ["nothing"] = null,
                 },
@@ -52,7 +52,7 @@ public class RemoteLaunchTests
         Assert.Equal("chrome", (string?)capabilities["browserName"]);
         Assert.True((bool?)capabilities["webSocketUrl"]);
         Assert.Equal("130", (string?)capabilities["browserVersion"]);
-        Assert.Equal("[1,2,2.5,3.25,1.5,18446744073709551615]", capabilities["vendor:options"]!["numbers"]!.ToJsonString());
+        Assert.Equal("[1,2,2.5,3.25,1.5,18446744073709551615,-1,2,3,4,5]", capabilities["vendor:options"]!["numbers"]!.ToJsonString());
         Assert.Equal("[true,false]", capabilities["vendor:options"]!["flags"]!.ToJsonString());
         Assert.Null(capabilities["vendor:options"]!["nothing"]);
         Assert.Contains(server.Requests, request => request.Method == "DELETE" && request.PathAndQuery == $"/wd/hub/session/{SessionId}");
@@ -104,6 +104,7 @@ public class RemoteLaunchTests
     {
         { DateTime.UnixEpoch, "vendor:options.value has a value of type DateTime" },
         { double.NaN, "vendor:options.value is NaN" },
+        { float.PositiveInfinity, "which JSON cannot represent" },
         { new object[] { "valid", new Uri("http://example") }, "vendor:options.value[1] has a value of type Uri" },
         { new Dictionary<int, string>() { [1] = "one" }, "vendor:options.value has a key of type Int32" },
     };

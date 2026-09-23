@@ -411,12 +411,10 @@ public class BrowserLauncherBuilder
     {
         if (this.locationBehavior != FileLocationBehavior.AutoLocateAndDownload && this.locationBehavior != newBehavior)
         {
-            string current = this.locationBehavior switch
-            {
-                FileLocationBehavior.UseSystemInstallLocation => "use the system-installed browser",
-                FileLocationBehavior.UseCustomLocation => $"use a custom browser location ({this.customBrowserLocation})",
-                _ => "auto-download the browser",
-            };
+            // Automatic download is the default, so it is never the conflicting earlier choice.
+            string current = this.locationBehavior == FileLocationBehavior.UseSystemInstallLocation
+                ? "use the system-installed browser"
+                : $"use a custom browser location ({this.customBrowserLocation})";
 
             string requested = newBehavior switch
             {
@@ -433,20 +431,19 @@ public class BrowserLauncherBuilder
     {
         if (this.launchStrategy != LaunchStrategy.Direct && this.launchStrategy != newStrategy)
         {
+            // Direct launch is the default, so it is neither requested nor the conflicting earlier choice.
             string current = this.launchStrategy switch
             {
                 LaunchStrategy.UsingDriver => "launch via driver executable",
                 LaunchStrategy.UsingRemoteGrid => $"connect to remote grid ({this.remoteUrl})",
-                LaunchStrategy.ConnectToExisting => $"connect to an existing browser ({this.remoteUrl})",
-                _ => "launch directly",
+                _ => $"connect to an existing browser ({this.remoteUrl})",
             };
 
             string requested = newStrategy switch
             {
                 LaunchStrategy.UsingDriver => "launch via driver executable",
                 LaunchStrategy.UsingRemoteGrid => "connect to remote grid",
-                LaunchStrategy.ConnectToExisting => "connect to an existing browser",
-                _ => "launch directly",
+                _ => "connect to an existing browser",
             };
 
             throw new BrowserLauncherConfigurationException($"Cannot specify to {requested}; you already specified to {current}.");

@@ -70,10 +70,11 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
         get => this.remoteEndUrl;
         set
         {
-            this.remoteEndUrl = value is null ? null : new UriBuilder(value) { UserName = string.Empty, Password = string.Empty }.Uri;
-            if (value is not null && !string.IsNullOrEmpty(value.UserInfo))
+            Uri url = value!;
+            this.remoteEndUrl = new UriBuilder(url) { UserName = string.Empty, Password = string.Empty }.Uri;
+            if (!string.IsNullOrEmpty(url.UserInfo))
             {
-                byte[] credentials = Encoding.UTF8.GetBytes(Uri.UnescapeDataString(value.UserInfo));
+                byte[] credentials = Encoding.UTF8.GetBytes(Uri.UnescapeDataString(url.UserInfo));
                 this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(credentials));
             }
         }
@@ -192,7 +193,17 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
 
         if (string.IsNullOrEmpty(this.ConnectionString))
         {
-            throw new BrowserLaunchException($"Unable to connect to WebSocket. Launched browse may not support the WebDriver BiDi protocol (response JSON: {responseJson})");
+            // The session is useless without a WebSocket URL, so it is ended rather than left open on the remote end.
+            try
+            {
+                await this.QuitBrowserAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is CannotQuitBrowserException || ex is HttpRequestException)
+            {
+                this.sessionId = string.Empty;
+            }
+
+            throw new BrowserLaunchException($"Unable to connect to WebSocket. Launched browser may not support the WebDriver BiDi protocol (response JSON: {responseJson})");
         }
 
         return this.CreateBrowserInstance(this.ConnectionString, this.GetProcessId());
@@ -276,9 +287,13 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
         while (!isInitialized && initializationStopwatch.Elapsed < this.InitializationTimeout && hasFailed?.Invoke() != true)
         {
+            // A remote end that accepts the connection but never answers must not outlast the timeout.
+            using CancellationTokenSource requestTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            TimeSpan remaining = this.InitializationTimeout - initializationStopwatch.Elapsed;
+            requestTokenSource.CancelAfter(TimeSpan.FromTicks(Math.Max(remaining.Ticks, 0)));
             try
             {
-                using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/status", cancellationToken).ConfigureAwait(false);
+                using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/status", requestTokenSource.Token).ConfigureAwait(false);
 
                 // Checking the response from the 'status' end point. Note that we are simply checking
                 // that the HTTP status returned is a 200 status, and that the response has the correct
@@ -292,8 +307,11 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
             catch (HttpRequestException)
             {
             }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+            }
 
-            if (!isInitialized)
+            if (!isInitialized && initializationStopwatch.Elapsed < this.InitializationTimeout)
             {
                 await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken).ConfigureAwait(false);
             }

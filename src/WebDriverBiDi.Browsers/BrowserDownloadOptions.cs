@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 /// <summary>
@@ -27,6 +28,7 @@ public class BrowserDownloadOptions
     /// subdirectory of the local application data directory on Windows, of ~/Library/Caches on
     /// macOS, and of $XDG_CACHE_HOME (or ~/.cache) on Linux.
     /// </summary>
+    [ExcludeFromCodeCoverage] // Takes only the branch for the operating system it runs on.
     public static string DefaultCacheDirectory
     {
         get

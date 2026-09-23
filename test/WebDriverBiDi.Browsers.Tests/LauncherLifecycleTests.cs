@@ -137,6 +137,51 @@ public class LauncherLifecycleTests
         Assert.Contains("--remote-debugging-pipe", (await fakeBrowser.WaitForLaunchAsync()).Arguments);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ChromePipeLaunchEndsWithBrowserProcess(bool kill)
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome))
+            .AtLocation(FakeBrowserSetup.ExecutablePath)
+            .WithConnection(ConnectionKind.Pipes)
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+        ChromeLauncher chromeLauncher = Assert.IsType<ChromeLauncher>(launcher);
+        bool hadPipeServer = chromeLauncher.PipeServerProcess is not null;
+        Transport transport = launcher.CreateTransport();
+
+        if (kill)
+        {
+            await launcher.KillBrowserAsync(TestContext.Current.CancellationToken);
+        }
+        else
+        {
+            await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
+        }
+
+        Assert.True(hadPipeServer);
+        Assert.IsType<ChromiumTransport>(transport);
+        Assert.False(launcher.IsRunning);
+        Assert.Null(chromeLauncher.PipeServerProcess);
+    }
+
+    [Theory]
+    [InlineData(BrowserKind.Chrome, typeof(ChromiumTransport), true)]
+    [InlineData(BrowserKind.Firefox, typeof(Transport), true)]
+    public async Task DirectLauncherCreatesTransportForBrowser(BrowserKind browser, Type expectedTransportType, bool isCloseAllowed)
+    {
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(browser).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
+
+        Transport transport = launcher.CreateTransport();
+
+        Assert.IsType(expectedTransportType, transport);
+        Assert.Equal(isCloseAllowed, launcher.IsBrowserCloseAllowed);
+        Assert.False(launcher.IsBiDiSessionInitialized);
+    }
+
     [Fact]
     public async Task LaunchRemovesProfilesWhoseOwnersHaveExited()
     {

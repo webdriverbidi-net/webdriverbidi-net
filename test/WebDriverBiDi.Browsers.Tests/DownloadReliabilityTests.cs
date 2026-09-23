@@ -236,6 +236,30 @@ public class DownloadReliabilityTests
         Assert.Contains(expectedMessage, exception.Message);
     }
 
+    // Nightly builds share a version number, so a rechecked Nightly replaces the installed build of that version.
+    [Fact]
+    public async Task RecheckedNightlyReplacesInstalledBuildOfSameVersion()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        string archivePath = "/pub/firefox/nightly/latest-mozilla-central/firefox-133.0a1.en-US.linux-x86_64.tar.xz";
+        byte[] archive = TestArchives.TarGz("firefox/firefox");
+        server.AddRedirect(TestDownloadOptions.FirefoxProductPath, server.UrlFor(archivePath));
+        server.AddFile(archivePath, archive);
+        FirefoxLocatorTests.ServeChecksums(server, archivePath, Sha256Of(archive));
+        using TemporaryDirectory cache = new();
+        FakeTimeProvider timeProvider = new(DateTimeOffset.UtcNow);
+        string installedPath = CacheSeeder.SeedInstallation(cache, "firefox/nightly", "133.0a1", "firefox/firefox");
+        string staleMarker = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(installedPath)!)!, "stale-build");
+        File.WriteAllText(staleMarker, string.Empty);
+        CacheSeeder.SeedResolvedVersion(cache, "firefox/nightly", "latest", "133.0a1", timeProvider.GetUtcNow() - TimeSpan.FromHours(25));
+
+        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, BrowserReleaseChannel.Alpha, downloadOptions: TestDownloadOptions.Create(server, cache, timeProvider: timeProvider), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(installedPath, path);
+        Assert.Equal(1, server.RequestCount(archivePath));
+        Assert.False(File.Exists(staleMarker));
+    }
+
     // A supplied client that follows the product service's redirect itself leaves the target as the final request URL.
     [Fact]
     public async Task FirefoxVersionIsFoundThroughRedirectFollowingClient()

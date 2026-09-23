@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// Base class for browser locator settings, which define the properties and methods
 /// needed to locate and download a specific browser for testing.
@@ -33,7 +35,7 @@ internal abstract class BrowserLocatorSettings
     /// <param name="downloadOptions">The options controlling where the browser and driver are cached and downloaded from.</param>
     protected BrowserLocatorSettings(BrowserDownloadOptions downloadOptions)
     {
-        this.DownloadOptions = downloadOptions ?? throw new ArgumentNullException(nameof(downloadOptions));
+        this.DownloadOptions = downloadOptions;
     }
 
     /// <summary>
@@ -133,12 +135,6 @@ internal abstract class BrowserLocatorSettings
     public string DriverExecutableLocation { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the version of the driver to use. If null, the driver version will be determined
-    /// based on the browser version or channel. Only used when <see cref="IncludeDriver"/> is true.
-    /// </summary>
-    public string? DriverVersion { get; set; }
-
-    /// <summary>
     /// Gets or sets the file extractor used to extract the browser from the installer.
     /// Defaults to a ZipFileBrowserExtractor, but can be overridden for browsers that use
     /// different installer formats (e.g., DMG, self-extracting EXE, tarball).
@@ -185,13 +181,10 @@ internal abstract class BrowserLocatorSettings
     {
         get
         {
-            return this.LocationBehavior switch
-            {
-                FileLocationBehavior.UseSystemInstallLocation => $"system-installed {this.BrowserDisplayName}",
-                FileLocationBehavior.UseCustomLocation => $"custom {this.BrowserDisplayName}",
-                FileLocationBehavior.AutoLocateAndDownload => $"cached {this.BrowserDisplayName}",
-                _ => "unknown location behavior",
-            };
+            string location = this.LocationBehavior == FileLocationBehavior.UseSystemInstallLocation
+                ? "system-installed"
+                : this.LocationBehavior == FileLocationBehavior.UseCustomLocation ? "custom" : "cached";
+            return $"{location} {this.BrowserDisplayName}";
         }
     }
 
@@ -200,7 +193,11 @@ internal abstract class BrowserLocatorSettings
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
-    public abstract Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken);
+    /// <exception cref="NotSupportedException">Thrown for a browser that is never downloaded.</exception>
+    public virtual Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
+    {
+        throw new NotSupportedException($"{this.BrowserDisplayName} is not downloaded.");
+    }
 
     /// <summary>
     /// Gets the SHA-256 hash the browser's publisher lists for a download.
@@ -221,18 +218,20 @@ internal abstract class BrowserLocatorSettings
     /// <returns>The required driver version, or <see langword="null"/> if the driver version must be resolved.</returns>
     public virtual string? GetRequiredDriverVersion(string? browserVersion)
     {
-        return string.IsNullOrEmpty(this.DriverVersion) || this.DriverVersion == LatestVersionString ? null : this.DriverVersion;
+        return null;
     }
 
     /// <summary>
     /// Gets the driver download information for a driver that is compatible with this browser.
-    /// Uses the <see cref="DriverVersion"/> property to determine which driver version to download,
-    /// or determines it automatically based on the browser version if <see cref="DriverVersion"/> is null.
     /// </summary>
     /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public abstract Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken);
+    /// <exception cref="NotSupportedException">Thrown for a browser whose driver is never downloaded.</exception>
+    public virtual Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
+    {
+        throw new NotSupportedException($"The driver for {this.BrowserDisplayName} is not downloaded.");
+    }
 
     /// <summary>
     /// Gets the path, within the 64-bit or else the 32-bit Program Files directory, at which a
@@ -240,6 +239,7 @@ internal abstract class BrowserLocatorSettings
     /// </summary>
     /// <param name="relativePath">The path of the executable relative to the Program Files directory.</param>
     /// <returns>The path of the installed executable, or its 64-bit path if it is installed in neither.</returns>
+    [ExcludeFromCodeCoverage] // Depends on which of the directories the machine has the application in.
     protected static string GetWindowsProgramFilesPath(string relativePath)
     {
         string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), relativePath);

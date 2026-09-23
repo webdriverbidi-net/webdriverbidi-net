@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Browsers;
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -57,21 +58,28 @@ public class FirefoxLauncher : BrowserLauncher
     /// </summary>
     protected override ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new("firefoxLauncher.logMessage");
 
-    private IList<string> CommandLineArguments
+    [ExcludeFromCodeCoverage] // Takes only the branch for the operating system it runs on.
+    private static IEnumerable<string> PlatformDefaultArguments
     {
         get
         {
-            List<string> defaultArguments = [.. this.firefoxArguments];
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                defaultArguments.Add("--foreground");
+                yield return "--foreground";
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                defaultArguments.Add("--wait-for-browser");
+                yield return "--wait-for-browser";
             }
+        }
+    }
 
+    private IList<string> CommandLineArguments
+    {
+        get
+        {
+            List<string> defaultArguments = [.. this.firefoxArguments, .. PlatformDefaultArguments];
             List<string> args = [.. this.LaunchSettings.FilterDefaultArguments(defaultArguments)];
             args.Add("--profile");
             args.Add(this.ProfileDirectory);

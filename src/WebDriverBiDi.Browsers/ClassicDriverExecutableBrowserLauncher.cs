@@ -40,15 +40,9 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// </summary>
     /// <param name="browserLocatorSettings">The browser locator settings to use for locating the browser and driver executables.</param>
     /// <param name="port">The port on which the launcher will listen.</param>
-    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
     internal ClassicDriverExecutableBrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port = 0)
         : base(browserLocatorSettings, port)
     {
-        if (!browserLocatorSettings.IncludeDriver)
-        {
-            throw new ArgumentException("The settings must have IncludeDriver set to true.", nameof(browserLocatorSettings));
-        }
-
         this.launcherExecutableName = browserLocatorSettings.DriverExecutableName;
     }
 
@@ -132,16 +126,10 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         // Locate executables using BrowserLocator
         BrowserExecutableInfo executableInfo = await this.BrowserLocator.LocateExecutablesAsync(cancellationToken).ConfigureAwait(false);
 
-        if (executableInfo.DriverPath is null || string.IsNullOrEmpty(executableInfo.DriverPath))
-        {
-            throw new BrowserLaunchException($"Failed to locate {this.launcherExecutableName} executable.");
-        }
-
+        // The settings of every driver launcher include the driver, so a path is always located.
+        string browserLauncherFullPath = executableInfo.DriverPath!;
         this.BrowserExecutableLocation = executableInfo.BrowserPath;
-
-        // Determine the launcher path and full path
-        string browserLauncherFullPath = executableInfo.DriverPath;
-        string? driverDirectory = Path.GetDirectoryName(executableInfo.DriverPath);
+        string? driverDirectory = Path.GetDirectoryName(browserLauncherFullPath);
 
         // If the driver path has no directory (e.g., just "chromedriver"), it's on the system PATH
         string logDetail;

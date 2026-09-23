@@ -103,15 +103,17 @@ public class InstallCacheTests
         await AssertDownloadFailedAsync(() => FindChromeAsync(options));
     }
 
-    [Fact]
-    public async Task UnreadableVersionRecordIsResolvedAgain()
+    [Theory]
+    [InlineData("{ not json")]
+    [InlineData("null")]
+    public async Task UnreadableVersionRecordIsResolvedAgain(string record)
     {
         await using DownloadServer server = await DownloadServer.StartAsync();
         Serve(server, "Stable", LatestVersion);
         using TemporaryDirectory cache = new();
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache);
         string installedPath = await FindChromeAsync(options);
-        File.WriteAllText(Path.Combine(cache.Path, "chrome", "stable", "resolved-versions.json"), "{ not json");
+        File.WriteAllText(Path.Combine(cache.Path, "chrome", "stable", "resolved-versions.json"), record);
 
         string path = await FindChromeAsync(options);
 

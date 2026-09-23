@@ -10,6 +10,13 @@ using System.Runtime.InteropServices;
 public class BrowserDownloadOptionsTests
 {
     [Fact]
+    public void LockTimeoutMustBePositiveOrInfinite()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new BrowserDownloadOptions() { LockTimeout = TimeSpan.Zero });
+        Assert.Equal(Timeout.InfiniteTimeSpan, new BrowserDownloadOptions() { LockTimeout = Timeout.InfiniteTimeSpan }.LockTimeout);
+    }
+
+    [Fact]
     public void DefaultsUsePublicDownloadServicesAndCurrentPlatform()
     {
         BrowserDownloadOptions options = new();

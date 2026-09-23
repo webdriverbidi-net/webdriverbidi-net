@@ -29,8 +29,8 @@ public class BrowserInstance : IAsyncDisposable
     internal BrowserInstance(BrowserLauncher launcher, string connectionString, int processId, int launchId)
     {
         this.launchId = launchId;
-        this.launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
-        this.ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+        this.launcher = launcher;
+        this.ConnectionString = connectionString;
         this.ProcessId = processId;
     }
 

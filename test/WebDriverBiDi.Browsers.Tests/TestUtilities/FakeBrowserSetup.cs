@@ -112,6 +112,30 @@ public sealed class FakeBrowserSetup : IDisposable
     }
 
     /// <summary>
+    /// Waits for the child process started by the fake browser to exit, if it has not already.
+    /// </summary>
+    /// <param name="timeout">How long to wait.</param>
+    /// <returns><see langword="true"/> if the child has exited; otherwise, <see langword="false"/>.</returns>
+    public bool WaitForChildExit(TimeSpan timeout)
+    {
+        Process child;
+        try
+        {
+            child = this.GetChildProcess();
+        }
+        catch (ArgumentException)
+        {
+            // No process has the ID any longer.
+            return true;
+        }
+
+        using (child)
+        {
+            return child.WaitForExit(timeout);
+        }
+    }
+
+    /// <summary>
     /// Gets the value of an argument passed to the most recent launch, either as "name=value" or as
     /// "name" followed by the value.
     /// </summary>

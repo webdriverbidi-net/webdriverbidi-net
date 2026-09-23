@@ -23,8 +23,6 @@ public class SafariLauncher : ClassicDriverExecutableBrowserLauncher
     /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
     /// <param name="settings">The Safari browser locator settings to use for locating the browser and driver executables.</param>
-    /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
     internal SafariLauncher(SafariBrowserLocatorSettings settings)
         : base(settings, 0)
     {
