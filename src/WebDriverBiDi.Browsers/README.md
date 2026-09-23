@@ -2,4 +2,207 @@
 
 Locates, downloads, and launches browsers for automation with the [WebDriverBiDi](https://www.nuget.org/packages/WebDriverBiDi) .NET client library.
 
-> **Pre-release:** this package is under active development toward production quality, and its API is expected to change.
+- Downloads Chrome (from Chrome for Testing) and Firefox, and their drivers, into a shared local cache. Firefox and geckodriver downloads are verified against their published SHA-256 checksums; Chrome for Testing publishes none, so Chrome downloads are checked for corruption in transit.
+- Launches Chrome or Firefox directly, or through chromedriver, geckodriver, or safaridriver.
+- Connects to a browser on a remote WebDriver grid, or to one that is already running.
+- Works on Windows, macOS, and Linux (x64 and Arm64), and with native AOT.
+
+## Installation
+
+```bash
+dotnet add package WebDriverBiDi.Browsers
+```
+
+## Quick Start
+
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersQuickStart -->
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.Browsers;
+using WebDriverBiDi.Session;
+
+// Downloads Chrome for Testing into a local cache on first use.
+await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
+    .WithHeadlessOption()
+    .Build();
+await using BrowserInstance browser = await launcher.LaunchAsync();
+
+await using BiDiDriver driver = new(TimeSpan.FromSeconds(30), launcher.CreateTransport());
+await driver.StartAsync(browser.ConnectionString);
+
+// A browser launched through a driver executable already has a session.
+if (!launcher.IsBiDiSessionInitialized)
+{
+    await driver.Session.NewSessionAsync(new NewCommandParameters());
+}
+```
+
+Disposing the launcher closes the browser and deletes its temporary profile.
+
+## Choosing the Browser
+
+`BrowserLauncher.Configure` takes the browser (Chrome, Firefox, or Safari), and the builder chooses how it is found and launched:
+
+- **Channel:** `WithReleaseChannel` picks Stable (the default), Beta, DeveloperPreview (Chrome Dev, Firefox Developer Edition, Safari Technology Preview), Alpha (Chrome Canary, Firefox Nightly), or ExtendedSupport (Firefox ESR).
+- **Version:** `WithVersion` takes `BrowserVersion.Latest` (the default), `BrowserVersion.Specific("131.0.6778.204")`, or, for Chrome, `BrowserVersion.Milestone(131)`, the newest release of a major version.
+- **Location:** the browser is downloaded by default; `AtDefaultInstallationLocation()` uses the one installed on the machine, and `AtLocation(path)` a particular executable.
+- **Launch:** the browser is launched directly by default; `LaunchUsingDriver()` launches it through its driver executable, which is downloaded too. Safari is always launched through safaridriver, from its installed location.
+- **Settings:** `WithHeadlessOption`, `WithArguments`, `WithoutDefaultArguments`, `WithEnvironmentVariable`, `WithUserDataDirectory`, and `WithLaunchTimeout` apply to any browser; `WithBrowserOptions` takes settings for one browser, such as `ChromeLaunchOptions.UseHeadlessShell` or `FirefoxLaunchOptions.Preferences`.
+
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersChoosingBrowser -->
+```csharp
+using WebDriverBiDi.Browsers;
+
+// The newest release of Chrome 131, as the smaller chrome-headless-shell build.
+await using BrowserLauncher chrome = BrowserLauncher.Configure(BrowserKind.Chrome)
+    .WithVersion(BrowserVersion.Milestone(131))
+    .WithBrowserOptions(new ChromeLaunchOptions() { UseHeadlessShell = true })
+    .Build();
+
+// Firefox ESR, with an extra argument and a preference.
+FirefoxLaunchOptions firefoxOptions = new();
+firefoxOptions.Preferences["browser.startup.page"] = 0;
+await using BrowserLauncher firefox = BrowserLauncher.Configure(BrowserKind.Firefox)
+    .WithReleaseChannel(BrowserReleaseChannel.ExtendedSupport)
+    .WithArguments("--width=1280", "--height=800")
+    .WithBrowserOptions(firefoxOptions)
+    .Build();
+
+// The Chrome installed on this machine, launched through a downloaded chromedriver.
+await using BrowserLauncher installedChrome = BrowserLauncher.Configure(BrowserKind.Chrome)
+    .AtDefaultInstallationLocation()
+    .LaunchUsingDriver()
+    .Build();
+```
+
+## Remote Grids and Running Browsers
+
+`LaunchUsingRemoteGrid` creates the session on a Selenium Grid or a cloud service. The URL carries the grid's port and path, and `RemoteGridOptions` the capabilities and headers of the request:
+
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersRemoteGrid -->
+```csharp
+using WebDriverBiDi.Browsers;
+
+RemoteGridOptions gridOptions = new();
+gridOptions.Capabilities["browserVersion"] = "131";
+gridOptions.Capabilities["goog:chromeOptions"] = new Dictionary<string, object?>()
+{
+    ["args"] = new[] { "--headless=new" },
+};
+gridOptions.Headers["X-Build-Id"] = "nightly-1234";
+
+// Credentials in the URL are sent as Basic authorization.
+await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
+    .LaunchUsingRemoteGrid(new Uri("https://user:access-key@grid.example.com/wd/hub"), gridOptions)
+    .Build();
+```
+
+`ConnectToExisting` attaches to a browser that is already listening, which the launcher neither starts nor stops: closing the `BrowserInstance` only detaches from it. Give it Firefox's WebDriver BiDi URL (`ws://127.0.0.1:9222/session`), or Chrome's DevTools URL:
+
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersConnectToExisting -->
+```csharp
+using WebDriverBiDi.Browsers;
+
+// Chrome started with --remote-debugging-port=9222 reports this DevTools URL at
+// http://127.0.0.1:9222/json/version; it is reached through the WebDriver BiDi mapper.
+await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
+    .ConnectToExisting(new Uri("ws://127.0.0.1:9222/devtools/browser/0b8e2c1a-6d9e-4f35-a1c2-3b4d5e6f7a8b"))
+    .Build();
+```
+
+## Locating Without Launching
+
+`BrowserLocator.FindBrowserAsync` and `DriverLocator.FindDriverAsync` return the path of a browser or driver, downloading it if needed, for use with other tools:
+
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersLocateOnly -->
+```csharp
+using WebDriverBiDi.Browsers;
+
+string firefoxPath = await BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, BrowserReleaseChannel.Beta);
+string? geckodriverPath = await DriverLocator.FindDriverAsync(BrowserKind.Firefox);
+```
+
+## Downloads and the Cache
+
+Downloads are cached per browser, channel, and version, and a cached browser is used without a network request. The version a channel resolves to is rechecked once a day, and if the service cannot be reached, the cached version is used. `BrowserDownloadOptions` changes where browsers are cached and downloaded from:
+
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersDownloadOptions -->
+```csharp
+using WebDriverBiDi.Browsers;
+
+BrowserDownloadOptions downloadOptions = new()
+{
+    CacheDirectory = "/ci/cache/browsers",
+    ManifestUrl = new Uri("https://mirror.example.com/browsers/manifest.json"),
+    Progress = new Progress<BrowserDownloadProgress>(report => Console.WriteLine($"{report.Name}: {report.BytesReceived} bytes")),
+};
+
+await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
+    .WithDownloadOptions(downloadOptions)
+    .Build();
+```
+
+These environment variables set the defaults, so a CI system can configure every test run without code changes:
+
+| Variable | Effect |
+| --- | --- |
+| `WEBDRIVERBIDI_BROWSERS_PATH` | The cache directory. The default is a `webdriverbidi-net` directory in the local application data directory (Windows), `~/Library/Caches` (macOS), or `$XDG_CACHE_HOME` or `~/.cache` (Linux). |
+| `WEBDRIVERBIDI_SKIP_DOWNLOAD` | Set to `1` or `true` to use only what is already cached, making no network requests. |
+| `WEBDRIVERBIDI_DOWNLOAD_MANIFEST` | The URL or file path of a mirror manifest (below). |
+| `CHROME_EXECUTABLE`, `FIREFOX_EXECUTABLE`, `SAFARI_EXECUTABLE` | A browser executable to use in place of locating one. |
+| `CHROMEDRIVER_EXECUTABLE`, `GECKODRIVER_EXECUTABLE`, `SAFARIDRIVER_EXECUTABLE` | A driver executable to use in place of locating one. |
+
+### Mirroring Downloads
+
+To download from an internal mirror rather than the vendors' services, set `ManifestUrl` (or `WEBDRIVERBIDI_DOWNLOAD_MANIFEST`) to a manifest listing the builds it holds. Every browser and driver is then resolved through the manifest; one it does not list cannot be downloaded. The manifest is JSON:
+
+```json
+{
+  "schemaVersion": 1,
+  "browsers": {
+    "chrome": {
+      "channels": { "stable": "131.0.6778.204" },
+      "versions": {
+        "131.0.6778.204": {
+          "linux-x64": {
+            "url": "chrome/131.0.6778.204/chrome-linux64.zip",
+            "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+            "size": 171234567
+          }
+        }
+      }
+    }
+  },
+  "drivers": {
+    "chromedriver": {
+      "versions": {
+        "131.0.6778.204": {
+          "linux-x64": { "url": "chrome/131.0.6778.204/chromedriver-linux64.zip", "sha256": "…" }
+        }
+      }
+    },
+    "geckodriver": {
+      "latest": "0.36.0",
+      "versions": {
+        "0.36.0": {
+          "linux-x64": { "url": "geckodriver/geckodriver-v0.36.0-linux64.tar.gz", "sha256": "…" }
+        }
+      }
+    }
+  }
+}
+```
+
+- **Browsers** are `chrome`, `chrome-headless-shell`, and `firefox`; **drivers** are `chromedriver` and `geckodriver`.
+- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's, and geckodriver's is its `latest`.
+- **Platforms** are `linux-x64`, `linux-arm64`, `linux-x86`, `macos-x64`, `macos-arm64`, `windows-x64`, `windows-x86`, and `windows-arm64`.
+- **Builds** are each vendor's archive, unchanged. Each lists its SHA-256 hash, which is verified, and optionally its size. A URL may be relative to the manifest, so a directory holding the manifest and the archives serves as a mirror with no server (`file:///…/manifest.json`).
+- **Nightly builds** share version numbers, so give each mirrored Nightly build a distinct version string.
+
+## Errors
+
+Every exception the package throws derives from `WebDriverBiDiException`: `BrowserDownloadException` when a browser or driver cannot be located or downloaded, `BrowserLaunchException` (with the exit code and the end of the output) when one cannot be started, and `BrowserLauncherConfigurationException` when `Build()` finds settings that cannot be used together.
+
+## Documentation
+
+See the [Browser Setup Guide](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/browser-setup.html) and the [API reference](https://webdriverbidi-net.github.io/webdriverbidi-net/api/WebDriverBiDi.Browsers.html).

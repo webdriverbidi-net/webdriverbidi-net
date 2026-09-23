@@ -12,8 +12,6 @@
     <AssemblyOriginatorKeyFile>../../WebDriverBiDi.snk</AssemblyOriginatorKeyFile>
     <IsAotCompatible Condition="'$(TargetFramework)' != 'netstandard2.0'">true</IsAotCompatible>
 
-    <!-- Not yet production quality; becomes packable when its roadmap phase is complete. -->
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup>

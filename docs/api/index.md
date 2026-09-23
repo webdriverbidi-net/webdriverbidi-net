@@ -163,6 +163,18 @@ Low-level protocol communication types.
 - `Command` - Command representation
 - `Message` - Protocol message base class
 
+### WebDriverBiDi.Browsers
+
+Locating, downloading, and launching browsers, from the `WebDriverBiDi.Browsers` package. See the [Browser Setup Guide](../articles/browser-setup.md).
+
+**Key Classes:**
+- `BrowserLauncher` - Starts a browser (directly, through its driver, or on a remote grid) and creates the `Transport` to connect to it; `BrowserLauncher.Configure` returns a `BrowserLauncherBuilder`
+- `BrowserInstance` - A launched browser, which closes it when disposed
+- `BrowserLocator` / `DriverLocator` - Find or download a browser or driver without launching it
+- `BrowserDownloadOptions` - The cache directory, download sources, and mirror manifest
+- `RemoteGridOptions` - Capabilities and headers for a session on a remote grid
+- `ChromiumTransport` - A `Transport` that speaks WebDriver BiDi to Chromium through its DevTools endpoint
+
 ## Using the API Reference
 
 ### Generating Documentation
@@ -173,11 +185,11 @@ To generate the full API documentation locally:
 # Install DocFX if not already installed
 dotnet tool install -g docfx
 
-# Build the library and the logging package in Release; docfx metadata reads the API
-# surface from src/WebDriverBiDi/bin/Release/netstandard2.0/WebDriverBiDi.dll and
-# src/WebDriverBiDi.Logging/bin/Release/netstandard2.0/WebDriverBiDi.Logging.dll
+# Build the library, the logging package, and the browser management package in Release;
+# docfx metadata reads the API surface from each one's bin/Release/netstandard2.0 directory
 dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
 dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release
+dotnet build src/WebDriverBiDi.Browsers/WebDriverBiDi.Browsers.csproj --configuration Release
 
 # Compile the documentation code samples (every [!code-csharp] region must compile)
 dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release

@@ -49,7 +49,9 @@ aforementioned could conceivably use this library as a mechanism for driving the
 be launched, and for the WebDriver BiDi websocket to already be open and available for communication. Moreover,
 it is the user's responsibility to know what the URL of the websocket connection is to initiate a session. A
 browser driven over a remote debugging pipe rather than a websocket is launched the same way, by the user,
-and the session is started with `PipeConnection` in place of the default websocket connection.
+and the session is started with `PipeConnection` in place of the default websocket connection. The companion
+[WebDriverBiDi.Browsers](https://www.nuget.org/packages/WebDriverBiDi.Browsers) package does these things:
+it downloads, launches, and connects to Chrome, Firefox, and Safari, and to browsers on remote grids.
 
 ## Getting Started
 The library is built to support .NET Standard 2.0. This should allow the widest usage of the library across
@@ -85,7 +87,7 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 | `src/WebDriverBiDi.Analyzers` | Roslyn analyzers that flag antipatterns in code using the main library | `WebDriverBiDi.Analyzers` |
 | `src/WebDriverBiDi.Analyzers.CodeFixProviders` | Code fixes for the analyzers' diagnostics | Included in `WebDriverBiDi.Analyzers` |
 | `src/WebDriverBiDi.Logging` | `Microsoft.Extensions.Logging` (`ILogger`) integration | `WebDriverBiDi.Logging` |
-| `src/WebDriverBiDi.Browsers` | Locates, downloads, and launches browsers for automation | Pre-release; not yet published |
+| `src/WebDriverBiDi.Browsers` | Locates, downloads, and launches browsers for automation | `WebDriverBiDi.Browsers` |
 | `src/WebDriverBiDi.Extensions` | Convenience extension methods, an input action builder, and network traffic capture | Pre-release; not yet published |
 | `src/WebDriverBiDi.Automation` | High-level automation API that waits automatically for elements to be ready for interaction | Pre-release; not yet published |
 
@@ -275,13 +277,14 @@ To update the DocFx tooling, you can use the following command:
 
     dotnet tool update -g docfx
 
-To build the documentation, use the following commands. The first two steps are required because
+To build the documentation, use the following commands. The first three steps are required because
 `docfx metadata` reads the API surface from the Release `netstandard2.0` builds of the main library
-and of the `WebDriverBiDi.Logging` package (see `docs/docfx.json`), which the snippets project does
-not produce by itself (it builds only the `net10.0` flavour of each):
+and of the `WebDriverBiDi.Logging` and `WebDriverBiDi.Browsers` packages (see `docs/docfx.json`), which
+the snippets project does not produce by itself (it builds only the `net10.0` flavour of each):
 
     dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
     dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release
+    dotnet build src/WebDriverBiDi.Browsers/WebDriverBiDi.Browsers.csproj --configuration Release
     dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj
     docfx metadata docs/docfx.json
     docfx build docs/docfx.json

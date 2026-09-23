@@ -13,6 +13,12 @@
             "WebDriverBiDi.Logging.dll"
           ],
           "src": "../src/WebDriverBiDi.Logging/bin/Release/netstandard2.0"
+        },
+        {
+          "files": [
+            "WebDriverBiDi.Browsers.dll"
+          ],
+          "src": "../src/WebDriverBiDi.Browsers/bin/Release/netstandard2.0"
         }
       ],
       "dest": "api",

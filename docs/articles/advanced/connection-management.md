@@ -36,7 +36,7 @@ This is sufficient for 95% of use cases. The driver creates a WebSocket connecti
 
 ### Using a Browser Launcher (Best for Local Automation)
 
-For local automation, use a browser launcher to manage the process and connection. **The `WebDriverBiDi` package does not ship a launcher.** The samples in this article use `BrowserLauncher` from the repository's `WebDriverBiDi.Browsers` library, which is pre-release and not yet published to NuGet; in your own project you implement the equivalent (see [Browser Setup — Implementing Your Own Launcher](../browser-setup.md#implementing-your-own-launcher)). The pattern:
+For local automation, use a browser launcher to manage the process and connection. The `WebDriverBiDi` package does not ship a launcher; the samples in this article use `BrowserLauncher` from the `WebDriverBiDi.Browsers` package (see [Browser Setup](../browser-setup.md#using-webdriverbidibrowsers)). The pattern:
 
 [!code-csharp[Using a Browser Launcher](../../code/advanced/ConnectionManagementSamples.cs#UsingaBrowserLauncher)]
 

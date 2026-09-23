@@ -100,7 +100,7 @@ WebDriverBiDi.NET enables sophisticated browser automation scenarios:
 ### What This Library Is NOT
 
 - **Not a high-level automation framework**: WebDriverBiDi.NET is a protocol implementation, not a complete automation framework like Selenium, Puppeteer, or Playwright. It can serve as a foundation for such frameworks.
-- **No browser management**: The library does not launch browsers or manage profiles. You must start the browser separately with WebDriver BiDi enabled.
+- **No browser management in the core package**: The `WebDriverBiDi` package does not launch browsers or manage profiles. The companion `WebDriverBiDi.Browsers` package does: it downloads, launches, and connects to Chrome, Firefox, and Safari (see the [Browser Setup Guide](articles/browser-setup.md)). Without it, you start the browser separately with WebDriver BiDi enabled.
 - **Protocol-level API**: The API closely follows the protocol specification, which may require more code for common tasks compared to higher-level frameworks.
 
 ### Design Principles

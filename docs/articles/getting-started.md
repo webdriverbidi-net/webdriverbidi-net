@@ -35,15 +35,35 @@ Install-Package WebDriverBiDi
 
 > Check [NuGet](https://www.nuget.org/packages/WebDriverBiDi) for the latest version, and see [API Design and Compatibility](advanced/api-design.md#versioning-and-compatibility) for the versioning policy.
 
+### Recommended: Browser Management
+
+The `WebDriverBiDi` package is the protocol client, and connects to a browser that is already running. The [WebDriverBiDi.Browsers](https://www.nuget.org/packages/WebDriverBiDi.Browsers) package downloads and launches Chrome, Firefox, or Safari for you, and is used throughout this guide:
+
+```bash
+dotnet add package WebDriverBiDi.Browsers
+```
+
 ### Optional: Roslyn Analyzers
 
 For compile-time help catching common usage errors, add the [WebDriverBiDi.Analyzers](advanced/analyzers.md) package. See [Roslyn Analyzers](advanced/analyzers.md) for the full list of available analyzers.
 
 ## Browser Setup
 
-WebDriverBiDi.NET requires a WebSocket endpoint that speaks WebDriver BiDi. See the [Browser Setup Guide](browser-setup.md) for the full picture; the essentials are below.
+WebDriverBiDi.NET requires a connection that speaks WebDriver BiDi. See the [Browser Setup Guide](browser-setup.md) for the full picture; the essentials are below.
 
-### Chrome, Chromium and Edge
+### Launching with WebDriverBiDi.Browsers (recommended)
+
+`BrowserLauncher` downloads the browser on first use, launches it, and creates the transport a `BiDiDriver` connects over:
+
+[!code-csharp[Launch and Connect](../code/PackageReadmeSamples.cs#BrowsersQuickStart)]
+
+`BrowserLauncher.Configure` also takes Firefox or Safari, and the builder chooses the channel, version, headless mode, and whether to launch through the browser's driver executable, a remote grid, or an already-running browser. See [Using WebDriverBiDi.Browsers](browser-setup.md#using-webdriverbidibrowsers).
+
+### Setting Up a Browser Yourself
+
+Without the package, you start the browser (or its driver) yourself and connect to the WebSocket URL it reports.
+
+#### Chrome, Chromium and Edge
 
 Chrome and Edge do **not** speak WebDriver BiDi on their `--remote-debugging-port` endpoint — that endpoint (`ws://localhost:9222/devtools/browser/<id>`, reported by `/json/version`) speaks the Chrome DevTools Protocol only, and a `BiDiDriver` connected to it fails on its first command. Use the browser's driver executable instead: chromedriver (from [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/)) or msedgedriver.
 
@@ -61,7 +81,7 @@ curl -X POST http://localhost:9515/session \
 
 The response's `value.capabilities.webSocketUrl` — for example `ws://localhost:9515/session/8a4d1c2e-…` — is the URL for `BiDiDriver.StartAsync()`. chromedriver launches the browser as part of creating the session, so you do not start Chrome yourself; browser flags such as `--headless=new` go in `goog:chromeOptions.args` (`ms:edgeOptions.args` for Edge).
 
-### Firefox
+#### Firefox
 
 Firefox speaks WebDriver BiDi natively. Either launch it directly:
 
@@ -71,7 +91,7 @@ firefox --remote-debugging-port=9222
 
 and connect to `ws://localhost:9222/session`, or run geckodriver (`geckodriver --port 4444`) and connect to `ws://localhost:4444/session`. On both of these endpoints you must call `driver.Session.NewSessionAsync(...)` after `StartAsync`, because no session exists yet. (geckodriver also accepts the `webSocketUrl: true` classic session shown above, in which case the session already exists.)
 
-### Getting the WebSocket URL Programmatically
+#### Getting the WebSocket URL Programmatically
 
 Creating the session from C# is a single HTTP request:
 
@@ -79,7 +99,7 @@ Creating the session from C# is a single HTTP request:
 
 [!code-csharp[Create a BiDi Session Usage](../code/examples/GettingStartedSamples.cs#DiscoverWebSocketUrlUsage)]
 
-#### Common Connection String Formats
+##### Common Connection String Formats
 
 **Session created through chromedriver, msedgedriver or geckodriver (recommended):**
 ```
@@ -100,7 +120,7 @@ ws://localhost:9222/devtools/browser/<browser-id>
 ws://localhost:9222/devtools/page/<page-id>
 ```
 
-#### Complete Connection Example
+##### Complete Connection Example
 
 [!code-csharp[Connect to Browser](../code/examples/GettingStartedSamples.cs#ConnecttoBrowser)]
 
@@ -111,7 +131,7 @@ ws://localhost:9222/devtools/page/<page-id>
 - Include fallback logic for connection failures
 - Handle HttpClient timeouts appropriately (the driver launches the browser while answering the new-session request)
 
-### Connection Methods
+#### Connection Methods
 
 WebDriverBiDi.NET supports two ways to connect to browsers:
 
@@ -128,6 +148,7 @@ For getting started, WebSocket connections are recommended as they're simpler to
 dotnet new console -n MyFirstBiDiApp
 cd MyFirstBiDiApp
 dotnet add package WebDriverBiDi
+dotnet add package WebDriverBiDi.Browsers
 ```
 
 ### 2. Write the Code
@@ -137,9 +158,10 @@ Replace the contents of `Program.cs` with the code below, adding these `using` d
 <!-- inline-csharp: the using directives the sample needs, quoted on their own -->
 ```csharp
 using WebDriverBiDi;
+using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
-using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
+using WebDriverBiDi.Session;
 ```
 
 [!code-csharp[First Application](../code/examples/GettingStartedSamples.cs#FirstApplication)]
@@ -154,11 +176,17 @@ dotnet run
 
 Let's break down what this code does:
 
+### Launching the Browser
+
+[!code-csharp[Launching the Browser](../code/examples/GettingStartedSamples.cs#LaunchingtheBrowser)]
+
+`BrowserLauncher.Configure` returns a builder for the launcher; with no other settings, it downloads the latest stable Chrome for Testing into a local cache on first use, and launches it with a temporary profile. `LaunchAsync` starts the browser and returns a `BrowserInstance` describing it. Disposing the launcher closes the browser and deletes the profile.
+
 ### Creating the Driver
 
 [!code-csharp[Creating the Driver](../code/examples/GettingStartedSamples.cs#CreatingtheDriver)]
 
-The `BiDiDriver` is the main entry point for all WebDriver BiDi operations. The timeout parameter specifies how long to wait for command responses.
+The `BiDiDriver` is the main entry point for all WebDriver BiDi operations. The timeout parameter specifies how long to wait for command responses, and the transport, from the launcher, is how the driver reaches the browser.
 
 > **Tip:** By default, event handler exceptions and problems with messages from the browser never throw.
 > They are reported only through the driver's diagnostic events, which nothing may be watching. During
@@ -180,7 +208,7 @@ The `BiDiDriver` is the main entry point for all WebDriver BiDi operations. The 
 
 [!code-csharp[Connecting to Browser](../code/examples/GettingStartedSamples.cs#ConnectingtoBrowser)]
 
-This establishes a WebSocket connection to the browser. The browser must already be running with WebDriver BiDi enabled.
+This connects to the browser at the address the launch reported. A browser launched directly has no WebDriver BiDi session yet, so one is created; a browser launched through its driver executable already has one, which `IsBiDiSessionInitialized` reports.
 
 ### Getting the Browsing Context
 
@@ -215,6 +243,10 @@ Now that you have a working WebDriverBiDi.NET application, explore these topics:
 6. **[Common Scenarios](examples/common-scenarios.md)**: See practical examples
 
 ## Troubleshooting
+
+### The Browser Cannot Be Downloaded or Launched
+
+`BrowserDownloadException` means the browser or its driver could not be located or downloaded, for example because the machine is offline and nothing is cached. `BrowserLaunchException` means it could not be started; its `ExitCode` and `ProcessOutput` show what the browser reported. On Linux, a Firefox installed as a Snap or Flatpak needs a profile directory it can read; see [Browser Setup](browser-setup.md#choosing-the-browser).
 
 ### "Could not connect to remote WebSocket server" Error
 
