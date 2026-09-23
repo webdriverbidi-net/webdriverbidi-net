@@ -29,17 +29,6 @@ public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
     public override bool IsBrowserCloseAllowed => false;
 
     /// <summary>
-    /// Gets a value indicating the time to wait for the service to terminate before forcing it to terminate.
-    /// </summary>
-    protected override TimeSpan TerminationTimeout => TimeSpan.FromMilliseconds(100);
-
-    /// <summary>
-    /// Gets a value indicating whether the service has a shutdown API that can be called to terminate
-    /// it gracefully before forcing a termination.
-    /// </summary>
-    protected override bool HasShutdownApi => false;
-
-    /// <summary>
     /// Creates the WebDriver Classic capabilities used to launch the browser.
     /// </summary>
     /// <returns>A dictionary containing the capabilities.</returns>

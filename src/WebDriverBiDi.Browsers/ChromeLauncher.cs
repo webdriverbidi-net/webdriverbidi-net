@@ -16,8 +16,6 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
 {
-    private static readonly SemaphoreSlim LockObject = new(1, 1);
-
     private readonly List<string> disabledFeatures = [
         "Translate",
 
@@ -68,7 +66,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         "--use-mock-keychain",
     ];
 
-    private string userDataDirectory = string.Empty;
+    private TemporaryProfile? profile;
 
     private Connection? connection;
 
@@ -114,7 +112,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             List<string> args = [.. this.chromeArguments];
             args.Add($"--disable-features={string.Join(",", this.disabledFeatures)}");
             args.Add($"--enable-features={string.Join(",", this.enabledFeatures)}");
-            args.Add($"--user-data-dir={this.userDataDirectory}");
+            args.Add($"--user-data-dir={this.profile?.Path}");
             if (this.ConnectionType == ConnectionKind.Pipes)
             {
                 args.Add("--remote-debugging-pipe");
@@ -160,31 +158,20 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
         await this.LogAsync($"Launching Chrome browser from {browserExecutableLocation}").ConfigureAwait(false);
 
-        // A word about the locking mechanism. It's not entirely possible to make
-        // atomic the finding of a free port, then using that port as the port for
-        // the launcher to listen on. There will always be a race condition between
-        // releasing the port and starting the launcher where another application
-        // could acquire the same port. The window of opportunity is likely in the
-        // millisecond order of magnitude, but the chance does exist. We will attempt
-        // to mitigate at least other instances of a BrowserLauncher acquiring the
-        // same port when launching the browser.
-        await LockObject.WaitAsync().ConfigureAwait(false);
+        // With port 0, Chrome chooses a free port itself and reports it with its DevTools endpoint.
+        this.ConnectionString = string.Empty;
+        this.profile = TemporaryProfile.Create("chrome");
         try
         {
-            if (this.Port == 0)
-            {
-                this.Port = FindFreePort();
-            }
-
-            this.CreateUserDataDirectory();
-
-            this.browserProcess = new Process
+            Process process = new()
             {
                 StartInfo = this.CreateProcessStartInfo(browserExecutableLocation),
             };
-            this.browserProcess.ErrorDataReceived += this.ReadConsoleOutputForWebSocketUrl;
-            this.browserProcess.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
-            this.browserProcess.Start();
+            process.ErrorDataReceived += this.ReadConsoleOutputForWebSocketUrl;
+            process.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
+            process.Start();
+            this.browserProcess = process;
+            this.profile.SetOwner(this.browserProcess);
             this.browserProcess.BeginOutputReadLine();
             this.browserProcess.BeginErrorReadLine();
             bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
@@ -200,9 +187,16 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
                 throw new BrowserNotLaunchedException($"Unable to launch Chrome browser. {reason}");
             }
         }
-        finally
+        catch (Exception)
         {
-            LockObject.Release();
+            // Whatever was started is killed, and the profile deleted, however the launch failed.
+            await this.TerminateBrowserProcessAsync(requestExit: false).ConfigureAwait(false);
+            throw;
+        }
+
+        if (this.ConnectionType == ConnectionKind.WebSocket)
+        {
+            this.Port = new Uri(this.ConnectionString).Port;
         }
 
         int processId = this.GetProcessId();
@@ -210,10 +204,10 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     }
 
     /// <summary>
-    /// Asynchronously quits the browser.
+    /// Asynchronously quits the browser: asks it to exit, waits up to <see cref="BrowserLauncher.ShutdownTimeout"/>,
+    /// then kills it and every process it started, and deletes its temporary profile.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
     public override async Task QuitBrowserAsync()
     {
         if (this.connection is not null && this.connection.IsActive && this.connection.ConnectionKind == ConnectionKind.Pipes && this.connection is PipeConnection pipeConnection)
@@ -222,7 +216,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             this.connection = null;
         }
 
-        this.TerminateBrowserProcess();
+        await this.TerminateBrowserProcessAsync(requestExit: true).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -232,7 +226,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     public override async Task KillBrowserAsync()
     {
         // Terminate first: stopping the pipe connection is the step most likely to be what failed.
-        this.TerminateBrowserProcess();
+        await this.TerminateBrowserProcessAsync(requestExit: false).ConfigureAwait(false);
         if (this.connection is PipeConnection pipeConnection)
         {
             try
@@ -315,69 +309,33 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         return "bash";
     }
 
-    private static string EscapeShellArgument(string argument)
-    {
-        // Escape single quotes by ending the single-quoted string,
-        // adding an escaped single quote, and starting a new single-quoted string
-        return "'" + argument.Replace("'", "'\\''") + "'";
-    }
-
-    private static string EscapeWindowsArgument(string argument)
-    {
-        // If the argument contains spaces or special characters, wrap in quotes
-        if (argument.Contains(' ') || argument.Contains('"'))
-        {
-            // Escape internal quotes and wrap in quotes
-            return "\"" + argument.Replace("\"", "\\\"") + "\"";
-        }
-
-        return argument;
-    }
-
     private ProcessStartInfo CreateProcessStartInfo(string browserExecutableLocation)
     {
         string fileName = browserExecutableLocation;
-        string args = string.Join(" ", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? this.CommandLineArguments.Select(EscapeWindowsArgument) : this.CommandLineArguments);
-        if (this.connection is not null && this.connection.ConnectionKind == ConnectionKind.Pipes && this.connection is PipeConnection pipeConnection)
+        List<string> arguments = [.. this.CommandLineArguments];
+        if (this.connection is PipeConnection pipeConnection && pipeConnection.ConnectionKind == ConnectionKind.Pipes)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                List<string> browserArgs = [.. this.CommandLineArguments];
-                browserArgs.Add($"--remote-debugging-io-pipes={pipeConnection.ReadPipeHandle},{pipeConnection.WritePipeHandle}");
-                args = string.Join(" ", browserArgs.Select(EscapeWindowsArgument));
+                arguments.Add($"--remote-debugging-io-pipes={pipeConnection.ReadPipeHandle},{pipeConnection.WritePipeHandle}");
             }
             else
             {
-                // Escape the browser path and arguments for shell usage
-                string escapedBrowserPath = EscapeShellArgument(browserExecutableLocation);
-                string escapedArgs = string.Join(" ", this.CommandLineArguments.Select(EscapeShellArgument));
-
-                // For pipe connection in non-Windows OSes, create a bash command that:
-                // 1. Redirects FD 3 to read from our write pipe (browser reads commands)
-                // 2. Redirects FD 4 to write to our read pipe (browser writes responses)
-                // 3. Closes the original pipe FDs to avoid leaking them
-                // 4. Executes the browser with exec to replace the shell process
-                //
-                // The syntax is:
-                //   exec 3<&{fd} 4>&{fd} {fd}<&- {fd}>&- ; exec browser args
-                //
-                // Where:
-                //   3<&{fd}  - duplicate read pipe fd to fd 3
-                //   4>&{fd}  - duplicate write pipe fd to fd 4
-                //   {fd}<&-  - close the original read pipe fd
-                //   {fd}>&-  - close the original write pipe fd
-                string bashScript = $"exec 3<&{pipeConnection.ReadPipeHandle} 4>&{pipeConnection.WritePipeHandle} " +
-                                $"{pipeConnection.ReadPipeHandle}<&- {pipeConnection.WritePipeHandle}>&-; " +
-                                $"exec {escapedBrowserPath} {escapedArgs}";
+                // Chrome reads commands from file descriptor 3 and writes responses to 4, so a shell
+                // duplicates the inherited pipe descriptors onto those, closes the originals, and
+                // then replaces itself with the browser.
+                string readHandle = pipeConnection.ReadPipeHandle;
+                string writeHandle = pipeConnection.WritePipeHandle;
+                string browserCommand = string.Join(" ", new[] { browserExecutableLocation }.Concat(arguments).Select(CommandLine.QuotePosixShellArgument));
                 fileName = GetShellPath();
-                args = $"-c \"{bashScript.Replace("\"", "\\\"")}\"";
+                arguments = ["-c", $"exec 3<&{readHandle} 4>&{writeHandle} {readHandle}<&- {writeHandle}>&-; exec {browserCommand}"];
             }
         }
 
         return new ProcessStartInfo()
         {
             FileName = fileName,
-            Arguments = args,
+            Arguments = CommandLine.JoinArguments(arguments),
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -385,10 +343,6 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         };
     }
 
-    /// <summary>
-    /// Asynchronously waits for the initialization of the browser launcher.
-    /// </summary>
-    /// <returns>The task object representing the asynchronous operation.</returns>
     private async Task<bool> WaitForInitializationAsync()
     {
         bool isInitialized = false;
@@ -421,44 +375,27 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         return isInitialized;
     }
 
-    private void CreateUserDataDirectory()
+    private async Task TerminateBrowserProcessAsync(bool requestExit)
     {
-        string tempPath = Path.GetTempPath();
-        string directoryName = Path.Combine(tempPath, $"webdriverbidi-net-chrome-data-{Guid.NewGuid()}");
-        DirectoryInfo info = Directory.CreateDirectory(directoryName);
-        this.userDataDirectory = info.FullName;
-    }
-
-    private void TerminateBrowserProcess()
-    {
-        if (this.browserProcess is not null)
+        Process? process = this.browserProcess;
+        if (process is not null)
         {
-            if (!this.browserProcess.HasExited)
+            bool hasExited = process.HasExited
+                || (requestExit && ProcessTermination.RequestExit(process) && await ProcessTermination.WaitForExitAsync(process, this.ShutdownTimeout).ConfigureAwait(false));
+            if (!hasExited)
             {
-                this.browserProcess.Kill();
-                this.browserProcess.WaitForExit();
+                ProcessTermination.KillTree(process);
+                await ProcessTermination.WaitForExitAsync(process, ProcessTermination.KilledProcessExitTimeout).ConfigureAwait(false);
             }
 
+            process.Dispose();
             this.browserProcess = null;
-            this.RemoveUserDataDirectory();
         }
-    }
 
-    private void RemoveUserDataDirectory()
-    {
-        // NOTE: This is a naive algorithm for demonstration purposes only.
-        // Production code might do something like allow the user to keep
-        // the profile directory around for examination after shutting the
-        // browser down.
-        if (!string.IsNullOrEmpty(this.userDataDirectory) && Directory.Exists(this.userDataDirectory))
+        if (this.profile is not null)
         {
-            try
-            {
-                Directory.Delete(this.userDataDirectory, true);
-            }
-            catch (IOException)
-            {
-            }
+            await this.profile.DeleteAsync().ConfigureAwait(false);
+            this.profile = null;
         }
     }
 }

@@ -18,13 +18,12 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public class FirefoxLauncher : BrowserLauncher
 {
-    private static readonly SemaphoreSlim LockObject = new(1, 1);
-
     // Firefox announces that its WebDriver BiDi endpoint is accepting connections with a
     // line of the form "WebDriver BiDi listening on ws://127.0.0.1:9222" on its standard
-    // error stream. This differs from the "DevTools listening on ..." line matched by the
-    // base class implementation, which Firefox never emits.
-    private static readonly Regex BiDiEndpointReadyMatcher = new(@"WebDriver BiDi listening on ws:\/\/", RegexOptions.IgnoreCase);
+    // error stream, naming the port it chose if it was given port 0. This differs from the
+    // "DevTools listening on ..." line matched by the base class implementation, which
+    // Firefox never emits.
+    private static readonly Regex BiDiEndpointReadyMatcher = new(@"WebDriver BiDi listening on ws:\/\/[^\s\/]+:(\d+)", RegexOptions.IgnoreCase);
 
     private readonly List<string> firefoxArguments = [
       "--no-remote",
@@ -33,10 +32,10 @@ public class FirefoxLauncher : BrowserLauncher
     private readonly Dictionary<string, object> userPreferences = [];
 
     private Process? browserProcess;
-    private string userDataDirectory = string.Empty;
+    private TemporaryProfile? profile;
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
-    private int isBiDiEndpointReadyFlag;
+    private int reportedPort;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FirefoxLauncher"/> class.
@@ -74,7 +73,7 @@ public class FirefoxLauncher : BrowserLauncher
             }
 
             args.Add("--profile");
-            args.Add(this.userDataDirectory);
+            args.Add(this.profile?.Path ?? string.Empty);
             args.Add($"--remote-debugging-port");
             args.Add($"{this.Port}");
             if (this.IsBrowserHeadless)
@@ -86,21 +85,14 @@ public class FirefoxLauncher : BrowserLauncher
         }
     }
 
+    // The port Firefox reported its WebDriver BiDi endpoint listening on, or 0 before it has.
     // Set from the browser process's output handler, which runs on a thread pool thread, and
     // read by the initialization wait loop, which may resume on a different one. Reads and
     // writes go through Interlocked so both threads are guaranteed to agree on the value.
-    private bool IsBiDiEndpointReady
+    private int ReportedPort
     {
-        get
-        {
-            return Interlocked.CompareExchange(ref this.isBiDiEndpointReadyFlag, 0, 0) == 1;
-        }
-
-        set
-        {
-            int flagValue = value ? 1 : 0;
-            Interlocked.Exchange(ref this.isBiDiEndpointReadyFlag, flagValue);
-        }
+        get => Interlocked.CompareExchange(ref this.reportedPort, 0, 0);
+        set => Interlocked.Exchange(ref this.reportedPort, value);
     }
 
     /// <summary>
@@ -128,33 +120,22 @@ public class FirefoxLauncher : BrowserLauncher
         string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
         await this.LogAsync($"Launching Firefox browser from {browserExecutableLocation}").ConfigureAwait(false);
 
-        // A word about the locking mechanism. It's not entirely possible to make
-        // atomic the finding of a free port, then using that port as the port for
-        // the launcher to listen on. There will always be a race condition between
-        // releasing the port and starting the launcher where another application
-        // could acquire the same port. The window of opportunity is likely in the
-        // millisecond order of magnitude, but the chance does exist. We will attempt
-        // to mitigate at least other instances of a BrowserLauncher acquiring the
-        // same port when launching the browser.
-        await LockObject.WaitAsync().ConfigureAwait(false);
+        // With port 0, Firefox chooses a free port itself and reports it when its endpoint is ready.
+        this.ConnectionString = string.Empty;
+        this.ReportedPort = 0;
+        this.profile = TemporaryProfile.Create("firefox");
         try
         {
-            if (this.Port == 0)
-            {
-                this.Port = FindFreePort();
-            }
-
-            this.CreateUserDataDirectory();
-            this.CreateProfile();
-
-            this.IsBiDiEndpointReady = false;
-            this.browserProcess = new Process()
+            this.CreateProfile(this.profile.Path);
+            Process process = new()
             {
                 StartInfo = this.CreateProcessStartInfo(browserExecutableLocation),
             };
-            this.browserProcess.ErrorDataReceived += this.ReadConsoleOutputForWebSocketUrl;
-            this.browserProcess.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
-            this.browserProcess.Start();
+            process.ErrorDataReceived += this.ReadConsoleOutputForWebSocketUrl;
+            process.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
+            process.Start();
+            this.browserProcess = process;
+            this.profile.SetOwner(this.browserProcess);
             this.browserProcess.BeginOutputReadLine();
             this.browserProcess.BeginErrorReadLine();
             bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
@@ -165,37 +146,29 @@ public class FirefoxLauncher : BrowserLauncher
                     : $"Browser process exited with code {this.browserProcess.ExitCode} before reporting its WebDriver BiDi endpoint as ready.";
                 throw new BrowserNotLaunchedException($"Unable to launch Firefox browser. {reason}");
             }
-
-            this.ConnectionString = $"ws://localhost:{this.Port}/session";
         }
-        finally
+        catch (Exception)
         {
-            LockObject.Release();
+            // Whatever was started is killed, and the profile deleted, however the launch failed.
+            await this.TerminateBrowserProcessAsync(requestExit: false).ConfigureAwait(false);
+            throw;
         }
+
+        this.Port = this.ReportedPort;
+        this.ConnectionString = $"ws://localhost:{this.Port}/session";
 
         int processId = this.GetProcessId();
         return new BrowserInstance(this, this.ConnectionString, processId);
     }
 
     /// <summary>
-    /// Asynchronously quits the browser.
+    /// Asynchronously quits the browser: asks it to exit, waits up to <see cref="BrowserLauncher.ShutdownTimeout"/>,
+    /// then kills it and every process it started, and deletes its temporary profile.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
     public override Task QuitBrowserAsync()
     {
-        if (this.browserProcess is not null)
-        {
-            if (!this.browserProcess.HasExited)
-            {
-                this.browserProcess.Kill();
-            }
-
-            this.browserProcess = null;
-            this.RemoveUserDataDirectory();
-        }
-
-        return Task.CompletedTask;
+        return this.TerminateBrowserProcessAsync(requestExit: true);
     }
 
     /// <summary>
@@ -204,8 +177,7 @@ public class FirefoxLauncher : BrowserLauncher
     /// <returns>The task object representing the asynchronous operation.</returns>
     public override Task KillBrowserAsync()
     {
-        // Quitting a Firefox browser launched by this class already terminates its process.
-        return this.QuitBrowserAsync();
+        return this.TerminateBrowserProcessAsync(requestExit: false);
     }
 
     /// <summary>
@@ -245,16 +217,19 @@ public class FirefoxLauncher : BrowserLauncher
     /// <param name="sender">The source of the event.</param>
     /// <param name="e">The event data.</param>
     /// <remarks>
-    /// This only records that the endpoint is ready; it deliberately does not capture the
-    /// announced URL. Firefox announces the endpoint's origin without a path, whereas creating
-    /// a session requires the "/session" path, so <see cref="LaunchBrowserAsync"/> continues to
-    /// construct the session URL from the port the launcher selected.
+    /// This records only the announced port. Firefox announces the endpoint's origin without a
+    /// path, whereas creating a session requires the "/session" path, so <see cref="LaunchBrowserAsync"/>
+    /// constructs the session URL from the port.
     /// </remarks>
     protected override void ReadConsoleOutputForWebSocketUrl(object sender, DataReceivedEventArgs e)
     {
-        if (e.Data is not null && BiDiEndpointReadyMatcher.IsMatch(e.Data))
+        if (e.Data is not null)
         {
-            this.IsBiDiEndpointReady = true;
+            Match match = BiDiEndpointReadyMatcher.Match(e.Data);
+            if (match.Success)
+            {
+                this.ReportedPort = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+            }
         }
     }
 
@@ -524,7 +499,7 @@ public class FirefoxLauncher : BrowserLauncher
         ProcessStartInfo startInfo = new()
         {
             FileName = browserExecutableLocation,
-            Arguments = string.Join(" ", this.CommandLineArguments),
+            Arguments = CommandLine.JoinArguments(this.CommandLineArguments),
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -534,14 +509,8 @@ public class FirefoxLauncher : BrowserLauncher
         return startInfo;
     }
 
-    private void CreateProfile()
+    private void CreateProfile(string profileDirectory)
     {
-        // If the tempUserDataDirectory begins and ends with a quote, remove the quote
-        if (this.userDataDirectory.StartsWith("\"", StringComparison.OrdinalIgnoreCase) && this.userDataDirectory.EndsWith("\"", StringComparison.OrdinalIgnoreCase))
-        {
-            this.userDataDirectory = this.userDataDirectory.Substring(1, this.userDataDirectory.Length - 2);
-        }
-
         Dictionary<string, object> defaultPreferences = GetDefaultPreferences(this.userPreferences);
         List<string> preferenceList = [];
         foreach (KeyValuePair<string, object> preferencePair in defaultPreferences)
@@ -549,8 +518,8 @@ public class FirefoxLauncher : BrowserLauncher
             preferenceList.Add($"user_pref({FormatJsValue(preferencePair.Key)}, {FormatJsValue(preferencePair.Value)});");
         }
 
-        File.WriteAllText(Path.Combine(this.userDataDirectory, "user.js"), string.Join("\n", preferenceList));
-        File.WriteAllText(Path.Combine(this.userDataDirectory, "prefs.js"), string.Empty);
+        File.WriteAllText(Path.Combine(profileDirectory, "user.js"), string.Join("\n", preferenceList));
+        File.WriteAllText(Path.Combine(profileDirectory, "prefs.js"), string.Empty);
     }
 
     /// <summary>
@@ -576,7 +545,7 @@ public class FirefoxLauncher : BrowserLauncher
                 break;
             }
 
-            if (this.IsBiDiEndpointReady)
+            if (this.ReportedPort != 0)
             {
                 isInitialized = true;
                 break;
@@ -589,29 +558,27 @@ public class FirefoxLauncher : BrowserLauncher
         return isInitialized;
     }
 
-    private void CreateUserDataDirectory()
+    private async Task TerminateBrowserProcessAsync(bool requestExit)
     {
-        string tempPath = Path.GetTempPath();
-        string directoryName = Path.Combine(tempPath, $"webdriverbidi-net-firefox-data-{Guid.NewGuid()}");
-        DirectoryInfo info = Directory.CreateDirectory(directoryName);
-        this.userDataDirectory = info.FullName;
-    }
-
-    private void RemoveUserDataDirectory()
-    {
-        // NOTE: This is a naive algorithm for demonstration purposes only.
-        // Production code might do something like allow the user to keep
-        // the profile directory around for examination after shutting the
-        // browser down.
-        if (!string.IsNullOrEmpty(this.userDataDirectory) && Directory.Exists(this.userDataDirectory))
+        Process? process = this.browserProcess;
+        if (process is not null)
         {
-            try
+            bool hasExited = process.HasExited
+                || (requestExit && ProcessTermination.RequestExit(process) && await ProcessTermination.WaitForExitAsync(process, this.ShutdownTimeout).ConfigureAwait(false));
+            if (!hasExited)
             {
-                Directory.Delete(this.userDataDirectory, true);
+                ProcessTermination.KillTree(process);
+                await ProcessTermination.WaitForExitAsync(process, ProcessTermination.KilledProcessExitTimeout).ConfigureAwait(false);
             }
-            catch (IOException)
-            {
-            }
+
+            process.Dispose();
+            this.browserProcess = null;
+        }
+
+        if (this.profile is not null)
+        {
+            await this.profile.DeleteAsync().ConfigureAwait(false);
+            this.profile = null;
         }
     }
 }

@@ -87,21 +87,10 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     protected string BrowserExecutableLocation { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets a value indicating whether the service has a shutdown API that can be called to terminate
-    /// it gracefully before forcing a termination.
-    /// </summary>
-    protected virtual bool HasShutdownApi => false;
-
-    /// <summary>
     /// Gets the HTTP client used to communicate with the WebDriver Classic remote end. Note
     /// carefully that this is only used for launching and quitting the browser.
     /// </summary>
     protected HttpClient HttpClient => this.httpClient;
-
-    /// <summary>
-    /// Gets a value indicating the time to wait for the service to terminate before forcing it to terminate.
-    /// </summary>
-    protected virtual TimeSpan TerminationTimeout => TimeSpan.FromSeconds(10);
 
     /// <summary>
     /// Gets the Uri of the service.
@@ -272,14 +261,25 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     }
 
     /// <summary>
-    /// Asynchronously waits for the initialization of the browser launcher.
+    /// Releases the resources used by the launcher after quitting the browser and stopping the launcher.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected async Task<bool> WaitForInitializationAsync()
+    protected override async ValueTask DisposeAsyncCore()
+    {
+        await base.DisposeAsyncCore().ConfigureAwait(false);
+        this.httpClient.Dispose();
+    }
+
+    /// <summary>
+    /// Asynchronously waits for the initialization of the browser launcher.
+    /// </summary>
+    /// <param name="hasFailed">Checked before each poll; returns <see langword="true"/> to stop waiting early, such as when the launcher process has exited.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    protected async Task<bool> WaitForInitializationAsync(Func<bool>? hasFailed = null)
     {
         bool isInitialized = false;
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
-        while (!isInitialized && initializationStopwatch.Elapsed < this.InitializationTimeout)
+        while (!isInitialized && initializationStopwatch.Elapsed < this.InitializationTimeout && hasFailed?.Invoke() != true)
         {
             try
             {

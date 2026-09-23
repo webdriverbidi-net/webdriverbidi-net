@@ -59,6 +59,12 @@ public abstract class BrowserLauncher : IAsyncDisposable
     public TimeSpan InitializationTimeout { get; set; } = TimeSpan.FromSeconds(20);
 
     /// <summary>
+    /// Gets or sets how long <see cref="QuitBrowserAsync"/> waits for a browser that has been asked
+    /// to exit before killing it and every process it started. Defaults to 5 seconds.
+    /// </summary>
+    public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>
     /// Gets or sets the connection string for communicating with the browser via the WebDriver BiDi protocol.
     /// For a WebSocket connection, this is the URL to the WebSocket; for other connection types, see the
     /// documentation for the connection type.

@@ -59,7 +59,7 @@ public abstract class FileExtractor
         Task completedTask = Task.WhenAll(exitedSource.Task, stdoutTask, stderrTask);
         if (await Task.WhenAny(completedTask, timeoutTask).ConfigureAwait(false) != completedTask)
         {
-            KillProcessTree(process);
+            ProcessTermination.KillTree(process);
             throw new WebDriverBiDiTimeoutException($"Process '{fileName} {arguments}' did not complete within {processTimeout.TotalSeconds} seconds.");
         }
 
@@ -69,22 +69,6 @@ public abstract class FileExtractor
         if (process.ExitCode != 0)
         {
             throw new InvalidOperationException($"Process '{fileName} {arguments}' exited with code {process.ExitCode}.\nstdout: {stdout}\nstderr: {stderr}");
-        }
-    }
-
-    private static void KillProcessTree(Process process)
-    {
-        try
-        {
-#if NET5_0_OR_GREATER
-            process.Kill(entireProcessTree: true);
-#else
-            process.Kill();
-#endif
-        }
-        catch (InvalidOperationException)
-        {
-            // The process exited after the timeout elapsed but before it could be killed.
         }
     }
 }
