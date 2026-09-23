@@ -16,19 +16,18 @@ public class FirefoxLocatorTests
 {
     private const string GeckoDriverVersion = "0.36.0";
 
-    public static TheoryData<OperatingSystemFamily, string, string> LatestReleasePlatforms => new()
+    public static TheoryData<OperatingSystemFamily, string, string, string> LatestReleasePlatforms => new()
     {
-        { OperatingSystemFamily.Linux, "linux64", "linux-x86_64/en-US/firefox-131.0.2.tar.xz" },
-        { OperatingSystemFamily.MacOS, "osx", "mac/en-US/Firefox%20131.0.2.dmg" },
-        { OperatingSystemFamily.Windows, "win64", "win64/en-US/Firefox%20Setup%20131.0.2.exe" },
+        { OperatingSystemFamily.Linux, "linux64", "linux-x86_64/en-US/firefox-131.0.2.tar.xz", "firefox/firefox" },
+        { OperatingSystemFamily.MacOS, "osx", "mac/en-US/Firefox%20131.0.2.dmg", "Firefox.app/Contents/MacOS/firefox" },
+        { OperatingSystemFamily.Windows, "win64", "win64/en-US/Firefox%20Setup%20131.0.2.exe", "firefox/firefox.exe" },
     };
 
-    public static TheoryData<BrowserReleaseChannel, string, string, string> Channels => new()
+    public static TheoryData<BrowserReleaseChannel, string, string, string, string> Channels => new()
     {
-        { BrowserReleaseChannel.Stable, "stable", "firefox-latest", "pub/firefox/releases/131.0.2/linux-x86_64/en-US/firefox-131.0.2.tar.xz" },
-        { BrowserReleaseChannel.Beta, "beta", "firefox-beta-latest", "pub/firefox/releases/132.0b9/linux-x86_64/en-US/firefox-132.0b9.tar.xz" },
-        { BrowserReleaseChannel.DeveloperPreview, "dev", "firefox-devedition-latest", "pub/devedition/releases/132.0b9/linux-x86_64/en-US/firefox-132.0b9.tar.xz" },
-        { BrowserReleaseChannel.Alpha, "nightly", "firefox-nightly-latest", "pub/firefox/nightly/latest-mozilla-central/firefox-133.0a1.en-US.linux-x86_64.tar.xz" },
+        { BrowserReleaseChannel.Stable, "stable", "firefox-latest", "pub/firefox/releases/131.0.2/linux-x86_64/en-US/firefox-131.0.2.tar.xz", "131.0.2" },
+        { BrowserReleaseChannel.Beta, "beta", "firefox-beta-latest", "pub/firefox/releases/132.0b9/linux-x86_64/en-US/firefox-132.0b9.tar.xz", "132.0b9" },
+        { BrowserReleaseChannel.DeveloperPreview, "dev", "firefox-devedition-latest", "pub/devedition/releases/132.0b9/linux-x86_64/en-US/firefox-132.0b9.tar.xz", "132.0b9" },
     };
 
     public static TheoryData<OperatingSystemFamily, string> PinnedReleasePlatforms => new()
@@ -46,38 +45,61 @@ public class FirefoxLocatorTests
         { OperatingSystemFamily.Windows, Architecture.X86, "win32.zip" },
     };
 
+    // The redirect target's version is already installed, so the locator returns it without
+    // downloading, which shows both the product service request and the parsed version.
     [Theory]
     [MemberData(nameof(LatestReleasePlatforms))]
-    public async Task FindBrowserFollowsProductServiceRedirectForPlatform(OperatingSystemFamily operatingSystem, string serviceOperatingSystem, string archiveRelativePath)
+    public async Task FindBrowserFollowsProductServiceRedirectForPlatform(OperatingSystemFamily operatingSystem, string serviceOperatingSystem, string archiveRelativePath, string executablePath)
     {
         await using DownloadServer server = await DownloadServer.StartAsync();
-        string archivePath = $"/pub/firefox/releases/131.0.2/{archiveRelativePath}";
-        server.AddRedirect(TestDownloadOptions.FirefoxProductPath, server.UrlFor(archivePath));
-        server.AddNotFound(archivePath);
+        server.AddRedirect(TestDownloadOptions.FirefoxProductPath, server.UrlFor($"/pub/firefox/releases/131.0.2/{archiveRelativePath}"));
         using TemporaryDirectory cache = new();
+        string installedPath = CacheSeeder.SeedInstallation(cache, "firefox/stable", "131.0.2", executablePath);
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, new BrowserPlatform(operatingSystem, Architecture.X64));
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options));
+        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
 
-        Assert.Equal([$"/mozilla/?product=firefox-latest-ssl&os={serviceOperatingSystem}&lang=en-US", archivePath], server.RequestedUrls);
-        Assert.True(Directory.Exists(Path.Combine(cache.Path, "firefox", "stable", "131.0.2")));
+        Assert.Equal(installedPath, path);
+        Assert.Equal([$"/mozilla/?product=firefox-latest-ssl&os={serviceOperatingSystem}&lang=en-US"], server.RequestedUrls);
     }
 
     [Theory]
     [MemberData(nameof(Channels))]
-    public async Task FindBrowserRequestsProductForChannelAndParsesVersion(BrowserReleaseChannel channel, string channelDirectory, string product, string archiveRelativePath)
+    public async Task FindBrowserRequestsProductForChannelAndParsesVersion(BrowserReleaseChannel channel, string channelDirectory, string product, string archiveRelativePath, string version)
     {
         await using DownloadServer server = await DownloadServer.StartAsync();
-        string archivePath = $"/{archiveRelativePath}";
+        server.AddRedirect(TestDownloadOptions.FirefoxProductPath, server.UrlFor(archiveRelativePath));
+        using TemporaryDirectory cache = new();
+        string installedPath = CacheSeeder.SeedInstallation(cache, $"firefox/{channelDirectory}", version, "firefox/firefox");
+
+        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, channel, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache));
+
+        Assert.Equal(installedPath, path);
+        Assert.Equal([$"/mozilla/?product={product}-ssl&os=linux64&lang=en-US"], server.RequestedUrls);
+    }
+
+    // Nightly builds share a version number, so Nightly is downloaded again whenever it is rechecked,
+    // installed or not; the parsed version shows in the download log message.
+    [Fact]
+    public async Task FindBrowserParsesNightlyVersionFromBuildFileName()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        string archivePath = "/pub/firefox/nightly/latest-mozilla-central/firefox-133.0a1.en-US.linux-x86_64.tar.xz";
         server.AddRedirect(TestDownloadOptions.FirefoxProductPath, server.UrlFor(archivePath));
         server.AddNotFound(archivePath);
         using TemporaryDirectory cache = new();
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Firefox)
+            .WithReleaseChannel(BrowserReleaseChannel.Alpha)
+            .WithDownloadOptions(TestDownloadOptions.Create(server, cache, BrowserPlatform.Current))
+            .Build();
+        List<string> messages = [];
+        launcher.OnLogMessage.AddObserver(e => messages.Add(e.Message));
+        await launcher.StartAsync();
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, channel, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache)));
+        await Assert.ThrowsAsync<HttpRequestException>(launcher.LaunchBrowserAsync);
 
-        Assert.Equal($"/mozilla/?product={product}-ssl&os=linux64&lang=en-US", server.RequestedUrls[0]);
-        string expectedVersion = archivePath.Contains("firefox-133.0a1") ? "133.0a1" : archivePath.Split('/')[^4];
-        Assert.True(Directory.Exists(Path.Combine(cache.Path, "firefox", channelDirectory, expectedVersion)));
+        Assert.Equal("/mozilla/?product=firefox-nightly-latest-ssl", server.RequestedUrls[0].Split("&os=")[0]);
+        Assert.Contains("Downloading Firefox Nightly 133.0a1...", messages);
     }
 
     [Theory]

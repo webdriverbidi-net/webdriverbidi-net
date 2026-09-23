@@ -62,9 +62,10 @@ internal class RemoteBrowserLocatorSettings : BrowserLocatorSettings
     /// <summary>
     /// Gets the driver download information for a driver that is compatible with this browser.
     /// </summary>
+    /// <param name="browserVersion">The version of the located browser; not used.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
     /// <exception cref="NotImplementedException">Thrown because driver download is not supported for remote browsers.</exception>
-    public override Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo()
+    public override Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion)
     {
         throw new NotImplementedException();
     }

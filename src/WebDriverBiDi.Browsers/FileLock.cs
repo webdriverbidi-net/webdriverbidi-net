@@ -5,12 +5,16 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Diagnostics;
+
 /// <summary>
 /// A cross-process file-based lock. Call <see cref="AcquireAsync"/> to wait until the lock
 /// is available, then dispose the returned handle to release it.
 /// </summary>
 internal sealed class FileLock
 {
+    private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(100);
+
     private readonly string lockFilePath;
 
     /// <summary>
@@ -26,46 +30,31 @@ internal sealed class FileLock
     /// Waits until the lock is available, acquires it, and returns a handle that releases
     /// the lock when disposed.
     /// </summary>
+    /// <param name="timeout">The maximum time to wait for the lock.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>An <see cref="IDisposable"/> that releases the lock when disposed.</returns>
-    internal async Task<IDisposable> AcquireAsync()
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the lock is not acquired within <paramref name="timeout"/>.</exception>
+    internal async Task<IDisposable> AcquireAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(this.lockFilePath)!);
+        Stopwatch waitStopwatch = Stopwatch.StartNew();
         while (true)
         {
             try
             {
-                FileStream stream = new(this.lockFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                return new LockHandle(stream, this.lockFilePath);
+                // The file is left in place on release: deleting it lets a waiter that opened the old
+                // file and a newcomer that creates a new one both believe they hold the lock.
+                return new FileStream(this.lockFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             }
             catch (IOException)
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+                if (timeout != Timeout.InfiniteTimeSpan && waitStopwatch.Elapsed >= timeout)
+                {
+                    throw new WebDriverBiDiTimeoutException($"Timed out after {timeout.TotalSeconds} seconds waiting for the lock file {this.lockFilePath}; another process may be installing the same browser or driver.");
+                }
+
+                await Task.Delay(PollInterval, cancellationToken).ConfigureAwait(false);
             }
-        }
-    }
-
-    private sealed class LockHandle : IDisposable
-    {
-        private readonly FileStream stream;
-        private readonly string lockFilePath;
-        private bool disposed;
-
-        internal LockHandle(FileStream stream, string lockFilePath)
-        {
-            this.stream = stream;
-            this.lockFilePath = lockFilePath;
-        }
-
-        public void Dispose()
-        {
-            if (this.disposed)
-            {
-                return;
-            }
-
-            this.disposed = true;
-            this.stream.Close();
-            File.Delete(this.lockFilePath);
         }
     }
 }

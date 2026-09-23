@@ -111,21 +111,15 @@ public class DriverLocator
 
         settings.IncludeDriver = true;
         DriverLocator locator = new(settings);
-
-        Cache? cacheInfo = locationBehavior == FileLocationBehavior.AutoLocateAndDownload
-            ? Cache.Load(locator.CacheDirectory)
-            : null;
-
-        string? driverPath = await locator.LocateDriverAsync(cacheInfo).ConfigureAwait(false);
-        return driverPath;
+        return await locator.LocateDriverAsync(null).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Locates the driver executable, downloading it if necessary.
     /// </summary>
-    /// <param name="cacheInfo">The cache information, or null if cache is not being used.</param>
+    /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
     /// <returns>The path to the driver executable, or null if driver is not included.</returns>
-    internal async Task<string?> LocateDriverAsync(Cache? cacheInfo)
+    internal async Task<string?> LocateDriverAsync(string? browserVersion)
     {
         if (!this.settings.IncludeDriver)
         {
@@ -157,33 +151,48 @@ public class DriverLocator
             return this.settings.DriverExecutableLocation;
         }
 
-        // If we fall through to this point, the behavior must be AutoLocateAndDownload.
-        if (cacheInfo is null)
+        InstallCache cache = new(Path.Combine(this.CacheDirectory, "drivers", this.settings.DriverName), this.settings.DownloadOptions);
+        using IDisposable lockHandle = await cache.LockAsync().ConfigureAwait(false);
+        string relativeExecutablePath = this.settings.DriverExecutableName;
+        string? requiredVersion = this.settings.GetRequiredDriverVersion(browserVersion);
+        if (requiredVersion is not null)
         {
-            throw new InvalidOperationException("Cache should have been loaded for AutoLocateAndDownload behavior.");
-        }
-
-        FileLock fileLock = new(Path.Combine(this.CacheDirectory, $".lock-{this.settings.BrowserName}-Driver-{this.settings.Channel}"));
-        using IDisposable lockHandle = await fileLock.AcquireAsync().ConfigureAwait(false);
-        {
-            // Reload the cache in case the requested browser version was loaded while acquiring the lock
-            cacheInfo = Cache.Load(this.CacheDirectory);
-            DriverDownloadInfo driverDownloadInfo = await this.settings.GetMatchingDriverDownloadInfo().ConfigureAwait(false);
-            Cache.InstalledDriverInfo driverInfo = await this.GetInstalledDriverInfoFromCacheAsync(cacheInfo, driverDownloadInfo).ConfigureAwait(false);
-            string driverCacheDirectory = Path.Combine(this.CacheDirectory, "drivers", driverDownloadInfo.DriverName, driverDownloadInfo.Version);
-            string executablePath = Path.Combine(driverCacheDirectory, this.settings.DriverExecutableName);
-
-            string cacheLogMessage = $"Using cached {driverDownloadInfo.DriverName}.";
-            if (!File.Exists(executablePath))
+            if (cache.TryGetInstalledExecutable(requiredVersion, relativeExecutablePath, out string? installedPath))
             {
-                await this.DownloadAndExtractDriverAsync(driverInfo, driverCacheDirectory, executablePath).ConfigureAwait(false);
-                cacheLogMessage = $"{driverDownloadInfo.DriverName} ready at: {executablePath}";
+                await this.LogAsync($"Using cached {this.settings.DriverName} {requiredVersion}.", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+                return installedPath;
             }
 
-            await this.LogAsync(cacheLogMessage, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-            cacheInfo.Save();
-            return executablePath;
+            DriverDownloadInfo requiredDownloadInfo = await this.settings.GetMatchingDriverDownloadInfo(browserVersion).ConfigureAwait(false);
+            return await this.InstallDriverAsync(cache, requiredDownloadInfo).ConfigureAwait(false);
         }
+
+        string request = this.settings.DriverVersionRequest;
+        string? cachedPath = null;
+        bool isResolvedVersionInstalled = cache.TryGetResolvedVersion(request, out string? resolvedVersion, out bool isFresh)
+            && cache.TryGetInstalledExecutable(resolvedVersion, relativeExecutablePath, out cachedPath);
+        if (isResolvedVersionInstalled && isFresh)
+        {
+            await this.LogAsync($"Using cached {this.settings.DriverName} {resolvedVersion}.", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+            return cachedPath;
+        }
+
+        DriverDownloadInfo downloadInfo;
+        try
+        {
+            downloadInfo = await this.settings.GetMatchingDriverDownloadInfo(browserVersion).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (isResolvedVersionInstalled && BrowserLocator.IsUnreachableServiceException(ex))
+        {
+            await this.LogAsync($"Could not check for a newer {this.settings.DriverName} ({ex.Message}); using cached version {resolvedVersion}.", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+            return cachedPath;
+        }
+
+        string executablePath = cache.TryGetInstalledExecutable(downloadInfo.Version, relativeExecutablePath, out string? currentPath)
+            ? currentPath
+            : await this.InstallDriverAsync(cache, downloadInfo).ConfigureAwait(false);
+        cache.SaveResolvedVersion(request, downloadInfo.Version);
+        return executablePath;
     }
 
     /// <summary>
@@ -197,74 +206,35 @@ public class DriverLocator
         await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
-    private async Task<Cache.InstalledDriverInfo> GetInstalledDriverInfoFromCacheAsync(Cache cacheInfo, DriverDownloadInfo driverDownloadInfo)
+    private async Task<string> InstallDriverAsync(InstallCache cache, DriverDownloadInfo downloadInfo)
     {
-        Cache.InstalledDriverInfo driverInfo;
-        if (cacheInfo.TryGetCachedDriver(driverDownloadInfo.DriverName, driverDownloadInfo.Version, out Cache.InstalledDriverInfo? cachedDriverInfo))
+        await this.LogAsync($"Downloading {downloadInfo.DriverName} {downloadInfo.Version}...", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+        string relativeExecutablePath = this.settings.DriverExecutableName;
+        string executablePath = await cache.InstallAsync(downloadInfo.Version, relativeExecutablePath, async installDirectory =>
         {
-            driverInfo = cachedDriverInfo;
-        }
-        else
-        {
-            driverInfo = new Cache.InstalledDriverInfo
+            // The installer is named for the download URL's file name, without any query string.
+            string installerPath = Path.Combine(installDirectory, Path.GetFileName(new Uri(downloadInfo.DownloadUrl).LocalPath));
+            FileDownloader downloader = new();
+            downloader.OnDownloadProgress.AddObserver(this.LogFileDownloadProgressAsync);
+            await downloader.DownloadFileAsync(DownloadHttpClient.GetClient(this.settings.DownloadOptions), downloadInfo.DownloadUrl, installerPath).ConfigureAwait(false);
+            await this.settings.DriverExtractor.ExtractFileContentsAsync(installerPath, installDirectory).ConfigureAwait(false);
+
+            // Driver executables might be in a subdirectory of the archive.
+            string expectedPath = Path.Combine(installDirectory, relativeExecutablePath);
+            if (!File.Exists(expectedPath))
             {
-                DriverName = driverDownloadInfo.DriverName,
-                Version = driverDownloadInfo.Version,
-                BrowserVersion = driverDownloadInfo.BrowserVersion,
-                DirectDownloadUrl = driverDownloadInfo.DownloadUrl,
-            };
-            cacheInfo.AddDriverToCache(driverInfo);
-        }
+                string[] foundDrivers = Directory.GetFiles(installDirectory, relativeExecutablePath, SearchOption.AllDirectories);
+                if (foundDrivers.Length == 0)
+                {
+                    throw new FileNotFoundException($"{downloadInfo.DriverName} executable not found after extraction at: {relativeExecutablePath}");
+                }
 
-        if (driverInfo.IsCachedVersionInfoExpired(this.settings.DownloadOptions.TimeProvider))
-        {
-            driverInfo.Version = driverDownloadInfo.Version;
-            driverInfo.DirectDownloadUrl = driverDownloadInfo.DownloadUrl;
-            driverInfo.BrowserVersion = driverDownloadInfo.BrowserVersion;
-        }
-
-        return driverInfo;
-    }
-
-    private async Task DownloadAndExtractDriverAsync(Cache.InstalledDriverInfo driverInfo, string cachedInstallDirectory, string expectedExtractedExecutablePath)
-    {
-        if (!Directory.Exists(cachedInstallDirectory))
-        {
-            Directory.CreateDirectory(cachedInstallDirectory);
-        }
-
-        await this.LogAsync($"Downloading {driverInfo.DriverName}...", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-
-        // Parse the download URL to extract the filename (without query string)
-        Uri downloadUri = new(driverInfo.DirectDownloadUrl);
-        string installerFileName = Path.GetFileName(downloadUri.LocalPath);
-
-        string downloadedInstallerPath = Path.Combine(cachedInstallDirectory, installerFileName);
-
-        FileDownloader downloader = new();
-        downloader.OnDownloadProgress.AddObserver(this.LogFileDownloadProgressAsync);
-
-        HttpClient client = DownloadHttpClient.GetClient(this.settings.DownloadOptions);
-        await downloader.DownloadFileAsync(client, driverInfo.DirectDownloadUrl, downloadedInstallerPath).ConfigureAwait(false);
-        await this.settings.DriverExtractor.ExtractFileContentsAsync(downloadedInstallerPath, cachedInstallDirectory).ConfigureAwait(false);
-
-        // Driver executables might be in a subdirectory, try to find them
-        if (!File.Exists(expectedExtractedExecutablePath))
-        {
-            string[] foundDrivers = Directory.GetFiles(cachedInstallDirectory, this.settings.DriverExecutableName, SearchOption.AllDirectories);
-            if (foundDrivers.Length > 0)
-            {
-                // Move the driver executable to the expected location
-                File.Move(foundDrivers[0], expectedExtractedExecutablePath);
+                File.Move(foundDrivers[0], expectedPath);
             }
-        }
+        }).ConfigureAwait(false);
 
-        if (!File.Exists(expectedExtractedExecutablePath))
-        {
-            throw new FileNotFoundException($"{driverInfo.DriverName} executable not found after extraction at: {expectedExtractedExecutablePath}");
-        }
-
-        driverInfo.LastDownload = this.settings.DownloadOptions.TimeProvider.GetUtcNow().UtcDateTime;
+        await this.LogAsync($"{downloadInfo.DriverName} ready at: {executablePath}", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+        return executablePath;
     }
 
     private async Task LogFileDownloadProgressAsync(FileDownloadProgressEventArgs args)

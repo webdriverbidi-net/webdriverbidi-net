@@ -108,8 +108,9 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     /// Uses the <see cref="BrowserLocatorSettings.DriverVersion"/> property to determine which driver version to download,
     /// or uses the latest version if <see cref="BrowserLocatorSettings.DriverVersion"/> is null.
     /// </summary>
+    /// <param name="browserVersion">The version of the located browser; not used, as geckodriver releases are independent of Firefox releases.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo()
+    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion)
     {
         Uri apiUrl = new(
             this.DownloadOptions.GeckoDriverReleasesEndpoint,

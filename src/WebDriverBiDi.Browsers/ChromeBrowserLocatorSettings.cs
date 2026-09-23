@@ -68,6 +68,12 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// </summary>
     public override string DriverEnvironmentVariableName => "CHROMEDRIVER_EXECUTABLE";
 
+    /// <summary>
+    /// Gets the version request under which the resolved chromedriver version is cached, which
+    /// is per channel, as each channel's latest chromedriver matches that channel's latest Chrome.
+    /// </summary>
+    public override string DriverVersionRequest => $"{LatestVersionString}-{this.Channel}";
+
     private BrowserPlatform Platform => this.DownloadOptions.ResolvedPlatform;
 
     private Uri ChannelDownloadInfoUrl => new(this.DownloadOptions.ChromeForTestingEndpoint, ChannelDownloadInfoFileName);
@@ -84,7 +90,7 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
 
         BinaryVersionInfo binaryVersionInfo = this.IsLatestChannelVersion
             ? this.GetChannelBinaryVersionInfo(json)
-            : this.GetSpecificBinaryVersionInfo(json);
+            : this.GetSpecificBinaryVersionInfo(json, this.Version);
 
         BrowserDownloadInfo browserDownloadInfo = new()
         {
@@ -112,53 +118,28 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     }
 
     /// <summary>
-    /// Gets the driver download information for the chromedriver that matches the Chrome browser version or channel specified.
-    /// Uses the <see cref="BrowserLocatorSettings.DriverVersion"/> property to determine which driver version to download,
-    /// or determines it automatically based on the browser version if <see cref="BrowserLocatorSettings.DriverVersion"/> is null.
+    /// Gets the chromedriver version that must be used, which is the version of the Chrome it drives.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo()
+    /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
+    /// <returns>The required driver version, or <see langword="null"/> if the latest driver for the channel is to be used.</returns>
+    public override string? GetRequiredDriverVersion(string? browserVersion)
     {
-        BinaryVersionInfo binaryVersionInfo;
+        string? pinnedBrowserVersion = this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload && this.Version != LatestVersionString ? this.Version : null;
+        return base.GetRequiredDriverVersion(browserVersion) ?? browserVersion ?? pinnedBrowserVersion;
+    }
 
-        // Determine which driver version to download
-        if (!string.IsNullOrEmpty(this.DriverVersion))
-        {
-            // Explicit driver version specified
-            Uri driverBinaryUrl = this.DriverVersion == LatestVersionString ? this.ChannelDownloadInfoUrl : this.AllVersionsDownloadInfoUrl;
-            string json = await DownloadHttpClient.GetStringAsync(this.DownloadOptions, driverBinaryUrl).ConfigureAwait(false);
-
-            if (this.DriverVersion == LatestVersionString)
-            {
-                // Get latest driver for the browser's channel
-                binaryVersionInfo = this.GetChannelBinaryVersionInfo(json);
-            }
-            else
-            {
-                // Specific driver version requested
-                ChromeAllVersionsBinaryDownloadInfo? downloadInfo =
-                    JsonSerializer.Deserialize(json, ChromeBrowserLocatorSettingsJsonSerializerContext.Default.ChromeAllVersionsBinaryDownloadInfo)
-                    ?? throw new InvalidOperationException($"Failed to deserialize Chrome binary download information from {this.AllVersionsDownloadInfoUrl}.");
-
-                binaryVersionInfo = downloadInfo.Versions.FirstOrDefault(v => v.Version.Equals(this.DriverVersion, StringComparison.OrdinalIgnoreCase))
-                    ?? throw new InvalidOperationException($"Failed to find download information for chromedriver version {this.DriverVersion}.");
-            }
-        }
-        else if (this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload)
-        {
-            // Browser is being auto-downloaded, match driver to browser version
-            string json = await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.GetBinaryDownloadInfoUrl()).ConfigureAwait(false);
-
-            binaryVersionInfo = this.IsLatestChannelVersion
-                ? this.GetChannelBinaryVersionInfo(json)
-                : this.GetSpecificBinaryVersionInfo(json);
-        }
-        else
-        {
-            // Browser is system/custom - download latest driver for the browser's channel
-            string json = await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.ChannelDownloadInfoUrl).ConfigureAwait(false);
-            binaryVersionInfo = this.GetChannelBinaryVersionInfo(json);
-        }
+    /// <summary>
+    /// Gets the driver download information for the chromedriver matching the Chrome version given
+    /// by <see cref="GetRequiredDriverVersion"/>, or the latest chromedriver for the channel if none is required.
+    /// </summary>
+    /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
+    /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
+    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion)
+    {
+        string? requiredVersion = this.GetRequiredDriverVersion(browserVersion);
+        BinaryVersionInfo binaryVersionInfo = requiredVersion is null
+            ? this.GetChannelBinaryVersionInfo(await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.ChannelDownloadInfoUrl).ConfigureAwait(false))
+            : this.GetSpecificBinaryVersionInfo(await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.AllVersionsDownloadInfoUrl).ConfigureAwait(false), requiredVersion);
 
         DriverDownloadInfo driverDownloadInfo = new()
         {
@@ -210,20 +191,20 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         return channelInfo;
     }
 
-    private BinaryVersionInfo GetSpecificBinaryVersionInfo(string json)
+    private BinaryVersionInfo GetSpecificBinaryVersionInfo(string json, string version)
     {
         ChromeAllVersionsBinaryDownloadInfo? downloadInfo =
             JsonSerializer.Deserialize(json, ChromeBrowserLocatorSettingsJsonSerializerContext.Default.ChromeAllVersionsBinaryDownloadInfo)
-            ?? throw new InvalidOperationException($"Failed to deserialize Chrome binary download information from {this.ChannelDownloadInfoUrl}.");
+            ?? throw new InvalidOperationException($"Failed to deserialize Chrome binary download information from {this.AllVersionsDownloadInfoUrl}.");
         foreach (BinaryVersionInfo versionInfo in downloadInfo.Versions)
         {
-            if (versionInfo.Version.Equals(this.Version, StringComparison.OrdinalIgnoreCase))
+            if (versionInfo.Version.Equals(version, StringComparison.OrdinalIgnoreCase))
             {
                 return versionInfo;
             }
         }
 
-        throw new InvalidOperationException($"Failed to find download information for Chrome version '{this.Version}'.");
+        throw new InvalidOperationException($"Failed to find download information for Chrome version '{version}'.");
     }
 
     private string GetPlatformIdentifierString()

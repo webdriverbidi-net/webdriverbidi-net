@@ -90,8 +90,9 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
     /// For Safari, this is hard-coded, as the user can only use the system-installed version of Safari and
     /// its accompanying driver.
     /// </summary>
+    /// <param name="browserVersion">The version of the located browser; not used.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo()
+    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion)
     {
         DriverDownloadInfo driverDownloadInfo = new()
         {

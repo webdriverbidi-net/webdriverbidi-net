@@ -43,15 +43,30 @@ public static class ChromeForTestingService
     /// <param name="otherVersions">Additional versions listed only in the all-versions document.</param>
     public static void Serve(DownloadServer server, string channel, string version, params string[] otherVersions)
     {
+        Serve(server, channel, version, null, otherVersions);
+    }
+
+    /// <summary>
+    /// Serves both version documents, listing <paramref name="version"/> as the latest release of
+    /// <paramref name="channel"/>, and archives for every platform, serving
+    /// <paramref name="chromeArchiveContent"/> in place of each Chrome archive.
+    /// </summary>
+    /// <param name="server">The server.</param>
+    /// <param name="channel">The channel name, as Chrome for Testing spells it (e.g., "Stable").</param>
+    /// <param name="version">The version.</param>
+    /// <param name="chromeArchiveContent">The content served for each Chrome archive, or <see langword="null"/> for a valid archive.</param>
+    /// <param name="otherVersions">Additional versions listed only in the all-versions document.</param>
+    public static void Serve(DownloadServer server, string channel, string version, byte[]? chromeArchiveContent, params string[] otherVersions)
+    {
         JsonObject channelDocument = new()
         {
             ["timestamp"] = "2026-09-23T00:00:00.000Z",
-            ["channels"] = new JsonObject() { [channel] = CreateVersionEntry(server, version, channel) },
+            ["channels"] = new JsonObject() { [channel] = CreateVersionEntry(server, version, channel, chromeArchiveContent) },
         };
         JsonArray versions = [];
         foreach (string listedVersion in otherVersions.Append(version))
         {
-            versions.Add(CreateVersionEntry(server, listedVersion, null));
+            versions.Add(CreateVersionEntry(server, listedVersion, null, chromeArchiveContent));
         }
 
         server.AddText(ChannelDocumentPath, channelDocument.ToJsonString());
@@ -86,14 +101,14 @@ public static class ChromeForTestingService
         _ => $"chrome-{platformIdentifier}/chrome.exe",
     };
 
-    private static JsonObject CreateVersionEntry(DownloadServer server, string version, string? channel)
+    private static JsonObject CreateVersionEntry(DownloadServer server, string version, string? channel, byte[]? chromeArchiveContent)
     {
         JsonArray chromeDownloads = [];
         JsonArray driverDownloads = [];
         foreach (string platformIdentifier in PlatformIdentifiers)
         {
             string driverFileName = platformIdentifier.StartsWith("win", StringComparison.Ordinal) ? "chromedriver.exe" : "chromedriver";
-            server.AddFile(ChromeArchivePath(version, platformIdentifier), TestArchives.Zip(ChromeExecutablePath(platformIdentifier)));
+            server.AddFile(ChromeArchivePath(version, platformIdentifier), chromeArchiveContent ?? TestArchives.Zip(ChromeExecutablePath(platformIdentifier)));
             server.AddFile(DriverArchivePath(version, platformIdentifier), TestArchives.Zip($"chromedriver-{platformIdentifier}/{driverFileName}"));
             chromeDownloads.Add(new JsonObject() { ["platform"] = platformIdentifier, ["url"] = server.UrlFor(ChromeArchivePath(version, platformIdentifier)).AbsoluteUri });
             driverDownloads.Add(new JsonObject() { ["platform"] = platformIdentifier, ["url"] = server.UrlFor(DriverArchivePath(version, platformIdentifier)).AbsoluteUri });

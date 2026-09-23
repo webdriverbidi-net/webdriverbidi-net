@@ -136,6 +136,17 @@ internal abstract class BrowserLocatorSettings
     public abstract string DriverEnvironmentVariableName { get; }
 
     /// <summary>
+    /// Gets the name of the driver (e.g., "chromedriver"), which names its cache directory.
+    /// </summary>
+    public string DriverName => Path.GetFileNameWithoutExtension(this.DriverExecutableName);
+
+    /// <summary>
+    /// Gets the version request under which the resolved driver version is cached when
+    /// <see cref="GetRequiredDriverVersion"/> returns <see langword="null"/>.
+    /// </summary>
+    public virtual string DriverVersionRequest => LatestVersionString;
+
+    /// <summary>
     /// Gets the description of the browser location behavior, which is used for logging and user-facing messages.
     /// </summary>
     public virtual string BrowserLocationBehaviorDescription
@@ -159,10 +170,21 @@ internal abstract class BrowserLocatorSettings
     public abstract Task<BrowserDownloadInfo> GetBrowserDownloadInfo();
 
     /// <summary>
+    /// Gets the driver version that must be used, if it is known without a network request.
+    /// </summary>
+    /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
+    /// <returns>The required driver version, or <see langword="null"/> if the driver version must be resolved.</returns>
+    public virtual string? GetRequiredDriverVersion(string? browserVersion)
+    {
+        return string.IsNullOrEmpty(this.DriverVersion) || this.DriverVersion == LatestVersionString ? null : this.DriverVersion;
+    }
+
+    /// <summary>
     /// Gets the driver download information for a driver that is compatible with this browser.
     /// Uses the <see cref="DriverVersion"/> property to determine which driver version to download,
     /// or determines it automatically based on the browser version if <see cref="DriverVersion"/> is null.
     /// </summary>
+    /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public abstract Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo();
+    public abstract Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion);
 }

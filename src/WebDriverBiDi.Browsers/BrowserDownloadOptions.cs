@@ -13,6 +13,7 @@ public class BrowserDownloadOptions
 {
     private string cacheDirectory = DefaultCacheDirectory;
     private TimeProvider timeProvider = TimeProvider.System;
+    private TimeSpan lockTimeout = TimeSpan.FromMinutes(10);
     private Uri chromeForTestingEndpoint = new("https://googlechromelabs.github.io/chrome-for-testing/");
     private Uri firefoxProductEndpoint = new("https://download.mozilla.org/");
     private Uri firefoxReleaseArchiveEndpoint = new("https://download-installer.cdn.mozilla.net/pub/firefox/releases/");
@@ -52,6 +53,19 @@ public class BrowserDownloadOptions
     {
         get => this.timeProvider;
         init => this.timeProvider = value ?? throw new ArgumentNullException(nameof(this.TimeProvider));
+    }
+
+    /// <summary>
+    /// Gets how long to wait for another process that is installing the same browser or driver
+    /// into the cache directory. Defaults to 10 minutes.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a value that is not positive or <see cref="Timeout.InfiniteTimeSpan"/>.</exception>
+    public TimeSpan LockTimeout
+    {
+        get => this.lockTimeout;
+        init => this.lockTimeout = value > TimeSpan.Zero || value == Timeout.InfiniteTimeSpan
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(this.LockTimeout), "Lock timeout must be positive or infinite.");
     }
 
     /// <summary>
