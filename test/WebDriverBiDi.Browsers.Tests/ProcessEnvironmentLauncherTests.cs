@@ -239,6 +239,38 @@ public class ProcessEnvironmentLauncherTests
     }
 
     [Fact]
+    public async Task StoppingDriverIsNotCancellable()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        using DriverOverride driverOverride = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).LaunchUsingDriver().Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        using CancellationTokenSource cancellationSource = new();
+        cancellationSource.Cancel();
+
+        await launcher.StopAsync(cancellationSource.Token);
+
+        Assert.False(launcher.IsRunning);
+    }
+
+    [Fact]
+    public async Task DriverThatCannotBeStartedIsReported()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        using DriverOverride driverOverride = new();
+        using TemporaryDirectory directory = new();
+        string driverPath = Path.Combine(directory.Path, "chromedriver");
+        File.WriteAllText(driverPath, "not an executable");
+        Environment.SetEnvironmentVariable("CHROMEDRIVER_EXECUTABLE", driverPath);
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).LaunchUsingDriver().Build();
+
+        BrowserLaunchException exception = await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.StartAsync(TestContext.Current.CancellationToken));
+
+        Assert.Contains($"Unable to start chromedriver from {driverPath}", exception.Message);
+        Assert.False(launcher.IsRunning);
+    }
+
+    [Fact]
     public async Task MissingDriverExecutableIsReported()
     {
         using FakeBrowserSetup fakeBrowser = new();
@@ -352,6 +384,31 @@ public class ProcessEnvironmentLauncherTests
         JsonNode browserOptions = fakeBrowser.SessionRequests.Single()["capabilities"]!["firstMatch"]![0]![optionsName]!;
         Assert.Null(browserOptions["args"]);
         Assert.Null(browserOptions["prefs"]);
+    }
+
+    [Fact]
+    public async Task HeadlessChromeIsLaunchedThroughDriverWithHeadlessArguments()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        using DriverOverride driverOverride = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).LaunchUsingDriver().WithHeadlessOption().Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        JsonNode chromeOptions = fakeBrowser.SessionRequests.Single()["capabilities"]!["firstMatch"]![0]!["goog:chromeOptions"]!;
+        string[] arguments = chromeOptions["args"]!.Deserialize<string[]>()!;
+        Assert.Contains("--headless=new", arguments);
+        Assert.Contains("--disable-dev-shm-usage", arguments);
+    }
+
+    [Fact]
+    public async Task GeckoDriverLaunchedFirefoxIsNotClosedThroughBiDi()
+    {
+        using DriverOverride driverOverride = new(BrowserKind.Firefox);
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Firefox).LaunchUsingDriver().Build();
+
+        Assert.False(launcher.IsBrowserCloseAllowed);
     }
 
     [Fact]

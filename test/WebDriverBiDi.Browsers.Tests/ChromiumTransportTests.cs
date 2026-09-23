@@ -36,6 +36,14 @@ public class ChromiumTransportTests
     }
 
     [Fact]
+    public async Task DefaultTransportUsesWebSocketConnection()
+    {
+        await using ChromiumTransport transport = new();
+
+        Assert.Equal(TimeSpan.FromSeconds(20), transport.InitializationTimeout);
+    }
+
+    [Fact]
     public async Task CommandsRelayThroughMapperAndResponsesReturnThroughBinding()
     {
         FakeDevToolsConnection connection = new();
@@ -84,6 +92,18 @@ public class ChromiumTransportTests
 
         Assert.Contains("'Runtime.addBinding' within 0.5 seconds", exception.Message);
         Assert.False(connection.IsActive);
+    }
+
+    [Fact]
+    public async Task FailedConnectReportsBootstrapFailureEvenWhenDisconnectFails()
+    {
+        FakeDevToolsConnection connection = new() { FailsToStop = true };
+        connection.NeverAnswer("Target.createTarget");
+        ChromiumTransport transport = new(connection) { InitializationTimeout = TimeSpan.FromMilliseconds(300) };
+
+        WebDriverBiDiException exception = await Assert.ThrowsAsync<WebDriverBiDiException>(() => transport.ConnectAsync(ConnectionString, TestContext.Current.CancellationToken));
+
+        Assert.Contains("'Target.createTarget'", exception.Message);
     }
 
     [Fact]

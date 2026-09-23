@@ -85,6 +85,32 @@ public class ApiSurfaceTests
     }
 
     [Fact]
+    public async Task LaunchStartsLauncherThenBrowser()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
+
+        BrowserInstance instance = await launcher.LaunchAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(instance.IsRunning);
+        Assert.Single(fakeBrowser.Launches);
+    }
+
+    [Fact]
+    public async Task LaunchFailureKeepsOnlyTheLastLinesOfOutput()
+    {
+        using FakeBrowserSetup fakeBrowser = new(mode: "exit:3:30");
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        BrowserLaunchException exception = await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(20, exception.ProcessOutput.Count);
+        Assert.Equal("Output line 12", exception.ProcessOutput[0]);
+        Assert.Equal("Fake browser exiting with code 3", exception.ProcessOutput[^1]);
+    }
+
+    [Fact]
     public async Task FindBrowserRejectsUnsupportedBrowser()
     {
         await Assert.ThrowsAsync<NotSupportedException>(() => BrowserLocator.FindBrowserAsync(BrowserKind.Edge, cancellationToken: TestContext.Current.CancellationToken));
@@ -113,12 +139,14 @@ public class ApiSurfaceTests
         Assert.True(fakeBrowser.WaitForChildExit(ProcessExitTimeout));
     }
 
-    [Fact]
-    public async Task QuitCancelledWhileWaitingKillsBrowserThenThrows()
+    [Theory]
+    [InlineData(BrowserKind.Firefox)]
+    [InlineData(BrowserKind.Chrome)]
+    public async Task QuitCancelledWhileWaitingKillsBrowserThenThrows(BrowserKind browser)
     {
         Assert.SkipWhen(OperatingSystem.IsWindows(), "Windows cannot ask a windowless process to exit, so there is no wait to cancel.");
         using FakeBrowserSetup fakeBrowser = new(mode: "ignore-term");
-        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Firefox)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(browser)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
         launcher.ShutdownTimeout = TimeSpan.FromMinutes(1);
         await launcher.StartAsync(TestContext.Current.CancellationToken);
         await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);

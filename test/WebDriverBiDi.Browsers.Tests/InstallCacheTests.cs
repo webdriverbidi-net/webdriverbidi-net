@@ -123,6 +123,25 @@ public class InstallCacheTests
     }
 
     [Fact]
+    public async Task VersionMarkedCompleteWithoutExecutableIsInstalledAgain()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        Serve(server, "Stable", LatestVersion);
+        using TemporaryDirectory cache = new();
+        string versionDirectory = CacheSeeder.GetVersionDirectory(cache, "chrome/stable", LatestVersion);
+        Directory.CreateDirectory(versionDirectory);
+        File.WriteAllText(Path.Combine(versionDirectory, "INSTALLATION_COMPLETE"), LatestVersion);
+        string discardedDirectory = Path.Combine(cache.Path, "chrome", "stable", ".discarded-leftover");
+        Directory.CreateDirectory(discardedDirectory);
+
+        string path = await FindChromeAsync(TestDownloadOptions.Create(server, cache));
+
+        Assert.True(File.Exists(path));
+        Assert.Equal(1, server.RequestCount(ChromeArchivePath(LatestVersion, "linux64")));
+        Assert.False(Directory.Exists(discardedDirectory));
+    }
+
+    [Fact]
     public async Task InterruptedInstallationIsReplaced()
     {
         await using DownloadServer server = await DownloadServer.StartAsync();

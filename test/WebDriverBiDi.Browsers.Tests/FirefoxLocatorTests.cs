@@ -42,6 +42,7 @@ public class FirefoxLocatorTests
     {
         { BrowserReleaseChannel.Stable, OperatingSystemFamily.Linux, Architecture.X64, "128.0", "/archive/firefox/releases/128.0/linux-x86_64/en-US/firefox-128.0.tar.bz2" },
         { BrowserReleaseChannel.Stable, OperatingSystemFamily.Linux, Architecture.X64, "135.0", "/archive/firefox/releases/135.0/linux-x86_64/en-US/firefox-135.0.tar.xz" },
+        { BrowserReleaseChannel.Stable, OperatingSystemFamily.Linux, Architecture.X64, "136", "/archive/firefox/releases/136/linux-x86_64/en-US/firefox-136.tar.xz" },
         { BrowserReleaseChannel.Stable, OperatingSystemFamily.Linux, Architecture.Arm64, "140.0", "/archive/firefox/releases/140.0/linux-aarch64/en-US/firefox-140.0.tar.xz" },
         { BrowserReleaseChannel.Stable, OperatingSystemFamily.Linux, Architecture.X86, "128.0", "/archive/firefox/releases/128.0/linux-i686/en-US/firefox-128.0.tar.bz2" },
         { BrowserReleaseChannel.Stable, OperatingSystemFamily.MacOS, Architecture.Arm64, "128.0", "/archive/firefox/releases/128.0/mac/en-US/Firefox%20128.0.dmg" },

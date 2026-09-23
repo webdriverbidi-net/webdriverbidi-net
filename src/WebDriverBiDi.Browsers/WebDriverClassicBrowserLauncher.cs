@@ -61,20 +61,18 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     internal Dictionary<string, object?> AdditionalCapabilities { get; set; } = [];
 
     /// <summary>
-    /// Gets or sets the URL of a remote end not started by this launcher, such as a grid (e.g.,
+    /// Sets the URL of a remote end not started by this launcher, such as a grid (e.g.,
     /// "https://grid.example/wd/hub"), or <see langword="null"/> for a driver on this machine's
     /// <see cref="BrowserLauncher.Port"/>. Credentials in the URL are sent as Basic authorization.
     /// </summary>
-    internal Uri? RemoteEndUrl
+    internal Uri RemoteEndUrl
     {
-        get => this.remoteEndUrl;
         set
         {
-            Uri url = value!;
-            this.remoteEndUrl = new UriBuilder(url) { UserName = string.Empty, Password = string.Empty }.Uri;
-            if (!string.IsNullOrEmpty(url.UserInfo))
+            this.remoteEndUrl = new UriBuilder(value) { UserName = string.Empty, Password = string.Empty }.Uri;
+            if (!string.IsNullOrEmpty(value.UserInfo))
             {
-                byte[] credentials = Encoding.UTF8.GetBytes(Uri.UnescapeDataString(url.UserInfo));
+                byte[] credentials = Encoding.UTF8.GetBytes(Uri.UnescapeDataString(value.UserInfo));
                 this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(credentials));
             }
         }
@@ -91,17 +89,10 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     protected string BrowserExecutableLocation { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets the HTTP client used to communicate with the WebDriver Classic remote end. Note
-    /// carefully that this is only used for launching and quitting the browser.
-    /// </summary>
-    protected HttpClient HttpClient => this.httpClient;
-
-    /// <summary>
     /// Gets the Uri of the service.
     /// </summary>
-    protected string ServiceUrl => this.remoteEndUrl is null
-        ? $"http://localhost{(this.Port == 0 ? string.Empty : $":{this.Port}")}"
-        : this.remoteEndUrl.AbsoluteUri.TrimEnd('/');
+    // A driver on this machine is given its port before the URL is first used.
+    protected string ServiceUrl => this.remoteEndUrl?.AbsoluteUri.TrimEnd('/') ?? $"http://localhost:{this.Port}";
 
     /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
@@ -246,6 +237,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
         }
         catch (FormatException)
         {
+            // .NET Framework rejects a malformed name by throwing, rather than by returning false.
             return false;
         }
     }

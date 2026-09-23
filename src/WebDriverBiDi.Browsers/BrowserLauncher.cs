@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -170,8 +171,8 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// Asynchronously stops the browser launcher.
     /// </summary>
     /// <param name="cancellationToken">
-    /// A token that cancels waiting for the launcher to stop; a driver executable is killed whether or
-    /// not waiting is cancelled, after which an <see cref="OperationCanceledException"/> is thrown.
+    /// A token that cancels waiting for the launcher to stop. A driver executable is killed at once, so
+    /// stopping one is not cancelled.
     /// </param>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
     /// <remarks>
@@ -381,6 +382,25 @@ public abstract class BrowserLauncher : IAsyncDisposable
     {
         LogMessageEventArgs logMessageArgs = new(message, logLevel, component);
         await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(logMessageArgs).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Starts a browser or driver process.
+    /// </summary>
+    /// <param name="process">The process, with its start information set.</param>
+    /// <param name="description">What the process is, such as "Chrome", for the error message.</param>
+    /// <exception cref="BrowserLaunchException">Thrown when the executable cannot be started, such as when it is not executable.</exception>
+    private protected static void StartProcess(Process process, string description)
+    {
+        try
+        {
+            process.Start();
+        }
+        catch (Win32Exception ex)
+        {
+            process.Dispose();
+            throw new BrowserLaunchException($"Unable to start {description} from {process.StartInfo.FileName}: {ex.Message}", ex);
+        }
     }
 
     /// <summary>

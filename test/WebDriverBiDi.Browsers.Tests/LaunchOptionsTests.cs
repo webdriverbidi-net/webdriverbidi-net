@@ -222,6 +222,22 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public async Task HeadlessFirefoxIsLaunchedWithHeadlessArgument()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Firefox))
+            .AtLocation(FakeBrowserSetup.ExecutablePath)
+            .WithHeadlessOption()
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains("--headless", fakeBrowser.Launches.Single().Arguments);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task SettingsAddedAfterBuildDoNotReachBuiltLauncher()
     {
         using FakeBrowserSetup fakeBrowser = new();

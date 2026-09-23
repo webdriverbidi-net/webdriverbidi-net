@@ -166,7 +166,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
             }
             catch (Exception)
             {
-                await this.StopLauncherProcessAsync(CancellationToken.None).ConfigureAwait(false);
+                await this.StopLauncherProcessAsync().ConfigureAwait(false);
                 throw;
             }
 
@@ -179,7 +179,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
             string reason = exitCode is null
                 ? $"did not respond on {this.ServiceUrl} within {this.InitializationTimeout.TotalSeconds} seconds"
                 : $"exited with code {exitCode} before responding on {this.ServiceUrl}";
-            await this.StopLauncherProcessAsync(CancellationToken.None).ConfigureAwait(false);
+            await this.StopLauncherProcessAsync().ConfigureAwait(false);
             if (!isPortAutomatic || exitCode is null || attempt == AutomaticPortAttempts)
             {
                 throw new BrowserLaunchException($"Unable to start {this.launcherExecutableName}: it {reason}.", exitCode, this.outputTail.ToList());
@@ -196,14 +196,14 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// <summary>
     /// Asynchronously stops the browser launcher.
     /// </summary>
-    /// <param name="cancellationToken">A token that cancels waiting for the launcher to stop.</param>
+    /// <param name="cancellationToken">Not observed: the driver is killed at once, so there is no wait to cancel.</param>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
     public override async Task StopAsync(CancellationToken cancellationToken = default)
     {
         if (this.launcherProcess is not null)
         {
             await this.LogAsync("Shutting down browser launcher", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-            await this.StopLauncherProcessAsync(cancellationToken).ConfigureAwait(false);
+            await this.StopLauncherProcessAsync().ConfigureAwait(false);
             await this.LogAsync("Browser launcher exited", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         }
     }
@@ -246,7 +246,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         await this.OnLauncherProcessStartingAsync(eventArgs).ConfigureAwait(false);
         await this.LogAsync("Starting browser launcher", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         this.outputTail.Clear();
-        process.Start();
+        StartProcess(process, this.launcherExecutableName);
         this.launcherProcess = process;
         if (this.CaptureBrowserLauncherOutput)
         {
@@ -254,26 +254,20 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         }
     }
 
-    private async Task StopLauncherProcessAsync(CancellationToken cancellationToken)
+    // Called only while a launcher process has been started.
+    private async Task StopLauncherProcessAsync()
     {
-        Process? process = this.launcherProcess;
-        if (process is null)
-        {
-            return;
-        }
+        Process process = this.launcherProcess!;
 
-        // Killing the whole tree also ends any browser the driver started and did not close.
-        bool isCancelled = await ProcessTermination.StopAsync(process, requestExit: false, TimeSpan.Zero, cancellationToken).ConfigureAwait(false);
+        // Killing the whole tree also ends any browser the driver started and did not close. The kill
+        // does not wait for the driver to exit on request, so there is no wait to cancel.
+        await ProcessTermination.StopAsync(process, requestExit: false, TimeSpan.Zero, CancellationToken.None).ConfigureAwait(false);
 
         // The readers finish once the killed processes' ends of the output pipes are closed.
         await Task.WhenAny(Task.WhenAll(this.outputReaderTasks), Task.Delay(ProcessTermination.KilledProcessExitTimeout)).ConfigureAwait(false);
         process.Dispose();
         this.launcherProcess = null;
         this.outputReaderTasks = [];
-        if (isCancelled)
-        {
-            throw new OperationCanceledException(cancellationToken);
-        }
     }
 
     private async Task LogProcessOutputAsync(StreamReader reader)

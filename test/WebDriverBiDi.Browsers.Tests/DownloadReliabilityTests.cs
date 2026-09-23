@@ -286,6 +286,102 @@ public class DownloadReliabilityTests
         Assert.Equal(1, server.RequestCount(archivePath));
     }
 
+    [Fact]
+    public async Task DownloadInterruptedMidStreamIsRetried()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        Serve(server, "Stable", ChromeVersion);
+        using TemporaryDirectory cache = new();
+        byte[] archive = TestArchives.Zip(ChromeExecutablePath("linux64"));
+        using ArchiveReplacingHandler handler = new(ChromeArchivePath(ChromeVersion, "linux64"), attempt => attempt == 1
+            ? new StreamContent(new FailingStream(archive[..20]))
+            : new ByteArrayContent(archive));
+        using HttpClient httpClient = new(handler);
+
+        string path = await FindChromeAsync(CreateOptionsWithClient(server, cache, httpClient));
+
+        Assert.True(File.Exists(path));
+        Assert.Equal(2, handler.Attempts);
+    }
+
+    [Fact]
+    public async Task DownloadOfUnstatedLengthReportsProgressAtEnd()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        Serve(server, "Stable", ChromeVersion);
+        using TemporaryDirectory cache = new();
+        byte[] archive = TestArchives.Zip(ChromeExecutablePath("linux64"));
+        using ArchiveReplacingHandler handler = new(ChromeArchivePath(ChromeVersion, "linux64"), _ => new StreamContent(new UnseekableStream(archive)));
+        using HttpClient httpClient = new(handler);
+        List<BrowserDownloadProgress> reports = [];
+        BrowserDownloadOptions defaults = CreateOptionsWithClient(server, cache, httpClient);
+        BrowserDownloadOptions options = new()
+        {
+            CacheDirectory = defaults.CacheDirectory,
+            Platform = defaults.Platform,
+            ChromeForTestingEndpoint = defaults.ChromeForTestingEndpoint,
+            ManifestUrl = null,
+            HttpClient = httpClient,
+            Progress = new SynchronousProgress(reports.Add),
+        };
+
+        await FindChromeAsync(options);
+
+        Assert.Null(reports[^1].TotalBytes);
+        Assert.Equal(archive.Length, reports[^1].BytesReceived);
+    }
+
+    [Fact]
+    public async Task DownloadEndingBeforeItsLengthIsRetriedThenRejected()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        Serve(server, "Stable", ChromeVersion);
+        using TemporaryDirectory cache = new();
+        using ArchiveReplacingHandler handler = new(ChromeArchivePath(ChromeVersion, "linux64"), _ =>
+        {
+            ByteArrayContent content = new(new byte[10]);
+            content.Headers.ContentLength = 100;
+            return content;
+        });
+        using HttpClient httpClient = new(handler);
+
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(() => FindChromeAsync(CreateOptionsWithClient(server, cache, httpClient)));
+
+        Assert.Contains("ended after 10 of 100 bytes", exception.Message);
+        Assert.Equal(3, handler.Attempts);
+    }
+
+    [Fact]
+    public async Task StaleDriverResolvingToInstalledVersionIsNotDownloadedAgain()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        JsonObject asset = new() { ["name"] = "geckodriver-v0.36.0-linux64.tar.gz", ["browser_download_url"] = server.UrlFor(GeckoDriverAssetPath).AbsoluteUri };
+        server.AddText(GeckoDriverReleasePath, new JsonObject() { ["tag_name"] = "v0.36.0", ["assets"] = new JsonArray(asset) }.ToJsonString());
+        server.AddNotFound(GeckoDriverAssetPath);
+        using TemporaryDirectory cache = new();
+        FakeTimeProvider timeProvider = new(DateTimeOffset.UtcNow);
+        string installedPath = CacheSeeder.SeedInstallation(cache, "drivers/geckodriver", "0.36.0", "geckodriver");
+        CacheSeeder.SeedResolvedVersion(cache, "drivers/geckodriver", "latest", "0.35.0", timeProvider.GetUtcNow() - TimeSpan.FromHours(25));
+
+        string? path = await FindGeckoDriverAsync(TestDownloadOptions.Create(server, cache, timeProvider: timeProvider));
+
+        Assert.Equal(installedPath, path);
+        Assert.Equal(0, server.RequestCount(GeckoDriverAssetPath));
+    }
+
+    private static BrowserDownloadOptions CreateOptionsWithClient(DownloadServer server, TemporaryDirectory cache, HttpClient httpClient)
+    {
+        BrowserDownloadOptions defaults = TestDownloadOptions.Create(server, cache);
+        return new BrowserDownloadOptions()
+        {
+            CacheDirectory = defaults.CacheDirectory,
+            Platform = defaults.Platform,
+            ChromeForTestingEndpoint = defaults.ChromeForTestingEndpoint,
+            ManifestUrl = null,
+            HttpClient = httpClient,
+        };
+    }
+
     private static Task<string> FindChromeAsync(BrowserDownloadOptions options)
     {
         return BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
@@ -310,6 +406,50 @@ public class DownloadReliabilityTests
     private static ServedResponse StorageResponse(byte[] body, string md5)
     {
         return new ServedResponse(HttpStatusCode.OK, body, new Dictionary<string, string>() { ["x-goog-hash"] = $"crc32c=AAAAAA==,md5={md5}" });
+    }
+
+    // Passes requests to the server, except that the archive at one path is replaced by generated content.
+    private sealed class ArchiveReplacingHandler(string archivePath, Func<int, HttpContent> createContent) : DelegatingHandler(new HttpClientHandler())
+    {
+        private int attempts;
+
+        public int Attempts => this.attempts;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (request.RequestUri?.AbsolutePath != archivePath)
+            {
+                return base.SendAsync(request, cancellationToken);
+            }
+
+            int attempt = Interlocked.Increment(ref this.attempts);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = createContent(attempt), RequestMessage = request });
+        }
+    }
+
+    // A stream whose length is not known, so the response states none.
+    private sealed class UnseekableStream(byte[] content) : MemoryStream(content)
+    {
+        public override bool CanSeek => false;
+    }
+
+    private sealed class SynchronousProgress(Action<BrowserDownloadProgress> report) : IProgress<BrowserDownloadProgress>
+    {
+        public void Report(BrowserDownloadProgress value) => report(value);
+    }
+
+    // Yields its content, then fails as a dropped connection does.
+    private sealed class FailingStream(byte[] content) : MemoryStream(content)
+    {
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            return this.Position < this.Length ? base.ReadAsync(buffer, offset, count, cancellationToken) : throw new IOException("The connection was reset.");
+        }
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            return this.Position < this.Length ? base.ReadAsync(buffer, cancellationToken) : throw new IOException("The connection was reset.");
+        }
     }
 
     private static string Md5Of(byte[] content) => Convert.ToBase64String(MD5.HashData(content));

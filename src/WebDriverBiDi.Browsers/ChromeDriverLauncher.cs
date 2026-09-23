@@ -27,11 +27,7 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
     /// <returns>A dictionary containing the capabilities.</returns>
     protected override Dictionary<string, object?> CreateBrowserLaunchCapabilities()
     {
-        Dictionary<string, object> chromeOptions = [];
-        if (!string.IsNullOrEmpty(this.BrowserExecutableLocation))
-        {
-            chromeOptions["binary"] = this.BrowserExecutableLocation;
-        }
+        Dictionary<string, object> chromeOptions = new() { ["binary"] = this.BrowserExecutableLocation };
 
         List<string> defaultArguments = this.IsBrowserHeadless ? ["--disable-dev-shm-usage"] : [];
         defaultArguments.AddRange(ChromeLauncher.SandboxArguments);

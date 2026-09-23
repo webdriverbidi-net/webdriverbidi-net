@@ -93,6 +93,19 @@ public class BuilderValidationTests
         Assert.Contains($"Invalid browser release channel for {browser}", exception.Message);
     }
 
+    [Theory]
+    [InlineData(BrowserKind.Chrome, BrowserReleaseChannel.Beta)]
+    [InlineData(BrowserKind.Chrome, BrowserReleaseChannel.DeveloperPreview)]
+    [InlineData(BrowserKind.Chrome, BrowserReleaseChannel.Alpha)]
+    [InlineData(BrowserKind.Firefox, BrowserReleaseChannel.Beta)]
+    [InlineData(BrowserKind.Firefox, BrowserReleaseChannel.DeveloperPreview)]
+    public async Task BuildAcceptsEveryChannelOfBrowser(BrowserKind browser, BrowserReleaseChannel channel)
+    {
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(browser).WithReleaseChannel(channel).AtDefaultInstallationLocation().Build();
+
+        Assert.False(launcher.IsRunning);
+    }
+
     [Fact]
     public void BuildRejectsUnknownBrowser()
     {

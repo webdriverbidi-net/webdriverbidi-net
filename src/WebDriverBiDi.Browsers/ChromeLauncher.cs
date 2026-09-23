@@ -125,7 +125,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             defaultArguments.AddRange(SandboxArguments);
 
             List<string> args = [.. this.LaunchSettings.FilterDefaultArguments(defaultArguments)];
-            args.Add($"--user-data-dir={this.LaunchSettings.UserDataDirectory ?? this.profile?.Path}");
+            args.Add($"--user-data-dir={this.LaunchSettings.UserDataDirectory ?? this.profile!.Path}");
             if (this.ConnectionType == ConnectionKind.Pipes)
             {
                 args.Add("--remote-debugging-pipe");
@@ -193,7 +193,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             process.ErrorDataReceived += this.RecordProcessOutput;
             process.OutputDataReceived += this.RecordProcessOutput;
             this.outputTail.Clear();
-            process.Start();
+            StartProcess(process, "Chrome");
             this.browserProcess = process;
             this.profile?.SetOwner(this.browserProcess);
             this.browserProcess.BeginOutputReadLine();
@@ -316,12 +316,12 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     }
 
     /// <summary>
-    /// Gets the process ID of the browser process, or 0 if the browser is not running.
+    /// Gets the process ID of the browser process just launched.
     /// </summary>
-    /// <returns>The process ID, or 0 if not running.</returns>
+    /// <returns>The process ID.</returns>
     protected override int GetProcessId()
     {
-        return this.browserProcess?.Id ?? 0;
+        return this.browserProcess!.Id;
     }
 
     [ExcludeFromCodeCoverage] // Takes only the branch for the operating system it runs on.

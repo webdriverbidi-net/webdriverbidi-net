@@ -51,6 +51,71 @@ public class ConfinedFirefoxTests
         await LaunchAsync(executablePath);
     }
 
+    [Theory]
+    [InlineData(BrowserKind.Chrome)]
+    [InlineData(BrowserKind.Firefox)]
+    public async Task BrowserThatCannotBeStartedIsReported(BrowserKind browser)
+    {
+        using TemporaryDirectory directory = new();
+        string executablePath = Path.Combine(directory.Path, "browser");
+        File.WriteAllText(executablePath, "not an executable");
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(browser).AtLocation(executablePath).Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        BrowserLaunchException exception = await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
+
+        Assert.Contains($"Unable to start {browser} from {executablePath}", exception.Message);
+        Assert.False(launcher.IsRunning);
+    }
+
+    [Fact]
+    public async Task ScriptWithoutInterpreterLineIsNotTreatedAsWrapper()
+    {
+        using TemporaryDirectory directory = new();
+        string executablePath = Path.Combine(directory.Path, "firefox");
+        File.WriteAllText(executablePath, "exec /snap/bin/firefox \"$@\"\n");
+
+        BrowserLaunchException exception = await LaunchAsync(executablePath);
+
+        Assert.DoesNotContain("Snap or Flatpak", exception.Message);
+    }
+
+    [Fact]
+    public async Task LinkLoopIsNotTreatedAsConfined()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Creating symbolic links on Windows requires elevation.");
+        using TemporaryDirectory directory = new();
+        string first = Path.Combine(directory.Path, "first");
+        string second = Path.Combine(directory.Path, "second");
+        File.CreateSymbolicLink(first, second);
+        File.CreateSymbolicLink(second, first);
+
+        BrowserLaunchException exception = await LaunchAsync(first);
+
+        Assert.DoesNotContain("Snap or Flatpak", exception.Message);
+    }
+
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public async Task UnreadableExecutableIsNotTreatedAsConfined()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows() || Environment.UserName == "root", "Needs file permissions that the user cannot bypass.");
+        using TemporaryDirectory directory = new();
+        string executablePath = Path.Combine(directory.Path, "firefox");
+        File.WriteAllText(executablePath, "#!/bin/sh\nexec /snap/bin/firefox\n");
+        File.SetUnixFileMode(executablePath, UnixFileMode.None);
+        try
+        {
+            BrowserLaunchException exception = await LaunchAsync(executablePath);
+
+            Assert.DoesNotContain("Snap or Flatpak", exception.Message);
+        }
+        finally
+        {
+            File.SetUnixFileMode(executablePath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+    }
+
     [Fact]
     [UnsupportedOSPlatform("windows")]
     public async Task LaunchWithUserDataDirectoryStartsConfinedFirefox()

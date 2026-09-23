@@ -361,17 +361,19 @@ public class BrowserLauncherBuilder
             _ => throw new BrowserLauncherConfigurationException($"Unknown browser type: {this.browser}"),
         };
 
-        // Copied, so settings added to this builder after Build() do not reach an already-built launcher.
-        launcher.LaunchSettings = this.launchSettings.Copy();
+        // Taken from the browser options as they are now, then copied, so settings changed after Build()
+        // do not reach an already-built launcher.
+        this.launchSettings.FirefoxPreferences.Clear();
         if (this.browserOptions is FirefoxLaunchOptions firefoxLaunchOptions)
         {
             foreach (KeyValuePair<string, object> preference in firefoxLaunchOptions.Preferences)
             {
-                launcher.LaunchSettings.FirefoxPreferences[preference.Key] = preference.Value;
+                this.launchSettings.FirefoxPreferences[preference.Key] = preference.Value;
             }
         }
 
-        launcher.LaunchSettings.UseHeadlessShell = this.UseHeadlessShell;
+        this.launchSettings.UseHeadlessShell = this.UseHeadlessShell;
+        launcher.LaunchSettings = this.launchSettings.Copy();
 
         if (this.launchTimeout is TimeSpan timeout)
         {

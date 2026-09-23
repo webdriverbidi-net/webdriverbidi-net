@@ -73,6 +73,25 @@ public class EnvironmentConfigurationTests
     }
 
     [Fact]
+    public void DownloadManifestVariableAcceptsFileUrl()
+    {
+        using VariableOverride variable = new(DownloadManifestVariableName, "file:///mirror/manifest.json");
+
+        Assert.Equal(new Uri("file:///mirror/manifest.json"), new BrowserDownloadOptions().ManifestUrl);
+    }
+
+    [Fact]
+    public void DownloadManifestVariableWithOtherSchemeIsFilePath()
+    {
+        using VariableOverride variable = new(DownloadManifestVariableName, "ftp:manifest.json");
+
+        Uri? manifestUrl = new BrowserDownloadOptions().ManifestUrl;
+
+        Assert.NotNull(manifestUrl);
+        Assert.True(manifestUrl.IsFile);
+    }
+
+    [Fact]
     public void ExplicitManifestUrlOverridesVariable()
     {
         using VariableOverride variable = new(DownloadManifestVariableName, "https://mirror.example/manifest.json");

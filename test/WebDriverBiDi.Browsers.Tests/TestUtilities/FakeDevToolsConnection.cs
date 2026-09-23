@@ -47,6 +47,11 @@ public sealed class FakeDevToolsConnection : Connection
     protected override bool IsConnectionOpen => Interlocked.CompareExchange(ref this.isOpenFlag, 0, 0) == 1;
 
     /// <summary>
+    /// Gets or sets a value indicating whether stopping the connection fails.
+    /// </summary>
+    public bool FailsToStop { get; set; }
+
+    /// <summary>
     /// Answers the next requests for a method with errors.
     /// </summary>
     /// <param name="method">The DevTools method.</param>
@@ -99,6 +104,11 @@ public sealed class FakeDevToolsConnection : Connection
     /// <inheritdoc/>
     protected override Task StopConnectionAsync(CancellationToken cancellationToken)
     {
+        if (this.FailsToStop)
+        {
+            throw new InvalidOperationException("The connection could not be stopped.");
+        }
+
         Interlocked.Exchange(ref this.isOpenFlag, 0);
         this.closed.TrySetResult(true);
         return Task.CompletedTask;

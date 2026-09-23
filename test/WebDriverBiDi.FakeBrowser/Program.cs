@@ -4,8 +4,8 @@
 // - Given a driver's "--port=<port>", it answers HTTP requests on that port as a ready driver that
 //   creates sessions, exiting with code 1 if the port is in use.
 // Environment variables:
-// - WEBDRIVERBIDI_FAKE_BROWSER_MODE: "exit:<code>" writes a line to stderr and exits at once with that code; "silent" never
-//   reports readiness; "ignore-term" ignores SIGTERM.
+// - WEBDRIVERBIDI_FAKE_BROWSER_MODE: "exit:<code>" writes a line to stderr and exits at once with that code, first
+//   writing numbered lines if given as "exit:<code>:<lines>"; "silent" never reports readiness; "ignore-term" ignores SIGTERM.
 // - WEBDRIVERBIDI_FAKE_BROWSER_LOG: a file to which each launch appends a JSON line with its arguments
 //   and the value of WEBDRIVERBIDI_FAKE_BROWSER_ECHO, and a driver appends one with each new session
 //   request body.
@@ -30,8 +30,14 @@ if (logFile is not null)
 
 if (mode is not null && mode.StartsWith("exit:", StringComparison.Ordinal))
 {
-    Console.Error.WriteLine($"Fake browser exiting with code {mode["exit:".Length..]}");
-    return int.Parse(mode["exit:".Length..]);
+    string[] exitParts = mode["exit:".Length..].Split(':');
+    for (int line = 1; exitParts.Length > 1 && line <= int.Parse(exitParts[1]); line++)
+    {
+        Console.Error.WriteLine($"Output line {line}");
+    }
+
+    Console.Error.WriteLine($"Fake browser exiting with code {exitParts[0]}");
+    return int.Parse(exitParts[0]);
 }
 
 Process? child = null;

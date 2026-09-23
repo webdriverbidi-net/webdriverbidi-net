@@ -95,7 +95,8 @@ public class FirefoxLauncher : BrowserLauncher
         }
     }
 
-    private string ProfileDirectory => this.LaunchSettings.UserDataDirectory ?? this.profile?.Path ?? string.Empty;
+    // The temporary profile is created before the profile directory is first needed.
+    private string ProfileDirectory => this.LaunchSettings.UserDataDirectory ?? this.profile!.Path;
 
     // The port Firefox reported its WebDriver BiDi endpoint listening on, or 0 before it has.
     // Set from the browser process's output handler, which runs on a thread pool thread, and
@@ -161,7 +162,7 @@ public class FirefoxLauncher : BrowserLauncher
             process.ErrorDataReceived += this.RecordProcessOutput;
             process.OutputDataReceived += this.RecordProcessOutput;
             this.outputTail.Clear();
-            process.Start();
+            StartProcess(process, "Firefox");
             this.browserProcess = process;
             this.profile?.SetOwner(this.browserProcess);
             this.browserProcess.BeginOutputReadLine();
@@ -238,12 +239,12 @@ public class FirefoxLauncher : BrowserLauncher
     }
 
     /// <summary>
-    /// Gets the process ID of the browser process, or 0 if the browser is not running.
+    /// Gets the process ID of the browser process just launched.
     /// </summary>
-    /// <returns>The process ID, or 0 if not running.</returns>
+    /// <returns>The process ID.</returns>
     protected override int GetProcessId()
     {
-        return this.browserProcess?.Id ?? 0;
+        return this.browserProcess!.Id;
     }
 
     /// <summary>
@@ -519,10 +520,9 @@ public class FirefoxLauncher : BrowserLauncher
         {
             string s => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"",
             bool b => b ? "true" : "false",
-            int i => i.ToString(CultureInfo.InvariantCulture),
-            long l => l.ToString(CultureInfo.InvariantCulture),
-            double d => d.ToString(CultureInfo.InvariantCulture),
-            _ => throw new ArgumentException($"Unsupported preference value type: {value.GetType().Name}", nameof(value)),
+
+            // Building the launcher rejects preferences that are not strings, Booleans, or integers.
+            _ => ((int)value).ToString(CultureInfo.InvariantCulture),
         };
     }
 

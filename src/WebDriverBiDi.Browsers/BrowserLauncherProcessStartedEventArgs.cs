@@ -19,12 +19,14 @@ public record BrowserLauncherProcessStartedEventArgs : WebDriverBiDiEventArgs
     public BrowserLauncherProcessStartedEventArgs(Process launcherProcess)
     {
         this.ProcessId = launcherProcess.Id;
-        if (launcherProcess.StartInfo.RedirectStandardOutput && !launcherProcess.StartInfo.UseShellExecute)
+
+        // A process whose output is redirected cannot have been started by the shell.
+        if (launcherProcess.StartInfo.RedirectStandardOutput)
         {
             this.StandardOutputStreamReader = launcherProcess.StandardOutput;
         }
 
-        if (launcherProcess.StartInfo.RedirectStandardError && !launcherProcess.StartInfo.UseShellExecute)
+        if (launcherProcess.StartInfo.RedirectStandardError)
         {
             this.StandardErrorStreamReader = launcherProcess.StandardError;
         }

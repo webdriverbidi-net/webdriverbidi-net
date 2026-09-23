@@ -89,6 +89,57 @@ public class RemoteLaunchTests
         Assert.True((bool?)capabilities["safari:experimentalWebSocketUrl"]);
     }
 
+    [Fact]
+    public async Task SafariGridSessionKeepsCallersWebSocketUrlCapability()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ServeGrid(server, string.Empty);
+        RemoteGridOptions options = new() { Capabilities = { ["safari:experimentalWebSocketUrl"] = false } };
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Safari).LaunchUsingRemoteGrid(server.UrlFor("/"), options).Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+        Transport transport = launcher.CreateTransport();
+
+        JsonNode capabilities = JsonNode.Parse(Assert.Single(server.Requests, request => request.Method == "POST").Body)!["capabilities"]!["firstMatch"]![0]!;
+        Assert.False((bool?)capabilities["safari:experimentalWebSocketUrl"]);
+        Assert.IsType<Transport>(transport);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task SessionWithoutWebSocketUrlIsEnded(HttpStatusCode deleteStatus)
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        server.AddResponses("/status", new ServedResponse(HttpStatusCode.OK, Encoding.UTF8.GetBytes("{\"value\":{\"ready\":true}}"), ContentType: "application/json"));
+        server.AddResponses("/session", HttpRequestMethod.Post, new ServedResponse(HttpStatusCode.OK, Encoding.UTF8.GetBytes($"{{\"value\":{{\"sessionId\":\"{SessionId}\",\"capabilities\":{{}}}}}}"), ContentType: "application/json"));
+        server.AddResponses($"/session/{SessionId}", HttpRequestMethod.Delete, new ServedResponse(deleteStatus, Encoding.UTF8.GetBytes("{\"value\":null}"), ContentType: "application/json"));
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(server.UrlFor("/")).Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
+
+        Assert.False(launcher.IsRunning);
+        Assert.Equal(1, server.RequestCount($"/session/{SessionId}"));
+    }
+
+    [Fact]
+    public async Task DisposingInstanceWhoseQuitFailsDoesNotThrow()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ServeGrid(server, string.Empty);
+        server.AddResponses($"/session/{SessionId}", HttpRequestMethod.Delete, new ServedResponse(HttpStatusCode.InternalServerError, Encoding.UTF8.GetBytes("{}"), ContentType: "application/json"));
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(server.UrlFor("/")).Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        BrowserInstance instance = await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        await instance.DisposeAsync();
+
+        Assert.False(instance.IsRunning);
+        Assert.Equal(1, server.RequestCount($"/session/{SessionId}"));
+    }
+
     [Theory]
     [MemberData(nameof(UnsupportedCapabilities))]
     public void BuildRejectsCapabilityValuesThatAreNotJson(object value, string expectedPath)
@@ -105,14 +156,17 @@ public class RemoteLaunchTests
         { DateTime.UnixEpoch, "vendor:options.value has a value of type DateTime" },
         { double.NaN, "vendor:options.value is NaN" },
         { float.PositiveInfinity, "which JSON cannot represent" },
+        { float.NaN, "which JSON cannot represent" },
         { new object[] { "valid", new Uri("http://example") }, "vendor:options.value[1] has a value of type Uri" },
         { new Dictionary<int, string>() { [1] = "one" }, "vendor:options.value has a key of type Int32" },
     };
 
-    [Fact]
-    public void BuildRejectsHeaderThatIsNotRequestHeader()
+    [Theory]
+    [InlineData("Content-Type")]
+    [InlineData("Not A Header Name")]
+    public void BuildRejectsHeaderThatIsNotRequestHeader(string name)
     {
-        RemoteGridOptions options = new() { Headers = { ["Content-Type"] = "text/plain" } };
+        RemoteGridOptions options = new() { Headers = { [name] = "text/plain" } };
 
         Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(new Uri("http://grid.example/"), options).Build);
     }
