@@ -109,6 +109,10 @@ jobs:
       - name: Enforce browser management coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-browsers.*.info
 
+      - name: Test extensions library
+        # Not yet coverage-gated; the gate is added once the library reaches the 95% threshold.
+        run: dotnet test --project test/WebDriverBiDi.Extensions.Tests --configuration Release --no-build --verbosity normal
+
       - name: Enforce combined coverage thresholds
         # Perform an aggregate threshold check
         run: >
@@ -315,6 +319,9 @@ jobs:
 
       - name: Test browser management library
         run: dotnet test --project test/WebDriverBiDi.Browsers.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test extensions library
+        run: dotnet test --project test/WebDriverBiDi.Extensions.Tests --configuration Release --no-build --verbosity normal
 
   # Compatibility tests build and run a separate consumer application against a specific build of
   # the library (currently the netstandard2.0 one) over a scripted WebSocket server. They need no
