@@ -19,8 +19,8 @@ public static class InputModuleExtensions
     /// <param name="browsingContextId">The ID of the browsing context containing the element to click.</param>
     /// <param name="elementReference">The <see cref="SharedReference"/> representing the element to be clicked.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>An Task representing the asynchronous operation.</returns>
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task ClickElementAsync(this InputModule module, string browsingContextId, SharedReference elementReference, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         InputBuilder inputBuilder = new();
@@ -31,19 +31,18 @@ public static class InputModuleExtensions
     }
 
     /// <summary>
-    /// Sends keys to the specified element.
+    /// Types text into the element that has focus, as a sequence of key presses. To type into a
+    /// particular element, focus it first, for example with <see cref="ClickElementAsync"/>.
     /// </summary>
     /// <param name="module">The <see cref="InputModule"/> to extend.</param>
-    /// <param name="browsingContextId">The ID of the browsing context containing the element to which to send keys.</param>
-    /// <param name="elementReference">The <see cref="SharedReference"/> representing the element to which to send keys.</param>
-    /// <param name="keysToSend">The keys to send to the element.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
+    /// <param name="keysToSend">The text to type, which may include special keys from <see cref="Keys"/>.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>An Task representing the asynchronous operation.</returns>
-    public static async Task SendKeysToElementAsync(this InputModule module, string browsingContextId, SharedReference elementReference, string keysToSend, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task SendKeysAsync(this InputModule module, string browsingContextId, string keysToSend, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         InputBuilder inputBuilder = new();
-        inputBuilder.AddClickOnElementAction(elementReference);
         inputBuilder.AddSendKeysToActiveElementAction(keysToSend);
         PerformActionsCommandParameters parameters = new(browsingContextId);
         parameters.Actions.AddRange(inputBuilder.Build());

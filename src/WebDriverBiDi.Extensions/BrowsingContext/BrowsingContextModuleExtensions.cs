@@ -13,42 +13,42 @@ using WebDriverBiDi.Script;
 public static class BrowsingContextModuleExtensions
 {
     /// <summary>
-    /// Closes the browsing context with the specified context ID.
+    /// Closes a browsing context.
     /// </summary>
     /// <param name="module">The <see cref="BrowsingContextModule"/> to extend.</param>
-    /// <param name="browsingContextId">The ID of the browsing context to close.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>An Task representing the asynchronous operation.</returns>
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task CloseAsync(this BrowsingContextModule module, string browsingContextId, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         await module.CloseAsync(new CloseCommandParameters(browsingContextId), timeoutOverride, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Gets a list of the top-level browsing contexts for the driver. Usually corresponds to a browser tab or window.
+    /// Gets the top-level browsing contexts (tabs and windows), without their child frames.
     /// </summary>
     /// <param name="module">The <see cref="BrowsingContextModule"/> to extend.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>The list of <see cref="BrowsingContextInfo"/> for the top-level browsing contexts.</returns>
-    public static async Task<List<BrowsingContextInfo>> GetTopLevelBrowsingContextsAsync(this BrowsingContextModule module, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>The top-level browsing contexts.</returns>
+    public static async Task<IReadOnlyList<BrowsingContextInfo>> GetTopLevelBrowsingContextsAsync(this BrowsingContextModule module, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        GetTreeCommandResult result = await module.GetTreeAsync(new GetTreeCommandParameters() { MaxDepth = 1 }, timeoutOverride, cancellationToken).ConfigureAwait(false);
+        GetTreeCommandResult result = await module.GetTreeAsync(new GetTreeCommandParameters() { MaxDepth = 0 }, timeoutOverride, cancellationToken).ConfigureAwait(false);
         return [.. result.ContextTree];
     }
 
     /// <summary>
-    /// Navigates a browsing context to a specifed URL, optionally waiting for a given readiness state.
+    /// Navigates a browsing context to a URL.
     /// </summary>
     /// <param name="module">The <see cref="BrowsingContextModule"/> to extend.</param>
-    /// <param name="browsingContextId">The ID of the browsing context to navigate.</param>
-    /// <param name="url">The URL to which to navigate the browsing context.</param>
-    /// <param name="wait">An optional <see cref="ReadinessState"/> parameter describing the navigation event for which to wait.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
+    /// <param name="url">The URL.</param>
+    /// <param name="wait">How far the new document must have loaded before the command completes, or <see langword="null"/> for the remote end's default.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>The URL navigated to after redirects.</returns>
-    public static async Task<string> NavigateAsync(this BrowsingContextModule module, string browsingContextId, string url, ReadinessState? wait, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>The URL navigated to.</returns>
+    public static async Task<string> NavigateAsync(this BrowsingContextModule module, string browsingContextId, string url, ReadinessState? wait = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         NavigateCommandParameters parameters = new(browsingContextId, url)
         {
@@ -59,109 +59,98 @@ public static class BrowsingContextModuleExtensions
     }
 
     /// <summary>
-    /// Captures a screenshot of the specified browsing context.
+    /// Captures a PNG screenshot of a browsing context.
     /// </summary>
     /// <param name="module">The <see cref="BrowsingContextModule"/> to extend.</param>
-    /// <param name="browsingContextId">The ID of the browsing context for which to capture the screenshot.</param>
-    /// <param name="origin">An optional <see cref="ScreenshotOrigin"/> parameter describing origin of the screenshot. If omitted, takes a screenshot of the browsing context's viewport onlhy.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
+    /// <param name="origin">Whether to capture the viewport or the whole document.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>A base64-encoded string representing the screenshot in PNG format.</returns>
-    public static async Task<string> CaptureScreenshotAsync(this BrowsingContextModule module, string browsingContextId, ScreenshotOrigin? origin = ScreenshotOrigin.Viewport, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>The PNG image.</returns>
+    public static async Task<byte[]> CaptureScreenshotAsync(this BrowsingContextModule module, string browsingContextId, ScreenshotOrigin origin = ScreenshotOrigin.Viewport, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         CaptureScreenshotCommandParameters parameters = new(browsingContextId)
         {
             Origin = origin,
         };
         CaptureScreenshotCommandResult result = await module.CaptureScreenshotAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
-        return result.Data;
+        return Convert.FromBase64String(result.Data);
     }
 
     /// <summary>
-    /// Locates a node in a specified browsing context using CSS selectors.
+    /// Finds the nodes matching a CSS selector.
     /// </summary>
     /// <param name="module">The <see cref="BrowsingContextModule"/> to extend.</param>
-    /// <param name="browsingContextId">The ID of the browsing context in which to find the nodes.</param>
-    /// <param name="cssSelector">The CSS selector to use to find the nodes.</param>
-    /// <param name="parentNodes">An optional list of nodes to use as parents of the nodes to find. If <see langword="null"/> or omitted, locates from the top-level document.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
+    /// <param name="cssSelector">The CSS selector.</param>
+    /// <param name="parentNodes">The nodes within which to search, or <see langword="null"/> for the whole document.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>A list of <see cref="SharedReference"/> objects representing the located nodes.</returns>
-    public static async Task<IList<SharedReference>> LocateNodesByCssSelectorAsync(this BrowsingContextModule module, string browsingContextId, string cssSelector, IList<SharedReference>? parentNodes = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>References to the matching nodes.</returns>
+    public static Task<IReadOnlyList<SharedReference>> LocateNodesByCssSelectorAsync(this BrowsingContextModule module, string browsingContextId, string cssSelector, IEnumerable<SharedReference>? parentNodes = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        CssLocator locator = new(cssSelector);
-        return await LocateNodesInternalAsync(module, browsingContextId, locator, parentNodes, timeoutOverride, cancellationToken).ConfigureAwait(false);
+        return LocateNodesAsync(module, browsingContextId, new CssLocator(cssSelector), parentNodes, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
-    /// Locates a node in a specified browsing context using XPath.
+    /// Finds the nodes matching an XPath expression.
     /// </summary>
     /// <param name="module">The <see cref="BrowsingContextModule"/> to extend.</param>
-    /// <param name="browsingContextId">The ID of the browsing context in which to find the nodes.</param>
-    /// <param name="xpath">The XPath to use to find the nodes.</param>
-    /// <param name="parentNodes">An optional list of nodes to use as parents of the nodes to find. If <see langword="null"/> or omitted, locates from the top-level document.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
+    /// <param name="xpath">The XPath expression.</param>
+    /// <param name="parentNodes">The nodes within which to search, or <see langword="null"/> for the whole document.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>A list of <see cref="SharedReference"/> objects representing the located nodes.</returns>
-    public static async Task<IList<SharedReference>> LocateNodesByXPathAsync(this BrowsingContextModule module, string browsingContextId, string xpath, IList<SharedReference>? parentNodes = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>References to the matching nodes.</returns>
+    public static Task<IReadOnlyList<SharedReference>> LocateNodesByXPathAsync(this BrowsingContextModule module, string browsingContextId, string xpath, IEnumerable<SharedReference>? parentNodes = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        XPathLocator locator = new(xpath);
-        return await LocateNodesInternalAsync(module, browsingContextId, locator, parentNodes, timeoutOverride, cancellationToken).ConfigureAwait(false);
+        return LocateNodesAsync(module, browsingContextId, new XPathLocator(xpath), parentNodes, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
-    /// Locates a node in a specified browsing context using accessible role.
+    /// Finds the nodes with an accessible role and, optionally, an accessible name.
     /// </summary>
     /// <param name="module">The <see cref="BrowsingContextModule"/> to extend.</param>
-    /// <param name="browsingContextId">The ID of the browsing context in which to find the nodes.</param>
-    /// <param name="accessibleRole">The accessible role to use to find the nodes.</param>
-    /// <param name="accessibleName">An optional accessible name to use to find the nodes. This will filter the list of nodes for accessible name matches within those with the specified accessible role.</param>
-    /// <param name="parentNodes">An optional list of nodes to use as parents of the nodes to find. If <see langword="null"/> or omitted, locates from the top-level document.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
+    /// <param name="accessibleRole">The accessible role, such as "button".</param>
+    /// <param name="accessibleName">The accessible name, or <see langword="null"/> to match any.</param>
+    /// <param name="parentNodes">The nodes within which to search, or <see langword="null"/> for the whole document.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>A list of <see cref="SharedReference"/> objects representing the located nodes.</returns>
-    public static async Task<IList<SharedReference>> LocateNodesByAccessibleRoleAsync(this BrowsingContextModule module, string browsingContextId, string accessibleRole, string? accessibleName = null, IList<SharedReference>? parentNodes = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>References to the matching nodes.</returns>
+    public static Task<IReadOnlyList<SharedReference>> LocateNodesByAccessibleRoleAsync(this BrowsingContextModule module, string browsingContextId, string accessibleRole, string? accessibleName = null, IEnumerable<SharedReference>? parentNodes = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         AccessibilityLocator locator = new()
         {
             Role = accessibleRole,
+            Name = accessibleName,
         };
-        if (accessibleName is not null)
-        {
-            locator.Name = accessibleName;
-        }
-
-        return await LocateNodesInternalAsync(module, browsingContextId, locator, parentNodes, timeoutOverride, cancellationToken).ConfigureAwait(false);
+        return LocateNodesAsync(module, browsingContextId, locator, parentNodes, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
-    /// Locates a node in a specified browsing context using visible text.
+    /// Finds the nodes whose rendered text matches.
     /// </summary>
     /// <param name="module">The <see cref="BrowsingContextModule"/> to extend.</param>
-    /// <param name="browsingContextId">The ID of the browsing context in which to find the nodes.</param>
-    /// <param name="text">The text to use to find the nodes.</param>
-    /// <param name="isPartialMatch"><see langword="true"/> to perform a match for a substring of the node text; otherwise <see langword="false"/>. Defaults to true.</param>
-    /// <param name="matchCase"><see langword="true"/> to perform a case-sensitive match for the node text; otherwise <see langword="false"/>. Defaults to false.</param>
-    /// <param name="parentNodes">An optional list of nodes to use as parents of the nodes to find. If <see langword="null"/> or omitted, locates from the top-level document.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
+    /// <param name="text">The text.</param>
+    /// <param name="isPartialMatch"><see langword="true"/> to match nodes whose text contains <paramref name="text"/>; <see langword="false"/> to match only nodes whose text is exactly it.</param>
+    /// <param name="matchCase"><see langword="true"/> to match case.</param>
+    /// <param name="parentNodes">The nodes within which to search, or <see langword="null"/> for the whole document.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>A list of <see cref="SharedReference"/> objects representing the located nodes.</returns>
-    /// <remarks>
-    /// Uses the innerText property of nodes to locate the nodes. This property takes CSS styling, visibility, and tranforms
-    /// into account.
-    /// </remarks>
-    public static async Task<IList<SharedReference>> LocateNodesByVisibleTextAsync(this BrowsingContextModule module, string browsingContextId, string text, bool isPartialMatch = true, bool matchCase = false, IList<SharedReference>? parentNodes = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>References to the matching nodes.</returns>
+    public static Task<IReadOnlyList<SharedReference>> LocateNodesByVisibleTextAsync(this BrowsingContextModule module, string browsingContextId, string text, bool isPartialMatch = true, bool matchCase = false, IEnumerable<SharedReference>? parentNodes = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         InnerTextLocator locator = new(text)
         {
             IgnoreCase = !matchCase,
             MatchType = isPartialMatch ? InnerTextMatchType.Partial : InnerTextMatchType.Full,
         };
-
-        return await LocateNodesInternalAsync(module, browsingContextId, locator, parentNodes, timeoutOverride, cancellationToken).ConfigureAwait(false);
+        return LocateNodesAsync(module, browsingContextId, locator, parentNodes, timeoutOverride, cancellationToken);
     }
 
-    private static async Task<IList<SharedReference>> LocateNodesInternalAsync(BrowsingContextModule module, string browsingContextId, Locator locator, IList<SharedReference>? parentNodes = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    private static async Task<IReadOnlyList<SharedReference>> LocateNodesAsync(BrowsingContextModule module, string browsingContextId, Locator locator, IEnumerable<SharedReference>? parentNodes, TimeSpan? timeoutOverride, CancellationToken cancellationToken)
     {
         LocateNodesCommandParameters parameters = new(browsingContextId, locator);
         if (parentNodes is not null)
@@ -170,12 +159,6 @@ public static class BrowsingContextModuleExtensions
         }
 
         LocateNodesCommandResult result = await module.LocateNodesAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
-        List<SharedReference> nodes = [];
-        foreach (NodeRemoteValue node in result.Nodes)
-        {
-            nodes.Add(node.ToSharedReference());
-        }
-
-        return nodes;
+        return [.. result.Nodes.Select(node => node.ToSharedReference())];
     }
 }
