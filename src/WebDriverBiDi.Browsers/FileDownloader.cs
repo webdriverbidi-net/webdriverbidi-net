@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Security.Cryptography;
+
 /// <summary>
 /// Downloads files, reporting their progress.
 /// </summary>
@@ -34,19 +36,81 @@ internal sealed class FileDownloader
     }
 
     /// <summary>
-    /// Downloads a file from the specified URL to the specified destination path.
+    /// Downloads a file, downloading it again if it is interrupted or corrupted in transit, and
+    /// verifies it against its published checksum and size, if given.
     /// </summary>
     /// <param name="client">The HTTP client to use for the download.</param>
     /// <param name="url">The URL of the file to download.</param>
     /// <param name="destPath">The path where the downloaded file should be saved.</param>
+    /// <param name="expectedSha256">The file's published SHA-256 hash in hexadecimal, or <see langword="null"/> if none is published.</param>
+    /// <param name="expectedSize">The file's published size in bytes, or <see langword="null"/> if none is published.</param>
     /// <param name="cancellationToken">A token that cancels the download.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task DownloadFileAsync(HttpClient client, string url, string destPath, CancellationToken cancellationToken)
+    /// <exception cref="DownloadVerificationException">Thrown when the file does not match its published checksum or size.</exception>
+    public async Task DownloadFileAsync(HttpClient client, string url, string destPath, string? expectedSha256, long? expectedSize, CancellationToken cancellationToken)
+    {
+        string sha256 = await DownloadHttpClient.RetryAsync(() => this.DownloadOnceAsync(client, new Uri(url), destPath, cancellationToken), cancellationToken).ConfigureAwait(false);
+        if (expectedSha256 is not null && !sha256.Equals(expectedSha256, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new DownloadVerificationException($"{this.name} from {url} has SHA-256 hash {sha256}, but its publisher lists {expectedSha256}.");
+        }
+
+        long size = new FileInfo(destPath).Length;
+        if (expectedSize is not null && size != expectedSize)
+        {
+            throw new DownloadVerificationException($"{this.name} from {url} is {size} bytes, but its publisher lists {expectedSize} bytes.");
+        }
+    }
+
+    // Google Cloud Storage, which serves Chrome for Testing, sends an MD5 hash of the file. It comes
+    // from the same server as the file, so it detects corruption in transit, not tampering.
+    private static string? GetStorageMd5(HttpResponseMessage response)
+    {
+        const string Md5Prefix = "md5=";
+        if (response.Headers.TryGetValues("x-goog-hash", out IEnumerable<string>? values))
+        {
+            foreach (string value in values.SelectMany(value => value.Split(',')))
+            {
+                string hash = value.Trim();
+                if (hash.StartsWith(Md5Prefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return hash.Substring(Md5Prefix.Length);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string ToHex(byte[] bytes)
+    {
+        return string.Concat(bytes.Select(value => value.ToString("x2", System.Globalization.CultureInfo.InvariantCulture)));
+    }
+
+    private static async Task<int> ReadAsync(Stream stream, byte[] buffer, Uri url, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+        }
+        catch (IOException ex)
+        {
+            throw new TransientDownloadException($"The download from {url} was interrupted: {ex.Message}", ex);
+        }
+    }
+
+    // Returns the SHA-256 hash of the downloaded file in hexadecimal.
+    private async Task<string> DownloadOnceAsync(HttpClient client, Uri url, string destPath, CancellationToken cancellationToken)
     {
         using HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+        DownloadServiceException.ThrowIfUnsuccessful(response, url);
 
         long? totalBytes = response.Content.Headers.ContentLength;
+        string? expectedMd5 = GetStorageMd5(response);
+        using IncrementalHash sha256 = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+#pragma warning disable CA5351 // Verifies the server's own transfer checksum; not used for security.
+        using IncrementalHash? md5 = expectedMd5 is null ? null : IncrementalHash.CreateHash(HashAlgorithmName.MD5);
+#pragma warning restore CA5351
         using Stream contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
         using FileStream fileStream = new(destPath, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize, true);
 
@@ -56,9 +120,11 @@ internal sealed class FileDownloader
         int lastLoggedPercent = -1;
         this.progress?.Report(new BrowserDownloadProgress(this.name, 0, totalBytes));
         int bytesRead;
-        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false)) > 0)
+        while ((bytesRead = await ReadAsync(contentStream, buffer, url, cancellationToken).ConfigureAwait(false)) > 0)
         {
             await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
+            sha256.AppendData(buffer, 0, bytesRead);
+            md5?.AppendData(buffer, 0, bytesRead);
             totalRead += bytesRead;
             if (totalRead - lastReported >= ProgressReportInterval || totalRead == totalBytes)
             {
@@ -81,5 +147,17 @@ internal sealed class FileDownloader
         {
             this.progress?.Report(new BrowserDownloadProgress(this.name, totalRead, totalBytes));
         }
+
+        if (totalBytes is not null && totalRead != totalBytes)
+        {
+            throw new TransientDownloadException($"The download of {this.name} from {url} ended after {totalRead} of {totalBytes} bytes.");
+        }
+
+        if (md5 is not null && Convert.ToBase64String(md5.GetHashAndReset()) != expectedMd5)
+        {
+            throw new TransientDownloadException($"The download of {this.name} from {url} does not match the MD5 hash the server sent.");
+        }
+
+        return ToHex(sha256.GetHashAndReset());
     }
 }

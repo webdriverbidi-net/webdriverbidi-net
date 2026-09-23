@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browsers;
 /// <summary>
 /// Represents information about a browser download, including the browser name, channel, version, and download URL.
 /// </summary>
-public record BrowserDownloadInfo
+internal record BrowserDownloadInfo
 {
     /// <summary>
     /// Gets or sets the name of the browser (e.g., "chrome", "firefox").

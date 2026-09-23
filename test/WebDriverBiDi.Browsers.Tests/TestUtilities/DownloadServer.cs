@@ -89,6 +89,16 @@ public sealed class DownloadServer : IAsyncDisposable
     }
 
     /// <summary>
+    /// Responds to successive requests for a path with successive responses, repeating the last.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="responses">The responses.</param>
+    public void AddResponses(string path, params ServedResponse[] responses)
+    {
+        this.server.RegisterHandler(path, new ScriptedHandler(responses, this.Record));
+    }
+
+    /// <summary>
     /// Counts the requests received for a path, ignoring any query string.
     /// </summary>
     /// <param name="path">The path.</param>
@@ -128,6 +138,26 @@ public sealed class DownloadServer : IAsyncDisposable
         }
     }
 
+    private sealed class ScriptedHandler(ServedResponse[] responses, Action<HttpRequest> record) : HttpRequestHandler([])
+    {
+        private int requestCount;
+
+        protected override Task<HttpResponse> ProcessRequestAsync(HttpRequest request)
+        {
+            record(request);
+            ServedResponse served = responses[Math.Min(Interlocked.Increment(ref this.requestCount), responses.Length) - 1];
+            HttpResponse response = this.CreateHttpResponse(request.Id, served.StatusCode);
+            response.SetBodyContent(served.Body ?? []);
+            this.AddStandardResponseHeaders(response);
+            foreach (KeyValuePair<string, string> header in served.Headers ?? new Dictionary<string, string>())
+            {
+                response.Headers[header.Key] = [header.Value];
+            }
+
+            return Task.FromResult(response);
+        }
+    }
+
     private sealed class RecordingNotFoundHandler(Action<HttpRequest> record) : NotFoundRequestHandler("Not found")
     {
         protected override Task<HttpResponse> ProcessRequestAsync(HttpRequest request)
@@ -137,3 +167,11 @@ public sealed class DownloadServer : IAsyncDisposable
         }
     }
 }
+
+/// <summary>
+/// A response served by <see cref="DownloadServer.AddResponses"/>.
+/// </summary>
+/// <param name="StatusCode">The status.</param>
+/// <param name="Body">The body, or <see langword="null"/> for none.</param>
+/// <param name="Headers">Headers added to the response, or <see langword="null"/> for none.</param>
+public sealed record ServedResponse(HttpStatusCode StatusCode, byte[]? Body = null, IReadOnlyDictionary<string, string>? Headers = null);

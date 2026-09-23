@@ -198,6 +198,18 @@ internal abstract class BrowserLocatorSettings
     public abstract Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken);
 
     /// <summary>
+    /// Gets the SHA-256 hash the browser's publisher lists for a download.
+    /// </summary>
+    /// <param name="downloadInfo">The download.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
+    /// <returns>The hash in hexadecimal, or <see langword="null"/> if the publisher lists none.</returns>
+    /// <exception cref="DownloadVerificationException">Thrown when the publisher lists hashes, but none for the download.</exception>
+    public virtual Task<string?> GetBrowserSha256Async(BrowserDownloadInfo downloadInfo, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<string?>(null);
+    }
+
+    /// <summary>
     /// Gets the driver version that must be used, if it is known without a network request.
     /// </summary>
     /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>

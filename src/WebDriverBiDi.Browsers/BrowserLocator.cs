@@ -264,13 +264,17 @@ public class BrowserLocator
 
     /// <summary>
     /// Gets a value indicating whether an exception from a version information request means the
-    /// service could not be reached, as opposed to it responding with something unusable.
+    /// service could not be reached, failed, or refused the request for now, as opposed to it
+    /// responding with something unusable.
     /// </summary>
     /// <param name="exception">The exception.</param>
     /// <returns><see langword="true"/> if the service could not be reached; otherwise, <see langword="false"/>.</returns>
     internal static bool IsUnreachableServiceException(Exception exception)
     {
-        return exception is HttpRequestException || exception is OperationCanceledException;
+        return exception is HttpRequestException
+            || exception is OperationCanceledException
+            || exception is DownloadServiceException { IsServerError: true }
+            || exception is DownloadServiceException { IsRateLimited: true };
     }
 
     /// <summary>
@@ -405,13 +409,14 @@ public class BrowserLocator
             await this.LogAsync(note, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         }
 
+        string? sha256 = await this.settings.GetBrowserSha256Async(downloadInfo, cancellationToken).ConfigureAwait(false);
         await this.LogAsync($"Downloading {name}...", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         string relativeExecutablePath = this.settings.ExpectedExecutablePath;
         string executablePath = await cache.InstallAsync(downloadInfo.Version, relativeExecutablePath, async installDirectory =>
         {
             string installerPath = Path.Combine(installDirectory, this.settings.InstallerFileName);
             FileDownloader downloader = new(name, this.settings.DownloadOptions.Progress, message => this.LogAsync(message, WebDriverBiDiLogLevel.Info));
-            await downloader.DownloadFileAsync(DownloadHttpClient.GetClient(this.settings.DownloadOptions), downloadInfo.DownloadUrl, installerPath, cancellationToken).ConfigureAwait(false);
+            await downloader.DownloadFileAsync(DownloadHttpClient.GetClient(this.settings.DownloadOptions), downloadInfo.DownloadUrl, installerPath, sha256, null, cancellationToken).ConfigureAwait(false);
             await this.settings.BrowserExtractor.ExtractFileContentsAsync(installerPath, installDirectory, cancellationToken).ConfigureAwait(false);
             if (!File.Exists(Path.Combine(installDirectory, relativeExecutablePath)))
             {

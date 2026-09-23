@@ -22,6 +22,13 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     // Firefox for Linux has been distributed as .tar.xz, rather than .tar.bz2, since version 135.
     private const int FirstXzCompressedLinuxVersion = 135;
 
+    private const string Sha256DigestPrefix = "sha256:";
+    private const string ReleaseChecksumsFileName = "SHA256SUMS";
+    private const string NightlyChecksumsExtension = ".checksums";
+
+    // Nightly build file names end with one of these; the checksums file beside a build replaces it.
+    private static readonly string[] NightlyBuildSuffixes = [".installer.exe", ".tar.xz", ".tar.bz2", ".dmg"];
+
     private readonly FirefoxChannel channelValue;
 
     /// <summary>
@@ -122,6 +129,47 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     }
 
     /// <summary>
+    /// Gets the SHA-256 hash Mozilla lists for a Firefox download: in the release's SHA256SUMS file,
+    /// or, for Nightly, in the checksums file published beside the build.
+    /// </summary>
+    /// <param name="downloadInfo">The download.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
+    /// <returns>The hash in hexadecimal.</returns>
+    /// <exception cref="DownloadVerificationException">Thrown when no hash is listed for the download.</exception>
+    public override async Task<string?> GetBrowserSha256Async(BrowserDownloadInfo downloadInfo, CancellationToken cancellationToken)
+    {
+        Uri downloadUrl = new(downloadInfo.DownloadUrl);
+        string path = Uri.UnescapeDataString(downloadUrl.AbsolutePath);
+        string fileName = path.Substring(path.LastIndexOf('/') + 1);
+        string checksumsPath;
+        string listedName;
+        if (this.channelValue == FirefoxChannel.Nightly)
+        {
+            string suffix = NightlyBuildSuffixes.FirstOrDefault(suffix => fileName.EndsWith(suffix, StringComparison.Ordinal))
+                ?? throw new DownloadVerificationException($"Cannot find the checksums file for the Firefox Nightly build {downloadUrl}.");
+            checksumsPath = path.Substring(0, path.Length - suffix.Length) + NightlyChecksumsExtension;
+            listedName = fileName;
+        }
+        else
+        {
+            string releaseDirectory = $"/releases/{downloadInfo.Version}/";
+            int releaseDirectoryIndex = path.IndexOf(releaseDirectory, StringComparison.Ordinal);
+            if (releaseDirectoryIndex < 0)
+            {
+                throw new DownloadVerificationException($"Cannot find the {ReleaseChecksumsFileName} file for the Firefox download {downloadUrl}.");
+            }
+
+            int releasePathLength = releaseDirectoryIndex + releaseDirectory.Length;
+            checksumsPath = path.Substring(0, releasePathLength) + ReleaseChecksumsFileName;
+            listedName = path.Substring(releasePathLength);
+        }
+
+        Uri checksumsUrl = new UriBuilder(downloadUrl) { Path = checksumsPath, Query = string.Empty }.Uri;
+        string checksums = await DownloadHttpClient.GetStringAsync(this.DownloadOptions, checksumsUrl, cancellationToken).ConfigureAwait(false);
+        return FindSha256(checksums, listedName) ?? throw new DownloadVerificationException($"{checksumsUrl} lists no SHA-256 hash for {listedName}.");
+    }
+
+    /// <summary>
     /// Gets the driver download information for the geckodriver that is compatible with the Firefox browser.
     /// Uses the <see cref="BrowserLocatorSettings.DriverVersion"/> property to determine which driver version to download,
     /// or uses the latest version if <see cref="BrowserLocatorSettings.DriverVersion"/> is null.
@@ -155,9 +203,34 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
             BrowserVersion = this.Version,
             DownloadUrl = matchingAsset.BrowserDownloadUrl,
             InstallerFileName = matchingAsset.Name,
+            Sha256 = matchingAsset.Digest is string digest && digest.StartsWith(Sha256DigestPrefix, StringComparison.OrdinalIgnoreCase) ? digest.Substring(Sha256DigestPrefix.Length) : null,
+            Size = matchingAsset.Size,
         };
 
         return driverDownloadInfo;
+    }
+
+    // SHA256SUMS lines are "<hash>  <path>"; Nightly checksums lines are "<hash> <algorithm> <size> <name>".
+    private static string? FindSha256(string checksums, string listedName)
+    {
+        const int Sha256HexLength = 64;
+        foreach (string line in checksums.Split('\n'))
+        {
+            string entry = line.TrimEnd('\r');
+            if (entry.IndexOf(' ') != Sha256HexLength)
+            {
+                continue;
+            }
+
+            string rest = entry.Substring(Sha256HexLength).TrimStart(' ');
+            string[] fields = rest.Split([' '], 3);
+            if (rest == listedName || (fields.Length == 3 && fields[0] == "sha256" && fields[2] == listedName))
+            {
+                return entry.Substring(0, Sha256HexLength);
+            }
+        }
+
+        return null;
     }
 
     private static int GetMajorVersion(string version)
@@ -431,6 +504,20 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
         [JsonPropertyName("browser_download_url")]
         [JsonInclude]
         public string BrowserDownloadUrl { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the digest of the asset (e.g., "sha256:..."), which GitHub lists for assets uploaded since mid-2025.
+        /// </summary>
+        [JsonPropertyName("digest")]
+        [JsonInclude]
+        public string? Digest { get; set; }
+
+        /// <summary>
+        /// Gets or sets the size of the asset in bytes.
+        /// </summary>
+        [JsonPropertyName("size")]
+        [JsonInclude]
+        public long? Size { get; set; }
     }
 }
 

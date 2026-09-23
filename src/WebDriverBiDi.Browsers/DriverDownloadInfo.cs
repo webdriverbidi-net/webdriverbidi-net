@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browsers;
 /// <summary>
 /// Represents information about a driver download, including the driver name, version, matched browser version, and download URL.
 /// </summary>
-public record DriverDownloadInfo
+internal record DriverDownloadInfo
 {
     /// <summary>
     /// Gets or sets the name of the driver (e.g., "chromedriver", "geckodriver").
@@ -34,4 +34,14 @@ public record DriverDownloadInfo
     /// Gets or sets the name of the installer or archive file.
     /// </summary>
     public string InstallerFileName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the SHA-256 hash of the download in hexadecimal, if its publisher lists one.
+    /// </summary>
+    public string? Sha256 { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size of the download in bytes, if its publisher lists one.
+    /// </summary>
+    public long? Size { get; set; }
 }

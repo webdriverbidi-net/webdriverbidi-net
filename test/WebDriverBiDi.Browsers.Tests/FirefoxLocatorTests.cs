@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Browsers;
 
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using WebDriverBiDi.Browsers.TestUtilities;
 
@@ -106,6 +107,7 @@ public class FirefoxLocatorTests
         string archivePath = "/pub/firefox/nightly/latest-mozilla-central/firefox-133.0a1.en-US.linux-x86_64.tar.xz";
         server.AddRedirect(TestDownloadOptions.FirefoxProductPath, server.UrlFor(archivePath));
         server.AddNotFound(archivePath);
+        string checksumsPath = ServeChecksums(server, archivePath, new string('0', 64));
         using TemporaryDirectory cache = new();
         await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Firefox)
             .WithReleaseChannel(BrowserReleaseChannel.Alpha)
@@ -119,6 +121,8 @@ public class FirefoxLocatorTests
 
         Assert.Equal("/mozilla/?product=firefox-nightly-latest-ssl", server.RequestedUrls[0].Split("&os=")[0]);
         Assert.Contains("Downloading Firefox Nightly 133.0a1...", messages);
+        Assert.Equal("/pub/firefox/nightly/latest-mozilla-central/firefox-133.0a1.en-US.linux-x86_64.checksums", checksumsPath);
+        Assert.Equal(1, server.RequestCount(checksumsPath));
     }
 
     [Theory]
@@ -127,12 +131,13 @@ public class FirefoxLocatorTests
     {
         await using DownloadServer server = await DownloadServer.StartAsync();
         server.AddNotFound(archivePath);
+        string checksumsPath = ServeChecksums(server, archivePath, new string('0', 64));
         using TemporaryDirectory cache = new();
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, new BrowserPlatform(operatingSystem, architecture));
 
         await AssertDownloadFailedAsync(() => BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, channel, BrowserVersion.Specific(version), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken));
 
-        Assert.Equal([archivePath], server.RequestedUrls);
+        Assert.Equal([checksumsPath, archivePath], server.RequestedUrls);
     }
 
     [Fact]
@@ -216,18 +221,49 @@ public class FirefoxLocatorTests
         {
             string assetPath = GeckoDriverAssetPath(assetSuffix);
             bool isWindows = assetSuffix.StartsWith("win", StringComparison.Ordinal);
-            server.AddFile(assetPath, isWindows ? TestArchives.Zip("geckodriver.exe") : TestArchives.TarGz("geckodriver"));
+            byte[] archive = isWindows ? TestArchives.Zip("geckodriver.exe") : TestArchives.TarGz("geckodriver");
+            server.AddFile(assetPath, archive);
             assets.Add(new JsonObject() { ["name"] = $"{assetPath.Split('/')[^1]}.asc", ["browser_download_url"] = server.UrlFor($"{assetPath}.asc").AbsoluteUri });
-            assets.Add(new JsonObject() { ["name"] = assetPath.Split('/')[^1], ["browser_download_url"] = server.UrlFor(assetPath).AbsoluteUri });
+            assets.Add(new JsonObject()
+            {
+                ["name"] = assetPath.Split('/')[^1],
+                ["browser_download_url"] = server.UrlFor(assetPath).AbsoluteUri,
+                ["digest"] = $"sha256:{Convert.ToHexStringLower(SHA256.HashData(archive))}",
+                ["size"] = archive.Length,
+            });
         }
 
         JsonObject release = new() { ["tag_name"] = $"v{GeckoDriverVersion}", ["name"] = GeckoDriverVersion, ["assets"] = assets };
         server.AddText("/gecko/latest", release.ToJsonString());
     }
 
+    // Serves the checksums file Mozilla publishes for an archive, listing a hash for it, and returns its path.
+    internal static string ServeChecksums(DownloadServer server, string archivePath, string sha256)
+    {
+        string path = Uri.UnescapeDataString(archivePath);
+        string fileName = path[(path.LastIndexOf('/') + 1)..];
+        int releasesIndex = path.IndexOf("/releases/", StringComparison.Ordinal);
+        string checksumsPath;
+        string line;
+        if (releasesIndex < 0)
+        {
+            checksumsPath = path[..path.IndexOf(".tar.", StringComparison.Ordinal)] + ".checksums";
+            line = $"{new string('1', 128)} sha512 100 {fileName}\n{sha256} sha256 100 {fileName}\n";
+        }
+        else
+        {
+            int versionEnd = path.IndexOf('/', releasesIndex + "/releases/".Length) + 1;
+            checksumsPath = path[..versionEnd] + "SHA256SUMS";
+            line = $"{new string('2', 64)}  other/file.txt\n{sha256}  {path[versionEnd..]}\n";
+        }
+
+        server.AddText(checksumsPath, line);
+        return checksumsPath;
+    }
+
     private static async Task AssertDownloadFailedAsync(Func<Task> action)
     {
         BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(action);
-        Assert.IsType<HttpRequestException>(exception.InnerException);
+        Assert.Contains("(404)", exception.Message);
     }
 }

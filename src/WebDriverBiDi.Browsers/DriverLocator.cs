@@ -196,7 +196,7 @@ public class DriverLocator
             // The installer is named for the download URL's file name, without any query string.
             string installerPath = Path.Combine(installDirectory, Path.GetFileName(new Uri(downloadInfo.DownloadUrl).LocalPath));
             FileDownloader downloader = new(name, this.settings.DownloadOptions.Progress, message => this.LogAsync(message, WebDriverBiDiLogLevel.Info));
-            await downloader.DownloadFileAsync(DownloadHttpClient.GetClient(this.settings.DownloadOptions), downloadInfo.DownloadUrl, installerPath, cancellationToken).ConfigureAwait(false);
+            await downloader.DownloadFileAsync(DownloadHttpClient.GetClient(this.settings.DownloadOptions), downloadInfo.DownloadUrl, installerPath, downloadInfo.Sha256, downloadInfo.Size, cancellationToken).ConfigureAwait(false);
             await this.settings.DriverExtractor.ExtractFileContentsAsync(installerPath, installDirectory, cancellationToken).ConfigureAwait(false);
 
             // Driver executables might be in a subdirectory of the archive.
