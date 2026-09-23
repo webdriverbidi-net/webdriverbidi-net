@@ -35,10 +35,32 @@ public static class NetworkEvents
     /// <param name="redirectCount">The number of redirects that led to the request.</param>
     /// <param name="intercepts">The IDs of the intercepts blocking the request, or <see langword="null"/> if it is not blocked.</param>
     /// <param name="url">The URL.</param>
+    /// <param name="navigation">The navigation the request is for, or <see langword="null"/> if it is not a navigation's request.</param>
+    /// <param name="headers">Request headers, or <see langword="null"/> for the default.</param>
+    /// <param name="timings">The fetch timing marks, or <see langword="null"/> for the default.</param>
+    /// <param name="startMilliseconds">The event's timestamp, in milliseconds after the default start.</param>
+    /// <param name="sizesKnown">A value indicating whether the body size is reported.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static Task BeforeRequestSentAsync(FakeRemoteEnd remoteEnd, string requestId, string method = "GET", ulong bodySize = 0, ulong redirectCount = 0, string[]? intercepts = null, string url = "https://example.com/")
+    public static Task BeforeRequestSentAsync(FakeRemoteEnd remoteEnd, string requestId, string method = "GET", ulong bodySize = 0, ulong redirectCount = 0, string[]? intercepts = null, string url = "https://example.com/", string? navigation = null, Dictionary<string, string>? headers = null, JsonObject? timings = null, long startMilliseconds = 0, bool sizesKnown = true)
     {
         JsonObject parameters = Base(requestId, redirectCount, intercepts, url, method, bodySize);
+        if (!sizesKnown)
+        {
+            parameters["request"]!["bodySize"] = null;
+        }
+
+        parameters["navigation"] = navigation;
+        parameters["timestamp"] = 1_790_000_000_000 + (long)redirectCount + startMilliseconds;
+        if (headers is not null)
+        {
+            parameters["request"]!["headers"] = new JsonArray([.. headers.Select(header => (JsonNode?)Header(header.Key, header.Value))]);
+        }
+
+        if (timings is not null)
+        {
+            parameters["request"]!["timings"] = timings;
+        }
+
         parameters["initiator"] = new JsonObject() { ["type"] = "other" };
         return remoteEnd.RaiseEventAsync("network.beforeRequestSent", parameters);
     }
@@ -51,11 +73,29 @@ public static class NetworkEvents
     /// <param name="status">The response status.</param>
     /// <param name="redirectCount">The number of redirects that led to the request.</param>
     /// <param name="headers">Response headers, or <see langword="null"/> for none.</param>
+    /// <param name="protocol">The protocol the response came over.</param>
+    /// <param name="mimeType">The response's MIME type.</param>
+    /// <param name="timings">The fetch timing marks, or <see langword="null"/> for the default.</param>
+    /// <param name="sizesKnown">A value indicating whether the header and body sizes are reported.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static Task ResponseCompletedAsync(FakeRemoteEnd remoteEnd, string requestId, ulong status = 200, ulong redirectCount = 0, Dictionary<string, string>? headers = null)
+    public static Task ResponseCompletedAsync(FakeRemoteEnd remoteEnd, string requestId, ulong status = 200, ulong redirectCount = 0, Dictionary<string, string>? headers = null, string protocol = "http/1.1", string mimeType = "text/html", JsonObject? timings = null, bool sizesKnown = true)
     {
         JsonObject parameters = Base(requestId, redirectCount, null, "https://example.com/", "GET", 0);
-        parameters["response"] = Response(status, headers, null);
+        if (timings is not null)
+        {
+            parameters["request"]!["timings"] = timings;
+        }
+
+        JsonObject response = Response(status, headers, null);
+        response["protocol"] = protocol;
+        response["mimeType"] = mimeType;
+        if (!sizesKnown)
+        {
+            response["headersSize"] = null;
+            response["bodySize"] = null;
+        }
+
+        parameters["response"] = response;
         return remoteEnd.RaiseEventAsync("network.responseCompleted", parameters);
     }
 

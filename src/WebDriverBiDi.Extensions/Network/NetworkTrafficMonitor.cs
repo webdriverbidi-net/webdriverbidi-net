@@ -283,7 +283,7 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
             Task<GetDataCommandResult>? requestBody = current.CollectorId is not null && e.Request.BodySize > 0
                 ? Task.Run(() => this.driver.Network.GetDataAsync(new GetDataCommandParameters(requestId, DataType.Request) { CollectorId = current.CollectorId, DisownCollectedData = true }))
                 : null;
-            this.pendingRequests[GetRequestKey(requestId, e.RedirectCount)] = new NetworkRequest(e.Request, e.Timestamp, e.RedirectCount, e.BrowsingContextId, requestBody);
+            this.pendingRequests[GetRequestKey(requestId, e.RedirectCount)] = new NetworkRequest(e.Request, e.Timestamp, e.RedirectCount, e.BrowsingContextId, e.NavigationId, requestBody);
         }
         else
         {
@@ -318,7 +318,7 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
         Task<GetDataCommandResult>? responseBody = current.CollectorId is not null && !IsRedirect(e.Response.Status)
             ? Task.Run(() => this.driver.Network.GetDataAsync(new GetDataCommandParameters(requestId, DataType.Response) { CollectorId = current.CollectorId, DisownCollectedData = true }))
             : null;
-        networkRequest.SetResponseReceived(e.Response, responseBody);
+        networkRequest.SetResponseReceived(e.Response, responseBody, e.Request.Timings);
     }
 
     private void HandleFetchError(FetchErrorEventArgs e)

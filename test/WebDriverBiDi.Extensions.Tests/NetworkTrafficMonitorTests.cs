@@ -141,6 +141,28 @@ public class NetworkTrafficMonitorTests
     }
 
     [Fact]
+    public async Task TimingsAreThoseReportedWhenTheResponseCompleted()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        await using NetworkTrafficMonitor monitor = new(driver);
+        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
+        JsonObject completedMarks = new()
+        {
+            ["timeOrigin"] = 0, ["requestTime"] = 0, ["redirectStart"] = 0, ["redirectEnd"] = 0, ["fetchStart"] = 3, ["dnsStart"] = 0, ["dnsEnd"] = 0,
+            ["connectStart"] = 0, ["connectEnd"] = 0, ["tlsStart"] = 0, ["requestStart"] = 4, ["responseStart"] = 40, ["responseEnd"] = 45,
+        };
+
+        await BeforeRequestSentAsync(remoteEnd, "request-1");
+        await ResponseCompletedAsync(remoteEnd, "request-1", timings: completedMarks);
+        await FlushAsync(driver);
+
+        NetworkRequest request = Assert.Single(await monitor.GetCapturedTrafficAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(40, request.Timings.ResponseStart);
+        Assert.Equal(45, request.Timings.ResponseEnd);
+    }
+
+    [Fact]
     public async Task EachRedirectHopIsCapturedSeparately()
     {
         (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();

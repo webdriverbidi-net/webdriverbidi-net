@@ -15,6 +15,7 @@ public class NetworkRequest
     private readonly string requestId;
     private readonly ulong redirectCount;
     private readonly string? browsingContextId;
+    private readonly string? navigationId;
     private readonly string requestUrl;
     private readonly string requestMethod;
     private readonly List<ReadOnlyHeader> requestHeaders = [];
@@ -23,9 +24,9 @@ public class NetworkRequest
     private readonly Task requestBodyCaptureTask;
     private readonly TaskCompletionSource<bool> responseReceivedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DateTime startedDateTime;
-    private readonly FetchTimingInfo timings;
-    private readonly ulong? requestHeadersSize;
+    private readonly ulong requestHeadersSize;
     private readonly ulong? requestBodySize;
+    private FetchTimingInfo timings;
     private string requestBody = string.Empty;
     private bool isRequestBodyBase64Encoded = false;
     private ulong responseStatusCode = 0;
@@ -50,12 +51,14 @@ public class NetworkRequest
     /// <param name="startedDateTime">The date and time the request was initiated.</param>
     /// <param name="redirectCount">The number of redirects that led to this request.</param>
     /// <param name="browsingContextId">The ID of the browsing context that made the request, if any.</param>
+    /// <param name="navigationId">The ID of the navigation the request is for, if it is a navigation's request.</param>
     /// <param name="requestBodyRetrieveTask">A <see cref="Task"/> object that will be fulfilled once the request body has been retrieved.</param>
-    internal NetworkRequest(RequestData requestData, DateTime startedDateTime, ulong redirectCount, string? browsingContextId, Task<GetDataCommandResult>? requestBodyRetrieveTask)
+    internal NetworkRequest(RequestData requestData, DateTime startedDateTime, ulong redirectCount, string? browsingContextId, string? navigationId, Task<GetDataCommandResult>? requestBodyRetrieveTask)
     {
         this.requestId = requestData.RequestId;
         this.redirectCount = redirectCount;
         this.browsingContextId = browsingContextId;
+        this.navigationId = navigationId;
         this.requestUrl = requestData.Url;
         this.requestMethod = requestData.Method;
         this.requestHeaders.AddRange(requestData.Headers);
@@ -87,6 +90,12 @@ public class NetworkRequest
     public string? BrowsingContextId => this.browsingContextId;
 
     /// <summary>
+    /// Gets the ID of the navigation this request loads the document for, or <see langword="null"/> if it is not a
+    /// navigation's request, as for an image or a script the document requests.
+    /// </summary>
+    public string? NavigationId => this.navigationId;
+
+    /// <summary>
     /// Gets the URL of the network request.
     /// </summary>
     public string Url => this.requestUrl;
@@ -102,7 +111,8 @@ public class NetworkRequest
     public DateTime StartedDateTime => this.startedDateTime;
 
     /// <summary>
-    /// Gets the fetch timing info for the request.
+    /// Gets the fetch timing marks for the request: those reported when its response completed, or, until then
+    /// and for a request that failed, those reported when it was sent.
     /// </summary>
     public FetchTimingInfo Timings => this.timings;
 
@@ -117,9 +127,9 @@ public class NetworkRequest
     public IReadOnlyList<Cookie> RequestCookies => this.requestCookies.AsReadOnly();
 
     /// <summary>
-    /// Gets the size in bytes of the request headers, or <see langword="null"/> if not available.
+    /// Gets the size in bytes of the request headers.
     /// </summary>
-    public ulong? RequestHeadersSize => this.requestHeadersSize;
+    public ulong RequestHeadersSize => this.requestHeadersSize;
 
     /// <summary>
     /// Gets the size in bytes of the request body, or <see langword="null"/> if not available.
@@ -330,16 +340,20 @@ public class NetworkRequest
     /// </summary>
     /// <param name="responseData">The data describing the HTTP response.</param>
     /// <param name="responseBodyRetrieveTask">A <see cref="Task"/> object that will be fulfilled once the response body has been retrieved.</param>
+    /// <param name="completedTimings">The fetch timing marks reported with the completed response, if any.</param>
     /// <remarks>
     /// A request has one outcome: whichever of this method and <see cref="SetFailed"/> is called first stands, and a
     /// later call to either is ignored.
     /// </remarks>
-    internal void SetResponseReceived(ResponseData responseData, Task<GetDataCommandResult>? responseBodyRetrieveTask = null)
+    internal void SetResponseReceived(ResponseData responseData, Task<GetDataCommandResult>? responseBodyRetrieveTask = null, FetchTimingInfo? completedTimings = null)
     {
         if (!this.TryClaimOutcome())
         {
             return;
         }
+
+        // The marks are complete only once the response is; those sent with the request are mostly unset.
+        this.timings = completedTimings ?? this.timings;
 
         this.responseProtocol = responseData.Protocol;
         this.responseStatusCode = responseData.Status;
