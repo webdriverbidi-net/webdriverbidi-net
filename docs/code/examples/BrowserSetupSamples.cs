@@ -12,8 +12,8 @@ using System.Text;
 using System.Text.Json;
 using OpenQA.Selenium.Chrome;
 using WebDriverBiDi;
+using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
-using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Session;
 
@@ -265,7 +265,7 @@ public class BrowserSetupPipeLauncher : IPipeServerProcessProvider
     public Process? PipeServerProcess => null; // Implement: launch browser process with pipe flags
 
     // For a Chromium browser the pipe carries CDP, so the Transport returned here must translate
-    // WebDriver BiDi to CDP (see ChromiumTransport in the WebDriverBiDi.Client demonstration
+    // WebDriver BiDi to CDP (see ChromiumTransport in the WebDriverBiDi.Browsers
     // library, which injects the chromium-bidi mapper). A plain Transport is shown only for shape.
     public Transport CreateTransport() => new Transport(new PipeConnection(this));
 

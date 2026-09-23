@@ -409,5 +409,5 @@ dotnet_naming_style.async_method_name.capitalization = pascal_case
 # IDE0005 (unnecessary using directive) is only reported by the compiler when
 # GenerateDocumentationFile is true, so it is scoped to the projects that set it.
 # Enabling it elsewhere emits warning EnableGenerateDocumentationFile instead.
-[{src/WebDriverBiDi,src/WebDriverBiDi.Client,src/WebDriverBiDi.Logging}/**.cs]
+[{src/WebDriverBiDi,src/WebDriverBiDi.Automation,src/WebDriverBiDi.Browsers,src/WebDriverBiDi.Extensions,src/WebDriverBiDi.Logging}/**.cs]
 dotnet_diagnostic.IDE0005.severity = warning

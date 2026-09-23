@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Integration.Tests;
 
-using WebDriverBiDi.Client.Launchers;
+using WebDriverBiDi.Browsers;
 
 /// <summary>
 /// Helper class for managing browser-specific integration tests across different environments.

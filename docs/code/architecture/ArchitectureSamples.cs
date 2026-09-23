@@ -9,8 +9,8 @@
 namespace WebDriverBiDi.Docs.Code.Architecture;
 
 using WebDriverBiDi;
+using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
-using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
 using WebDriverBiDi.Protocol;

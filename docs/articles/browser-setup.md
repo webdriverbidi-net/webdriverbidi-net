@@ -66,7 +66,7 @@ The session already exists, so **do not call `Session.NewSessionAsync`** on this
 
 ### Through a BiDi-over-CDP mapper (advanced)
 
-The [chromium-bidi](https://github.com/GoogleChromeLabs/chromium-bidi) project provides a JavaScript "mapper" that implements WebDriver BiDi on top of CDP. Injecting it into a hidden tab lets a client talk BiDi over the browser's own CDP endpoint (WebSocket or pipe) with no driver executable. The repository's `WebDriverBiDi.Client` demonstration library does exactly this in its `ChromiumTransport` (a `Transport` subclass that bootstraps the mapper during `ConnectAsync`); that library is not published to NuGet, but it is the reference for building your own. This is the only route that works over a pipe connection, and it requires `Session.NewSessionAsync` after connecting because the mapper does not create a session.
+The [chromium-bidi](https://github.com/GoogleChromeLabs/chromium-bidi) project provides a JavaScript "mapper" that implements WebDriver BiDi on top of CDP. Injecting it into a hidden tab lets a client talk BiDi over the browser's own CDP endpoint (WebSocket or pipe) with no driver executable. The repository's `WebDriverBiDi.Browsers` library does exactly this in its `ChromiumTransport` (a `Transport` subclass that bootstraps the mapper during `ConnectAsync`); that library is pre-release and not yet published to NuGet, but it is the reference for building your own. This is the only route that works over a pipe connection, and it requires `Session.NewSessionAsync` after connecting because the mapper does not create a session.
 
 ## Microsoft Edge
 
@@ -118,7 +118,7 @@ WebDriverBiDi.NET supports two transport mechanisms for communicating with brows
 
 **Example:**
 
-> **Note:** The `WebDriverBiDi` NuGet package does not include a browser launcher. The repository's `WebDriverBiDi.Client` demonstration library (not published to NuGet) provides a `BrowserLauncher` whose Chromium launcher implements `IPipeServerProcessProvider` and returns a `ChromiumTransport`, and the example below uses it. To do this yourself, implement `IPipeServerProcessProvider`: launch the browser with `--remote-debugging-pipe` so that it inherits the two anonymous pipe handles `PipeConnection` creates — `PipeConnection.ReadPipeHandle` and `PipeConnection.WritePipeHandle` give you those handles as strings to pass to the child process, and both return an empty string once the connection has started, because the first start disposes the connection's local copies of those handles, so read them before calling `StartAsync` — and pass a mapper-installing `Transport` built over that `PipeConnection` to `BiDiDriver`:
+> **Note:** The `WebDriverBiDi` NuGet package does not include a browser launcher. The repository's `WebDriverBiDi.Browsers` library (pre-release, not yet published to NuGet) provides a `BrowserLauncher` whose Chromium launcher implements `IPipeServerProcessProvider` and returns a `ChromiumTransport`, and the example below uses it. To do this yourself, implement `IPipeServerProcessProvider`: launch the browser with `--remote-debugging-pipe` so that it inherits the two anonymous pipe handles `PipeConnection` creates — `PipeConnection.ReadPipeHandle` and `PipeConnection.WritePipeHandle` give you those handles as strings to pass to the child process, and both return an empty string once the connection has started, because the first start disposes the connection's local copies of those handles, so read them before calling `StartAsync` — and pass a mapper-installing `Transport` built over that `PipeConnection` to `BiDiDriver`:
 
 [!code-csharp[Pipe Launcher Pattern](../code/examples/BrowserSetupSamples.cs#PipeLauncherPattern)]
 
@@ -261,7 +261,7 @@ You can start the driver executable yourself, create the session, and only then 
 
 ## Implementing Your Own Launcher
 
-The `WebDriverBiDi` NuGet package does **not** ship a browser launcher; the library only provides the protocol client. The repository's `WebDriverBiDi.Client` demonstration library shows one way to do it (see `BrowserLauncher` and its `ChromeDriverLauncher`, `GeckoDriverLauncher`, `FirefoxLauncher` and `ChromeLauncher` in `src/WebDriverBiDi.Client/Launchers`), but it is not published, so to automate browser launch in your own project you implement the launcher yourself. The patterns below sketch the two approaches.
+The `WebDriverBiDi` NuGet package does **not** ship a browser launcher; the library only provides the protocol client. The repository's `WebDriverBiDi.Browsers` library shows one way to do it (see `BrowserLauncher` and its `ChromeDriverLauncher`, `GeckoDriverLauncher`, `FirefoxLauncher` and `ChromeLauncher` in `src/WebDriverBiDi.Browsers`), but it is not yet published, so to automate browser launch in your own project you implement the launcher yourself. The patterns below sketch the two approaches.
 
 ### WebSocket Launcher Pattern
 
@@ -271,7 +271,7 @@ Start the driver executable, wait for its `/status` endpoint, create a session w
 
 ### Pipe Launcher Pattern
 
-For pipe connections (Chromium only), implement `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe` and provide a `Transport` to `BiDiDriver`. Because the pipe carries CDP, that `Transport` must install a BiDi-over-CDP mapper — see `ChromiumTransport` in the demonstration library. See the `Transport` and `PipeConnection` types in the API reference for the interface contract.
+For pipe connections (Chromium only), implement `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe` and provide a `Transport` to `BiDiDriver`. Because the pipe carries CDP, that `Transport` must install a BiDi-over-CDP mapper — see `ChromiumTransport` in the `WebDriverBiDi.Browsers` library. See the `Transport` and `PipeConnection` types in the API reference for the interface contract.
 
 ## Troubleshooting
 

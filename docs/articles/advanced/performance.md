@@ -50,7 +50,7 @@ For specific scenarios where the browser and test runner are co-located, pipe co
 - Limited browser support
 - No remote debugging capability
 
-The sample uses `BrowserLauncher` from the repository's `WebDriverBiDi.Client` demonstration library (not published to NuGet) to launch Chrome with a pipe connection; see [Browser Setup](../browser-setup.md#implementing-your-own-launcher) for building your own:
+The sample uses `BrowserLauncher` from the repository's `WebDriverBiDi.Browsers` library (pre-release, not yet published to NuGet) to launch Chrome with a pipe connection; see [Browser Setup](../browser-setup.md#implementing-your-own-launcher) for building your own:
 
 [!code-csharp[Pipe Connection](../../code/advanced/PerformanceSamples.cs#PipeConnection)]
 

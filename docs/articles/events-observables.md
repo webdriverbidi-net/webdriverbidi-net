@@ -211,7 +211,7 @@ per command) and `Trace` (every message exchanged with the remote end) must be o
 it suppresses everything.
 `ComponentName` identifies the part of the library that emitted the message: `"BiDiDriver"`, `"Transport"` or
 `"Connection"`, the `LoggerComponentName` constant of the emitting type. The browser launchers in
-`WebDriverBiDi.Client` use `"Browser Launcher"`, `"Browser Locator"` and `"Driver Locator"`. `Timestamp` is set to
+`WebDriverBiDi.Browsers` use `"Browser Launcher"`, `"Browser Locator"` and `"Driver Locator"`. `Timestamp` is set to
 `DateTime.UtcNow` at the time the message was created.
 
 > **Note:** For browser console log messages, use `driver.Log.OnEntryAdded` (a module-level event that

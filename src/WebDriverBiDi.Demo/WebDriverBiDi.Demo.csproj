@@ -12,7 +12,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WebDriverBiDi\WebDriverBiDi.csproj" />
-    <ProjectReference Include="..\WebDriverBiDi.Client\WebDriverBiDi.Client.csproj" />
+    <ProjectReference Include="..\WebDriverBiDi.Browsers\WebDriverBiDi.Browsers.csproj" />
+    <ProjectReference Include="..\WebDriverBiDi.Extensions\WebDriverBiDi.Extensions.csproj" />
+    <ProjectReference Include="..\WebDriverBiDi.Automation\WebDriverBiDi.Automation.csproj" />
     <ProjectReference Include="..\WebDriverBiDi.DemoWebSite\WebDriverBiDi.DemoWebSite.csproj" />
   </ItemGroup>
 

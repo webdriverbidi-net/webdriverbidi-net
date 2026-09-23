@@ -1,11 +1,9 @@
 namespace WebDriverBiDi.Demo;
 
 using System.Text;
+using WebDriverBiDi.Automation.Elements;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
-using WebDriverBiDi.Client.Elements;
-using WebDriverBiDi.Client.Inputs;
-using WebDriverBiDi.Client.Network;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;

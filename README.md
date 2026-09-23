@@ -75,51 +75,58 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are 18 projects in this repository:
-* src/WebDriverBiDi/WebDriverBiDi.csproj - The main library source code.
-* src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj - Source code for Roslyn analyzers
-to help users avoid antipatterns when using the main library.
-* src/WebDriverBiDi.Analyzers.CodeFixProviders/WebDriverBiDi.Analyzers.CodeFixProviders.csproj - Source code
-for Roslyn code fixers to help modify users' code in response to analysis performed by the analyzers.
-* src/WebDriverBiDi.Client/WebDriverBiDi.Client.csproj - A library containing helper methods to
-demonstrate scaffolding required to make the main library useful. This code is not unit tested,
-and should be viewed as a demonstration library only.
-* src/WebDriverBiDi.Demo/WebDriverBiDi.Demo.csproj - A console application used as a "playground"
-for practice using the library. Changes to this project are not canonical at this time, and this
-project should not be viewed as having desirable coding practices.
-* src/WebDriverBiDi.DemoWebSite/WebDriverBiDi.DemoWebSite.csproj - A project that instantiates
-an in-memory web server hosting content against which to test. The default code in the WebDriverBidi.Demo
-project will start this server and use it to demonstrate the use of the library against a site
-running on localhost. This server can be used programmatically, or as a standalone console application,
-but is designed as a demonstration and is explicitly recommended against production use.
-* src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj - A library that provides support for
-structured logging by providing integration with `Microsoft.Extensions.Logging.ILogger`.
-* test/WebDriverBiDi.Analyzers.Tests/WebDriverBiDi.Analyzers.Tests.csproj - Tests for the Roslyn analyzers
-and associated code fix providers.
-* test/WebDriverBiDi.AotTestApplication/WebDriverBiDi.AotTestApplication.csproj - A console application
-used to smoke test proper JSON serialization in ahead-of-time (AOT) compilation scenarios.
-* test/WebDriverBiDi.Benchmarks/WebDriverBiDi.Benchmarks.csproj - Performance benchmarks for the library.
-* test/WebDriverBiDi.Compatibility.Tests/WebDriverBiDi.Compatibility.Tests.csproj - Tests that verify
-the main library works when consumed from a particular build configuration. Each test builds a
-separate console application that pins its reference to the configuration under test, then runs that
-application out of process against a scripted WebSocket server. No browser is involved, which is what
-separates these from the integration tests.
-* test/WebDriverBiDi.Integration.Tests/WebDriverBiDi.Integration.Tests.csproj - Integration tests for
-the main library. These tests use actual browsers to test WebDriver BiDi functionality.
-* test/WebDriverBiDi.Logging.Tests/WebDriverBiDi.Logging.Tests.csproj - Tests for the structured logging extension project.
-* test/WebDriverBiDi.NamedPipeTestApplication/WebDriverBiDi.NamedPipeTestApplication.csproj - A console application
-that acts as a test server for named pipe communication, used by unit tests to validate pipe-based connections.
-* test/WebDriverBiDi.NetStandardTestApplication/WebDriverBiDi.NetStandardTestApplication.csproj - A console
-application whose main library reference is pinned to its netstandard2.0 build, allowing proper
-smoke testing of netstandard2.0-specific code paths in the main library. It is driven by the
-compatibility tests.
-* test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj - The unit tests for the main library.
-* test/WebDriverBiDi.TestUtilities/WebDriverBiDi.TestUtilities.csproj - A small library of helpers
-shared between test projects, rather than a test project itself. It currently holds the plumbing for
-launching a console application as a child process and collecting its exit code and console output,
-which the compatibility and integration tests both rely on.
-* docs/code/WebDriverBiDi.DocSnippets.csproj - The compilable code samples included in the documentation
-articles. Building this project verifies that every documented sample compiles against the current library.
+The repository's projects are grouped below. Each project's `.csproj` file is named after its directory.
+
+### Libraries
+
+| Project | Purpose | NuGet package |
+| --- | --- | --- |
+| `src/WebDriverBiDi` | The main library | `WebDriverBiDi` |
+| `src/WebDriverBiDi.Analyzers` | Roslyn analyzers that flag antipatterns in code using the main library | `WebDriverBiDi.Analyzers` |
+| `src/WebDriverBiDi.Analyzers.CodeFixProviders` | Code fixes for the analyzers' diagnostics | Included in `WebDriverBiDi.Analyzers` |
+| `src/WebDriverBiDi.Logging` | `Microsoft.Extensions.Logging` (`ILogger`) integration | `WebDriverBiDi.Logging` |
+| `src/WebDriverBiDi.Browsers` | Locates, downloads, and launches browsers for automation | Pre-release; not yet published |
+| `src/WebDriverBiDi.Extensions` | Convenience extension methods, an input action builder, and network traffic capture | Pre-release; not yet published |
+| `src/WebDriverBiDi.Automation` | High-level automation API that waits automatically for elements to be ready for interaction | Pre-release; not yet published |
+
+### Demo
+
+| Project | Purpose |
+| --- | --- |
+| `src/WebDriverBiDi.Demo` | Console "playground" for trying out the library |
+| `src/WebDriverBiDi.DemoWebSite` | In-memory web server hosting content for the demo to run against |
+
+### Tests and tooling
+
+| Project | Purpose |
+| --- | --- |
+| `test/WebDriverBiDi.Tests` | Unit tests for the main library |
+| `test/WebDriverBiDi.Analyzers.Tests` | Tests for the analyzers and code fix providers |
+| `test/WebDriverBiDi.Logging.Tests` | Tests for the logging library |
+| `test/WebDriverBiDi.Browsers.Tests` | Unit tests for the browser management library |
+| `test/WebDriverBiDi.Extensions.Tests` | Unit tests for the extensions library |
+| `test/WebDriverBiDi.Automation.Tests` | Unit tests for the automation library |
+| `test/WebDriverBiDi.Integration.Tests` | Integration tests that run the main library against real browsers |
+| `test/WebDriverBiDi.Compatibility.Tests` | Checks that the main library works when consumed from each build configuration |
+| `test/WebDriverBiDi.AotTestApplication` | Smoke test for JSON serialization under ahead-of-time (AOT) compilation |
+| `test/WebDriverBiDi.NetStandardTestApplication` | Console app pinned to the netstandard2.0 build; driven by the compatibility tests |
+| `test/WebDriverBiDi.NamedPipeTestApplication` | Named-pipe test server used by the pipe connection unit tests |
+| `test/WebDriverBiDi.TestUtilities` | Helpers shared between test projects (not itself a test project) |
+| `test/WebDriverBiDi.Benchmarks` | Performance benchmarks; see its [README](test/WebDriverBiDi.Benchmarks/README.md) |
+| `docs/code/WebDriverBiDi.DocSnippets.csproj` | The compilable code samples used in the documentation articles |
+
+### Project notes
+
+* **Demo.** Changes to the demo project are not canonical, and its code should not be treated as a model
+of good practice.
+* **DemoWebSite.** The demo starts this server itself. It can also be used programmatically or run as a
+standalone console application, but it is designed for demonstration only and must not be used in production.
+* **Compatibility tests.** Each test builds a separate console application whose reference is pinned to the
+build configuration under test, then runs it out of process against a scripted WebSocket server. No browser is
+involved, which is what separates these from the integration tests.
+* **TestUtilities.** Currently holds the plumbing for launching a console application as a child process and
+collecting its exit code and console output, which the compatibility and integration tests both rely on.
+* **DocSnippets.** Building this project verifies that every documented sample compiles against the current library.
 
 [Visual Studio Code](https://code.visualstudio.com/) is the preferred IDE for development of this library.
 It can be used across multiple operating systems, and there should be nothing platform-specific in the

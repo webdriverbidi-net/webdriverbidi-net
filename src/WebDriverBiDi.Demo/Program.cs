@@ -1,6 +1,6 @@
 ﻿using WebDriverBiDi;
 using WebDriverBiDi.Browser;
-using WebDriverBiDi.Client.Launchers;
+using WebDriverBiDi.Browsers;
 using WebDriverBiDi.Demo;
 using WebDriverBiDi.DemoWebSite;
 using WebDriverBiDi.Session;

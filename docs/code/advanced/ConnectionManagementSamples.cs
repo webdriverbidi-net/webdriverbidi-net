@@ -10,7 +10,7 @@ namespace WebDriverBiDi.Docs.Code.Advanced;
 
 using System.Net.WebSockets;
 using WebDriverBiDi;
-using WebDriverBiDi.Client.Launchers;
+using WebDriverBiDi.Browsers;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Session;
 
