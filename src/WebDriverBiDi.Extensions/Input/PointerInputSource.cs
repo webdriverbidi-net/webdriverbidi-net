@@ -87,7 +87,7 @@ public class PointerInputSource : InputSource
     /// <param name="duration">Optional duration for the pointer move. Defaults to <see langword="null"/>, which implies a zero duration.</param>
     /// <param name="additionalProperties">Optional additional properties for the pointer move action. Defaults to <see langword="null"/>.</param>
     /// <returns>The <see cref="InputAction"/> representing the action.</returns>
-    public InputAction CreatePointerMove(long x, long y, Origin? origin = null, TimeSpan? duration = null, PointerActionProperties? additionalProperties = null)
+    public InputAction CreatePointerMove(double x, double y, Origin? origin = null, TimeSpan? duration = null, PointerActionProperties? additionalProperties = null)
     {
         PointerMoveAction action = new()
         {

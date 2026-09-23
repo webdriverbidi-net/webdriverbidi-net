@@ -23,11 +23,7 @@ public static class InputModuleExtensions
     /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task ClickElementAsync(this InputModule module, string browsingContextId, SharedReference elementReference, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        InputBuilder inputBuilder = new();
-        inputBuilder.AddClickOnElementAction(elementReference);
-        PerformActionsCommandParameters parameters = new(browsingContextId);
-        parameters.Actions.AddRange(inputBuilder.Build());
-        await module.PerformActionsAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
+        await module.PerformActionsAsync(browsingContextId, new InputBuilder().AddClickOnElementAction(elementReference), timeoutOverride, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -42,10 +38,35 @@ public static class InputModuleExtensions
     /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task SendKeysAsync(this InputModule module, string browsingContextId, string keysToSend, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        InputBuilder inputBuilder = new();
-        inputBuilder.AddSendKeysToActiveElementAction(keysToSend);
+        await module.PerformActionsAsync(browsingContextId, new InputBuilder().AddSendKeysToActiveElementAction(keysToSend), timeoutOverride, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Performs the actions an <see cref="InputBuilder"/> has built.
+    /// </summary>
+    /// <param name="module">The <see cref="InputModule"/> to extend.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
+    /// <param name="builder">The builder.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task PerformActionsAsync(this InputModule module, string browsingContextId, InputBuilder builder, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    {
         PerformActionsCommandParameters parameters = new(browsingContextId);
-        parameters.Actions.AddRange(inputBuilder.Build());
+        parameters.Actions.AddRange(builder.Build());
         await module.PerformActionsAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Releases every key and button still pressed by earlier actions, and resets the input state.
+    /// </summary>
+    /// <param name="module">The <see cref="InputModule"/> to extend.</param>
+    /// <param name="browsingContextId">The ID of the browsing context.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A token that cancels waiting for the command's response.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task ReleaseActionsAsync(this InputModule module, string browsingContextId, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    {
+        await module.ReleaseActionsAsync(new ReleaseActionsCommandParameters(browsingContextId), timeoutOverride, cancellationToken).ConfigureAwait(false);
     }
 }

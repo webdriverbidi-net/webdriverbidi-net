@@ -5,36 +5,114 @@
 
 namespace WebDriverBiDi.Input;
 
+using System.Globalization;
 using WebDriverBiDi.Script;
 
 /// <summary>
-/// Provides extension methods for the <see cref="InputBuilder"/> class for adding input sequences for execution in the browser.
+/// Provides extension methods adding common sequences of actions to an <see cref="InputBuilder"/>.
 /// </summary>
 public static class InputBuilderExtensions
 {
     /// <summary>
-    /// Adds an action to click on a specified element.
+    /// Adds a click at the center of an element, with the default pointer.
     /// </summary>
-    /// <param name="builder">The <see cref="InputBuilder"/> used to create proper payloads for action types.</param>
-    /// <param name="elementReference">The <see cref="SharedReference"/> representing the element to click on.</param>
-    public static void AddClickOnElementAction(this InputBuilder builder, SharedReference elementReference)
+    /// <param name="builder">The builder.</param>
+    /// <param name="elementReference">The element.</param>
+    /// <param name="button">The button to click.</param>
+    /// <returns>The builder, for chaining.</returns>
+    public static InputBuilder AddClickOnElementAction(this InputBuilder builder, SharedReference elementReference, PointerButton button = PointerButton.Left)
     {
-        builder.AddAction(builder.DefaultPointerInputSource.CreatePointerMove(0, 0, Origin.Element(new ElementOrigin(elementReference))))
-            .AddAction(builder.DefaultPointerInputSource.CreatePointerDown(PointerButton.Left))
-            .AddAction(builder.DefaultPointerInputSource.CreatePointerUp());
+        PointerInputSource pointer = builder.DefaultPointerInputSource;
+        return builder.AddAction(pointer.CreatePointerMove(0, 0, Origin.Element(new ElementOrigin(elementReference))))
+            .AddAction(pointer.CreatePointerDown(button))
+            .AddAction(pointer.CreatePointerUp(button));
     }
 
     /// <summary>
-    /// Adds an action to send a series of keystrokes to the actively focused element.
+    /// Adds a double click at the center of an element, with the default pointer.
     /// </summary>
-    /// <param name="builder">The <see cref="InputBuilder"/> used to create proper payloads for action types.</param>
-    /// <param name="keysToSend">The keys to send to the actively focused element.</param>
-    public static void AddSendKeysToActiveElementAction(this InputBuilder builder, string keysToSend)
+    /// <param name="builder">The builder.</param>
+    /// <param name="elementReference">The element.</param>
+    /// <returns>The builder, for chaining.</returns>
+    public static InputBuilder AddDoubleClickOnElementAction(this InputBuilder builder, SharedReference elementReference)
     {
-        foreach (char character in keysToSend)
+        PointerInputSource pointer = builder.DefaultPointerInputSource;
+        return builder.AddClickOnElementAction(elementReference)
+            .AddAction(pointer.CreatePointerDown())
+            .AddAction(pointer.CreatePointerUp());
+    }
+
+    /// <summary>
+    /// Adds typing text into the element that has focus, with the default keyboard, as a press and a
+    /// release of each character. A character made of several code points, such as an emoji or a
+    /// letter with a combining accent, is typed as a single key.
+    /// </summary>
+    /// <param name="builder">The builder.</param>
+    /// <param name="keysToSend">The text, which may include special keys from <see cref="Keys"/>.</param>
+    /// <returns>The builder, for chaining.</returns>
+    public static InputBuilder AddSendKeysToActiveElementAction(this InputBuilder builder, string keysToSend)
+    {
+        KeyInputSource keyboard = builder.DefaultKeyInputSource;
+        TextElementEnumerator characters = StringInfo.GetTextElementEnumerator(keysToSend);
+        while (characters.MoveNext())
         {
-            builder.AddAction(builder.DefaultKeyInputSource.CreateKeyDown(character))
-                .AddAction(builder.DefaultKeyInputSource.CreateKeyUp(character));
+            string key = characters.GetTextElement();
+            builder.AddAction(keyboard.CreateKeyDown(key)).AddAction(keyboard.CreateKeyUp(key));
         }
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Adds pressing keys together, with the default keyboard: each is pressed in order, then all are released
+    /// in reverse order, as for a shortcut such as <c>AddKeyChordAction(Keys.Control, "a")</c>.
+    /// </summary>
+    /// <param name="builder">The builder.</param>
+    /// <param name="keys">The keys, each a single character or a special key from <see cref="Keys"/>.</param>
+    /// <returns>The builder, for chaining.</returns>
+    public static InputBuilder AddKeyChordAction(this InputBuilder builder, params string[] keys)
+    {
+        KeyInputSource keyboard = builder.DefaultKeyInputSource;
+        foreach (string key in keys)
+        {
+            builder.AddAction(keyboard.CreateKeyDown(key));
+        }
+
+        for (int index = keys.Length - 1; index >= 0; index--)
+        {
+            builder.AddAction(keyboard.CreateKeyUp(keys[index]));
+        }
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Adds dragging one element onto another, with the default pointer.
+    /// </summary>
+    /// <param name="builder">The builder.</param>
+    /// <param name="sourceElement">The element to drag.</param>
+    /// <param name="targetElement">The element on which to drop it.</param>
+    /// <returns>The builder, for chaining.</returns>
+    public static InputBuilder AddDragAndDropAction(this InputBuilder builder, SharedReference sourceElement, SharedReference targetElement)
+    {
+        PointerInputSource pointer = builder.DefaultPointerInputSource;
+        return builder.AddAction(pointer.CreatePointerMove(0, 0, Origin.Element(new ElementOrigin(sourceElement))))
+            .AddAction(pointer.CreatePointerDown())
+            .AddAction(pointer.CreatePointerMove(0, 0, Origin.Element(new ElementOrigin(targetElement))))
+            .AddAction(pointer.CreatePointerUp());
+    }
+
+    /// <summary>
+    /// Adds scrolling with the default wheel, over the center of an element or over the top left of the viewport.
+    /// </summary>
+    /// <param name="builder">The builder.</param>
+    /// <param name="deltaX">The distance to scroll horizontally, in CSS pixels.</param>
+    /// <param name="deltaY">The distance to scroll vertically, in CSS pixels.</param>
+    /// <param name="elementReference">The element over which to scroll, or <see langword="null"/> for the viewport.</param>
+    /// <returns>The builder, for chaining.</returns>
+    public static InputBuilder AddScrollAction(this InputBuilder builder, long deltaX, long deltaY, SharedReference? elementReference = null)
+    {
+        Origin? origin = elementReference is null ? null : Origin.Element(new ElementOrigin(elementReference));
+        return builder.AddAction(builder.DefaultWheelInputSource.CreateScroll(0, 0, deltaX, deltaY, origin));
     }
 }

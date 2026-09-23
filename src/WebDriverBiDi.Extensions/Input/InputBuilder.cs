@@ -14,56 +14,42 @@ public class InputBuilder
     private readonly Dictionary<string, SourceActions> sources = [];
     private KeyInputSource? defaultKeyInputSource;
     private PointerInputSource? defaultPointerInputSource;
+    private WheelInputSource? defaultWheelInputSource;
 
     /// <summary>
-    /// Gets the default key input source for this input builder.
+    /// Gets the default key input source, which is created the first time it is used.
     /// </summary>
-    public KeyInputSource DefaultKeyInputSource
-    {
-        get
-        {
-            this.defaultKeyInputSource ??= this.CreateKeyInputSource();
-            return this.defaultKeyInputSource;
-        }
-    }
+    public KeyInputSource DefaultKeyInputSource => this.defaultKeyInputSource ??= this.CreateKeyInputSource();
 
     /// <summary>
-    /// Gets the default pointer input source for this input builder.
+    /// Gets the default pointer input source, a mouse, which is created the first time it is used.
+    /// Pointer sources created with <see cref="CreatePointerInputSource"/> never become the default.
     /// </summary>
-    public PointerInputSource DefaultPointerInputSource
-    {
-        get
-        {
-            this.defaultPointerInputSource ??= this.CreatePointerInputSource(PointerType.Mouse);
-            return this.defaultPointerInputSource;
-        }
-    }
+    public PointerInputSource DefaultPointerInputSource => this.defaultPointerInputSource ??= this.CreatePointerInputSource(PointerType.Mouse);
 
     /// <summary>
-    /// Creates a key-based input source, like a keyboard, primarily for entering text.
+    /// Gets the default wheel input source, which is created the first time it is used.
     /// </summary>
-    /// <returns>The key-based input source.</returns>
+    public WheelInputSource DefaultWheelInputSource => this.defaultWheelInputSource ??= this.CreateWheelInputSource();
+
+    /// <summary>
+    /// Creates a key input source.
+    /// </summary>
+    /// <returns>The input source.</returns>
     public KeyInputSource CreateKeyInputSource()
     {
-        // When created, the input source action list is pre-populated with the number of
-        // pause actions equal to the number of the current longest action sequence. This
-        // ensures that the action sequences of all input sources are synchronized.
         KeySourceActions source = new();
-        source.Actions.AddRange(this.CreatePauseActions());
-        this.sources[source.Id] = source;
+        this.AddSource(source);
         return new KeyInputSource(source.Id);
     }
 
     /// <summary>
-    /// Creates a pointer input source, like a mouse, pen, or stylus. Also used for touch actions.
+    /// Creates a pointer input source.
     /// </summary>
-    /// <param name="pointerType">The type of pointer input source to create.</param>
-    /// <returns>The pointer input source.</returns>
+    /// <param name="pointerType">The kind of pointer: a mouse, a pen, or a touch.</param>
+    /// <returns>The input source.</returns>
     public PointerInputSource CreatePointerInputSource(PointerType pointerType)
     {
-        // When created, the input source action list is pre-populated with the number of
-        // pause actions equal to the number of the current longest action sequence. This
-        // ensures that the action sequences of all input sources are synchronized.
         PointerSourceActions source = new()
         {
             Parameters = new PointerParameters()
@@ -71,151 +57,138 @@ public class InputBuilder
                 PointerType = pointerType,
             },
         };
-        source.Actions.AddRange(this.CreatePauseActions());
-        this.sources[source.Id] = source;
-        PointerInputSource inputSource = new(source.Id, pointerType);
-        this.defaultPointerInputSource ??= inputSource;
-        return inputSource;
+        this.AddSource(source);
+        return new PointerInputSource(source.Id, pointerType);
     }
 
     /// <summary>
-    /// Creates a wheel input source, like a mouse wheel, primarily for
-    /// providing discrete consecutive input values.
+    /// Creates a wheel input source.
     /// </summary>
-    /// <returns>The wheel input source.</returns>
+    /// <returns>The input source.</returns>
     public WheelInputSource CreateWheelInputSource()
     {
-        // When created, the input source action list is pre-populated with the number of
-        // pause actions equal to the number of the current longest action sequence. This
-        // ensures that the action sequences of all input sources are synchronized.
         WheelSourceActions source = new();
-        source.Actions.AddRange(this.CreatePauseActions());
-        this.sources[source.Id] = source;
+        this.AddSource(source);
         return new WheelInputSource(source.Id);
     }
 
     /// <summary>
-    /// Clears the builder of all current input sources and associated actions.
+    /// Creates an input source that performs only pauses, for timing the other sources' actions.
+    /// </summary>
+    /// <returns>The input source.</returns>
+    public NoneInputSource CreateNoneInputSource()
+    {
+        NoneSourceActions source = new();
+        this.AddSource(source);
+        return new NoneInputSource(source.Id);
+    }
+
+    /// <summary>
+    /// Removes every input source and action, including the default input sources.
     /// </summary>
     public void Clear()
     {
         this.sources.Clear();
+        this.defaultKeyInputSource = null;
+        this.defaultPointerInputSource = null;
+        this.defaultWheelInputSource = null;
     }
 
     /// <summary>
-    /// Adds an action to the built set of actions. Adding an action will
-    /// add a "tick" to the set of all actions to be executed.
+    /// Adds an action as a tick of its own, in which every other input source pauses.
     /// </summary>
-    /// <param name="actionToAdd">The action to add to the set of actions.</param>
-    /// <returns>A self reference.</returns>
+    /// <param name="actionToAdd">The action.</param>
+    /// <returns>This builder, for chaining.</returns>
+    /// <exception cref="ArgumentException">Thrown when the action's input source was not created by this builder.</exception>
     public InputBuilder AddAction(InputAction actionToAdd)
     {
-        this.AddActions(actionToAdd);
-        return this;
+        return this.AddActions(actionToAdd);
     }
 
     /// <summary>
-    /// Adds an action to the built set of actions. Adding an action will
-    /// add a "tick" to the set of all actions to be executed. Only one action
-    /// for each input source may be added for a single tick.
+    /// Adds actions performed together, as one tick, in which every input source without an action pauses.
     /// </summary>
-    /// <param name="actionsToAdd">The set actions to add to the existing set of actions.</param>
-    /// <returns>A self reference.</returns>
+    /// <param name="actionsToAdd">The actions, at most one for each input source.</param>
+    /// <returns>This builder, for chaining.</returns>
+    /// <exception cref="ArgumentException">Thrown when an action's input source was not created by this builder, or two actions share one.</exception>
     public InputBuilder AddActions(params InputAction[] actionsToAdd)
     {
-        this.ProcessTick(actionsToAdd);
+        HashSet<string> usedSources = [];
+        foreach (InputAction inputAction in actionsToAdd)
+        {
+            if (!this.sources.ContainsKey(inputAction.SourceId))
+            {
+                throw new ArgumentException($"Builder does not contain an input source for ID {inputAction.SourceId}", nameof(actionsToAdd));
+            }
+
+            if (!usedSources.Add(inputAction.SourceId))
+            {
+                throw new ArgumentException("You can only add one action per input source for a single tick.", nameof(actionsToAdd));
+            }
+        }
+
+        foreach (InputAction inputAction in actionsToAdd)
+        {
+            Append(this.sources[inputAction.SourceId], inputAction);
+        }
+
+        foreach (SourceActions idleSource in this.sources.Values.Where(source => !usedSources.Contains(source.Id)))
+        {
+            Append(idleSource, null);
+        }
+
         return this;
     }
 
     /// <summary>
-    /// Gets the added actions as a list, suitable for adding to the payload of the
-    /// input.PerformActions command of the WebDriver BiDi protocol.
+    /// Builds the action sequences of every input source, for <see cref="PerformActionsCommandParameters.Actions"/>.
     /// </summary>
-    /// <returns>A list of actions.</returns>
+    /// <returns>The action sequences.</returns>
     public List<SourceActions> Build()
     {
-        return this.sources.Values.ToList();
+        return [.. this.sources.Values];
     }
 
-    private void ProcessTick(params InputAction[] inputActionsToAdd)
+    // Appends the action, or a pause when there is none.
+    private static void Append(SourceActions source, InputAction? inputAction)
     {
-        List<string> unusedDevices = this.sources.Keys.ToList();
-        List<string> usedDevices = [];
-        foreach (InputAction inputAction in inputActionsToAdd)
+        switch (source)
         {
-            if (!this.sources.TryGetValue(inputAction.SourceId, out SourceActions? source))
-            {
-                throw new ArgumentException($"Builder does not contain an input source for ID {inputAction.SourceId}");
-            }
-
-            if (usedDevices.Contains(inputAction.SourceId))
-            {
-                throw new ArgumentException("You can only add one action per input source for a single tick.");
-            }
-
-            usedDevices.Add(inputAction.SourceId);
-            unusedDevices.Remove(inputAction.SourceId);
-
-            if (source is KeySourceActions keySource)
-            {
-                keySource.Actions.Add(inputAction.AsActionType<IKeySourceAction>());
-            }
-            else if (source is PointerSourceActions pointerSource)
-            {
-                pointerSource.Actions.Add(inputAction.AsActionType<IPointerSourceAction>());
-            }
-            else if (source is WheelSourceActions wheelSource)
-            {
-                wheelSource.Actions.Add(inputAction.AsActionType<IWheelSourceAction>());
-            }
-        }
-
-        foreach (string unusedDevice in unusedDevices)
-        {
-            SourceActions source = this.sources[unusedDevice];
-            if (source is KeySourceActions keySource)
-            {
-                keySource.Actions.Add(new PauseAction());
-            }
-            else if (source is PointerSourceActions pointerSource)
-            {
-                pointerSource.Actions.Add(new PauseAction());
-            }
-            else if (source is WheelSourceActions wheelSource)
-            {
-                wheelSource.Actions.Add(new PauseAction());
-            }
+            case KeySourceActions keySource:
+                keySource.Actions.Add(inputAction?.AsActionType<IKeySourceAction>() ?? new PauseAction());
+                break;
+            case PointerSourceActions pointerSource:
+                pointerSource.Actions.Add(inputAction?.AsActionType<IPointerSourceAction>() ?? new PauseAction());
+                break;
+            case WheelSourceActions wheelSource:
+                wheelSource.Actions.Add(inputAction?.AsActionType<IWheelSourceAction>() ?? new PauseAction());
+                break;
+            default:
+                ((NoneSourceActions)source).Actions.Add(inputAction?.AsActionType<INoneSourceAction>() ?? new PauseAction());
+                break;
         }
     }
 
-    private List<PauseAction> CreatePauseActions()
+    private static int CountActions(SourceActions source)
     {
-        List<PauseAction> initialPauseActions = [];
-        int maxActionCount = 0;
-        foreach (SourceActions source in this.sources.Values)
+        return source switch
         {
-            if (source is KeySourceActions keySource)
-            {
-                maxActionCount = Math.Max(maxActionCount, keySource.Actions.Count);
-            }
-            else if (source is PointerSourceActions pointerSource)
-            {
-                maxActionCount = Math.Max(maxActionCount, pointerSource.Actions.Count);
-            }
-            else if (source is WheelSourceActions wheelSource)
-            {
-                maxActionCount = Math.Max(maxActionCount, wheelSource.Actions.Count);
-            }
+            KeySourceActions keySource => keySource.Actions.Count,
+            PointerSourceActions pointerSource => pointerSource.Actions.Count,
+            WheelSourceActions wheelSource => wheelSource.Actions.Count,
+            _ => ((NoneSourceActions)source).Actions.Count,
+        };
+    }
+
+    // A new source pauses through every tick already added, so that its first action lines up with the next tick.
+    private void AddSource(SourceActions source)
+    {
+        int tickCount = this.sources.Values.Select(CountActions).DefaultIfEmpty(0).Max();
+        for (int tick = 0; tick < tickCount; tick++)
+        {
+            Append(source, null);
         }
 
-        if (maxActionCount > 0)
-        {
-            for (int i = 0; i < maxActionCount; i++)
-            {
-                initialPauseActions.Add(new PauseAction());
-            }
-        }
-
-        return initialPauseActions;
+        this.sources[source.Id] = source;
     }
 }

@@ -45,16 +45,4 @@ public class PointerActionProperties
     /// of the pointer device. If omitted, defaults to 0.0.
     /// </summary>
     public double? AzimuthAngle { get; set; }
-
-    /// <summary>
-    /// Gets or sets the angle, in degrees, of the pointer device from left to right from the vertical.
-    /// Must be between -90 and 90; if omitted, defaults to 0.
-    /// </summary>
-    public long? TiltX { get; set; }
-
-    /// <summary>
-    /// Gets or sets the angle, in degrees, of the pointer device away from the user from the vertical.
-    /// Must be between -90 and 90; if omitted, defaults to 0.
-    /// </summary>
-    public long? TiltY { get; set; }
 }

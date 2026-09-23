@@ -25,24 +25,22 @@ public class KeyInputSource : InputSource
     public override InputSourceKind DeviceKind => InputSourceKind.Key;
 
     /// <summary>
-    /// Creates a key-down action for simulating a press of a key.
+    /// Creates an action that presses a key.
     /// </summary>
-    /// <param name="codePoint">The unicode character to be sent.</param>
-    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
-    public InputAction CreateKeyDown(char codePoint)
+    /// <param name="key">The key: a single character or grapheme, such as "a" or "é", or a special key from <see cref="Keys"/>.</param>
+    /// <returns>The action.</returns>
+    public InputAction CreateKeyDown(string key)
     {
-        KeyDownAction action = new(codePoint.ToString());
-        return new InputAction(this.SourceId, action);
+        return new InputAction(this.SourceId, new KeyDownAction(key));
     }
 
     /// <summary>
-    /// Creates a key-up action for simulating a release of a key.
+    /// Creates an action that releases a key.
     /// </summary>
-    /// <param name="codePoint">The unicode character to be sent.</param>
-    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
-    public InputAction CreateKeyUp(char codePoint)
+    /// <param name="key">The key: a single character or grapheme, such as "a" or "é", or a special key from <see cref="Keys"/>.</param>
+    /// <returns>The action.</returns>
+    public InputAction CreateKeyUp(string key)
     {
-        KeyUpAction action = new(codePoint.ToString());
-        return new InputAction(this.SourceId, action);
+        return new InputAction(this.SourceId, new KeyUpAction(key));
     }
 }

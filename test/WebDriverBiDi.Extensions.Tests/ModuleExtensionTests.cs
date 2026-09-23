@@ -30,6 +30,9 @@ public class ModuleExtensionTests
         { "script.removePreloadScript", (d, t, c) => d.Script.RemovePreloadScriptAsync("preload-script-1", t, c) },
         { "script.callFunction", (d, t, c) => d.Script.CallFunctionAsync("context-1", "() => 1", timeoutOverride: t, cancellationToken: c) },
         { "input.performActions", (d, t, c) => d.Input.ClickElementAsync("context-1", Element, t, c) },
+        { "input.performActions", (d, t, c) => d.Input.SendKeysAsync("context-1", "a", t, c) },
+        { "input.performActions", (d, t, c) => d.Input.PerformActionsAsync("context-1", new InputBuilder().AddScrollAction(0, 10), t, c) },
+        { "input.releaseActions", (d, t, c) => d.Input.ReleaseActionsAsync("context-1", t, c) },
     };
 
     [Theory]

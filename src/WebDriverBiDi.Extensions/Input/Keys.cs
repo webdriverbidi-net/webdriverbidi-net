@@ -13,324 +13,394 @@ public static class Keys
     /// <summary>
     /// Represents the NUL keystroke.
     /// </summary>
-    public static readonly char Null = Convert.ToChar(0xE000);
+    public const string Null = "\uE000";
 
     /// <summary>
     /// Represents the Cancel keystroke.
     /// </summary>
-    public static readonly char Cancel = Convert.ToChar(0xE001);
+    public const string Cancel = "\uE001";
 
     /// <summary>
     /// Represents the Help keystroke.
     /// </summary>
-    public static readonly char Help = Convert.ToChar(0xE002);
+    public const string Help = "\uE002";
 
     /// <summary>
     /// Represents the Backspace key.
     /// </summary>
-    public static readonly char Backspace = Convert.ToChar(0xE003);
+    public const string Backspace = "\uE003";
 
     /// <summary>
     /// Represents the Tab key.
     /// </summary>
-    public static readonly char Tab = Convert.ToChar(0xE004);
+    public const string Tab = "\uE004";
 
     /// <summary>
     /// Represents the Clear keystroke.
     /// </summary>
-    public static readonly char Clear = Convert.ToChar(0xE005);
+    public const string Clear = "\uE005";
 
     /// <summary>
     /// Represents the Return key.
     /// </summary>
-    public static readonly char Return = Convert.ToChar(0xE006);
+    public const string Return = "\uE006";
 
     /// <summary>
     /// Represents the Enter key.
     /// </summary>
-    public static readonly char Enter = Convert.ToChar(0xE007);
+    public const string Enter = "\uE007";
 
     /// <summary>
     /// Represents the Shift key.
     /// </summary>
-    public static readonly char Shift = Convert.ToChar(0xE008);
+    public const string Shift = "\uE008";
 
     /// <summary>
     /// Represents the Shift key.
     /// </summary>
-    public static readonly char LeftShift = Convert.ToChar(0xE008); // alias
+    public const string LeftShift = "\uE008"; // alias
 
     /// <summary>
     /// Represents the Control key.
     /// </summary>
-    public static readonly char Control = Convert.ToChar(0xE009);
+    public const string Control = "\uE009";
 
     /// <summary>
     /// Represents the Control key.
     /// </summary>
-    public static readonly char LeftControl = Convert.ToChar(0xE009); // alias
+    public const string LeftControl = "\uE009"; // alias
 
     /// <summary>
     /// Represents the Alt key.
     /// </summary>
-    public static readonly char Alt = Convert.ToChar(0xE00A);
+    public const string Alt = "\uE00A";
 
     /// <summary>
     /// Represents the Alt key.
     /// </summary>
-    public static readonly char LeftAlt = Convert.ToChar(0xE00A); // alias
+    public const string LeftAlt = "\uE00A"; // alias
 
     /// <summary>
     /// Represents the Pause key.
     /// </summary>
-    public static readonly char Pause = Convert.ToChar(0xE00B);
+    public const string Pause = "\uE00B";
 
     /// <summary>
     /// Represents the Escape key.
     /// </summary>
-    public static readonly char Escape = Convert.ToChar(0xE00C);
+    public const string Escape = "\uE00C";
 
     /// <summary>
     /// Represents the space bar key.
     /// </summary>
-    public static readonly char Space = Convert.ToChar(0xE00D);
+    public const string Space = "\uE00D";
 
     /// <summary>
     /// Represents the Page Up key.
     /// </summary>
-    public static readonly char PageUp = Convert.ToChar(0xE00E);
+    public const string PageUp = "\uE00E";
 
     /// <summary>
     /// Represents the Page Down key.
     /// </summary>
-    public static readonly char PageDown = Convert.ToChar(0xE00F);
+    public const string PageDown = "\uE00F";
 
     /// <summary>
     /// Represents the End key.
     /// </summary>
-    public static readonly char End = Convert.ToChar(0xE010);
+    public const string End = "\uE010";
 
     /// <summary>
     /// Represents the Home key.
     /// </summary>
-    public static readonly char Home = Convert.ToChar(0xE011);
+    public const string Home = "\uE011";
 
     /// <summary>
     /// Represents the left arrow key.
     /// </summary>
-    public static readonly char Left = Convert.ToChar(0xE012);
+    public const string Left = "\uE012";
 
     /// <summary>
     /// Represents the left arrow key.
     /// </summary>
-    public static readonly char ArrowLeft = Convert.ToChar(0xE012); // alias
+    public const string ArrowLeft = "\uE012"; // alias
 
     /// <summary>
     /// Represents the up arrow key.
     /// </summary>
-    public static readonly char Up = Convert.ToChar(0xE013);
+    public const string Up = "\uE013";
 
     /// <summary>
     /// Represents the up arrow key.
     /// </summary>
-    public static readonly char ArrowUp = Convert.ToChar(0xE013); // alias
+    public const string ArrowUp = "\uE013"; // alias
 
     /// <summary>
     /// Represents the right arrow key.
     /// </summary>
-    public static readonly char Right = Convert.ToChar(0xE014);
+    public const string Right = "\uE014";
 
     /// <summary>
     /// Represents the right arrow key.
     /// </summary>
-    public static readonly char ArrowRight = Convert.ToChar(0xE014); // alias
+    public const string ArrowRight = "\uE014"; // alias
 
     /// <summary>
     /// Represents the down arrow key.
     /// </summary>
-    public static readonly char Down = Convert.ToChar(0xE015);
+    public const string Down = "\uE015";
 
     /// <summary>
     /// Represents the down arrow key.
     /// </summary>
-    public static readonly char ArrowDown = Convert.ToChar(0xE015); // alias
+    public const string ArrowDown = "\uE015"; // alias
 
     /// <summary>
     /// Represents the Insert key.
     /// </summary>
-    public static readonly char Insert = Convert.ToChar(0xE016);
+    public const string Insert = "\uE016";
 
     /// <summary>
     /// Represents the Delete key.
     /// </summary>
-    public static readonly char Delete = Convert.ToChar(0xE017);
+    public const string Delete = "\uE017";
 
     /// <summary>
     /// Represents the semi-colon key.
     /// </summary>
-    public static readonly char Semicolon = Convert.ToChar(0xE018);
+    public const string Semicolon = "\uE018";
 
     /// <summary>
     /// Represents the equal sign key.
     /// </summary>
-    public static readonly char Equal = Convert.ToChar(0xE019);
+    public const string Equal = "\uE019";
 
     // Number pad keys
 
     /// <summary>
     /// Represents the number pad 0 key.
     /// </summary>
-    public static readonly char NumberPad0 = Convert.ToChar(0xE01A);
+    public const string NumberPad0 = "\uE01A";
 
     /// <summary>
     /// Represents the number pad 1 key.
     /// </summary>
-    public static readonly char NumberPad1 = Convert.ToChar(0xE01B);
+    public const string NumberPad1 = "\uE01B";
 
     /// <summary>
     /// Represents the number pad 2 key.
     /// </summary>
-    public static readonly char NumberPad2 = Convert.ToChar(0xE01C);
+    public const string NumberPad2 = "\uE01C";
 
     /// <summary>
     /// Represents the number pad 3 key.
     /// </summary>
-    public static readonly char NumberPad3 = Convert.ToChar(0xE01D);
+    public const string NumberPad3 = "\uE01D";
 
     /// <summary>
     /// Represents the number pad 4 key.
     /// </summary>
-    public static readonly char NumberPad4 = Convert.ToChar(0xE01E);
+    public const string NumberPad4 = "\uE01E";
 
     /// <summary>
     /// Represents the number pad 5 key.
     /// </summary>
-    public static readonly char NumberPad5 = Convert.ToChar(0xE01F);
+    public const string NumberPad5 = "\uE01F";
 
     /// <summary>
     /// Represents the number pad 6 key.
     /// </summary>
-    public static readonly char NumberPad6 = Convert.ToChar(0xE020);
+    public const string NumberPad6 = "\uE020";
 
     /// <summary>
     /// Represents the number pad 7 key.
     /// </summary>
-    public static readonly char NumberPad7 = Convert.ToChar(0xE021);
+    public const string NumberPad7 = "\uE021";
 
     /// <summary>
     /// Represents the number pad 8 key.
     /// </summary>
-    public static readonly char NumberPad8 = Convert.ToChar(0xE022);
+    public const string NumberPad8 = "\uE022";
 
     /// <summary>
     /// Represents the number pad 9 key.
     /// </summary>
-    public static readonly char NumberPad9 = Convert.ToChar(0xE023);
+    public const string NumberPad9 = "\uE023";
 
     /// <summary>
     /// Represents the number pad multiplication key.
     /// </summary>
-    public static readonly char Multiply = Convert.ToChar(0xE024);
+    public const string Multiply = "\uE024";
 
     /// <summary>
     /// Represents the number pad addition key.
     /// </summary>
-    public static readonly char Add = Convert.ToChar(0xE025);
+    public const string Add = "\uE025";
 
     /// <summary>
     /// Represents the number pad thousands separator key.
     /// </summary>
-    public static readonly char Separator = Convert.ToChar(0xE026);
+    public const string Separator = "\uE026";
 
     /// <summary>
     /// Represents the number pad subtraction key.
     /// </summary>
-    public static readonly char Subtract = Convert.ToChar(0xE027);
+    public const string Subtract = "\uE027";
 
     /// <summary>
     /// Represents the number pad decimal separator key.
     /// </summary>
-    public static readonly char Decimal = Convert.ToChar(0xE028);
+    public const string Decimal = "\uE028";
 
     /// <summary>
     /// Represents the number pad division key.
     /// </summary>
-    public static readonly char Divide = Convert.ToChar(0xE029);
+    public const string Divide = "\uE029";
 
     // Function keys
 
     /// <summary>
     /// Represents the function key F1.
     /// </summary>
-    public static readonly char F1 = Convert.ToChar(0xE031);
+    public const string F1 = "\uE031";
 
     /// <summary>
     /// Represents the function key F2.
     /// </summary>
-    public static readonly char F2 = Convert.ToChar(0xE032);
+    public const string F2 = "\uE032";
 
     /// <summary>
     /// Represents the function key F3.
     /// </summary>
-    public static readonly char F3 = Convert.ToChar(0xE033);
+    public const string F3 = "\uE033";
 
     /// <summary>
     /// Represents the function key F4.
     /// </summary>
-    public static readonly char F4 = Convert.ToChar(0xE034);
+    public const string F4 = "\uE034";
 
     /// <summary>
     /// Represents the function key F5.
     /// </summary>
-    public static readonly char F5 = Convert.ToChar(0xE035);
+    public const string F5 = "\uE035";
 
     /// <summary>
     /// Represents the function key F6.
     /// </summary>
-    public static readonly char F6 = Convert.ToChar(0xE036);
+    public const string F6 = "\uE036";
 
     /// <summary>
     /// Represents the function key F7.
     /// </summary>
-    public static readonly char F7 = Convert.ToChar(0xE037);
+    public const string F7 = "\uE037";
 
     /// <summary>
     /// Represents the function key F8.
     /// </summary>
-    public static readonly char F8 = Convert.ToChar(0xE038);
+    public const string F8 = "\uE038";
 
     /// <summary>
     /// Represents the function key F9.
     /// </summary>
-    public static readonly char F9 = Convert.ToChar(0xE039);
+    public const string F9 = "\uE039";
 
     /// <summary>
     /// Represents the function key F10.
     /// </summary>
-    public static readonly char F10 = Convert.ToChar(0xE03A);
+    public const string F10 = "\uE03A";
 
     /// <summary>
     /// Represents the function key F11.
     /// </summary>
-    public static readonly char F11 = Convert.ToChar(0xE03B);
+    public const string F11 = "\uE03B";
 
     /// <summary>
     /// Represents the function key F12.
     /// </summary>
-    public static readonly char F12 = Convert.ToChar(0xE03C);
+    public const string F12 = "\uE03C";
 
     /// <summary>
     /// Represents the function key META.
     /// </summary>
-    public static readonly char Meta = Convert.ToChar(0xE03D);
+    public const string Meta = "\uE03D";
 
     /// <summary>
     /// Represents the function key COMMAND.
     /// </summary>
-    public static readonly char Command = Convert.ToChar(0xE03D);
+    public const string Command = "\uE03D";
 
     /// <summary>
     /// Represents the Zenkaku/Hankaku key.
     /// </summary>
-    public static readonly char ZenkakuHankaku = Convert.ToChar(0xE040);
+    public const string ZenkakuHankaku = "\uE040";
+
+    /// <summary>
+    /// Represents the right-hand Shift key.
+    /// </summary>
+    public const string RightShift = "\uE050";
+
+    /// <summary>
+    /// Represents the right-hand Control key.
+    /// </summary>
+    public const string RightControl = "\uE051";
+
+    /// <summary>
+    /// Represents the right-hand Alt key.
+    /// </summary>
+    public const string RightAlt = "\uE052";
+
+    /// <summary>
+    /// Represents the right-hand Meta key.
+    /// </summary>
+    public const string RightMeta = "\uE053";
+
+    /// <summary>
+    /// Represents the Page Up key on the number pad.
+    /// </summary>
+    public const string NumberPadPageUp = "\uE054";
+
+    /// <summary>
+    /// Represents the Page Down key on the number pad.
+    /// </summary>
+    public const string NumberPadPageDown = "\uE055";
+
+    /// <summary>
+    /// Represents the End key on the number pad.
+    /// </summary>
+    public const string NumberPadEnd = "\uE056";
+
+    /// <summary>
+    /// Represents the Home key on the number pad.
+    /// </summary>
+    public const string NumberPadHome = "\uE057";
+
+    /// <summary>
+    /// Represents the left arrow key on the number pad.
+    /// </summary>
+    public const string NumberPadArrowLeft = "\uE058";
+
+    /// <summary>
+    /// Represents the up arrow key on the number pad.
+    /// </summary>
+    public const string NumberPadArrowUp = "\uE059";
+
+    /// <summary>
+    /// Represents the right arrow key on the number pad.
+    /// </summary>
+    public const string NumberPadArrowRight = "\uE05A";
+
+    /// <summary>
+    /// Represents the down arrow key on the number pad.
+    /// </summary>
+    public const string NumberPadArrowDown = "\uE05B";
+
+    /// <summary>
+    /// Represents the Insert key on the number pad.
+    /// </summary>
+    public const string NumberPadInsert = "\uE05C";
+
+    /// <summary>
+    /// Represents the Delete key on the number pad.
+    /// </summary>
+    public const string NumberPadDelete = "\uE05D";
 }
