@@ -24,8 +24,9 @@ internal static class ProcessTermination
     /// </summary>
     /// <param name="process">The process.</param>
     /// <param name="timeout">The maximum time to wait.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns><see langword="true"/> if the process exited within the timeout; otherwise, <see langword="false"/>.</returns>
-    public static async Task<bool> WaitForExitAsync(Process process, TimeSpan timeout)
+    public static async Task<bool> WaitForExitAsync(Process process, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         TaskCompletionSource<bool> exitedSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         void OnExited(object? sender, EventArgs e) => exitedSource.TrySetResult(true);
@@ -39,14 +40,79 @@ internal static class ProcessTermination
                 return true;
             }
 
-            using CancellationTokenSource timeoutSource = new(timeout);
+            using CancellationTokenSource timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(timeout);
             Task timeoutTask = Task.Delay(Timeout.Infinite, timeoutSource.Token);
-            return await Task.WhenAny(exitedSource.Task, timeoutTask).ConfigureAwait(false) == exitedSource.Task;
+            if (await Task.WhenAny(exitedSource.Task, timeoutTask).ConfigureAwait(false) == exitedSource.Task)
+            {
+                return true;
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            return false;
         }
         finally
         {
             process.Exited -= OnExited;
         }
+    }
+
+    /// <summary>
+    /// Stops a process: optionally asks it to exit and waits up to <paramref name="shutdownTimeout"/>, then
+    /// kills it and every process it started. The process is always stopped; cancellation only cuts the
+    /// wait short.
+    /// </summary>
+    /// <param name="process">The process.</param>
+    /// <param name="requestExit">A value indicating whether to ask the process to exit before killing it.</param>
+    /// <param name="shutdownTimeout">The maximum time to wait for the process to exit when asked.</param>
+    /// <param name="cancellationToken">A token that cancels waiting for the process to exit when asked.</param>
+    /// <returns><see langword="true"/> if the wait was cancelled; otherwise, <see langword="false"/>.</returns>
+    public static async Task<bool> StopAsync(Process process, bool requestExit, TimeSpan shutdownTimeout, CancellationToken cancellationToken)
+    {
+        bool isCancelled = false;
+        bool hasExited = process.HasExited;
+        if (!hasExited && requestExit && RequestExit(process))
+        {
+            try
+            {
+                hasExited = await WaitForExitAsync(process, shutdownTimeout, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                isCancelled = true;
+            }
+        }
+
+        if (!hasExited)
+        {
+            KillTree(process);
+            await WaitForExitAsync(process, KilledProcessExitTimeout).ConfigureAwait(false);
+        }
+
+        return isCancelled;
+    }
+
+    /// <summary>
+    /// Waits for the output of an exited process, read through its output events, to be fully delivered.
+    /// A process that started others may leave its output streams open, so the wait is bounded.
+    /// </summary>
+    /// <param name="process">The exited process.</param>
+    /// <returns>A task that completes when the output is delivered or the wait times out.</returns>
+    public static async Task WaitForOutputAsync(Process process)
+    {
+        // Unlike its overloads, the parameterless WaitForExit waits for the output events to be raised.
+        Task outputTask = Task.Run(() =>
+        {
+            try
+            {
+                process.WaitForExit();
+            }
+            catch (InvalidOperationException)
+            {
+                // The process was disposed after the wait timed out.
+            }
+        });
+        await Task.WhenAny(outputTask, Task.Delay(TimeSpan.FromSeconds(1))).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -28,7 +28,7 @@ public class FileExtractorTests
     {
         ProcessRunningExtractor extractor = new();
 
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(
             () => extractor.RunAsync("tar", "--not-a-real-option", TimeSpan.FromSeconds(30)));
 
         Assert.Contains("exited with code", exception.Message);
@@ -37,7 +37,7 @@ public class FileExtractorTests
 
     private sealed class ProcessRunningExtractor : FileExtractor
     {
-        public override Task ExtractFileContentsAsync(string installerPath, string extractDir) => throw new NotSupportedException();
+        public override Task ExtractFileContentsAsync(string installerPath, string extractDir, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
         public Task RunAsync(string fileName, string arguments, TimeSpan timeout) => this.RunProcessAsync(fileName, arguments, timeout);
     }

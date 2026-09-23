@@ -166,8 +166,9 @@ internal abstract class BrowserLocatorSettings
     /// <summary>
     /// Gets the browser download information.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
-    public abstract Task<BrowserDownloadInfo> GetBrowserDownloadInfo();
+    public abstract Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets the driver version that must be used, if it is known without a network request.
@@ -185,6 +186,7 @@ internal abstract class BrowserLocatorSettings
     /// or determines it automatically based on the browser version if <see cref="DriverVersion"/> is null.
     /// </summary>
     /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public abstract Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion);
+    public abstract Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken);
 }

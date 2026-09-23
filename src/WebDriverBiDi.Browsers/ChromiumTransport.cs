@@ -199,14 +199,14 @@ public class ChromiumTransport : Transport
         using Stream? resourceStream = executingAssembly.GetManifestResourceStream("chromium-bidi-mapper");
         if (resourceStream is null)
         {
-            throw new InvalidOperationException("Unable to find the Chromium BiDi mapper script as an embedded resource.");
+            throw new WebDriverBiDiException("Unable to find the Chromium BiDi mapper script as an embedded resource.");
         }
 
         using StreamReader reader = new(resourceStream);
         mapperScript = reader.ReadToEnd();
         if (string.IsNullOrEmpty(mapperScript))
         {
-            throw new InvalidOperationException("Found an embedded resource for the Chromium BiDi mapper script, but the resource was empty.");
+            throw new WebDriverBiDiException("Found an embedded resource for the Chromium BiDi mapper script, but the resource was empty.");
         }
 
         // Load the source code for the BiDi-to-CDP mapper into the target tab.

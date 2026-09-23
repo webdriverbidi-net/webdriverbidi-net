@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browsers;
 /// <summary>
 /// The exception that is thrown when an error occurs attempting to quit the browser.
 /// </summary>
-public class CannotQuitBrowserException : Exception
+public class CannotQuitBrowserException : WebDriverBiDiException
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CannotQuitBrowserException"/> class.

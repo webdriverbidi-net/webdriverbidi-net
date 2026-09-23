@@ -18,8 +18,9 @@ public abstract class FileExtractor
     /// </summary>
     /// <param name="installerPath">The path to the downloaded installer.</param>
     /// <param name="extractDir">The directory where the file should be extracted.</param>
+    /// <param name="cancellationToken">A token that cancels the extraction.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public abstract Task ExtractFileContentsAsync(string installerPath, string extractDir);
+    public abstract Task ExtractFileContentsAsync(string installerPath, string extractDir, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Runs a process with the specified file name and arguments, and waits for it to complete.
@@ -30,10 +31,11 @@ public abstract class FileExtractor
     /// <param name="fileName">The file name of the process to run.</param>
     /// <param name="arguments">The arguments for the process.</param>
     /// <param name="timeout">The timeout for the process. If omitted, a default timeout of 10 minutes is used.</param>
+    /// <param name="cancellationToken">A token that cancels the process, killing it.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the process exits with a non-zero exit code.</exception>
+    /// <exception cref="BrowserDownloadException">Thrown when the process exits with a non-zero exit code.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the process does not complete within the timeout.</exception>
-    protected async Task RunProcessAsync(string fileName, string arguments, TimeSpan? timeout = null)
+    protected async Task RunProcessAsync(string fileName, string arguments, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         TimeSpan processTimeout = timeout ?? TimeSpan.FromMinutes(10);
         using Process process = new();
@@ -54,12 +56,14 @@ public abstract class FileExtractor
 
         // A child process that inherits the output pipes can hold them open after the process exits,
         // so reading the output is bounded by the same timeout.
-        using CancellationTokenSource timeoutSource = new(processTimeout);
+        using CancellationTokenSource timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutSource.CancelAfter(processTimeout);
         Task timeoutTask = Task.Delay(Timeout.Infinite, timeoutSource.Token);
         Task completedTask = Task.WhenAll(exitedSource.Task, stdoutTask, stderrTask);
         if (await Task.WhenAny(completedTask, timeoutTask).ConfigureAwait(false) != completedTask)
         {
             ProcessTermination.KillTree(process);
+            cancellationToken.ThrowIfCancellationRequested();
             throw new WebDriverBiDiTimeoutException($"Process '{fileName} {arguments}' did not complete within {processTimeout.TotalSeconds} seconds.");
         }
 
@@ -68,7 +72,7 @@ public abstract class FileExtractor
         string stderr = await stderrTask.ConfigureAwait(false);
         if (process.ExitCode != 0)
         {
-            throw new InvalidOperationException($"Process '{fileName} {arguments}' exited with code {process.ExitCode}.\nstdout: {stdout}\nstderr: {stderr}");
+            throw new BrowserDownloadException($"Process '{fileName} {arguments}' exited with code {process.ExitCode}.\nstdout: {stdout}\nstderr: {stderr}");
         }
     }
 }

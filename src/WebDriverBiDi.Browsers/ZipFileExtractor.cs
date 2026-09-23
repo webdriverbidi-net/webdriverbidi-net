@@ -21,11 +21,13 @@ public class ZipFileExtractor : FileExtractor
     /// </summary>
     /// <param name="zipFilePath">Path to the zip file.</param>
     /// <param name="extractDirectory">Directory to extract the file to.</param>
+    /// <param name="cancellationToken">A token that cancels the extraction.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public override Task ExtractFileContentsAsync(string zipFilePath, string extractDirectory)
+    public override Task ExtractFileContentsAsync(string zipFilePath, string extractDirectory, CancellationToken cancellationToken = default)
     {
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ZipFile.ExtractToDirectory(zipFilePath, extractDirectory);
         }
         finally

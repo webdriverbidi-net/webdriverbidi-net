@@ -29,6 +29,8 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
 
     private readonly string launcherExecutableName;
 
+    private readonly ProcessOutputTail outputTail = new();
+
     private Process? launcherProcess;
     private Task[] outputReaderTasks = [];
 
@@ -116,9 +118,10 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels starting the launcher.</param>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
-    public override async Task StartAsync()
+    public override async Task StartAsync(CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
         if (this.launcherProcess is not null)
@@ -127,11 +130,11 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         }
 
         // Locate executables using BrowserLocator
-        BrowserExecutableInfo executableInfo = await this.BrowserLocator.LocateExecutablesAsync().ConfigureAwait(false);
+        BrowserExecutableInfo executableInfo = await this.BrowserLocator.LocateExecutablesAsync(cancellationToken).ConfigureAwait(false);
 
         if (executableInfo.DriverPath is null || string.IsNullOrEmpty(executableInfo.DriverPath))
         {
-            throw new InvalidOperationException($"Failed to locate {this.launcherExecutableName} executable.");
+            throw new BrowserLaunchException($"Failed to locate {this.launcherExecutableName} executable.");
         }
 
         this.BrowserExecutableLocation = executableInfo.BrowserPath;
@@ -168,19 +171,30 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
             }
 
             await this.StartLauncherProcessAsync(browserLauncherFullPath).ConfigureAwait(false);
-            if (await this.WaitForInitializationAsync(() => !this.IsRunning).ConfigureAwait(false))
+            bool isReady;
+            try
+            {
+                isReady = await this.WaitForInitializationAsync(() => !this.IsRunning, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                await this.StopLauncherProcessAsync(CancellationToken.None).ConfigureAwait(false);
+                throw;
+            }
+
+            if (isReady)
             {
                 break;
             }
 
-            bool hasExited = !this.IsRunning;
-            string reason = hasExited
-                ? $"exited with code {this.launcherProcess!.ExitCode} before responding on {this.ServiceUrl}"
-                : $"did not respond on {this.ServiceUrl} within {this.InitializationTimeout.TotalSeconds} seconds";
-            await this.StopLauncherProcessAsync().ConfigureAwait(false);
-            if (!isPortAutomatic || !hasExited || attempt == AutomaticPortAttempts)
+            int? exitCode = this.IsRunning ? null : this.launcherProcess!.ExitCode;
+            string reason = exitCode is null
+                ? $"did not respond on {this.ServiceUrl} within {this.InitializationTimeout.TotalSeconds} seconds"
+                : $"exited with code {exitCode} before responding on {this.ServiceUrl}";
+            await this.StopLauncherProcessAsync(CancellationToken.None).ConfigureAwait(false);
+            if (!isPortAutomatic || exitCode is null || attempt == AutomaticPortAttempts)
             {
-                throw new BrowserNotLaunchedException($"Unable to start {this.launcherExecutableName}: it {reason}.");
+                throw new BrowserLaunchException($"Unable to start {this.launcherExecutableName}: it {reason}.", exitCode, this.outputTail.ToList());
             }
 
             await this.LogAsync($"{this.launcherExecutableName} {reason}; retrying on another port.", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
@@ -194,13 +208,14 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// <summary>
     /// Asynchronously stops the browser launcher.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels waiting for the launcher to stop.</param>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
-    public override async Task StopAsync()
+    public override async Task StopAsync(CancellationToken cancellationToken = default)
     {
         if (this.launcherProcess is not null)
         {
             await this.LogAsync("Shutting down browser launcher", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-            await this.StopLauncherProcessAsync().ConfigureAwait(false);
+            await this.StopLauncherProcessAsync(cancellationToken).ConfigureAwait(false);
             await this.LogAsync("Browser launcher exited", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         }
     }
@@ -208,12 +223,13 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// <summary>
     /// Asynchronously forces the browser to terminate, for use when <see cref="BrowserLauncher.QuitBrowserAsync"/> has failed.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels waiting for the killed browser to exit, after which an <see cref="OperationCanceledException"/> is thrown.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public override Task KillBrowserAsync()
+    public override Task KillBrowserAsync(CancellationToken cancellationToken = default)
     {
         // The browser is a descendant of the driver, so stopping the driver, which kills its whole
         // process tree, also kills the browser.
-        return this.StopAsync();
+        return this.StopAsync(cancellationToken);
     }
 
     private async Task OnLauncherProcessStartingAsync(BrowserLauncherProcessStartingEventArgs eventArgs)
@@ -241,6 +257,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         BrowserLauncherProcessStartingEventArgs eventArgs = new(process.StartInfo);
         await this.OnLauncherProcessStartingAsync(eventArgs).ConfigureAwait(false);
         await this.LogAsync("Starting browser launcher", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+        this.outputTail.Clear();
         process.Start();
         this.launcherProcess = process;
         if (this.CaptureBrowserLauncherOutput)
@@ -249,7 +266,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         }
     }
 
-    private async Task StopLauncherProcessAsync()
+    private async Task StopLauncherProcessAsync(CancellationToken cancellationToken)
     {
         Process? process = this.launcherProcess;
         if (process is null)
@@ -258,14 +275,17 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         }
 
         // Killing the whole tree also ends any browser the driver started and did not close.
-        ProcessTermination.KillTree(process);
-        await ProcessTermination.WaitForExitAsync(process, ProcessTermination.KilledProcessExitTimeout).ConfigureAwait(false);
+        bool isCancelled = await ProcessTermination.StopAsync(process, requestExit: false, TimeSpan.Zero, cancellationToken).ConfigureAwait(false);
 
         // The readers finish once the killed processes' ends of the output pipes are closed.
         await Task.WhenAny(Task.WhenAll(this.outputReaderTasks), Task.Delay(ProcessTermination.KilledProcessExitTimeout)).ConfigureAwait(false);
         process.Dispose();
         this.launcherProcess = null;
         this.outputReaderTasks = [];
+        if (isCancelled)
+        {
+            throw new OperationCanceledException(cancellationToken);
+        }
     }
 
     private async Task LogProcessOutputAsync(StreamReader reader)
@@ -275,6 +295,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
             string? line;
             while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) is not null)
             {
+                this.outputTail.Add(line);
                 await this.LogAsync(line, WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
             }
         }

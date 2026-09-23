@@ -33,7 +33,7 @@ public class ChromeLocatorTests
         using TemporaryDirectory cache = new();
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, new BrowserPlatform(operatingSystem, architecture));
 
-        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(Path.Combine(cache.Path, "chrome", "stable", LatestVersion, TestDownloadOptions.ToLocalPath(ChromeExecutablePath(platformIdentifier))), path);
         Assert.True(File.Exists(path));
@@ -48,7 +48,7 @@ public class ChromeLocatorTests
         Serve(server, "Canary", LatestVersion);
         using TemporaryDirectory cache = new();
 
-        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Alpha, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache));
+        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Alpha, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.StartsWith(Path.Combine(cache.Path, "chrome", "canary", LatestVersion), path);
     }
@@ -60,7 +60,7 @@ public class ChromeLocatorTests
         Serve(server, "Stable", LatestVersion, OlderVersion);
         using TemporaryDirectory cache = new();
 
-        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Specific(OlderVersion), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache));
+        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Specific(OlderVersion), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(Path.Combine(cache.Path, "chrome", "stable", OlderVersion, "chrome-linux64", "chrome"), path);
         Assert.Equal(1, server.RequestCount(AllVersionsDocumentPath));
@@ -74,8 +74,8 @@ public class ChromeLocatorTests
         Serve(server, "Stable", LatestVersion);
         using TemporaryDirectory cache = new();
 
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Specific("1.2.3.4"), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache)));
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(
+            () => BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Specific("1.2.3.4"), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache), cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Contains("1.2.3.4", exception.Message);
     }
@@ -87,10 +87,10 @@ public class ChromeLocatorTests
         Serve(server, "Stable", LatestVersion);
         using TemporaryDirectory cache = new();
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache);
-        string firstPath = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        string firstPath = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
         int requestCount = server.RequestedUrls.Count;
 
-        string secondPath = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        string secondPath = await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(firstPath, secondPath);
         Assert.Equal(requestCount, server.RequestedUrls.Count);
@@ -104,10 +104,10 @@ public class ChromeLocatorTests
         using TemporaryDirectory cache = new();
         FakeTimeProvider timeProvider = new(DateTimeOffset.UtcNow);
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, timeProvider: timeProvider);
-        await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         timeProvider.Advance(TimeSpan.FromHours(25));
-        await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(2, server.RequestCount(ChannelDocumentPath));
         Assert.Equal(1, server.RequestCount(ChromeArchivePath(LatestVersion, "linux64")));
@@ -130,7 +130,7 @@ public class ChromeLocatorTests
             HttpClient = httpClient,
         };
 
-        await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        await BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(2, handler.RequestCount);
     }
@@ -144,7 +144,7 @@ public class ChromeLocatorTests
         using TemporaryDirectory cache = new();
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, new BrowserPlatform(operatingSystem, architecture));
 
-        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         string driverFileName = operatingSystem == OperatingSystemFamily.Windows ? "chromedriver.exe" : "chromedriver";
         Assert.Equal(Path.Combine(cache.Path, "drivers", "chromedriver", LatestVersion, driverFileName), path);

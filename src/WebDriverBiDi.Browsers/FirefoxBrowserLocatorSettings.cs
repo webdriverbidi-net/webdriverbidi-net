@@ -72,8 +72,9 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     /// <summary>
     /// Gets the browser download information for the Firefox browser version or channel specified..
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
-    public override async Task<BrowserDownloadInfo> GetBrowserDownloadInfo()
+    public override async Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
     {
         BrowserDownloadInfo downloadInfo = new()
         {
@@ -89,7 +90,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
         }
 
         Uri downloadServiceUrl = this.GetDownloadServiceUrl();
-        Uri redirectTarget = await DownloadHttpClient.GetRedirectTargetAsync(this.DownloadOptions, downloadServiceUrl).ConfigureAwait(false);
+        Uri redirectTarget = await DownloadHttpClient.GetRedirectTargetAsync(this.DownloadOptions, downloadServiceUrl, cancellationToken).ConfigureAwait(false);
         if (redirectTarget != downloadServiceUrl)
         {
             string location = redirectTarget.AbsoluteUri;
@@ -109,14 +110,15 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     /// or uses the latest version if <see cref="BrowserLocatorSettings.DriverVersion"/> is null.
     /// </summary>
     /// <param name="browserVersion">The version of the located browser; not used, as geckodriver releases are independent of Firefox releases.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion)
+    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
     {
         Uri apiUrl = new(
             this.DownloadOptions.GeckoDriverReleasesEndpoint,
             string.IsNullOrEmpty(this.DriverVersion) || this.DriverVersion == LatestVersionString ? "latest" : $"tags/v{this.DriverVersion}");
 
-        string json = await DownloadHttpClient.GetStringAsync(this.DownloadOptions, apiUrl).ConfigureAwait(false);
+        string json = await DownloadHttpClient.GetStringAsync(this.DownloadOptions, apiUrl, cancellationToken).ConfigureAwait(false);
 
         GeckoDriverRelease? release = JsonSerializer.Deserialize(json, GeckoDriverJsonSerializerContext.Default.GeckoDriverRelease);
         if (release is null)

@@ -102,6 +102,13 @@ public class BrowserDownloadOptions
     }
 
     /// <summary>
+    /// Gets the receiver of download progress reports, or <see langword="null"/> for none. Reports are
+    /// made on the thread doing the download, so a <see cref="Progress{T}"/> posts them to the context
+    /// in which it was created.
+    /// </summary>
+    public IProgress<BrowserDownloadProgress>? Progress { get; init; }
+
+    /// <summary>
     /// Gets the <see cref="System.Net.Http.HttpClient"/> used for downloads, or <see langword="null"/>
     /// to use a client owned by this library. A supplied client is not disposed by this library.
     /// </summary>

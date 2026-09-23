@@ -57,7 +57,7 @@ public class FirefoxLocatorTests
         string installedPath = CacheSeeder.SeedInstallation(cache, "firefox/stable", "131.0.2", executablePath);
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, new BrowserPlatform(operatingSystem, Architecture.X64));
 
-        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(installedPath, path);
         Assert.Equal([$"/mozilla/?product=firefox-latest-ssl&os={serviceOperatingSystem}&lang=en-US"], server.RequestedUrls);
@@ -72,7 +72,7 @@ public class FirefoxLocatorTests
         using TemporaryDirectory cache = new();
         string installedPath = CacheSeeder.SeedInstallation(cache, $"firefox/{channelDirectory}", version, "firefox/firefox");
 
-        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, channel, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache));
+        string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, channel, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: TestDownloadOptions.Create(server, cache), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(installedPath, path);
         Assert.Equal([$"/mozilla/?product={product}-ssl&os=linux64&lang=en-US"], server.RequestedUrls);
@@ -94,9 +94,9 @@ public class FirefoxLocatorTests
             .Build();
         List<string> messages = [];
         launcher.OnLogMessage.AddObserver(e => messages.Add(e.Message));
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<HttpRequestException>(launcher.LaunchBrowserAsync);
+        await AssertDownloadFailedAsync(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
 
         Assert.Equal("/mozilla/?product=firefox-nightly-latest-ssl", server.RequestedUrls[0].Split("&os=")[0]);
         Assert.Contains("Downloading Firefox Nightly 133.0a1...", messages);
@@ -111,7 +111,7 @@ public class FirefoxLocatorTests
         using TemporaryDirectory cache = new();
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, new BrowserPlatform(operatingSystem, Architecture.X64));
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, BrowserReleaseChannel.Stable, BrowserVersion.Specific("128.0"), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options));
+        await AssertDownloadFailedAsync(() => BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, BrowserReleaseChannel.Stable, BrowserVersion.Specific("128.0"), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Equal([archivePath], server.RequestedUrls);
     }
@@ -125,7 +125,7 @@ public class FirefoxLocatorTests
         using TemporaryDirectory cache = new();
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, new BrowserPlatform(operatingSystem, architecture));
 
-        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Firefox, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Firefox, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         string driverFileName = operatingSystem == OperatingSystemFamily.Windows ? "geckodriver.exe" : "geckodriver";
         Assert.Equal(Path.Combine(cache.Path, "drivers", "geckodriver", GeckoDriverVersion, driverFileName), path);
@@ -150,5 +150,11 @@ public class FirefoxLocatorTests
 
         JsonObject release = new() { ["tag_name"] = $"v{GeckoDriverVersion}", ["name"] = GeckoDriverVersion, ["assets"] = assets };
         server.AddText("/gecko/latest", release.ToJsonString());
+    }
+
+    private static async Task AssertDownloadFailedAsync(Func<Task> action)
+    {
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(action);
+        Assert.IsType<HttpRequestException>(exception.InnerException);
     }
 }

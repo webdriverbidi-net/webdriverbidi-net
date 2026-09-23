@@ -124,10 +124,10 @@ public class BrowserLauncherBuilderTests
         using TemporaryDirectory cache = new();
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, BrowserPlatform.Current);
         await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).WithDownloadOptions(options).Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
         // The downloaded "browser" is a text file, so starting it fails once it has been located.
-        await Assert.ThrowsAnyAsync<Exception>(launcher.LaunchBrowserAsync);
+        await Assert.ThrowsAnyAsync<Exception>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
 
         Assert.Equal(1, server.RequestCount(ChromeForTestingService.ChannelDocumentPath));
         Assert.True(Directory.Exists(Path.Combine(cache.Path, "chrome", "stable", "130.0.6723.58")));

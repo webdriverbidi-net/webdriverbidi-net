@@ -100,7 +100,7 @@ public class InstallCacheTests
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache);
         await server.DisposeAsync();
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => FindChromeAsync(options));
+        await AssertDownloadFailedAsync(() => FindChromeAsync(options));
     }
 
     [Fact]
@@ -245,11 +245,11 @@ public class InstallCacheTests
         DownloadServer server = await DownloadServer.StartAsync();
         Serve(server, "Stable", LatestVersion);
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, timeProvider: timeProvider);
-        string? installedPath = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options);
+        string? installedPath = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
         await server.DisposeAsync();
 
         timeProvider.Advance(TimeSpan.FromHours(25));
-        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options);
+        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(installedPath, path);
     }
@@ -275,7 +275,7 @@ public class InstallCacheTests
         Serve(server, "Stable", LatestVersion);
         using TemporaryDirectory cache = new();
 
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => FindChromeAsync(TestDownloadOptions.Create(server, cache, skipDownload: true)));
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(() => FindChromeAsync(TestDownloadOptions.Create(server, cache, skipDownload: true)));
 
         Assert.Contains("SkipDownload", exception.Message);
         Assert.Empty(server.RequestedUrls);
@@ -292,7 +292,7 @@ public class InstallCacheTests
         string path = await FindChromeAsync(options, BrowserVersion.Specific(OlderVersion));
 
         Assert.Equal(installedPath, path);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => FindChromeAsync(options, BrowserVersion.Specific(LatestVersion)));
+        await Assert.ThrowsAsync<BrowserDownloadException>(() => FindChromeAsync(options, BrowserVersion.Specific(LatestVersion)));
         Assert.Empty(server.RequestedUrls);
     }
 
@@ -305,23 +305,23 @@ public class InstallCacheTests
         CacheSeeder.SeedResolvedVersion(cache, "drivers/chromedriver", "latest-stable", OlderVersion, DateTimeOffset.UtcNow.AddDays(-30));
         BrowserDownloadOptions options = TestDownloadOptions.Create(server, cache, skipDownload: true);
 
-        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options);
+        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(installedPath, path);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Beta, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Specific(LatestVersion), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options));
+        await Assert.ThrowsAsync<BrowserDownloadException>(() => DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Beta, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<BrowserDownloadException>(() => DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Specific(LatestVersion), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken));
         Assert.Empty(server.RequestedUrls);
     }
 
     private static Task<string> FindChromeAsync(BrowserDownloadOptions options, BrowserVersion? version = null)
     {
-        return BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, version ?? BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options);
+        return BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, version ?? BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
     }
 
     private static async Task StartChromeDriverLauncherAsync(BrowserDownloadOptions options)
     {
         await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingDriver().WithDownloadOptions(options).Build();
-        await Assert.ThrowsAnyAsync<Exception>(launcher.StartAsync);
+        await Assert.ThrowsAnyAsync<Exception>(() => launcher.StartAsync(TestContext.Current.CancellationToken));
     }
 
     private static string GetCurrentChromePlatformIdentifier()
@@ -334,5 +334,11 @@ public class InstallCacheTests
             { OperatingSystem: OperatingSystemFamily.Windows } => "win32",
             _ => "linux64",
         };
+    }
+
+    private static async Task AssertDownloadFailedAsync(Func<Task> action)
+    {
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(action);
+        Assert.IsType<HttpRequestException>(exception.InnerException);
     }
 }

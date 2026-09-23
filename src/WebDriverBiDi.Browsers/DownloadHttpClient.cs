@@ -30,10 +30,12 @@ internal static class DownloadHttpClient
     /// </summary>
     /// <param name="options">The download options.</param>
     /// <param name="url">The URL to request.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>The response body.</returns>
-    public static async Task<string> GetStringAsync(BrowserDownloadOptions options, Uri url)
+    public static async Task<string> GetStringAsync(BrowserDownloadOptions options, Uri url, CancellationToken cancellationToken)
     {
-        using CancellationTokenSource timeoutTokenSource = new(MetadataRequestTimeout);
+        using CancellationTokenSource timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutTokenSource.CancelAfter(MetadataRequestTimeout);
         using HttpRequestMessage request = new(HttpMethod.Get, url);
 
         // The GitHub API rejects requests without a User-Agent.
@@ -47,10 +49,12 @@ internal static class DownloadHttpClient
     /// </summary>
     /// <param name="options">The download options.</param>
     /// <param name="url">The URL to request.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>The redirect target, or <paramref name="url"/> if the request is not redirected.</returns>
-    public static async Task<Uri> GetRedirectTargetAsync(BrowserDownloadOptions options, Uri url)
+    public static async Task<Uri> GetRedirectTargetAsync(BrowserDownloadOptions options, Uri url, CancellationToken cancellationToken)
     {
-        using CancellationTokenSource timeoutTokenSource = new(MetadataRequestTimeout);
+        using CancellationTokenSource timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutTokenSource.CancelAfter(MetadataRequestTimeout);
         HttpClient client = options.HttpClient ?? SharedNonRedirectingClient.Value;
         using HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, timeoutTokenSource.Token).ConfigureAwait(false);
         if (response.Headers.Location is not null)

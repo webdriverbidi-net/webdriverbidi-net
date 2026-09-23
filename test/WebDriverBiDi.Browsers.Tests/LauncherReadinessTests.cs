@@ -14,13 +14,13 @@ public class LauncherReadinessTests
     {
         using FakeBrowserSetup fakeBrowser = new();
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        BrowserInstance instance = await launcher.LaunchBrowserAsync();
+        BrowserInstance instance = await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal($"ws://127.0.0.1:{launcher.Port}/devtools/browser/fake-browser", instance.ConnectionString);
         Assert.True(launcher.IsRunning);
-        await launcher.QuitBrowserAsync();
+        await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
         Assert.False(launcher.IsRunning);
     }
 
@@ -29,9 +29,9 @@ public class LauncherReadinessTests
     {
         using FakeBrowserSetup fakeBrowser = new(mode: "exit:3");
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        BrowserNotLaunchedException exception = await Assert.ThrowsAsync<BrowserNotLaunchedException>(launcher.LaunchBrowserAsync);
+        BrowserLaunchException exception = await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
 
         Assert.Contains("exited with code 3", exception.Message);
     }
@@ -42,9 +42,9 @@ public class LauncherReadinessTests
         using FakeBrowserSetup fakeBrowser = new(mode: "silent");
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
         launcher.InitializationTimeout = TimeSpan.FromSeconds(1);
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        BrowserNotLaunchedException exception = await Assert.ThrowsAsync<BrowserNotLaunchedException>(launcher.LaunchBrowserAsync);
+        BrowserLaunchException exception = await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
 
         Assert.Contains("did not report its DevTools endpoint within 1 seconds", exception.Message);
     }
@@ -54,13 +54,13 @@ public class LauncherReadinessTests
     {
         using FakeBrowserSetup fakeBrowser = new();
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Firefox)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        BrowserInstance instance = await launcher.LaunchBrowserAsync();
+        BrowserInstance instance = await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal($"ws://localhost:{launcher.Port}/session", instance.ConnectionString);
         Assert.True(launcher.IsRunning);
-        await launcher.QuitBrowserAsync();
+        await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
         Assert.False(launcher.IsRunning);
     }
 
@@ -69,9 +69,9 @@ public class LauncherReadinessTests
     {
         using FakeBrowserSetup fakeBrowser = new(mode: "exit:3");
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Firefox)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        BrowserNotLaunchedException exception = await Assert.ThrowsAsync<BrowserNotLaunchedException>(launcher.LaunchBrowserAsync);
+        BrowserLaunchException exception = await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
 
         Assert.Contains("exited with code 3", exception.Message);
     }

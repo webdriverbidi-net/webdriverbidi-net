@@ -29,6 +29,8 @@ public class FirefoxLauncher : BrowserLauncher
       "--no-remote",
     ];
 
+    private readonly ProcessOutputTail outputTail = new();
+
     private Process? browserProcess;
     private TemporaryProfile? profile;
 
@@ -100,9 +102,10 @@ public class FirefoxLauncher : BrowserLauncher
     /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels starting the launcher.</param>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
-    public override Task StartAsync()
+    public override Task StartAsync(CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
 
@@ -113,13 +116,19 @@ public class FirefoxLauncher : BrowserLauncher
     /// <summary>
     /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels the launch; anything already started is stopped.</param>
     /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
-    /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
+    /// <exception cref="BrowserLaunchException">Thrown when the browser cannot be launched.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
-    public override async Task<BrowserInstance> LaunchBrowserAsync()
+    public override async Task<BrowserInstance> LaunchBrowserAsync(CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
-        string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
+        if (this.browserProcess is not null)
+        {
+            throw new InvalidOperationException("A browser launched by this launcher is still running; quit it before launching another.");
+        }
+
+        string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync(cancellationToken).ConfigureAwait(false);
         await this.LogAsync($"Launching Firefox browser from {browserExecutableLocation}").ConfigureAwait(false);
 
         // With port 0, Firefox chooses a free port itself and reports it when its endpoint is ready.
@@ -135,58 +144,69 @@ public class FirefoxLauncher : BrowserLauncher
             };
             process.ErrorDataReceived += this.ReadConsoleOutputForWebSocketUrl;
             process.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
+            process.ErrorDataReceived += this.RecordProcessOutput;
+            process.OutputDataReceived += this.RecordProcessOutput;
+            this.outputTail.Clear();
             process.Start();
             this.browserProcess = process;
             this.profile?.SetOwner(this.browserProcess);
             this.browserProcess.BeginOutputReadLine();
             this.browserProcess.BeginErrorReadLine();
-            bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
+            bool launcherAvailable = await this.WaitForInitializationAsync(cancellationToken).ConfigureAwait(false);
             if (!launcherAvailable)
             {
-                string reason = this.IsRunning
-                    ? $"Browser process did not report its WebDriver BiDi endpoint as ready within {this.InitializationTimeout.TotalSeconds} seconds."
-                    : $"Browser process exited with code {this.browserProcess.ExitCode} before reporting its WebDriver BiDi endpoint as ready.";
-                throw new BrowserNotLaunchedException($"Unable to launch Firefox browser. {reason}");
+                int? exitCode = null;
+                string reason = $"Browser process did not report its WebDriver BiDi endpoint as ready within {this.InitializationTimeout.TotalSeconds} seconds.";
+                if (!this.IsRunning)
+                {
+                    await ProcessTermination.WaitForOutputAsync(this.browserProcess).ConfigureAwait(false);
+                    exitCode = this.browserProcess.ExitCode;
+                    reason = $"Browser process exited with code {exitCode} before reporting its WebDriver BiDi endpoint as ready.";
+                }
+
+                throw new BrowserLaunchException($"Unable to launch Firefox browser. {reason}", exitCode, this.outputTail.ToList());
             }
         }
         catch (Exception)
         {
             // Whatever was started is killed, and the profile deleted, however the launch failed.
-            await this.TerminateBrowserProcessAsync(requestExit: false).ConfigureAwait(false);
+            await this.TerminateBrowserProcessAsync(requestExit: false, CancellationToken.None).ConfigureAwait(false);
             throw;
         }
 
         this.Port = this.ReportedPort;
         this.ConnectionString = $"ws://localhost:{this.Port}/session";
 
-        int processId = this.GetProcessId();
-        return new BrowserInstance(this, this.ConnectionString, processId);
+        return this.CreateBrowserInstance(this.ConnectionString, this.GetProcessId());
     }
 
     /// <summary>
     /// Asynchronously quits the browser: asks it to exit, waits up to <see cref="BrowserLauncher.ShutdownTimeout"/>,
     /// then kills it and every process it started, and deletes its temporary profile.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels waiting for the browser to exit; the browser is then killed, after which an <see cref="OperationCanceledException"/> is thrown.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public override Task QuitBrowserAsync()
+    public override Task QuitBrowserAsync(CancellationToken cancellationToken = default)
     {
-        return this.TerminateBrowserProcessAsync(requestExit: true);
+        return this.TerminateBrowserProcessAsync(requestExit: true, cancellationToken);
     }
 
     /// <summary>
     /// Asynchronously forces the browser to terminate, for use when <see cref="QuitBrowserAsync"/> has failed.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels waiting for the killed browser to exit, after which an <see cref="OperationCanceledException"/> is thrown.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public override Task KillBrowserAsync()
+    public override Task KillBrowserAsync(CancellationToken cancellationToken = default)
     {
-        return this.TerminateBrowserProcessAsync(requestExit: false);
+        return this.TerminateBrowserProcessAsync(requestExit: false, cancellationToken);
     }
 
     /// <summary>
     /// Asynchronously stops the browser launcher.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels waiting for the launcher to stop.</param>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
-    public override Task StopAsync()
+    public override Task StopAsync(CancellationToken cancellationToken = default)
     {
         // No operation required to stop the launcher.
         return Task.CompletedTask;
@@ -537,7 +557,7 @@ public class FirefoxLauncher : BrowserLauncher
     /// be absorbed by the connection's startup retries, which is not always enough on a cold or
     /// heavily loaded machine.
     /// </remarks>
-    private async Task<bool> WaitForInitializationAsync()
+    private async Task<bool> WaitForInitializationAsync(CancellationToken cancellationToken)
     {
         bool isInitialized = false;
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
@@ -555,26 +575,25 @@ public class FirefoxLauncher : BrowserLauncher
                 break;
             }
 
-            await Task.Delay(100).ConfigureAwait(false);
+            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
         initializationStopwatch.Stop();
         return isInitialized;
     }
 
-    private async Task TerminateBrowserProcessAsync(bool requestExit)
+    private void RecordProcessOutput(object sender, DataReceivedEventArgs e)
     {
+        this.outputTail.Add(e.Data);
+    }
+
+    private async Task TerminateBrowserProcessAsync(bool requestExit, CancellationToken cancellationToken)
+    {
+        bool isCancelled = false;
         Process? process = this.browserProcess;
         if (process is not null)
         {
-            bool hasExited = process.HasExited
-                || (requestExit && ProcessTermination.RequestExit(process) && await ProcessTermination.WaitForExitAsync(process, this.ShutdownTimeout).ConfigureAwait(false));
-            if (!hasExited)
-            {
-                ProcessTermination.KillTree(process);
-                await ProcessTermination.WaitForExitAsync(process, ProcessTermination.KilledProcessExitTimeout).ConfigureAwait(false);
-            }
-
+            isCancelled = await ProcessTermination.StopAsync(process, requestExit, this.ShutdownTimeout, cancellationToken).ConfigureAwait(false);
             process.Dispose();
             this.browserProcess = null;
         }
@@ -583,6 +602,11 @@ public class FirefoxLauncher : BrowserLauncher
         {
             await this.profile.DeleteAsync().ConfigureAwait(false);
             this.profile = null;
+        }
+
+        if (isCancelled)
+        {
+            throw new OperationCanceledException(cancellationToken);
         }
     }
 }

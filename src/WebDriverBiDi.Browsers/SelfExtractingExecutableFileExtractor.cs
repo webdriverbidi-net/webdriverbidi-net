@@ -37,8 +37,9 @@ public class SelfExtractingExecutableFileExtractor : FileExtractor
     /// </summary>
     /// <param name="installerPath">Path to the self-extracting executable installer.</param>
     /// <param name="extractDirectory">Directory to extract the file to.</param>
+    /// <param name="cancellationToken">A token that cancels the extraction.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public override async Task ExtractFileContentsAsync(string installerPath, string extractDirectory)
+    public override async Task ExtractFileContentsAsync(string installerPath, string extractDirectory, CancellationToken cancellationToken = default)
     {
         string temporaryExtractionPath = Path.Combine(extractDirectory, "extract");
         string destinationPath = Path.Combine(extractDirectory, this.extractedDestinationDirectoryName);
@@ -55,7 +56,7 @@ public class SelfExtractingExecutableFileExtractor : FileExtractor
             }
 
             Directory.CreateDirectory(temporaryExtractionPath);
-            await this.RunProcessAsync(installerPath, $"/ExtractDir={temporaryExtractionPath}").ConfigureAwait(false);
+            await this.RunProcessAsync(installerPath, $"/ExtractDir={temporaryExtractionPath}", cancellationToken: cancellationToken).ConfigureAwait(false);
             string sourcePath = Path.Combine(temporaryExtractionPath, this.extractedSourceDirectoryName);
             Directory.Move(sourcePath, destinationPath);
         }

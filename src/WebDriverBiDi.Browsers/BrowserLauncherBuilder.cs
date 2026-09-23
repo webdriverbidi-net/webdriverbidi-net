@@ -364,7 +364,7 @@ public class BrowserLauncherBuilder
     /// Builds and returns the configured <see cref="BrowserLauncher"/> instance.
     /// </summary>
     /// <returns>The configured browser launcher.</returns>
-    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    /// <exception cref="BrowserLauncherConfigurationException">Thrown when the specified browser is not yet supported.</exception>
     /// <exception cref="BrowserLauncherConfigurationException">Thrown when the configuration is invalid.</exception>
     public BrowserLauncher Build()
     {
@@ -375,10 +375,10 @@ public class BrowserLauncherBuilder
             BrowserKind.Chrome => this.CreateChromeLauncher(),
             BrowserKind.Firefox => this.CreateFirefoxLauncher(),
             BrowserKind.Safari => this.CreateSafariLauncher(),
-            BrowserKind.Edge => throw new NotImplementedException(
+            BrowserKind.Edge => throw new BrowserLauncherConfigurationException(
                 "Microsoft Edge browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Edge support is planned for a future release."),
-            _ => throw new WebDriverBiDiException($"Unknown browser type: {this.browser}"),
+            _ => throw new BrowserLauncherConfigurationException($"Unknown browser type: {this.browser}"),
         };
 
         // Copied, so settings added to this builder after Build() do not reach an already-built launcher.
@@ -619,7 +619,7 @@ public class BrowserLauncherBuilder
         {
             BrowserReleaseChannel.Stable => SafariChannel.Stable,
             BrowserReleaseChannel.DeveloperPreview => SafariChannel.TechnologyPreview,
-            _ => throw new WebDriverBiDiException($"Invalid browser release channel for Safari: {this.channel}"),
+            _ => throw new BrowserLauncherConfigurationException($"Invalid browser release channel for Safari: {this.channel}"),
         };
 
         SafariBrowserLocatorSettings settings = new(safariChannel);
@@ -640,7 +640,7 @@ public class BrowserLauncherBuilder
             BrowserReleaseChannel.Beta => ChromeChannel.Beta,
             BrowserReleaseChannel.DeveloperPreview => ChromeChannel.Dev,
             BrowserReleaseChannel.Alpha => ChromeChannel.Canary,
-            _ => throw new WebDriverBiDiException($"Invalid browser release channel for Chrome: {this.channel}"),
+            _ => throw new BrowserLauncherConfigurationException($"Invalid browser release channel for Chrome: {this.channel}"),
         };
 
         string versionString = this.version.Value;
@@ -684,7 +684,7 @@ public class BrowserLauncherBuilder
             BrowserReleaseChannel.Beta => FirefoxChannel.Beta,
             BrowserReleaseChannel.DeveloperPreview => FirefoxChannel.Dev,
             BrowserReleaseChannel.Alpha => FirefoxChannel.Nightly,
-            _ => throw new WebDriverBiDiException($"Invalid browser release channel for Firefox: {this.channel}"),
+            _ => throw new BrowserLauncherConfigurationException($"Invalid browser release channel for Firefox: {this.channel}"),
         };
 
         string versionString = this.version.Value;
@@ -717,7 +717,7 @@ public class BrowserLauncherBuilder
     private WebDriverClassicBrowserLauncher CreateRemoteLauncher(string browserName)
     {
         // remoteGridHostName is guaranteed non-null by ValidateConfiguration() called in Build()
-        string hostName = this.remoteGridHostName ?? throw new InvalidOperationException("Remote grid hostname should have been validated.");
+        string hostName = this.remoteGridHostName!;
         RemoteBrowserLocatorSettings settings = new(browserName, hostName, this.remoteGridUseSsl);
 
         WebDriverClassicBrowserLauncher launcher = new(settings, this.port)

@@ -4,7 +4,7 @@
 // - Given a driver's "--port=<port>", it answers HTTP requests on that port as a ready driver that
 //   creates sessions, exiting with code 1 if the port is in use.
 // Environment variables:
-// - WEBDRIVERBIDI_FAKE_BROWSER_MODE: "exit:<code>" exits at once with that code; "silent" never
+// - WEBDRIVERBIDI_FAKE_BROWSER_MODE: "exit:<code>" writes a line to stderr and exits at once with that code; "silent" never
 //   reports readiness; "ignore-term" ignores SIGTERM.
 // - WEBDRIVERBIDI_FAKE_BROWSER_LOG: a file to which each launch appends a JSON line with its arguments
 //   and the value of WEBDRIVERBIDI_FAKE_BROWSER_ECHO, and a driver appends one with each new session
@@ -30,6 +30,7 @@ if (logFile is not null)
 
 if (mode is not null && mode.StartsWith("exit:", StringComparison.Ordinal))
 {
+    Console.Error.WriteLine($"Fake browser exiting with code {mode["exit:".Length..]}");
     return int.Parse(mode["exit:".Length..]);
 }
 

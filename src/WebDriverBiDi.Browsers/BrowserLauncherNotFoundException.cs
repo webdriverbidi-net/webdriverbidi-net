@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browsers;
 /// <summary>
 /// The exception that is thrown when the browser launcher is not found.
 /// </summary>
-public class BrowserLauncherNotFoundException : Exception
+public class BrowserLauncherNotFoundException : WebDriverBiDiException
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncherNotFoundException"/> class.

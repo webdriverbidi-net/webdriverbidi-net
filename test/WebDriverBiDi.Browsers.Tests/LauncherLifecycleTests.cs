@@ -21,11 +21,11 @@ public class LauncherLifecycleTests
     {
         using FakeBrowserSetup fakeBrowser = new(startChild: true);
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(browser)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
-        await launcher.StartAsync();
-        await launcher.LaunchBrowserAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
         using Process child = fakeBrowser.GetChildProcess();
 
-        await launcher.KillBrowserAsync();
+        await launcher.KillBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.False(launcher.IsRunning);
         Assert.True(child.WaitForExit(ProcessExitTimeout));
@@ -40,11 +40,11 @@ public class LauncherLifecycleTests
         Assert.SkipWhen(OperatingSystem.IsWindows(), "Windows has no way to ask a windowless process to exit.");
         using FakeBrowserSetup fakeBrowser = new(startChild: true);
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(browser)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
-        await launcher.StartAsync();
-        await launcher.LaunchBrowserAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
         using Process child = fakeBrowser.GetChildProcess();
 
-        await launcher.QuitBrowserAsync();
+        await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.False(launcher.IsRunning);
         Assert.True(fakeBrowser.ExitedGracefully);
@@ -58,11 +58,11 @@ public class LauncherLifecycleTests
         using FakeBrowserSetup fakeBrowser = new(mode: "ignore-term", startChild: true);
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(browser)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
         launcher.ShutdownTimeout = TimeSpan.FromMilliseconds(500);
-        await launcher.StartAsync();
-        await launcher.LaunchBrowserAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
         using Process child = fakeBrowser.GetChildProcess();
 
-        await launcher.QuitBrowserAsync();
+        await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.False(launcher.IsRunning);
         Assert.False(fakeBrowser.ExitedGracefully);
@@ -76,12 +76,12 @@ public class LauncherLifecycleTests
     {
         using FakeBrowserSetup fakeBrowser = new();
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(browser)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
-        await launcher.StartAsync();
-        await launcher.LaunchBrowserAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
         string profileDirectory = fakeBrowser.GetLastLaunchArgument(profileArgumentName);
         Assert.True(Directory.Exists(profileDirectory));
 
-        await launcher.QuitBrowserAsync();
+        await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.False(Directory.Exists(profileDirectory));
     }
@@ -94,9 +94,9 @@ public class LauncherLifecycleTests
         using FakeBrowserSetup fakeBrowser = new(mode: "silent", startChild: true);
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(browser)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
         launcher.InitializationTimeout = TimeSpan.FromSeconds(1);
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<BrowserNotLaunchedException>(launcher.LaunchBrowserAsync);
+        await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
 
         Assert.False(launcher.IsRunning);
         Assert.False(Directory.Exists(fakeBrowser.GetLastLaunchArgument(profileArgumentName)));
@@ -110,9 +110,9 @@ public class LauncherLifecycleTests
     {
         using FakeBrowserSetup fakeBrowser = new();
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(browser)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        BrowserInstance instance = await launcher.LaunchBrowserAsync();
+        BrowserInstance instance = await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal("0", fakeBrowser.GetLastLaunchArgument("--remote-debugging-port"));
         Assert.NotEqual(0, launcher.Port);
@@ -127,9 +127,9 @@ public class LauncherLifecycleTests
             .AtLocation(FakeBrowserSetup.ExecutablePath)
             .WithConnection(ConnectionKind.Pipes)
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        BrowserInstance instance = await launcher.LaunchBrowserAsync();
+        BrowserInstance instance = await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         // A pipe launch is ready as soon as the process starts, which may be before the browser has
         // run far enough to record its arguments.
@@ -150,9 +150,9 @@ public class LauncherLifecycleTests
         {
             using FakeBrowserSetup fakeBrowser = new();
             await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
-            await launcher.StartAsync();
+            await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-            await launcher.LaunchBrowserAsync();
+            await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
             Assert.False(Directory.Exists(exitedOwner));
             Assert.False(Directory.Exists(reusedProcessId));

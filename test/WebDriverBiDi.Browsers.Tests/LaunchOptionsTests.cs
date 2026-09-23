@@ -30,9 +30,9 @@ public class LaunchOptionsTests
             .WithConnection(connectionKind)
             .WithArguments(ArgumentsNeedingQuotes)
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         string[] arguments = (await fakeBrowser.WaitForLaunchAsync()).Arguments;
         int firstAddedArgument = Array.IndexOf(arguments, ArgumentsNeedingQuotes[0]);
@@ -48,9 +48,9 @@ public class LaunchOptionsTests
             .AtLocation(FakeBrowserSetup.ExecutablePath)
             .WithoutDefaultArguments()
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         string[] arguments = fakeBrowser.Launches.Single().Arguments;
         Assert.Equal(2, arguments.Length);
@@ -66,9 +66,9 @@ public class LaunchOptionsTests
             .AtLocation(FakeBrowserSetup.ExecutablePath)
             .WithoutDefaultArguments()
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(["--profile", fakeBrowser.GetLastLaunchArgument("--profile"), "--remote-debugging-port", "0"], fakeBrowser.Launches.Single().Arguments);
     }
@@ -81,9 +81,9 @@ public class LaunchOptionsTests
             .AtLocation(FakeBrowserSetup.ExecutablePath)
             .WithoutDefaultArguments("--disable-features", "--no-first-run", "about:blank")
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         string[] arguments = fakeBrowser.Launches.Single().Arguments;
         Assert.DoesNotContain(arguments, argument => argument.StartsWith("--disable-features=", StringComparison.Ordinal));
@@ -103,9 +103,9 @@ public class LaunchOptionsTests
             .AtLocation(FakeBrowserSetup.ExecutablePath)
             .WithEnvironmentVariable(FakeBrowserSetup.EchoVariableName, "a value with spaces")
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal("a value with spaces", fakeBrowser.Launches.Single().Echo);
     }
@@ -121,10 +121,10 @@ public class LaunchOptionsTests
             .AtLocation(FakeBrowserSetup.ExecutablePath)
             .WithUserDataDirectory(profileDirectory)
             .Build();
-        await launcher.StartAsync();
-        await launcher.LaunchBrowserAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
-        await launcher.QuitBrowserAsync();
+        await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(profileDirectory, fakeBrowser.GetLastLaunchArgument("--user-data-dir"));
         Assert.Equal("kept", File.ReadAllText(Path.Combine(profileDirectory, "user-file")));
@@ -142,10 +142,10 @@ public class LaunchOptionsTests
             .WithUserDataDirectory(profile.Path)
             .WithBrowserOptions(new FirefoxLaunchOptions() { Preferences = { ["custom.preference"] = "value" } })
             .Build();
-        await launcher.StartAsync();
-        await launcher.LaunchBrowserAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
-        await launcher.QuitBrowserAsync();
+        await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
 
         string userJs = File.ReadAllText(Path.Combine(profile.Path, "user.js"));
         Assert.Equal(profile.Path, fakeBrowser.GetLastLaunchArgument("--profile"));
@@ -163,9 +163,9 @@ public class LaunchOptionsTests
             .AtLocation(FakeBrowserSetup.ExecutablePath)
             .WithBrowserOptions(new FirefoxLaunchOptions() { Preferences = { ["remote.enabled"] = false, ["apz.content_response_timeout"] = 5 } })
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         string userJs = File.ReadAllText(Path.Combine(fakeBrowser.GetLastLaunchArgument("--profile"), "user.js"));
         Assert.Contains("user_pref(\"remote.enabled\", false);", userJs);
@@ -181,9 +181,9 @@ public class LaunchOptionsTests
             .AtLocation(FakeBrowserSetup.ExecutablePath)
             .WithLaunchTimeout(TimeSpan.FromSeconds(1))
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        BrowserNotLaunchedException exception = await Assert.ThrowsAsync<BrowserNotLaunchedException>(launcher.LaunchBrowserAsync);
+        BrowserLaunchException exception = await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken));
 
         Assert.Contains("within 1 seconds", exception.Message);
     }
@@ -196,9 +196,9 @@ public class LaunchOptionsTests
             .AtLocation(FakeBrowserSetup.ExecutablePath)
             .WithHeadlessOption()
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         string[] arguments = fakeBrowser.Launches.Single().Arguments;
         Assert.Contains("--headless=new", arguments);
@@ -214,9 +214,9 @@ public class LaunchOptionsTests
             .WithArguments("--before-build");
         await using BrowserLauncher launcher = builder.Build();
         builder.WithArguments("--after-build");
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         string[] arguments = fakeBrowser.Launches.Single().Arguments;
         Assert.Contains("--before-build", arguments);

@@ -14,6 +14,11 @@ using WebDriverBiDi.Protocol;
 /// <summary>
 /// Abstract base class for launching a browser to connect to using a WebDriverBiDi session.
 /// </summary>
+/// <remarks>
+/// A launcher owns everything it starts, and runs one browser at a time: disposing it quits its
+/// browser and stops any driver it started. A <see cref="BrowserInstance"/> is a handle to one
+/// launch, which quits the browser only while that launch is still the launcher's current one.
+/// </remarks>
 public abstract class BrowserLauncher : IAsyncDisposable
 {
     /// <summary>
@@ -22,6 +27,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
     public const string LoggerComponentName = "Browser Launcher";
 
     private bool disposed = false;
+    private int launchCount = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
@@ -108,6 +114,12 @@ public abstract class BrowserLauncher : IAsyncDisposable
     internal LaunchSettings LaunchSettings { get; set; } = new();
 
     /// <summary>
+    /// Gets the identity of the most recent successful launch, so that a <see cref="BrowserInstance"/>
+    /// from an earlier launch cannot quit a browser launched after it.
+    /// </summary>
+    internal int CurrentLaunchId => this.launchCount;
+
+    /// <summary>
     /// Gets an ObservableEventInvocable that subclasses can use to raise the OnLogMessage event.
     /// </summary>
     protected abstract ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; }
@@ -157,42 +169,58 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// For browsers that support direct WebDriver BiDi connections, this method does nothing.
     /// </para>
     /// </remarks>
-    public abstract Task StartAsync();
+    /// <param name="cancellationToken">A token that cancels starting the launcher.</param>
+    public abstract Task StartAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously stops the browser launcher.
     /// </summary>
+    /// <param name="cancellationToken">
+    /// A token that cancels waiting for the launcher to stop; a driver executable is killed whether or
+    /// not waiting is cancelled, after which an <see cref="OperationCanceledException"/> is thrown.
+    /// </param>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
     /// <remarks>
     /// For a browser that is launched by a driver executable (chromedriver, geckodriver,
     /// safaridriver, etc), this method will terminate that executable. For browsers that
     /// support direct WebDriver BiDi connections, this method does nothing.
     /// </remarks>
-    public abstract Task StopAsync();
+    public abstract Task StopAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels the launch; anything already started is stopped.</param>
     /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
-    /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
-    public abstract Task<BrowserInstance> LaunchBrowserAsync();
+    /// <exception cref="BrowserDownloadException">Thrown when the browser or driver cannot be located or downloaded.</exception>
+    /// <exception cref="BrowserLaunchException">Thrown when the browser cannot be launched.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when a browser launched by this launcher is still running.</exception>
+    public abstract Task<BrowserInstance> LaunchBrowserAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously quits the browser.
     /// </summary>
+    /// <param name="cancellationToken">
+    /// A token that cancels waiting for the browser to exit; the browser is then killed, after which an
+    /// <see cref="OperationCanceledException"/> is thrown.
+    /// </param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
-    public abstract Task QuitBrowserAsync();
+    public abstract Task QuitBrowserAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously forces the browser to terminate, for use when <see cref="QuitBrowserAsync"/> has failed.
     /// </summary>
+    /// <param name="cancellationToken">
+    /// A token that cancels waiting for the killed browser to exit, after which an
+    /// <see cref="OperationCanceledException"/> is thrown.
+    /// </param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <remarks>
     /// The default implementation does nothing, which is correct for launchers that do not own a local
     /// browser process, such as a launcher connected to a remote grid.
     /// </remarks>
-    public virtual Task KillBrowserAsync()
+    public virtual Task KillBrowserAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }
@@ -209,17 +237,19 @@ public abstract class BrowserLauncher : IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
-    /// This is the recommended method for launching browsers with the new API.
+    /// Asynchronously starts the launcher, then launches the browser and returns a <see cref="BrowserInstance"/>
+    /// representing the running browser.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels the launch; anything already started is stopped.</param>
     /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
-    /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
+    /// <exception cref="BrowserDownloadException">Thrown when the browser or driver cannot be located or downloaded.</exception>
+    /// <exception cref="BrowserLaunchException">Thrown when the browser cannot be launched.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
-    public virtual async Task<BrowserInstance> LaunchAsync()
+    public virtual async Task<BrowserInstance> LaunchAsync(CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
-        await this.StartAsync().ConfigureAwait(false);
-        return await this.LaunchBrowserAsync().ConfigureAwait(false);
+        await this.StartAsync(cancellationToken).ConfigureAwait(false);
+        return await this.LaunchBrowserAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -357,6 +387,18 @@ public abstract class BrowserLauncher : IAsyncDisposable
     {
         LogMessageEventArgs logMessageArgs = new(message, logLevel, component);
         await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(logMessageArgs).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Records a successful launch and creates the <see cref="BrowserInstance"/> representing it.
+    /// </summary>
+    /// <param name="connectionString">The connection string of the launched browser.</param>
+    /// <param name="processId">The process ID of the launched browser, or 0 if it is not a local process.</param>
+    /// <returns>The browser instance.</returns>
+    private protected BrowserInstance CreateBrowserInstance(string connectionString, int processId)
+    {
+        this.launchCount++;
+        return new BrowserInstance(this, connectionString, processId, this.launchCount);
     }
 
     private async Task OnLocatorLogAsync(LogMessageEventArgs args)

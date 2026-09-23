@@ -100,24 +100,25 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels starting the launcher.</param>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
-    public override async Task StartAsync()
+    public override async Task StartAsync(CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
-        bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
+        bool launcherAvailable = await this.WaitForInitializationAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         if (!launcherAvailable)
         {
-            string msg = "Cannot start the browser launcher on " + this.ServiceUrl;
-            throw new WebDriverBiDiException(msg);
+            throw new BrowserLaunchException($"The remote end at {this.ServiceUrl} did not report that it was ready within {this.InitializationTimeout.TotalSeconds} seconds.");
         }
     }
 
     /// <summary>
     /// Asynchronously stops the browser launcher.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels waiting for the launcher to stop.</param>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
-    public override Task StopAsync()
+    public override Task StopAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }
@@ -125,8 +126,9 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <summary>
     /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels the launch; anything already started is stopped.</param>
     /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
-    /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
+    /// <exception cref="BrowserLaunchException">Thrown when the browser cannot be launched.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
     /// <remarks>
     /// The IL2026/IL3050 suppressions on this method cover the serialization of the
@@ -141,10 +143,15 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// </remarks>
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = "Classic capabilities are typed as Dictionary<string, object> by design; see CreateBrowserLaunchCapabilities remarks.")]
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = "Classic capabilities are typed as Dictionary<string, object> by design; see CreateBrowserLaunchCapabilities remarks.")]
-    public override async Task<BrowserInstance> LaunchBrowserAsync()
+    public override async Task<BrowserInstance> LaunchBrowserAsync(CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
-        await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(this.sessionId))
+        {
+            throw new InvalidOperationException("A browser launched by this launcher is still running; quit it before launching another.");
+        }
+
+        await this.BrowserLocator.LocateBrowserAsync(cancellationToken).ConfigureAwait(false);
 
         // The launcher's own capabilities are applied last, so an added capability can never replace
         // browserName or turn off webSocketUrl, without which no BiDi session is created.
@@ -168,11 +175,11 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
         await this.LogAsync("Launching browser", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         await this.LogAsync($"Sending classic new session command. JSON:\n{json}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         StringContent content = new(json, Encoding.UTF8, "application/json");
-        using HttpResponseMessage response = await this.httpClient.PostAsync($"{this.ServiceUrl}/session", content).ConfigureAwait(false);
+        using HttpResponseMessage response = await this.httpClient.PostAsync($"{this.ServiceUrl}/session", content, cancellationToken).ConfigureAwait(false);
         string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         if (response.StatusCode != HttpStatusCode.OK)
         {
-            throw new BrowserNotLaunchedException($"Unable to launch browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
+            throw new BrowserLaunchException($"Unable to launch browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
         }
 
         await this.LogAsync($"Received classic new session response. JSON:\n{responseJson}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
@@ -198,29 +205,29 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
 
         if (string.IsNullOrEmpty(this.sessionId))
         {
-            throw new BrowserNotLaunchedException($"Unable to launch browser. Could not detect session ID in WebDriver classic new session response (response JSON: {responseJson})");
+            throw new BrowserLaunchException($"Unable to launch browser. Could not detect session ID in WebDriver classic new session response (response JSON: {responseJson})");
         }
 
         if (string.IsNullOrEmpty(this.ConnectionString))
         {
-            throw new BrowserNotLaunchedException($"Unable to connect to WebSocket. Launched browse may not support the WebDriver BiDi protocol (response JSON: {responseJson})");
+            throw new BrowserLaunchException($"Unable to connect to WebSocket. Launched browse may not support the WebDriver BiDi protocol (response JSON: {responseJson})");
         }
 
-        int processId = this.GetProcessId();
-        return new BrowserInstance(this, this.ConnectionString, processId);
+        return this.CreateBrowserInstance(this.ConnectionString, this.GetProcessId());
     }
 
     /// <summary>
     /// Asynchronously quits the browser.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels waiting for the browser to exit; the browser is then killed, after which an <see cref="OperationCanceledException"/> is thrown.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
-    public override async Task QuitBrowserAsync()
+    public override async Task QuitBrowserAsync(CancellationToken cancellationToken = default)
     {
         if (!string.IsNullOrEmpty(this.sessionId))
         {
             await this.LogAsync($"Quitting browser", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-            using HttpResponseMessage response = await this.httpClient.DeleteAsync($"{this.ServiceUrl}/session/{this.sessionId}").ConfigureAwait(false);
+            using HttpResponseMessage response = await this.httpClient.DeleteAsync($"{this.ServiceUrl}/session/{this.sessionId}", cancellationToken).ConfigureAwait(false);
             string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
             {
@@ -274,8 +281,9 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// Asynchronously waits for the initialization of the browser launcher.
     /// </summary>
     /// <param name="hasFailed">Checked before each poll; returns <see langword="true"/> to stop waiting early, such as when the launcher process has exited.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected async Task<bool> WaitForInitializationAsync(Func<bool>? hasFailed = null)
+    protected async Task<bool> WaitForInitializationAsync(Func<bool>? hasFailed = null, CancellationToken cancellationToken = default)
     {
         bool isInitialized = false;
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
@@ -283,7 +291,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
         {
             try
             {
-                using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/status").ConfigureAwait(false);
+                using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/status", cancellationToken).ConfigureAwait(false);
 
                 // Checking the response from the 'status' end point. Note that we are simply checking
                 // that the HTTP status returned is a 200 status, and that the response has the correct
@@ -300,7 +308,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
 
             if (!isInitialized)
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken).ConfigureAwait(false);
             }
         }
 

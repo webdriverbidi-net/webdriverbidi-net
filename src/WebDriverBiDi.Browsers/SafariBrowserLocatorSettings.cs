@@ -72,8 +72,9 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
     /// For Safari, the browser cannot be downloaded independently, so this hard-codes no download
     /// information.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
-    public override async Task<BrowserDownloadInfo> GetBrowserDownloadInfo()
+    public override async Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
     {
         BrowserDownloadInfo downloadInfo = new()
         {
@@ -91,8 +92,9 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
     /// its accompanying driver.
     /// </summary>
     /// <param name="browserVersion">The version of the located browser; not used.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion)
+    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
     {
         DriverDownloadInfo driverDownloadInfo = new()
         {

@@ -20,13 +20,14 @@ public class TarballFileExtractor : FileExtractor
     /// </summary>
     /// <param name="tarFilePath">Path to the tar.xz file.</param>
     /// <param name="extractDirectory">Directory to extract the file to.</param>
+    /// <param name="cancellationToken">A token that cancels the extraction.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public override async Task ExtractFileContentsAsync(string tarFilePath, string extractDirectory)
+    public override async Task ExtractFileContentsAsync(string tarFilePath, string extractDirectory, CancellationToken cancellationToken = default)
     {
         try
         {
             string extractFlags = tarFilePath.EndsWith(".tar.xz", StringComparison.OrdinalIgnoreCase) ? "xJf" : "xzf";
-            await this.RunProcessAsync("tar", $"-{extractFlags} \"{tarFilePath}\" -C \"{extractDirectory}\"").ConfigureAwait(false);
+            await this.RunProcessAsync("tar", $"-{extractFlags} \"{tarFilePath}\" -C \"{extractDirectory}\"", cancellationToken: cancellationToken).ConfigureAwait(false);
         }
         finally
         {

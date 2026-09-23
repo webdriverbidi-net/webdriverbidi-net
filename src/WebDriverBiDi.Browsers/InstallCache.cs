@@ -46,10 +46,11 @@ internal sealed class InstallCache
     /// <summary>
     /// Waits for and acquires the lock on this cache.
     /// </summary>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A handle that releases the lock when disposed.</returns>
-    public Task<IDisposable> LockAsync()
+    public Task<IDisposable> LockAsync(CancellationToken cancellationToken)
     {
-        return new FileLock(Path.Combine(this.directory, LockFileName)).AcquireAsync(this.options.LockTimeout);
+        return new FileLock(Path.Combine(this.directory, LockFileName)).AcquireAsync(this.options.LockTimeout, cancellationToken);
     }
 
     /// <summary>

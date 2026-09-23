@@ -41,9 +41,9 @@ public class ProcessEnvironmentLauncherTests
             .AtLocation(Path.Combine(executableDirectory, Path.GetFileName(FakeBrowserSetup.ExecutablePath)))
             .WithConnection(connectionKind)
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         await fakeBrowser.WaitForLaunchAsync();
         string profileDirectory = fakeBrowser.GetLastLaunchArgument(profileArgumentName);
@@ -57,11 +57,11 @@ public class ProcessEnvironmentLauncherTests
         using FakeBrowserSetup fakeBrowser = new(startChild: true);
         using DriverOverride driverOverride = new();
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).LaunchUsingDriver().Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
         using Process child = fakeBrowser.GetChildProcess();
         Assert.True(launcher.IsRunning);
 
-        await launcher.StopAsync();
+        await launcher.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.False(launcher.IsRunning);
         Assert.True(child.WaitForExit(ProcessExitTimeout));
@@ -74,9 +74,10 @@ public class ProcessEnvironmentLauncherTests
         using DriverOverride driverOverride = new();
         await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).LaunchUsingDriver().Build();
 
-        BrowserNotLaunchedException exception = await Assert.ThrowsAsync<BrowserNotLaunchedException>(launcher.StartAsync);
+        BrowserLaunchException exception = await Assert.ThrowsAsync<BrowserLaunchException>(() => launcher.StartAsync(TestContext.Current.CancellationToken));
 
         Assert.Contains("exited with code 1", exception.Message);
+        Assert.Equal(1, exception.ExitCode);
         Assert.Equal(3, fakeBrowser.Launches.Count);
         Assert.Equal(3, fakeBrowser.Launches.Select(launch => launch.Arguments.Single(argument => argument.StartsWith("--port=", StringComparison.Ordinal))).Distinct().Count());
     }
@@ -93,9 +94,9 @@ public class ProcessEnvironmentLauncherTests
             .WithUserDataDirectory(profile.Path)
             .WithEnvironmentVariable(FakeBrowserSetup.EchoVariableName, "for the driver")
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         JsonNode chromeOptions = fakeBrowser.SessionRequests.Single()["capabilities"]!["firstMatch"]![0]!["goog:chromeOptions"]!;
         string[] arguments = chromeOptions["args"]!.Deserialize<string[]>()!;
@@ -116,9 +117,9 @@ public class ProcessEnvironmentLauncherTests
             .WithUserDataDirectory(profile.Path)
             .WithBrowserOptions(new FirefoxLaunchOptions() { Preferences = { ["custom.boolean"] = true, ["custom.number"] = 3 } })
             .Build();
-        await launcher.StartAsync();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
 
-        await launcher.LaunchBrowserAsync();
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         JsonNode firefoxOptions = fakeBrowser.SessionRequests.Single()["capabilities"]!["firstMatch"]![0]!["moz:firefoxOptions"]!;
         Assert.Equal(["-profile", profile.Path, "--custom-argument"], firefoxOptions["args"]!.Deserialize<string[]>()!);
@@ -135,8 +136,8 @@ public class ProcessEnvironmentLauncherTests
             using FakeBrowserSetup inheritingBrowser = new();
             await using (BrowserLauncher launcher = inheritingBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build())
             {
-                await launcher.StartAsync();
-                await launcher.LaunchBrowserAsync();
+                await launcher.StartAsync(TestContext.Current.CancellationToken);
+                await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
             }
 
             using FakeBrowserSetup isolatedBrowser = new();
@@ -145,8 +146,8 @@ public class ProcessEnvironmentLauncherTests
                 .WithEnvironmentVariable(FakeBrowserSetup.EchoVariableName, null)
                 .Build())
             {
-                await launcher.StartAsync();
-                await launcher.LaunchBrowserAsync();
+                await launcher.StartAsync(TestContext.Current.CancellationToken);
+                await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
             }
 
             Assert.Equal("inherited", inheritingBrowser.Launches.Single().Echo);
@@ -156,6 +157,20 @@ public class ProcessEnvironmentLauncherTests
         {
             Environment.SetEnvironmentVariable(FakeBrowserSetup.EchoVariableName, null);
         }
+    }
+
+    [Fact]
+    public async Task DriverStartCancelledWhileWaitingStopsDriver()
+    {
+        using FakeBrowserSetup fakeBrowser = new(mode: "silent");
+        using DriverOverride driverOverride = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).LaunchUsingDriver().Build();
+        using CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        cancellationSource.CancelAfter(TimeSpan.FromMilliseconds(500));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => launcher.StartAsync(cancellationSource.Token));
+
+        Assert.False(launcher.IsRunning);
     }
 
     // Makes the fake browser the browser and driver found through the environment.

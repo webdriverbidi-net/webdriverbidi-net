@@ -9,9 +9,14 @@ namespace WebDriverBiDi.Browsers;
 /// Represents a running browser instance that has been launched and is ready to accept connections.
 /// Implements <see cref="IAsyncDisposable"/> to ensure proper cleanup of browser processes.
 /// </summary>
+/// <remarks>
+/// An instance is a handle to one launch. Once its launcher has launched another browser, closing,
+/// killing, or disposing the instance has no effect, and <see cref="IsRunning"/> is <see langword="false"/>.
+/// </remarks>
 public class BrowserInstance : IAsyncDisposable
 {
     private readonly BrowserLauncher launcher;
+    private readonly int launchId;
     private bool disposed = false;
 
     /// <summary>
@@ -20,8 +25,10 @@ public class BrowserInstance : IAsyncDisposable
     /// <param name="launcher">The launcher that created this instance.</param>
     /// <param name="connectionString">The connection string for connecting to the browser.</param>
     /// <param name="processId">The process ID of the browser, or 0 if not applicable.</param>
-    internal BrowserInstance(BrowserLauncher launcher, string connectionString, int processId)
+    /// <param name="launchId">The identity of the launch this instance represents.</param>
+    internal BrowserInstance(BrowserLauncher launcher, string connectionString, int processId, int launchId)
     {
+        this.launchId = launchId;
         this.launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         this.ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         this.ProcessId = processId;
@@ -42,21 +49,27 @@ public class BrowserInstance : IAsyncDisposable
     /// Gets a value indicating whether the browser process is still running.
     /// For remote browsers, this always returns true until the instance is disposed.
     /// </summary>
-    public bool IsRunning => !this.disposed && this.launcher.IsRunning;
+    public bool IsRunning => this.IsActive && this.launcher.IsRunning;
+
+    private bool IsActive => !this.disposed && this.launcher.CurrentLaunchId == this.launchId;
 
     /// <summary>
     /// Asynchronously closes the browser.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
+    /// <param name="cancellationToken">
+    /// A token that cancels waiting for the browser to exit; the browser is then killed, after which an
+    /// <see cref="OperationCanceledException"/> is thrown.
+    /// </param>
     /// <exception cref="CannotQuitBrowserException">Thrown when the browser cannot be closed; use <see cref="KillAsync"/> to force termination.</exception>
-    public async Task CloseAsync()
+    public async Task CloseAsync(CancellationToken cancellationToken = default)
     {
-        if (this.disposed)
+        if (!this.IsActive)
         {
             return;
         }
 
-        await this.launcher.QuitBrowserAsync().ConfigureAwait(false);
+        await this.launcher.QuitBrowserAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -66,14 +79,18 @@ public class BrowserInstance : IAsyncDisposable
     /// <remarks>
     /// A browser on a remote grid cannot be terminated from this machine, so for such a browser this method has no effect.
     /// </remarks>
-    public async Task KillAsync()
+    /// <param name="cancellationToken">
+    /// A token that cancels waiting for the killed browser to exit, after which an
+    /// <see cref="OperationCanceledException"/> is thrown.
+    /// </param>
+    public async Task KillAsync(CancellationToken cancellationToken = default)
     {
-        if (this.disposed)
+        if (!this.IsActive)
         {
             return;
         }
 
-        await this.launcher.KillBrowserAsync().ConfigureAwait(false);
+        await this.launcher.KillBrowserAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -83,8 +100,9 @@ public class BrowserInstance : IAsyncDisposable
     /// <returns>A task representing the asynchronous dispose operation.</returns>
     public async ValueTask DisposeAsync()
     {
-        if (this.disposed)
+        if (!this.IsActive)
         {
+            this.disposed = true;
             return;
         }
 
