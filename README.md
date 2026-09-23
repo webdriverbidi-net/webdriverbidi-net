@@ -110,6 +110,7 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 | `test/WebDriverBiDi.Compatibility.Tests` | Checks that the main library works when consumed from each build configuration |
 | `test/WebDriverBiDi.AotTestApplication` | Smoke test for JSON serialization under ahead-of-time (AOT) compilation |
 | `test/WebDriverBiDi.NetStandardTestApplication` | Console app pinned to the netstandard2.0 build; driven by the compatibility tests |
+| `test/WebDriverBiDi.FakeBrowser` | Stand-in browser executable used by the browser management library's launcher tests |
 | `test/WebDriverBiDi.NamedPipeTestApplication` | Named-pipe test server used by the pipe connection unit tests |
 | `test/WebDriverBiDi.TestUtilities` | Helpers shared between test projects (not itself a test project) |
 | `test/WebDriverBiDi.Benchmarks` | Performance benchmarks; see its [README](test/WebDriverBiDi.Benchmarks/README.md) |

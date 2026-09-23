@@ -268,10 +268,11 @@ internal class Cache
         /// <summary>
         /// Gets a value indicating whether the cached browser information is expired based on the last download time.
         /// </summary>
+        /// <param name="timeProvider">The <see cref="TimeProvider"/> supplying the current time.</param>
         /// <returns><see langword="true"/> if the cached information is expired; otherwise, <see langword="false"/>.</returns>
-        public bool IsCachedVersionInfoExpired()
+        public bool IsCachedVersionInfoExpired(TimeProvider timeProvider)
         {
-            bool isCacheExpired = DateTime.UtcNow - this.LastDownload > TimeSpan.FromHours(24);
+            bool isCacheExpired = timeProvider.GetUtcNow().UtcDateTime - this.LastDownload > TimeSpan.FromHours(24);
             return isCacheExpired;
         }
     }
@@ -339,10 +340,11 @@ internal class Cache
         /// <summary>
         /// Gets a value indicating whether the cached driver information is expired based on the last download time.
         /// </summary>
+        /// <param name="timeProvider">The <see cref="TimeProvider"/> supplying the current time.</param>
         /// <returns><see langword="true"/> if the cached information is expired; otherwise, <see langword="false"/>.</returns>
-        public bool IsCachedVersionInfoExpired()
+        public bool IsCachedVersionInfoExpired(TimeProvider timeProvider)
         {
-            bool isCacheExpired = DateTime.UtcNow - this.LastDownload > TimeSpan.FromHours(24);
+            bool isCacheExpired = timeProvider.GetUtcNow().UtcDateTime - this.LastDownload > TimeSpan.FromHours(24);
             return isCacheExpired;
         }
     }

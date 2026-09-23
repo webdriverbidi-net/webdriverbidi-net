@@ -5,12 +5,14 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 
 /// <summary>
 /// File extractor for files distributed as zip files. This extractor uses the built-in ZipFile class to extract
 /// the file from the downloaded zip file to the specified directory, and then deletes the zip file after extraction.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ZipFileExtractor : FileExtractor
 {
     /// <summary>

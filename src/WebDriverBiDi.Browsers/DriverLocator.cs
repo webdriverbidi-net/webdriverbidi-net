@@ -15,14 +15,6 @@ public class DriverLocator
     /// </summary>
     public const string LoggerComponentName = "Driver Locator";
 
-    /// <summary>
-    /// Gets the default base cache directory for downloaded drivers, which is a subdirectory of the user's profile directory.
-    /// </summary>
-    private static readonly string DefaultCacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-        ".cache",
-        "webdriverbidi-net");
-
     private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent = new("driverLocator.logMessage");
     private readonly BrowserLocatorSettings settings;
 
@@ -91,7 +83,7 @@ public class DriverLocator
     /// <param name="version">The version of the driver to locate (typically matches browser version).</param>
     /// <param name="locationBehavior">The strategy for locating the driver.</param>
     /// <param name="customPath">The custom path to the driver executable (only used when locationBehavior is UseCustomLocation).</param>
-    /// <param name="cacheDirectory">The custom cache directory (only used when locationBehavior is AutoLocateAndDownload). If null, uses default cache location.</param>
+    /// <param name="downloadOptions">The options controlling where the driver is cached and downloaded from, or <see langword="null"/> for the defaults.</param>
     /// <returns>The path to the driver executable, or null if not found.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
     /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
@@ -101,12 +93,13 @@ public class DriverLocator
         BrowserVersion version,
         FileLocationBehavior locationBehavior,
         string? customPath = null,
-        string? cacheDirectory = null)
+        BrowserDownloadOptions? downloadOptions = null)
     {
+        downloadOptions ??= new BrowserDownloadOptions();
         BrowserLocatorSettings settings = browser switch
         {
-            BrowserKind.Chrome => BrowserLocator.CreateChromeSettings(channel, version, locationBehavior, customPath),
-            BrowserKind.Firefox => BrowserLocator.CreateFirefoxSettings(channel, version, locationBehavior, customPath),
+            BrowserKind.Chrome => BrowserLocator.CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            BrowserKind.Firefox => BrowserLocator.CreateFirefoxSettings(channel, version, locationBehavior, customPath, downloadOptions),
             BrowserKind.Edge => throw new NotImplementedException(
                 "Microsoft Edge driver support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Edge support is planned for a future release."),
@@ -223,7 +216,7 @@ public class DriverLocator
             cacheInfo.AddDriverToCache(driverInfo);
         }
 
-        if (driverInfo.IsCachedVersionInfoExpired())
+        if (driverInfo.IsCachedVersionInfoExpired(this.settings.DownloadOptions.TimeProvider))
         {
             driverInfo.Version = driverDownloadInfo.Version;
             driverInfo.DirectDownloadUrl = driverDownloadInfo.DownloadUrl;
@@ -251,7 +244,7 @@ public class DriverLocator
         FileDownloader downloader = new();
         downloader.OnDownloadProgress.AddObserver(this.LogFileDownloadProgressAsync);
 
-        using HttpClient client = new();
+        HttpClient client = DownloadHttpClient.GetClient(this.settings.DownloadOptions);
         await downloader.DownloadFileAsync(client, driverInfo.DirectDownloadUrl, downloadedInstallerPath).ConfigureAwait(false);
         await this.settings.DriverExtractor.ExtractFileContentsAsync(downloadedInstallerPath, cachedInstallDirectory).ConfigureAwait(false);
 
@@ -271,7 +264,7 @@ public class DriverLocator
             throw new FileNotFoundException($"{driverInfo.DriverName} executable not found after extraction at: {expectedExtractedExecutablePath}");
         }
 
-        driverInfo.LastDownload = DateTime.UtcNow;
+        driverInfo.LastDownload = this.settings.DownloadOptions.TimeProvider.GetUtcNow().UtcDateTime;
     }
 
     private async Task LogFileDownloadProgressAsync(FileDownloadProgressEventArgs args)

@@ -55,6 +55,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Extensions.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Automation.Tests", "test\WebDriverBiDi.Automation.Tests\WebDriverBiDi.Automation.Tests.csproj", "{2DBA12A5-C177-4AE9-B768-9480225BD764}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.FakeBrowser", "test\WebDriverBiDi.FakeBrowser\WebDriverBiDi.FakeBrowser.csproj", "{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -333,6 +335,18 @@ Global
 		{2DBA12A5-C177-4AE9-B768-9480225BD764}.Release|x64.Build.0 = Release|Any CPU
 		{2DBA12A5-C177-4AE9-B768-9480225BD764}.Release|x86.ActiveCfg = Release|Any CPU
 		{2DBA12A5-C177-4AE9-B768-9480225BD764}.Release|x86.Build.0 = Release|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Debug|x64.Build.0 = Debug|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Debug|x86.Build.0 = Debug|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Release|x64.ActiveCfg = Release|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Release|x64.Build.0 = Release|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Release|x86.ActiveCfg = Release|Any CPU
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -361,5 +375,6 @@ Global
 		{1DDCF45C-C364-4EA7-86CF-A548E95AB16B} = {731061A2-3861-4672-B5D5-711ADD4F6F47}
 		{F81E3418-4970-49AA-BC26-B4B107A7CB31} = {731061A2-3861-4672-B5D5-711ADD4F6F47}
 		{2DBA12A5-C177-4AE9-B768-9480225BD764} = {731061A2-3861-4672-B5D5-711ADD4F6F47}
+		{7C5C66F7-470D-4A4C-9AAD-AF5314BFF928} = {731061A2-3861-4672-B5D5-711ADD4F6F47}
 	EndGlobalSection
 EndGlobal

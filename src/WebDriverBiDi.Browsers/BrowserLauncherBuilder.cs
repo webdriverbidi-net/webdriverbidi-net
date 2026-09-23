@@ -17,7 +17,7 @@ public class BrowserLauncherBuilder
     private BrowserVersion version = BrowserVersion.Latest;
     private FileLocationBehavior locationBehavior = FileLocationBehavior.AutoLocateAndDownload;
     private string? customBrowserLocation = null;
-    private string? cacheDirectory = null;
+    private BrowserDownloadOptions? downloadOptions = null;
     private LaunchStrategy launchStrategy = LaunchStrategy.Direct;
     private ConnectionKind connectionType = ConnectionKind.WebSocket;
     private int port = 0;
@@ -149,15 +149,26 @@ public class BrowserLauncherBuilder
 
     /// <summary>
     /// Specifies to automatically locate the browser, downloading it if necessary to a cache directory.
+    /// Use <see cref="WithDownloadOptions"/> to change the cache directory or download sources.
     /// </summary>
-    /// <param name="cacheDirectory">Optional custom cache directory. If omitted or <see langword="null"/>, uses default cache location.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     /// <exception cref="BrowserLauncherConfigurationException">Thrown when a conflicting location behavior has already been specified.</exception>
-    public BrowserLauncherBuilder AtAutomaticallyDownloadedLocation(string? cacheDirectory = null)
+    public BrowserLauncherBuilder AtAutomaticallyDownloadedLocation()
     {
         this.ValidateLocationBehaviorNotSet(FileLocationBehavior.AutoLocateAndDownload);
         this.locationBehavior = FileLocationBehavior.AutoLocateAndDownload;
-        this.cacheDirectory = cacheDirectory;
+        return this;
+    }
+
+    /// <summary>
+    /// Specifies the options controlling where the browser and driver are cached and downloaded from.
+    /// </summary>
+    /// <param name="options">The download options.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when options is null.</exception>
+    public BrowserLauncherBuilder WithDownloadOptions(BrowserDownloadOptions options)
+    {
+        this.downloadOptions = options ?? throw new ArgumentNullException(nameof(options));
         return this;
     }
 
@@ -352,6 +363,11 @@ public class BrowserLauncherBuilder
             }
         }
 
+        if (this.launchStrategy != LaunchStrategy.UsingRemoteGrid && this.downloadOptions?.Platform is BrowserPlatform platform && platform != BrowserPlatform.Current)
+        {
+            throw new BrowserLauncherConfigurationException($"Cannot launch a browser for platform {platform} on platform {BrowserPlatform.Current}.");
+        }
+
         // Validate capabilities are only used with remote grid
         if (this.capabilities is not null && this.capabilities.Count > 0 && this.launchStrategy != LaunchStrategy.UsingRemoteGrid)
         {
@@ -392,11 +408,11 @@ public class BrowserLauncherBuilder
                 "The remote grid manages its own browser installations.");
         }
 
-        if (this.cacheDirectory is not null)
+        if (this.downloadOptions is not null)
         {
             throw new BrowserLauncherConfigurationException(
-                "Cannot specify cache directory with LaunchUsingRemoteGrid. " +
-                "The remote grid manages its own browser cache.");
+                "Cannot specify download options with LaunchUsingRemoteGrid. " +
+                "The remote grid manages its own browser installations.");
         }
 
         if (this.headless)
@@ -467,11 +483,7 @@ public class BrowserLauncherBuilder
         string versionString = this.version.Value;
         string browserLocation = this.customBrowserLocation ?? string.Empty;
 
-        ChromeBrowserLocatorSettings settings = new(chromeChannel, this.locationBehavior, browserLocation, versionString);
-        if (this.cacheDirectory is not null)
-        {
-            settings.CacheDirectory = this.cacheDirectory;
-        }
+        ChromeBrowserLocatorSettings settings = new(chromeChannel, this.locationBehavior, this.downloadOptions ?? new BrowserDownloadOptions(), browserLocation, versionString);
 
         if (this.launchStrategy == LaunchStrategy.UsingDriver)
         {
@@ -515,11 +527,7 @@ public class BrowserLauncherBuilder
         string versionString = this.version.Value;
         string browserLocation = this.customBrowserLocation ?? string.Empty;
 
-        FirefoxBrowserLocatorSettings settings = new(firefoxChannel, this.locationBehavior, browserLocation, versionString);
-        if (this.cacheDirectory is not null)
-        {
-            settings.CacheDirectory = this.cacheDirectory;
-        }
+        FirefoxBrowserLocatorSettings settings = new(firefoxChannel, this.locationBehavior, this.downloadOptions ?? new BrowserDownloadOptions(), browserLocation, versionString);
 
         if (this.launchStrategy == LaunchStrategy.UsingDriver)
         {

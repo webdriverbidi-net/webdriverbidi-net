@@ -5,11 +5,15 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// File extractor for files distributed as disk images (DMG files) on macOS. This extractor
 /// mounts the DMG, copies the contents to the specified extraction directory, and then unmounts
 /// and deletes the DMG.
 /// </summary>
+// Runs only on macOS (hdiutil). No CI job runs on macOS, so it is verified locally.
+[ExcludeFromCodeCoverage]
 public class DiskImageFileExtractor : FileExtractor
 {
     /// <summary>

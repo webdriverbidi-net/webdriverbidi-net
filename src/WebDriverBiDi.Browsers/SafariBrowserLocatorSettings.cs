@@ -30,6 +30,7 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
     /// </summary>
     /// <param name="channel">The distribution channel of the Safari browser.</param>
     internal SafariBrowserLocatorSettings(SafariChannel channel)
+        : base(new BrowserDownloadOptions())
     {
         this.channelValue = channel;
         this.BrowserName = "safari";

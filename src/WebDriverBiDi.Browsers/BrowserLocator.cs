@@ -17,14 +17,6 @@ public class BrowserLocator
     /// </summary>
     public const string LoggerComponentName = "Browser Locator";
 
-    /// <summary>
-    /// Gets the default base cache directory for downloaded browsers, which is a subdirectory of the user's profile directory.
-    /// </summary>
-    private static readonly string DefaultCacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-        ".cache",
-        "webdriverbidi-net");
-
     private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent = new("browserLocator.logMessage");
     private readonly BrowserLocatorSettings settings;
     private readonly DriverLocator? driverLocator;
@@ -138,6 +130,7 @@ public class BrowserLocator
     /// <param name="version">The version of the browser to locate.</param>
     /// <param name="locationBehavior">The strategy for locating the browser.</param>
     /// <param name="customPath">The custom path to the browser executable (only used when locationBehavior is UseCustomLocation).</param>
+    /// <param name="downloadOptions">The options controlling where the browser is cached and downloaded from, or <see langword="null"/> for the defaults.</param>
     /// <returns>The path to the browser executable.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
     /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
@@ -146,12 +139,14 @@ public class BrowserLocator
         BrowserReleaseChannel channel,
         BrowserVersion version,
         FileLocationBehavior locationBehavior,
-        string? customPath = null)
+        string? customPath = null,
+        BrowserDownloadOptions? downloadOptions = null)
     {
+        downloadOptions ??= new BrowserDownloadOptions();
         BrowserLocatorSettings settings = browser switch
         {
-            BrowserKind.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath),
-            BrowserKind.Firefox => CreateFirefoxSettings(channel, version, locationBehavior, customPath),
+            BrowserKind.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            BrowserKind.Firefox => CreateFirefoxSettings(channel, version, locationBehavior, customPath, downloadOptions),
             BrowserKind.Edge => throw new NotImplementedException(
                 "Microsoft Edge browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Edge support is planned for a future release."),
@@ -217,13 +212,15 @@ public class BrowserLocator
     /// <param name="version">The browser version.</param>
     /// <param name="locationBehavior">The location behavior strategy.</param>
     /// <param name="customPath">Optional custom path to the browser executable.</param>
+    /// <param name="downloadOptions">The options controlling where the browser is cached and downloaded from.</param>
     /// <returns>Configured Chrome browser locator settings.</returns>
     /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
     internal static BrowserLocatorSettings CreateChromeSettings(
         BrowserReleaseChannel channel,
         BrowserVersion version,
         FileLocationBehavior locationBehavior,
-        string? customPath)
+        string? customPath,
+        BrowserDownloadOptions downloadOptions)
     {
         ChromeChannel chromeChannel = channel switch
         {
@@ -242,7 +239,7 @@ public class BrowserLocator
             throw new ArgumentException("customPath must be provided when locationBehavior is UseCustomLocation.", nameof(customPath));
         }
 
-        return new ChromeBrowserLocatorSettings(chromeChannel, locationBehavior, browserLocation, versionString);
+        return new ChromeBrowserLocatorSettings(chromeChannel, locationBehavior, downloadOptions, browserLocation, versionString);
     }
 
     /// <summary>
@@ -252,13 +249,15 @@ public class BrowserLocator
     /// <param name="version">The browser version.</param>
     /// <param name="locationBehavior">The location behavior strategy.</param>
     /// <param name="customPath">Optional custom path to the browser executable.</param>
+    /// <param name="downloadOptions">The options controlling where the browser is cached and downloaded from.</param>
     /// <returns>Configured Firefox browser locator settings.</returns>
     /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
     internal static BrowserLocatorSettings CreateFirefoxSettings(
         BrowserReleaseChannel channel,
         BrowserVersion version,
         FileLocationBehavior locationBehavior,
-        string? customPath)
+        string? customPath,
+        BrowserDownloadOptions downloadOptions)
     {
         FirefoxChannel firefoxChannel = channel switch
         {
@@ -277,7 +276,7 @@ public class BrowserLocator
             throw new ArgumentException("customPath must be provided when locationBehavior is UseCustomLocation.", nameof(customPath));
         }
 
-        return new FirefoxBrowserLocatorSettings(firefoxChannel, locationBehavior, browserLocation, versionString);
+        return new FirefoxBrowserLocatorSettings(firefoxChannel, locationBehavior, downloadOptions, browserLocation, versionString);
     }
 
     /// <summary>
@@ -377,7 +376,7 @@ public class BrowserLocator
     private bool IsBrowserCached(Cache cacheInfo, [NotNullWhen(true)] out string? cachedExecutablePath)
     {
         cachedExecutablePath = null;
-        if (cacheInfo.TryGetCachedBrowser(this.settings, out Cache.InstalledBrowserInfo? browserInfo) && !browserInfo.IsCachedVersionInfoExpired() && !browserInfo.ForceNewDownload)
+        if (cacheInfo.TryGetCachedBrowser(this.settings, out Cache.InstalledBrowserInfo? browserInfo) && !browserInfo.IsCachedVersionInfoExpired(this.settings.DownloadOptions.TimeProvider) && !browserInfo.ForceNewDownload)
         {
             string installDirectory = Path.Combine(this.CacheDirectory, this.settings.BrowserName, this.settings.Channel, browserInfo.Version);
             string executablePath = Path.Combine(installDirectory, this.settings.ExpectedExecutablePath);
@@ -411,7 +410,7 @@ public class BrowserLocator
             cacheInfo.AddBrowserToCache(browserInfo, this.settings.IsLatestChannelVersion);
         }
 
-        if (browserInfo.IsCachedVersionInfoExpired())
+        if (browserInfo.IsCachedVersionInfoExpired(this.settings.DownloadOptions.TimeProvider))
         {
             browserInfo.Version = browserDownloadInfo.Version;
             browserInfo.DirectDownloadUrl = browserDownloadInfo.DownloadUrl;
@@ -434,7 +433,7 @@ public class BrowserLocator
         FileDownloader downloader = new();
         downloader.OnDownloadProgress.AddObserver(this.LogFileDownloadProgressAsync);
 
-        using HttpClient client = new();
+        HttpClient client = DownloadHttpClient.GetClient(this.settings.DownloadOptions);
         await downloader.DownloadFileAsync(client, browserInfo.DirectDownloadUrl, downloadedInstallerPath).ConfigureAwait(false);
         await this.settings.BrowserExtractor.ExtractFileContentsAsync(downloadedInstallerPath, cachedInstallDirectory).ConfigureAwait(false);
 
@@ -443,7 +442,7 @@ public class BrowserLocator
             throw new FileNotFoundException($"{this.settings.BrowserDisplayName} executable not found after extraction at: {expectedExtractedExecutablePath}");
         }
 
-        browserInfo.LastDownload = DateTime.UtcNow;
+        browserInfo.LastDownload = this.settings.DownloadOptions.TimeProvider.GetUtcNow().UtcDateTime;
     }
 
     private async Task LogFileDownloadProgressAsync(FileDownloadProgressEventArgs args)

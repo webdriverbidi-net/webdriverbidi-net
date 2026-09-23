@@ -21,6 +21,7 @@ internal class RemoteBrowserLocatorSettings : BrowserLocatorSettings
     /// <param name="hostName">The hostname where the remote browser is running.</param>
     /// <param name="useSsl">A value indicating whether to use SSL for the connection.</param>
     public RemoteBrowserLocatorSettings(string browserName, string hostName, bool useSsl = false)
+        : base(new BrowserDownloadOptions())
     {
         this.browserName = browserName;
         this.BrowserDisplayName = $"remote {browserName}";

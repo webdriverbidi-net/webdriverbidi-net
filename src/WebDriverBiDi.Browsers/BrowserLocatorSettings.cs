@@ -23,9 +23,23 @@ internal abstract class BrowserLocatorSettings
     public const string SystemVersionString = "system";
 
     /// <summary>
-    /// Gets or sets the directory for the browser and driver cache.
+    /// Initializes a new instance of the <see cref="BrowserLocatorSettings"/> class.
     /// </summary>
-    public string CacheDirectory { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "webdriverbidi-net");
+    /// <param name="downloadOptions">The options controlling where the browser and driver are cached and downloaded from.</param>
+    protected BrowserLocatorSettings(BrowserDownloadOptions downloadOptions)
+    {
+        this.DownloadOptions = downloadOptions ?? throw new ArgumentNullException(nameof(downloadOptions));
+    }
+
+    /// <summary>
+    /// Gets the options controlling where the browser and driver are cached and downloaded from.
+    /// </summary>
+    public BrowserDownloadOptions DownloadOptions { get; }
+
+    /// <summary>
+    /// Gets the directory for the browser and driver cache.
+    /// </summary>
+    public string CacheDirectory => this.DownloadOptions.CacheDirectory;
 
     /// <summary>
     /// Gets the name of the browser (e.g., "chrome", "firefox").

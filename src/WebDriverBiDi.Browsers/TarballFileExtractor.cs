@@ -5,10 +5,13 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// File extractor for files distributed as tar.xz files on Linux. This extractor uses the 'tar' command-line tool
 /// to extract the file from the downloaded tarball to the specified directory, and then deletes the tarball file.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class TarballFileExtractor : FileExtractor
 {
     /// <summary>
