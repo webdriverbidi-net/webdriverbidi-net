@@ -1,4 +1,4 @@
-// <copyright file="TextElementsTests.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="TypedCharacterTests.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -7,8 +7,9 @@ namespace WebDriverBiDi;
 
 using WebDriverBiDi.Input;
 
-// Each case gives the characters as .NET Framework's StringInfo splits them, and as one user would count them.
-public class TextElementsTests
+// Each case gives the characters as .NET Framework's StringInfo splits them, and as one user would count them. The
+// .NET Framework tests compile this file too, where the netstandard2.0 build joins what StringInfo splits.
+public class TypedCharacterTests
 {
     private const string Joiner = "‍";
     private const string Man = "\U0001F468";
@@ -38,15 +39,13 @@ public class TextElementsTests
 
     [Theory]
     [MemberData(nameof(FrameworkSplits))]
-    public void CharactersSplitByOlderRulesAreJoined(string[] frameworkElements, string[] expected)
+    public void EachUserPerceivedCharacterIsTypedAsOneKey(string[] frameworkElements, string[] expected)
     {
-        Assert.Equal(expected, TextElements.Join(frameworkElements));
-    }
+        InputBuilder builder = new();
 
-    [Theory]
-    [MemberData(nameof(FrameworkSplits))]
-    public void ThisRuntimeSplitsTextAsTheJoinedCharacters(string[] frameworkElements, string[] expected)
-    {
-        Assert.Equal(expected, TextElements.Split(string.Concat(frameworkElements)));
+        builder.AddSendKeysToActiveElementAction(string.Concat(frameworkElements));
+
+        KeySourceActions keyboard = Assert.IsType<KeySourceActions>(Assert.Single(builder.Build()));
+        Assert.Equal(expected, keyboard.Actions.OfType<KeyDownAction>().Select(action => action.Value));
     }
 }

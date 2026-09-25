@@ -22,7 +22,8 @@ internal sealed class ProgressWriter(TextWriter writer) : IProgress<BrowserDownl
         lock (this.reportedQuarters)
         {
             // Reported synchronously by the downloader, so the lines are in order with the tool's other output.
-            int quarter = value.TotalBytes is long total && total > 0 ? (int)Math.Min(4, value.BytesReceived * 4 / total) : 0;
+            long total = value.TotalBytes ?? 0;
+            int quarter = total > 0 ? (int)Math.Min(4, value.BytesReceived * 4 / total) : 0;
             if (this.reportedQuarters.TryGetValue(value.Name, out int reported) && quarter <= reported)
             {
                 return;

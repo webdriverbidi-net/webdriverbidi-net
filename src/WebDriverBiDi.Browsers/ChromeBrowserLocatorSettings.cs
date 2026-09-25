@@ -17,7 +17,7 @@ using System.Text.Json.Serialization;
 /// on the current platform and architecture. The locator settings are used by the BrowserLocator to
 /// locate and download the correct version of Chrome for testing with WebDriver BiDi.
 /// </summary>
-internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
+internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings, IBrowserDownloadSource, IDriverDownloadSource
 {
     private const string ChannelDownloadInfoFileName = "last-known-good-versions-with-downloads.json";
     private const string AllVersionsDownloadInfoFileName = "known-good-versions-with-downloads.json";
@@ -49,6 +49,8 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         this.Channel = channel.ToString().ToLowerInvariant();
         this.BrowserDisplayName = useHeadlessShell ? $"Chrome Headless Shell {channel}" : $"Chrome {channel}";
         this.EnvironmentVariableName = "CHROME_EXECUTABLE";
+        this.DriverExecutableName = this.Platform.OperatingSystem == OperatingSystemFamily.Windows ? "chromedriver.exe" : "chromedriver";
+        this.DriverEnvironmentVariableName = "CHROMEDRIVER_EXECUTABLE";
         this.LocationBehavior = locationBehavior;
         this.InstallerFileName = $"{this.BrowserName}-{this.Channel}.zip";
         this.ExpectedExecutablePath = this.InitializeExpectedExecutablePath(expectedExecutablePath);
@@ -71,16 +73,6 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// Gets a value indicating whether chrome-headless-shell is located rather than Chrome.
     /// </summary>
     public bool UseHeadlessShell { get; }
-
-    /// <summary>
-    /// Gets the name of the driver executable (e.g., "chromedriver" or "chromedriver.exe").
-    /// </summary>
-    public override string DriverExecutableName => this.Platform.OperatingSystem == OperatingSystemFamily.Windows ? "chromedriver.exe" : "chromedriver";
-
-    /// <summary>
-    /// Gets the name of the environment variable that can be used to override the driver executable path.
-    /// </summary>
-    public override string DriverEnvironmentVariableName => "CHROMEDRIVER_EXECUTABLE";
 
     /// <summary>
     /// Gets the version request under which the resolved chromedriver version is cached, which
@@ -119,7 +111,7 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
-    public override async Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
+    public async Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
     {
         string platformIdentifierString = this.GetRequiredPlatformIdentifierString();
         string json = await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.GetBinaryDownloadInfoUrl(), cancellationToken).ConfigureAwait(false);
@@ -168,7 +160,18 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// <returns>The version, or <see langword="null"/> if it cannot be read, when the latest chromedriver of the channel is used.</returns>
     public override Task<string?> GetInstalledBrowserVersionAsync(string executablePath, CancellationToken cancellationToken)
     {
-        return InstalledBrowserVersion.ReadAsync(executablePath, cancellationToken);
+        return InstalledBrowserVersion.ReadAsync(executablePath, this.DownloadOptions.TimeProvider, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the SHA-256 hash of a download, which Chrome for Testing does not publish.
+    /// </summary>
+    /// <param name="downloadInfo">The download.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
+    /// <returns><see langword="null"/>.</returns>
+    public Task<string?> GetBrowserSha256Async(BrowserDownloadInfo downloadInfo, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<string?>(null);
     }
 
     /// <summary>
@@ -189,7 +192,7 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
+    public async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
     {
         string platformIdentifierString = this.GetRequiredPlatformIdentifierString();
         string? requiredVersion = this.GetRequiredDriverVersion(browserVersion);

@@ -115,14 +115,7 @@ public class BrowserInstance : IAsyncDisposable
         }
         catch (Exception)
         {
-            try
-            {
-                await this.launcher.KillBrowserAsync().ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // Disposal must not throw; this matches BrowserLauncher.DisposeAsyncCore.
-            }
+            await this.launcher.KillBrowserAsync().ConfigureAwait(false);
         }
 
         GC.SuppressFinalize(this);

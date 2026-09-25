@@ -18,6 +18,9 @@
          PipeConnection.cs, EventObserver{T}.cs, and IncomingMessage.cs) at runtime,
          without requiring .NET Framework or Windows. -->
     <ProjectReference Include="../../src/WebDriverBiDi/WebDriverBiDi.csproj" SetTargetFramework="TargetFramework=netstandard2.0" />
+
+    <!-- Pinned the same way, for the netstandard2.0-only code of WebDriverBiDi.Browsers (see BrowsersScenario.cs). -->
+    <ProjectReference Include="../../src/WebDriverBiDi.Browsers/WebDriverBiDi.Browsers.csproj" SetTargetFramework="TargetFramework=netstandard2.0" />
   </ItemGroup>
 
   <ItemGroup>

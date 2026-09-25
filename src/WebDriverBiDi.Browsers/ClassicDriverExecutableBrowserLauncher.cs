@@ -85,22 +85,8 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     {
         get
         {
-            if (this.IsRunning)
-            {
-                // There's a slight chance that the Process object is running,
-                // but does not have an ID set. This should be rare, but we
-                // definitely don't want to throw an exception.
-                try
-                {
-                    // IsRunning contains a null check for the process.
-                    return this.launcherProcess.Id;
-                }
-                catch (InvalidOperationException)
-                {
-                }
-            }
-
-            return 0;
+            // IsRunning contains a null check for the process, which it only sets once started.
+            return this.IsRunning ? this.launcherProcess.Id : 0;
         }
     }
 
@@ -220,6 +206,20 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         return this.StopAsync(cancellationToken);
     }
 
+    // Returns null at the end of the output.
+    [ExcludeFromCodeCoverage] // The process is disposed mid-read only when a reader outlives the wait after the kill.
+    private static async Task<string?> ReadLineAsync(StreamReader reader)
+    {
+        try
+        {
+            return await reader.ReadLineAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException)
+        {
+            return null;
+        }
+    }
+
     private async Task OnLauncherProcessStartingAsync(BrowserLauncherProcessStartingEventArgs eventArgs)
     {
         await this.invocableBrowserLauncherProcessStartingObservableEvent.InvokeNotifyObserversAsync(eventArgs).ConfigureAwait(false);
@@ -272,18 +272,11 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
 
     private async Task LogProcessOutputAsync(StreamReader reader)
     {
-        try
+        string? line;
+        while ((line = await ReadLineAsync(reader).ConfigureAwait(false)) is not null)
         {
-            string? line;
-            while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) is not null)
-            {
-                this.outputTail.Add(line);
-                await this.LogAsync(line, WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
-            }
-        }
-        catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException)
-        {
-            // The process was disposed while its output was being read.
+            this.outputTail.Add(line);
+            await this.LogAsync(line, WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
         }
     }
 }

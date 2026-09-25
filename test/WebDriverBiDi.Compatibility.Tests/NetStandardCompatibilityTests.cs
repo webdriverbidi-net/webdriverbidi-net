@@ -119,7 +119,7 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
 
         RunProcessResult runResult = await ProcessRunner.RunProcessAsync(
             "dotnet",
-            $"\"{this.fixture.DllPath}\" ws://localhost:{server.Port} \"{this.fixture.PipePeerPath}\"",
+            $"\"{this.fixture.DllPath}\" ws://localhost:{server.Port} \"{this.fixture.PipePeerPath}\" \"{this.fixture.FakeBrowserPath}\"",
             workingDirectory: this.fixture.BuildDir,
             timeout: TimeSpan.FromSeconds(30),
             diagnosticReporter: (output) => TestContext.Current.SendDiagnosticMessage(output));
@@ -147,6 +147,12 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
         // and reaching it depends on the log level, so a change to the level's default can silently stop
         // covering it, as one did.
         Assert.Contains("Netstandard2.0 SEND and RECV trace logging exercised the message decode branch.", runResult.StandardOutputConsoleContent);
+
+        // Prove the netstandard2.0-only code of WebDriverBiDi.Browsers ran: the process tree kill, the
+        // confined executable check, the cache layout marker, the version read's timeout, and the grid header.
+        Assert.Contains("Browsers: a browser was launched and killed through the netstandard2.0 build.", runResult.StandardOutputConsoleContent);
+        Assert.Contains("Browsers: the installed browser's version was read and the new cache was marked.", runResult.StandardOutputConsoleContent);
+        Assert.Contains("Browsers: a remote grid header was added.", runResult.StandardOutputConsoleContent);
         Assert.Contains("PASS:", runResult.StandardOutputConsoleContent);
         Assert.Equal(0, runResult.ExitCode);
     }

@@ -22,11 +22,6 @@
     <None Include="HarSchema/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- Only .NET Framework splits what TextElements joins, so the tests exercise a copy of it compiled here. -->
-  <ItemGroup>
-    <Compile Include="..\..\src\WebDriverBiDi.Extensions\Input\TextElements.cs" Link="Linked\TextElements.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\WebDriverBiDi.Extensions\WebDriverBiDi.Extensions.csproj" />
   </ItemGroup>

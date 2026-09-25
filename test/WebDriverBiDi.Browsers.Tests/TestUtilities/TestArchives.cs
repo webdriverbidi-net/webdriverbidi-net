@@ -35,6 +35,30 @@ public static class TestArchives
     }
 
     /// <summary>
+    /// Creates a zip archive containing a file at each of the given paths, and an incompressible file of the given size.
+    /// </summary>
+    /// <param name="paddingSize">The size of the incompressible file.</param>
+    /// <param name="entryPaths">The '/'-separated paths of the files to include.</param>
+    /// <returns>The archive contents.</returns>
+    public static byte[] LargeZip(int paddingSize, params string[] entryPaths)
+    {
+        using MemoryStream stream = new();
+        using (ZipArchive archive = new(stream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (string entryPath in entryPaths)
+            {
+                using StreamWriter writer = new(archive.CreateEntry(entryPath).Open());
+                writer.Write(entryPath);
+            }
+
+            using Stream padding = archive.CreateEntry("padding", CompressionLevel.NoCompression).Open();
+            padding.Write(System.Security.Cryptography.RandomNumberGenerator.GetBytes(paddingSize));
+        }
+
+        return stream.ToArray();
+    }
+
+    /// <summary>
     /// Creates a gzip-compressed tar archive containing a file at each of the given paths.
     /// </summary>
     /// <param name="entryPaths">The '/'-separated paths of the files to include.</param>

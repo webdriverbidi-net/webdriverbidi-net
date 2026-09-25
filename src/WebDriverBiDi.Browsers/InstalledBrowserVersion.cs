@@ -25,9 +25,10 @@ internal static class InstalledBrowserVersion
     /// Windows, or otherwise from what it writes when run with "--version".
     /// </summary>
     /// <param name="executablePath">The path of the browser executable.</param>
+    /// <param name="timeProvider">The time provider that times the wait for "--version" output.</param>
     /// <param name="cancellationToken">A token that cancels reading the version.</param>
     /// <returns>The version, such as "130.0.2849.80", or <see langword="null"/> if it cannot be read.</returns>
-    public static async Task<string?> ReadAsync(string executablePath, CancellationToken cancellationToken)
+    public static async Task<string?> ReadAsync(string executablePath, TimeProvider timeProvider, CancellationToken cancellationToken)
     {
         if (!File.Exists(executablePath))
         {
@@ -43,7 +44,7 @@ internal static class InstalledBrowserVersion
         }
 
         // A Chromium browser on Windows writes nothing for "--version", but its file version is the browser's.
-        return ReadWindowsFileVersion(executablePath) ?? await ReadVersionOutputAsync(executablePath, cancellationToken).ConfigureAwait(false);
+        return ReadWindowsFileVersion(executablePath) ?? await ReadVersionOutputAsync(executablePath, timeProvider, cancellationToken).ConfigureAwait(false);
     }
 
     private static string? FindVersion(string text)
@@ -58,7 +59,7 @@ internal static class InstalledBrowserVersion
         return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? FindVersion(FileVersionInfo.GetVersionInfo(executablePath).FileVersion ?? string.Empty) : null;
     }
 
-    private static async Task<string?> ReadVersionOutputAsync(string executablePath, CancellationToken cancellationToken)
+    private static async Task<string?> ReadVersionOutputAsync(string executablePath, TimeProvider timeProvider, CancellationToken cancellationToken)
     {
         using Process process = new()
         {
@@ -83,17 +84,21 @@ internal static class InstalledBrowserVersion
         // Drained concurrently: a process blocked writing to a full stderr pipe never closes stdout.
         Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
         Task<string> errorTask = process.StandardError.ReadToEndAsync();
-        using CancellationTokenSource timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutSource.CancelAfter(VersionOutputTimeout);
+#if NET8_0_OR_GREATER
+        using CancellationTokenSource timeoutSource = new(VersionOutputTimeout, timeProvider);
+#else
+        using CancellationTokenSource timeoutSource = timeProvider.CreateCancellationTokenSource(VersionOutputTimeout);
+#endif
+        using CancellationTokenSource waitSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutSource.Token);
         Task outputRead = Task.WhenAll(outputTask, errorTask);
-        if (await Task.WhenAny(outputRead, Task.Delay(Timeout.Infinite, timeoutSource.Token)).ConfigureAwait(false) != outputRead)
+        if (await Task.WhenAny(outputRead, Task.Delay(Timeout.Infinite, waitSource.Token)).ConfigureAwait(false) != outputRead)
         {
             ProcessTermination.KillTree(process);
             cancellationToken.ThrowIfCancellationRequested();
             return null;
         }
 
-        timeoutSource.Cancel();
+        waitSource.Cancel();
         return FindVersion(await outputTask.ConfigureAwait(false));
     }
 }

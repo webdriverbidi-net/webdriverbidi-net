@@ -366,6 +366,10 @@ jobs:
       - name: Test command-line tool
         run: dotnet test --project test/WebDriverBiDi.Tool.Tests --configuration Release --no-build --verbosity normal
 
+      # Runs the netstandard2.0 builds on the real .NET Framework, which only Windows has.
+      - name: Test on .NET Framework
+        run: dotnet test --project test/WebDriverBiDi.NetFramework.Tests --configuration Release --no-build --verbosity normal
+
   # Compatibility tests build and run a separate consumer application against a specific build of
   # the library (currently the netstandard2.0 one) over a scripted WebSocket server. They need no
   # browser, so they run once per operating system here rather than once per browser per operating

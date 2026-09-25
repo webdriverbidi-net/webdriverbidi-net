@@ -5,15 +5,11 @@
 
 namespace WebDriverBiDi.Browsers;
 
-using System.Diagnostics.CodeAnalysis;
-
 /// <summary>
 /// Browser extractor for browsers distributed as self-extracting executables on Windows. This extractor
 /// runs the installer with silent and extraction options to extract the browser to the specified directory,
 /// and then deletes the installer file.
 /// </summary>
-// Runs only on Windows (the Firefox installer). No CI job exercises it: CI supplies Firefox via FIREFOX_EXECUTABLE.
-[ExcludeFromCodeCoverage]
 public class SelfExtractingExecutableFileExtractor : FileExtractor
 {
     private readonly string extractedSourceDirectoryName;
@@ -56,21 +52,20 @@ public class SelfExtractingExecutableFileExtractor : FileExtractor
             }
 
             Directory.CreateDirectory(temporaryExtractionPath);
-            await this.RunProcessAsync(installerPath, $"/ExtractDir={temporaryExtractionPath}", cancellationToken: cancellationToken).ConfigureAwait(false);
-            string sourcePath = Path.Combine(temporaryExtractionPath, this.extractedSourceDirectoryName);
-            Directory.Move(sourcePath, destinationPath);
-        }
-        finally
-        {
-            if (Directory.Exists(temporaryExtractionPath))
+            try
+            {
+                await this.RunProcessAsync(installerPath, $"/ExtractDir={temporaryExtractionPath}", cancellationToken: cancellationToken).ConfigureAwait(false);
+                string sourcePath = Path.Combine(temporaryExtractionPath, this.extractedSourceDirectoryName);
+                Directory.Move(sourcePath, destinationPath);
+            }
+            finally
             {
                 Directory.Delete(temporaryExtractionPath, true);
             }
-
-            if (File.Exists(installerPath))
-            {
-                File.Delete(installerPath);
-            }
+        }
+        finally
+        {
+            File.Delete(installerPath);
         }
     }
 }

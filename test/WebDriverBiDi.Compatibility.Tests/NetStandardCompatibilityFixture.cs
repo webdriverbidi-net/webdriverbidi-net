@@ -27,6 +27,8 @@ public class NetStandardCompatibilityFixture : IAsyncLifetime
 
     public string PipePeerPath => PipePeerDllPath;
 
+    public string FakeBrowserPath { get; } = Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? "WebDriverBiDi.FakeBrowser.exe" : "WebDriverBiDi.FakeBrowser");
+
     public async ValueTask InitializeAsync()
     {
         // Build to a dedicated directory to avoid conflicts with regular builds, and so
@@ -58,6 +60,7 @@ public class NetStandardCompatibilityFixture : IAsyncLifetime
         // The pipe-peer application must have been copied next to this test assembly; the smoke app
         // launches it to exercise the netstandard2.0 PipeConnection round trip.
         Assert.True(File.Exists(PipePeerDllPath), $"Pipe peer application not found at {PipePeerDllPath}.");
+        Assert.True(File.Exists(this.FakeBrowserPath), $"Fake browser not found at {this.FakeBrowserPath}.");
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;

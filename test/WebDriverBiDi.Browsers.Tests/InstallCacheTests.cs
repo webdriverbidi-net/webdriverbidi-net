@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Runtime.Versioning;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Time.Testing;
 using WebDriverBiDi.Browsers.TestUtilities;
@@ -332,6 +333,59 @@ public class InstallCacheTests
         await Assert.ThrowsAsync<BrowserDownloadException>(() => DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Beta, BrowserVersion.Latest, FileLocationBehavior.UseSystemInstallLocation, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken));
         await Assert.ThrowsAsync<BrowserDownloadException>(() => DriverLocator.FindDriverAsync(BrowserKind.Chrome, BrowserReleaseChannel.Stable, BrowserVersion.Specific(LatestVersion), FileLocationBehavior.AutoLocateAndDownload, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken));
         Assert.Empty(server.RequestedUrls);
+    }
+
+    [Fact]
+    public async Task LockWithoutTimeoutIsWaitedForUntilReleased()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        Serve(server, "Stable", LatestVersion);
+        using TemporaryDirectory cache = new();
+        string scopeDirectory = Path.Combine(cache.Path, "chrome", "stable");
+        Directory.CreateDirectory(scopeDirectory);
+        FileStream heldLock = new(Path.Combine(scopeDirectory, ".lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        BrowserDownloadOptions defaults = TestDownloadOptions.Create(server, cache);
+        BrowserDownloadOptions options = new()
+        {
+            CacheDirectory = defaults.CacheDirectory,
+            Platform = defaults.Platform,
+            ChromeForTestingEndpoint = defaults.ChromeForTestingEndpoint,
+            LockTimeout = Timeout.InfiniteTimeSpan,
+        };
+
+        Task<string> find = FindChromeAsync(options);
+        await Task.Delay(TimeSpan.FromMilliseconds(300), TestContext.Current.CancellationToken);
+        bool waited = !find.IsCompleted;
+        heldLock.Dispose();
+        string path = await find;
+
+        Assert.True(waited);
+        Assert.True(File.Exists(path));
+    }
+
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public async Task LeftoverThatCannotBeDeletedDoesNotStopAnInstallation()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows() || Environment.UserName == "root", "Needs directory permissions that the user cannot bypass.");
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        Serve(server, "Stable", LatestVersion);
+        using TemporaryDirectory cache = new();
+        string leftover = Path.Combine(cache.Path, "chrome", "stable", ".tmp-leftover");
+        Directory.CreateDirectory(leftover);
+        File.WriteAllText(Path.Combine(leftover, "partial"), string.Empty);
+        File.SetUnixFileMode(leftover, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+        try
+        {
+            string path = await FindChromeAsync(TestDownloadOptions.Create(server, cache));
+
+            Assert.True(File.Exists(path));
+            Assert.True(Directory.Exists(leftover));
+        }
+        finally
+        {
+            File.SetUnixFileMode(leftover, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
     }
 
     private static Task<string> FindChromeAsync(BrowserDownloadOptions options, BrowserVersion? version = null)

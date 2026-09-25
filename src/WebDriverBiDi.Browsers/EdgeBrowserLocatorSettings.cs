@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 /// as installers: the installed Edge of a channel, or the executable at a custom location, is used. Its driver,
 /// msedgedriver, is downloaded in the version of the installed Edge.
 /// </summary>
-internal class EdgeBrowserLocatorSettings : BrowserLocatorSettings
+internal class EdgeBrowserLocatorSettings : BrowserLocatorSettings, IDriverDownloadSource
 {
     private const string DriverNameValue = "msedgedriver";
 
@@ -31,6 +31,8 @@ internal class EdgeBrowserLocatorSettings : BrowserLocatorSettings
         this.Channel = channel.ToString().ToLowerInvariant();
         this.BrowserDisplayName = channel == EdgeChannel.Stable ? "Microsoft Edge" : $"Microsoft Edge {channel}";
         this.EnvironmentVariableName = "EDGE_EXECUTABLE";
+        this.DriverExecutableName = this.Platform.OperatingSystem == OperatingSystemFamily.Windows ? $"{DriverNameValue}.exe" : DriverNameValue;
+        this.DriverEnvironmentVariableName = "MSEDGEDRIVER_EXECUTABLE";
         this.LocationBehavior = customPath is null ? FileLocationBehavior.UseSystemInstallLocation : FileLocationBehavior.UseCustomLocation;
         this.InstallerFileName = string.Empty;
         this.ExpectedExecutablePath = customPath ?? this.GetDefaultSystemInstalledLocation();
@@ -42,16 +44,6 @@ internal class EdgeBrowserLocatorSettings : BrowserLocatorSettings
     /// </summary>
     public override string BrowserName { get; } = "edge";
 
-    /// <summary>
-    /// Gets the name of the driver executable ("msedgedriver" or "msedgedriver.exe").
-    /// </summary>
-    public override string DriverExecutableName => this.Platform.OperatingSystem == OperatingSystemFamily.Windows ? $"{DriverNameValue}.exe" : DriverNameValue;
-
-    /// <summary>
-    /// Gets the name of the environment variable that can be used to override the driver executable path.
-    /// </summary>
-    public override string DriverEnvironmentVariableName => "MSEDGEDRIVER_EXECUTABLE";
-
     private BrowserPlatform Platform => this.DownloadOptions.ResolvedPlatform;
 
     /// <summary>
@@ -62,7 +54,7 @@ internal class EdgeBrowserLocatorSettings : BrowserLocatorSettings
     /// <returns>The version, or <see langword="null"/> if it cannot be read.</returns>
     public override Task<string?> GetInstalledBrowserVersionAsync(string executablePath, CancellationToken cancellationToken)
     {
-        return InstalledBrowserVersion.ReadAsync(executablePath, cancellationToken);
+        return InstalledBrowserVersion.ReadAsync(executablePath, this.DownloadOptions.TimeProvider, cancellationToken);
     }
 
     /// <summary>
@@ -82,7 +74,7 @@ internal class EdgeBrowserLocatorSettings : BrowserLocatorSettings
     /// <param name="browserVersion">The version of the located Edge, or <see langword="null"/> if it could not be read.</param>
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task whose result is the driver download information.</returns>
-    public override Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
+    public Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
     {
         string version = this.GetRequiredDriverVersion(browserVersion)!;
         string fileName = $"edgedriver_{this.GetDriverPlatformIdentifier()}.zip";

@@ -127,7 +127,7 @@ public class BrowserLocator
         BrowserDownloadInfo downloadInfo;
         try
         {
-            downloadInfo = await locator.GetBrowserDownloadInfoAsync(cancellationToken).ConfigureAwait(false);
+            downloadInfo = await locator.GetBrowserDownloadInfoAsync((IBrowserDownloadSource)settings, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not WebDriverBiDiException && !(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
@@ -405,7 +405,7 @@ public class BrowserLocator
             return new LocatedBrowser(envBrowserPath, await this.GetInstalledVersionForDriverAsync(envBrowserPath, cancellationToken).ConfigureAwait(false));
         }
 
-        if (this.settings.LocationBehavior != FileLocationBehavior.AutoLocateAndDownload)
+        if (this.settings is not IBrowserDownloadSource downloadSource || this.settings.LocationBehavior != FileLocationBehavior.AutoLocateAndDownload)
         {
             if (!this.settings.IncludeDriver)
             {
@@ -418,7 +418,7 @@ public class BrowserLocator
 
         try
         {
-            return await this.LocateCachedBrowserAsync(cancellationToken).ConfigureAwait(false);
+            return await this.LocateCachedBrowserAsync(downloadSource, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not WebDriverBiDiException && !(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
@@ -431,12 +431,12 @@ public class BrowserLocator
     private async Task<string?> GetInstalledVersionForDriverAsync(string executablePath, CancellationToken cancellationToken)
     {
         bool driverIsLocated = this.settings.IncludeDriver
-            && this.settings.DriverLocationBehavior == FileLocationBehavior.AutoLocateAndDownload
+            && this.settings is IDriverDownloadSource
             && LauncherEnvironment.GetVariable(this.settings.DriverEnvironmentVariableName) is null;
         return driverIsLocated ? await this.settings.GetInstalledBrowserVersionAsync(executablePath, cancellationToken).ConfigureAwait(false) : null;
     }
 
-    private async Task<LocatedBrowser> LocateCachedBrowserAsync(CancellationToken cancellationToken)
+    private async Task<LocatedBrowser> LocateCachedBrowserAsync(IBrowserDownloadSource downloadSource, CancellationToken cancellationToken)
     {
         InstallCache cache = new(Path.Combine(this.CacheDirectory, this.settings.BrowserName, this.settings.Channel), this.settings.DownloadOptions);
         using IDisposable lockHandle = await cache.LockAsync(cancellationToken).ConfigureAwait(false);
@@ -452,8 +452,8 @@ public class BrowserLocator
             }
 
             this.ThrowIfDownloadSkipped($"{this.settings.BrowserDisplayName} {this.settings.Version}");
-            BrowserDownloadInfo pinnedDownloadInfo = await this.GetBrowserDownloadInfoAsync(cancellationToken).ConfigureAwait(false);
-            return new LocatedBrowser(await this.InstallBrowserAsync(cache, pinnedDownloadInfo, cancellationToken).ConfigureAwait(false), pinnedDownloadInfo.Version);
+            BrowserDownloadInfo pinnedDownloadInfo = await this.GetBrowserDownloadInfoAsync(downloadSource, cancellationToken).ConfigureAwait(false);
+            return new LocatedBrowser(await this.InstallBrowserAsync(cache, pinnedDownloadInfo, downloadSource, cancellationToken).ConfigureAwait(false), pinnedDownloadInfo.Version);
         }
 
         string? cachedPath = null;
@@ -469,7 +469,7 @@ public class BrowserLocator
         BrowserDownloadInfo downloadInfo;
         try
         {
-            downloadInfo = await this.GetBrowserDownloadInfoAsync(cancellationToken).ConfigureAwait(false);
+            downloadInfo = await this.GetBrowserDownloadInfoAsync(downloadSource, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (isLatestInstalled && IsUnreachableServiceException(ex) && !cancellationToken.IsCancellationRequested)
         {
@@ -488,9 +488,9 @@ public class BrowserLocator
         string executablePath;
         try
         {
-            executablePath = await this.InstallBrowserAsync(cache, downloadInfo, cancellationToken).ConfigureAwait(false);
+            executablePath = await this.InstallBrowserAsync(cache, downloadInfo, downloadSource, cancellationToken).ConfigureAwait(false);
         }
-        catch (IOException ex) when (cache.TryGetInstalledExecutable(downloadInfo.Version, relativeExecutablePath, out string? inUsePath))
+        catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && cache.TryGetInstalledExecutable(downloadInfo.Version, relativeExecutablePath, out string? inUsePath))
         {
             // Not recorded as resolved, so that the replacement is attempted again next time.
             await this.LogAsync($"Could not replace {this.settings.BrowserDisplayName} {downloadInfo.Version}, which may be in use ({ex.Message}); using the existing installation.", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
@@ -501,11 +501,11 @@ public class BrowserLocator
         return new LocatedBrowser(executablePath, downloadInfo.Version);
     }
 
-    private async Task<BrowserDownloadInfo> GetBrowserDownloadInfoAsync(CancellationToken cancellationToken)
+    private async Task<BrowserDownloadInfo> GetBrowserDownloadInfoAsync(IBrowserDownloadSource downloadSource, CancellationToken cancellationToken)
     {
         if (this.settings.DownloadOptions.ManifestUrl is null)
         {
-            return await this.settings.GetBrowserDownloadInfo(cancellationToken).ConfigureAwait(false);
+            return await downloadSource.GetBrowserDownloadInfo(cancellationToken).ConfigureAwait(false);
         }
 
         DownloadManifest manifest = await DownloadManifest.LoadAsync(this.settings.DownloadOptions, cancellationToken).ConfigureAwait(false);
@@ -529,7 +529,7 @@ public class BrowserLocator
         }
     }
 
-    private async Task<string> InstallBrowserAsync(InstallCache cache, BrowserDownloadInfo downloadInfo, CancellationToken cancellationToken)
+    private async Task<string> InstallBrowserAsync(InstallCache cache, BrowserDownloadInfo downloadInfo, IBrowserDownloadSource downloadSource, CancellationToken cancellationToken)
     {
         string name = $"{this.settings.BrowserDisplayName} {downloadInfo.Version}";
         if (this.settings.PlatformSubstitutionNote is string note)
@@ -537,7 +537,7 @@ public class BrowserLocator
             await this.LogAsync(note, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         }
 
-        string? sha256 = downloadInfo.Sha256 ?? await this.settings.GetBrowserSha256Async(downloadInfo, cancellationToken).ConfigureAwait(false);
+        string? sha256 = downloadInfo.Sha256 ?? await downloadSource.GetBrowserSha256Async(downloadInfo, cancellationToken).ConfigureAwait(false);
         await this.LogAsync($"Downloading {name}...", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
         string relativeExecutablePath = this.settings.ExpectedExecutablePath;
         string executablePath = await cache.InstallAsync(downloadInfo.Version, relativeExecutablePath, async installDirectory =>

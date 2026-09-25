@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using Microsoft.Extensions.Time.Testing;
+
 // These tests set environment variables of the test process itself, so they must not run
 // alongside other tests.
 [Collection("NonParallel")]
@@ -128,6 +130,52 @@ public class EnvironmentConfigurationTests
         using VariableOverride variable = new("XDG_CACHE_HOME", xdgCacheHome);
 
         Assert.Equal(expected ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "webdriverbidi-net"), BrowserDownloadOptions.DefaultCacheDirectory);
+    }
+
+    [Fact]
+    public async Task CacheIsListedAndCleanedWithoutOptions()
+    {
+        using TestUtilities.TemporaryDirectory cache = new();
+        using VariableOverride variable = new(BrowsersPathVariableName, cache.Path);
+        TestUtilities.CacheSeeder.SeedInstallation(cache, "drivers/geckodriver", "0.36.0", "geckodriver");
+
+        CachedInstallation installation = Assert.Single(BrowserCache.List());
+        await BrowserCache.RemoveAsync(installation, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Empty(BrowserCache.List());
+    }
+
+    // The variable holds a URL or a file path, and anything that is not an http, https, or file URL is taken as a path.
+    [Fact]
+    public void ManifestVariableWithOtherSchemeIsAPath()
+    {
+        using VariableOverride variable = new(DownloadManifestVariableName, "ftp://mirror.example/manifest.json");
+
+        Uri manifestUrl = new BrowserDownloadOptions().ManifestUrl!;
+
+        Assert.True(manifestUrl.IsFile);
+        Assert.EndsWith("manifest.json", manifestUrl.LocalPath);
+    }
+
+    // The version is read by running the browser, which inherits the mode from this process.
+    [Fact]
+    public async Task BrowserThatNeverReportsItsVersionGetsTheLatestDriverOfTheChannel()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Windows reads the file version without running the browser.");
+        await using TestUtilities.DownloadServer server = await TestUtilities.DownloadServer.StartAsync();
+        TestUtilities.ChromeForTestingService.Serve(server, "Stable", "131.0.6778.204");
+        using TestUtilities.TemporaryDirectory cache = new();
+        FakeTimeProvider timeProvider = new(DateTimeOffset.UtcNow);
+        using VariableOverride variable = new("WEBDRIVERBIDI_FAKE_BROWSER_MODE", "hang-version");
+
+        Task<string?> find = DriverLocator.FindDriverAsync(BrowserKind.Chrome, locationBehavior: FileLocationBehavior.UseCustomLocation, customPath: TestUtilities.FakeBrowserSetup.ExecutablePath, downloadOptions: TestUtilities.TestDownloadOptions.Create(server, cache, timeProvider: timeProvider), cancellationToken: TestContext.Current.CancellationToken);
+        while (!find.IsCompleted)
+        {
+            timeProvider.Advance(TimeSpan.FromSeconds(10));
+            await Task.WhenAny(find, Task.Delay(50, TestContext.Current.CancellationToken));
+        }
+
+        Assert.Equal(Path.Combine(cache.Path, "drivers", "chromedriver", "131.0.6778.204", "chromedriver"), await find);
     }
 
     private sealed class VariableOverride : IDisposable

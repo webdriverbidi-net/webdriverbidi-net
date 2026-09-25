@@ -185,6 +185,7 @@ internal sealed class InstallCache
     }
 
     // Anti-malware scanners briefly hold files that were just written, so a move can fail transiently on Windows.
+    [ExcludeFromCodeCoverage] // A move fails only while another process holds the files.
     private static async Task MoveDirectoryAsync(string source, string destination)
     {
         for (int attempt = 1; ; attempt++)

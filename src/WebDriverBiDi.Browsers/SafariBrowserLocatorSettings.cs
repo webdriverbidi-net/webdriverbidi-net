@@ -37,7 +37,8 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
         this.InstallerFileName = string.Empty;
         this.ExpectedExecutablePath = customPath ?? this.GetDefaultSystemInstalledLocation();
         this.IncludeDriver = true;
-        this.DriverLocationBehavior = FileLocationBehavior.UseCustomLocation;
+        this.DriverExecutableName = "safaridriver";
+        this.DriverEnvironmentVariableName = "SAFARIDRIVER_EXECUTABLE";
         this.DriverExecutableLocation = this.GetDriverLocation();
         this.Version = SystemVersionString;
     }
@@ -46,16 +47,6 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
     /// Gets the name of the browser (e.g., "safari").
     /// </summary>
     public override string BrowserName { get; } = "safari";
-
-    /// <summary>
-    /// Gets the name of the driver executable (e.g., "safaridriver").
-    /// </summary>
-    public override string DriverExecutableName => "safaridriver";
-
-    /// <summary>
-    /// Gets the name of the environment variable that can be used to override the driver executable path.
-    /// </summary>
-    public override string DriverEnvironmentVariableName => "SAFARIDRIVER_EXECUTABLE";
 
     /// <summary>
     /// Gets a value indicating whether the Safari browser is the technology preview edition.

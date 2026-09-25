@@ -5,26 +5,18 @@
 
 namespace WebDriverBiDi.Input;
 
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 /// <summary>
 /// Splits text into user-perceived characters. The runtime's segmentation does this on .NET 5 and later; .NET
 /// Framework follows older Unicode rules, which make separate characters of the zero-width joiner and what it joins,
-/// emoji modifiers, tag characters, and each regional indicator, so those are joined again.
+/// emoji modifiers, tag characters, and each regional indicator, so the netstandard2.0 build joins those again.
 /// </summary>
 internal static class TextElements
 {
+#if NETSTANDARD2_0
     private const int ZeroWidthJoiner = 0x200D;
-
-    // Extended_Pictographic from Unicode's emoji data, compacted into ranges; it only decides whether a joiner joins.
-    private static readonly (int First, int Last)[] PictographicRanges =
-    [
-        (0x00A9, 0x00A9), (0x00AE, 0x00AE), (0x203C, 0x203C), (0x2049, 0x2049), (0x2122, 0x2122), (0x2139, 0x2139),
-        (0x2194, 0x21AA), (0x231A, 0x23FF), (0x24C2, 0x24C2), (0x25AA, 0x25FE), (0x2600, 0x27BF), (0x2934, 0x2935),
-        (0x2B05, 0x2B55), (0x3030, 0x3030), (0x303D, 0x303D), (0x3297, 0x3297), (0x3299, 0x3299),
-        (0x1F000, 0x1F1E5), (0x1F200, 0x1F3FA), (0x1F400, 0x1FAFF), (0x1FC00, 0x1FFFD),
-    ];
+#endif
 
     /// <summary>
     /// Splits text into user-perceived characters.
@@ -40,15 +32,19 @@ internal static class TextElements
             elements.Add(enumerator.GetTextElement());
         }
 
+#if NETSTANDARD2_0
         return Join(elements);
+#else
+        return elements;
+#endif
     }
 
+#if NETSTANDARD2_0
     /// <summary>
     /// Joins the characters that older Unicode rules split out of one user-perceived character.
     /// </summary>
     /// <param name="elements">The characters, as the runtime's segmentation split them.</param>
     /// <returns>The characters, joined where they are one.</returns>
-    [ExcludeFromCodeCoverage] // Only .NET Framework splits what this joins; the tests exercise a copy linked into the test project.
     internal static List<string> Join(IReadOnlyList<string> elements)
     {
         List<string> joined = [];
@@ -67,7 +63,6 @@ internal static class TextElements
         return joined;
     }
 
-    [ExcludeFromCodeCoverage] // As for Join.
     private static bool Continues(string previous, string next)
     {
         int first = FirstCodePoint(next);
@@ -89,12 +84,14 @@ internal static class TextElements
     }
 
     // Text may hold a lone surrogate, which is its own character.
-    [ExcludeFromCodeCoverage] // As for Join.
     private static int FirstCodePoint(string text) => char.IsSurrogatePair(text, 0) ? char.ConvertToUtf32(text, 0) : text[0];
 
-    [ExcludeFromCodeCoverage] // As for Join.
-    private static bool IsPictographic(int codePoint) => PictographicRanges.Any(range => codePoint >= range.First && codePoint <= range.Last);
+    // Extended_Pictographic from Unicode's emoji data, compacted into ranges; it only decides whether a joiner joins.
+    private static bool IsPictographic(int codePoint) => codePoint is 0x00A9 or 0x00AE or 0x203C or 0x2049 or 0x2122 or 0x2139
+        or (>= 0x2194 and <= 0x21AA) or (>= 0x231A and <= 0x23FF) or 0x24C2 or (>= 0x25AA and <= 0x25FE) or (>= 0x2600 and <= 0x27BF)
+        or 0x2934 or 0x2935 or (>= 0x2B05 and <= 0x2B55) or 0x3030 or 0x303D or 0x3297 or 0x3299
+        or (>= 0x1F000 and <= 0x1F1E5) or (>= 0x1F200 and <= 0x1F3FA) or (>= 0x1F400 and <= 0x1FAFF) or (>= 0x1FC00 and <= 0x1FFFD);
 
-    [ExcludeFromCodeCoverage] // As for Join.
     private static bool IsRegionalIndicator(int codePoint) => codePoint is >= 0x1F1E6 and <= 0x1F1FF;
+#endif
 }

@@ -119,7 +119,7 @@ public class DriverLocator
             string? browserVersion = settings.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload
                 ? null
                 : await new BrowserLocator(settings).LocateBrowserVersionAsync(cancellationToken).ConfigureAwait(false);
-            downloadInfo = await locator.GetDriverDownloadInfoAsync(browserVersion, cancellationToken).ConfigureAwait(false);
+            downloadInfo = await locator.GetDriverDownloadInfoAsync((IDriverDownloadSource)settings, browserVersion, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not WebDriverBiDiException && !(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
@@ -147,15 +147,15 @@ public class DriverLocator
             return envDriverPath;
         }
 
-        if (this.settings.DriverLocationBehavior == FileLocationBehavior.UseCustomLocation)
+        if (this.settings is not IDriverDownloadSource downloadSource)
         {
-            await this.LogAsync($"Using custom {this.settings.DriverExecutableName} at: {this.settings.DriverExecutableLocation}", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+            await this.LogAsync($"Using {this.settings.DriverExecutableName} at: {this.settings.DriverExecutableLocation}", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
             return this.settings.DriverExecutableLocation;
         }
 
         try
         {
-            return await this.LocateCachedDriverAsync(browserVersion, cancellationToken).ConfigureAwait(false);
+            return await this.LocateCachedDriverAsync(downloadSource, browserVersion, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not WebDriverBiDiException && !(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
@@ -177,21 +177,22 @@ public class DriverLocator
     /// <summary>
     /// Gets the download of the driver, for the given version of the browser it drives.
     /// </summary>
+    /// <param name="downloadSource">The settings, as the source of the driver's download.</param>
     /// <param name="browserVersion">The version of the browser, or <see langword="null"/> if it is not known.</param>
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>The driver download information.</returns>
-    internal async Task<DriverDownloadInfo> GetDriverDownloadInfoAsync(string? browserVersion, CancellationToken cancellationToken)
+    internal async Task<DriverDownloadInfo> GetDriverDownloadInfoAsync(IDriverDownloadSource downloadSource, string? browserVersion, CancellationToken cancellationToken)
     {
         if (this.settings.DownloadOptions.ManifestUrl is null)
         {
-            return await this.settings.GetMatchingDriverDownloadInfo(browserVersion, cancellationToken).ConfigureAwait(false);
+            return await downloadSource.GetMatchingDriverDownloadInfo(browserVersion, cancellationToken).ConfigureAwait(false);
         }
 
         DownloadManifest manifest = await DownloadManifest.LoadAsync(this.settings.DownloadOptions, cancellationToken).ConfigureAwait(false);
         return manifest.ResolveDriver(this.settings, browserVersion);
     }
 
-    private async Task<string> LocateCachedDriverAsync(string? browserVersion, CancellationToken cancellationToken)
+    private async Task<string> LocateCachedDriverAsync(IDriverDownloadSource downloadSource, string? browserVersion, CancellationToken cancellationToken)
     {
         InstallCache cache = new(Path.Combine(this.CacheDirectory, "drivers", this.settings.DriverName), this.settings.DownloadOptions);
         using IDisposable lockHandle = await cache.LockAsync(cancellationToken).ConfigureAwait(false);
@@ -199,7 +200,7 @@ public class DriverLocator
         string? requiredVersion = this.settings.GetRequiredDriverVersion(browserVersion);
         if (requiredVersion is not null)
         {
-            return await this.LocateMatchingDriverAsync(cache, requiredVersion, browserVersion, cancellationToken).ConfigureAwait(false);
+            return await this.LocateMatchingDriverAsync(downloadSource, cache, requiredVersion, browserVersion, cancellationToken).ConfigureAwait(false);
         }
 
         string request = this.settings.DriverVersionRequest;
@@ -216,7 +217,7 @@ public class DriverLocator
         DriverDownloadInfo downloadInfo;
         try
         {
-            downloadInfo = await this.GetDriverDownloadInfoAsync(browserVersion, cancellationToken).ConfigureAwait(false);
+            downloadInfo = await this.GetDriverDownloadInfoAsync(downloadSource, browserVersion, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (isResolvedVersionInstalled && BrowserLocator.IsUnreachableServiceException(ex) && !cancellationToken.IsCancellationRequested)
         {
@@ -233,7 +234,7 @@ public class DriverLocator
 
     // A driver of another version may be the match for the required one, and is then recorded as its match, rechecked
     // as a resolved version is, so that it is found without a network request.
-    private async Task<string> LocateMatchingDriverAsync(InstallCache cache, string requiredVersion, string? browserVersion, CancellationToken cancellationToken)
+    private async Task<string> LocateMatchingDriverAsync(IDriverDownloadSource downloadSource, InstallCache cache, string requiredVersion, string? browserVersion, CancellationToken cancellationToken)
     {
         string relativeExecutablePath = this.settings.DriverExecutableName;
         if (cache.TryGetInstalledExecutable(requiredVersion, relativeExecutablePath, out string? installedPath))
@@ -256,7 +257,7 @@ public class DriverLocator
         DriverDownloadInfo downloadInfo;
         try
         {
-            downloadInfo = await this.GetDriverDownloadInfoAsync(browserVersion, cancellationToken).ConfigureAwait(false);
+            downloadInfo = await this.GetDriverDownloadInfoAsync(downloadSource, browserVersion, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (isMatchInstalled && BrowserLocator.IsUnreachableServiceException(ex) && !cancellationToken.IsCancellationRequested)
         {

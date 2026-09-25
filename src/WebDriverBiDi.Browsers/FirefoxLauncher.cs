@@ -503,12 +503,9 @@ public class FirefoxLauncher : BrowserLauncher
             ["fission.webContentIsolationStrategy"] = 0,
         };
 
-        if (preferences != null)
+        foreach (KeyValuePair<string, object> kv in preferences)
         {
-            foreach (KeyValuePair<string, object> kv in preferences)
-            {
-                prefs[kv.Key] = kv.Value;
-            }
+            prefs[kv.Key] = kv.Value;
         }
 
         return prefs;
@@ -573,27 +570,19 @@ public class FirefoxLauncher : BrowserLauncher
     /// </remarks>
     private async Task<bool> WaitForInitializationAsync(CancellationToken cancellationToken)
     {
-        bool isInitialized = false;
+        // A browser process that has exited ends the wait early.
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
-        while (!isInitialized && initializationStopwatch.Elapsed <= this.InitializationTimeout)
+        while (initializationStopwatch.Elapsed <= this.InitializationTimeout && this.IsRunning)
         {
-            // If the browser process has exited, we can exit early.
-            if (!this.IsRunning)
-            {
-                break;
-            }
-
             if (this.ReportedPort != 0)
             {
-                isInitialized = true;
-                break;
+                return true;
             }
 
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
-        initializationStopwatch.Stop();
-        return isInitialized;
+        return false;
     }
 
     private void RecordProcessOutput(object sender, DataReceivedEventArgs e)

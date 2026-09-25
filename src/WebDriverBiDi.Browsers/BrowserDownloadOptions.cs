@@ -84,7 +84,8 @@ public class BrowserDownloadOptions
     public BrowserPlatform? Platform { get; init; }
 
     /// <summary>
-    /// Gets the <see cref="System.TimeProvider"/> used to decide whether cached version information is stale.
+    /// Gets the <see cref="System.TimeProvider"/> used to decide whether cached version information is stale, and to time
+    /// the wait for an installed browser to report its version.
     /// </summary>
     public TimeProvider TimeProvider
     {

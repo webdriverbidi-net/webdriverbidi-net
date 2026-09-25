@@ -193,6 +193,19 @@ public class FirefoxLocatorTests
         Assert.IsType<PlatformNotSupportedException>(exception.InnerException);
     }
 
+    // geckodriver does not follow the Firefox version, so a Firefox that is not downloaded is not asked for its version.
+    [Fact]
+    public async Task GeckoDriverForFirefoxAtCustomLocationIsTheLatest()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ServeGeckoDriverRelease(server);
+        using TemporaryDirectory cache = new();
+
+        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Firefox, locationBehavior: FileLocationBehavior.UseCustomLocation, customPath: Path.Combine(cache.Path, "firefox"), downloadOptions: TestDownloadOptions.Create(server, cache), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(Path.Combine(cache.Path, "drivers", "geckodriver", GeckoDriverVersion, "geckodriver"), path);
+    }
+
     [Theory]
     [MemberData(nameof(GeckoDriverPlatforms))]
     public async Task FindDriverDownloadsGeckoDriverAssetForPlatform(OperatingSystemFamily operatingSystem, Architecture architecture, string assetSuffix)

@@ -82,6 +82,16 @@ public class ResolveDownloadTests
     }
 
     [Fact]
+    public async Task DriverIsResolvedWithDefaultOptions()
+    {
+        using TemporaryDirectory directory = new();
+
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(() => DriverLocator.ResolveDownloadAsync(BrowserKind.Edge, locationBehavior: FileLocationBehavior.UseCustomLocation, customPath: Path.Combine(directory.Path, "msedge"), cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Contains("could not be read", exception.Message);
+    }
+
+    [Fact]
     public async Task BuildThatCannotBeResolvedIsReported()
     {
         await using DownloadServer server = await DownloadServer.StartAsync();

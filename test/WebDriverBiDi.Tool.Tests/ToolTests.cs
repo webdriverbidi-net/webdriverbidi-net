@@ -6,6 +6,8 @@
 namespace WebDriverBiDi.Tool;
 
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 using WebDriverBiDi.Browsers;
 using WebDriverBiDi.Tool.TestUtilities;
 
@@ -111,6 +113,46 @@ public sealed class ToolTests : IDisposable
         string[] progress = [.. result.Error.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Where(line => line.StartsWith("Downloading Chrome Beta", StringComparison.Ordinal))];
         Assert.Equal(["0%", "25%", "50%", "75%", "100%"], progress.Select(line => line[(line.LastIndexOf(' ') + 1)..]));
         Assert.All(progress, line => Assert.Contains($"{Mirror.ChromeBetaVersion} of 5.0 MB", line));
+    }
+
+    [Fact]
+    public async Task DownloadOfUnknownSizeReportsOnlyItsStart()
+    {
+        byte[] archive = Mirror.Zip("chrome-linux64/chrome");
+        using ChunkedServer server = new(archive);
+        using TemporaryDirectory mirror = new();
+        string manifestPath = Path.Combine(mirror.Path, "manifest.json");
+        File.WriteAllText(manifestPath, new JsonObject()
+        {
+            ["schemaVersion"] = 1,
+            ["browsers"] = new JsonObject()
+            {
+                ["chrome"] = new JsonObject()
+                {
+                    ["channels"] = new JsonObject() { ["stable"] = Mirror.ChromeVersion },
+                    ["versions"] = new JsonObject() { [Mirror.ChromeVersion] = new JsonObject() { ["linux-x64"] = new JsonObject() { ["url"] = server.Url.AbsoluteUri, ["sha256"] = Convert.ToHexStringLower(SHA256.HashData(archive)) } } },
+                },
+            },
+            ["drivers"] = new JsonObject(),
+        }.ToJsonString());
+        StringWriter output = new();
+        StringWriter error = new();
+
+        int exitCode = await WebDriverBiDiTool.RunAsync(
+            ["install", "chrome"],
+            output,
+            error,
+            (path, progress) => new BrowserDownloadOptions()
+            {
+                CacheDirectory = this.cache.Path,
+                ManifestUrl = new Uri(manifestPath),
+                Platform = new BrowserPlatform(OperatingSystemFamily.Linux, Architecture.X64),
+                Progress = progress,
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal([$"Downloading Chrome Stable {Mirror.ChromeVersion}: 0%"], error.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries));
     }
 
     [Fact]

@@ -182,6 +182,9 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         }
 
         string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync(cancellationToken).ConfigureAwait(false);
+
+        // Quitting releases the pipes, so a relaunch needs new ones.
+        this.connection ??= this.CreateConnection();
         await this.LogAsync($"Launching {this.ProductName} browser from {browserExecutableLocation}").ConfigureAwait(false);
 
         // With port 0, Chrome chooses a free port itself and reports it with its DevTools endpoint.
@@ -203,6 +206,12 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             this.profile?.SetOwner(this.browserProcess);
             this.browserProcess.BeginOutputReadLine();
             this.browserProcess.BeginErrorReadLine();
+            if (this.connection is PipeConnection)
+            {
+                // A pipe connection is ready as soon as the process runs.
+                this.ConnectionString = $"pipe://chrome:{process.Id}";
+            }
+
             bool launcherAvailable = await this.WaitForInitializationAsync(cancellationToken).ConfigureAwait(false);
             if (!launcherAvailable)
             {
@@ -245,7 +254,8 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// <returns>The task object representing the asynchronous operation.</returns>
     public override async Task QuitBrowserAsync(CancellationToken cancellationToken = default)
     {
-        if (this.connection is not null && this.connection.IsActive && this.connection.ConnectionKind == ConnectionKind.Pipes && this.connection is PipeConnection pipeConnection)
+        // Stopping a pipe connection that was never opened does nothing.
+        if (this.connection is PipeConnection pipeConnection)
         {
             await pipeConnection.StopAsync().ConfigureAwait(false);
             this.connection = null;
@@ -265,14 +275,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         await this.TerminateBrowserProcessAsync(requestExit: false, cancellationToken).ConfigureAwait(false);
         if (this.connection is PipeConnection pipeConnection)
         {
-            try
-            {
-                await pipeConnection.StopAsync().ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // The process is gone; a failure releasing the pipe must not mask that the kill succeeded.
-            }
+            await pipeConnection.StopAsync().ConfigureAwait(false);
         }
 
         this.connection = null;
@@ -386,34 +389,19 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
 
     private async Task<bool> WaitForInitializationAsync(CancellationToken cancellationToken)
     {
-        bool isInitialized = false;
+        // A browser process that has exited ends the wait early.
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
-        while (!isInitialized && initializationStopwatch.Elapsed <= this.InitializationTimeout)
+        while (initializationStopwatch.Elapsed <= this.InitializationTimeout && this.IsRunning)
         {
-            // If the driver service process has exited, we can exit early.
-            if (!this.IsRunning)
-            {
-                break;
-            }
-
-            if (this.browserProcess is not null && this.connection is not null && this.connection.ConnectionKind == ConnectionKind.Pipes && this.connection is PipeConnection)
-            {
-                this.ConnectionString = $"pipe://chrome:{this.browserProcess.Id}";
-            }
-
             if (!string.IsNullOrEmpty(this.ConnectionString))
             {
-                isInitialized = true;
-                break;
+                return true;
             }
-            else
-            {
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
-            }
+
+            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
-        initializationStopwatch.Stop();
-        return isInitialized;
+        return false;
     }
 
     private void RecordProcessOutput(object sender, DataReceivedEventArgs e)

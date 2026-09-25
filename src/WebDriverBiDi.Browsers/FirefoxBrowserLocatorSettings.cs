@@ -17,7 +17,7 @@ using System.Text.Json.Serialization;
 /// on the current platform and architecture. The locator settings are used by the BrowserLocator to
 /// locate and download the correct version of Firefox for testing with WebDriver BiDi.
 /// </summary>
-internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
+internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings, IBrowserDownloadSource, IDriverDownloadSource
 {
     // Firefox for Linux has been distributed as .tar.xz, rather than .tar.bz2, since version 135.
     private const int FirstXzCompressedLinuxVersion = 135;
@@ -61,6 +61,8 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
         this.Channel = channel.ToString().ToLowerInvariant();
         this.BrowserDisplayName = $"Firefox {channel}";
         this.EnvironmentVariableName = "FIREFOX_EXECUTABLE";
+        this.DriverExecutableName = this.Platform.OperatingSystem == OperatingSystemFamily.Windows ? "geckodriver.exe" : "geckodriver";
+        this.DriverEnvironmentVariableName = "GECKODRIVER_EXECUTABLE";
         this.LocationBehavior = locationBehavior;
         this.InstallerFileName = this.InitializeInstallerFileName();
         this.ExpectedExecutablePath = this.InitializeExpectedExecutablePath(expectedExecutablePath);
@@ -81,16 +83,6 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     /// </summary>
     public override string BrowserName { get; } = "firefox";
 
-    /// <summary>
-    /// Gets the name of the driver executable (e.g., "geckodriver" or "geckodriver.exe").
-    /// </summary>
-    public override string DriverExecutableName => this.Platform.OperatingSystem == OperatingSystemFamily.Windows ? "geckodriver.exe" : "geckodriver";
-
-    /// <summary>
-    /// Gets the name of the environment variable that can be used to override the driver executable path.
-    /// </summary>
-    public override string DriverEnvironmentVariableName => "GECKODRIVER_EXECUTABLE";
-
     private BrowserPlatform Platform => this.DownloadOptions.ResolvedPlatform;
 
     /// <summary>
@@ -98,7 +90,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
-    public override async Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
+    public async Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
     {
         BrowserDownloadInfo downloadInfo = new()
         {
@@ -136,7 +128,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>The hash in hexadecimal.</returns>
     /// <exception cref="DownloadVerificationException">Thrown when no hash is listed for the download.</exception>
-    public override async Task<string?> GetBrowserSha256Async(BrowserDownloadInfo downloadInfo, CancellationToken cancellationToken)
+    public async Task<string?> GetBrowserSha256Async(BrowserDownloadInfo downloadInfo, CancellationToken cancellationToken)
     {
         Uri downloadUrl = new(downloadInfo.DownloadUrl);
         string path = Uri.UnescapeDataString(downloadUrl.AbsolutePath);
@@ -175,7 +167,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     /// <param name="browserVersion">The version of the located browser; not used, as geckodriver releases are independent of Firefox releases.</param>
     /// <param name="cancellationToken">A token that cancels the request.</param>
     /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    public override async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
+    public async Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
     {
         Uri apiUrl = new(this.DownloadOptions.GeckoDriverReleasesEndpoint, "latest");
 
@@ -358,8 +350,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
             FirefoxChannel.Beta => "firefox-beta-latest",
             FirefoxChannel.Dev => "firefox-devedition-latest",
             FirefoxChannel.Nightly => "firefox-nightly-latest",
-            FirefoxChannel.Esr => "firefox-esr-latest",
-            _ => throw new InvalidOperationException($"Unsupported Firefox channel: {this.channelValue}."),
+            _ => "firefox-esr-latest",
         };
 
         return new Uri(this.DownloadOptions.FirefoxProductEndpoint, $"?product={product}-ssl&os={osMarker}&lang=en-US");

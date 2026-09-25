@@ -69,6 +69,16 @@ public class ConfinedFirefoxTests
     }
 
     [Fact]
+    public async Task MissingExecutableIsNotTreatedAsConfined()
+    {
+        using TemporaryDirectory directory = new();
+
+        BrowserLaunchException exception = await LaunchAsync(Path.Combine(directory.Path, "missing-firefox"));
+
+        Assert.DoesNotContain("Snap or Flatpak", exception.Message);
+    }
+
+    [Fact]
     public async Task ScriptWithoutInterpreterLineIsNotTreatedAsWrapper()
     {
         using TemporaryDirectory directory = new();

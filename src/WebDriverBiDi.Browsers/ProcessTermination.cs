@@ -149,11 +149,12 @@ internal static class ProcessTermination
     /// <param name="process">The process.</param>
     public static void KillTree(Process process)
     {
+#if NET5_0_OR_GREATER
+        // Killing a process that has already exited does nothing.
+        process.Kill(entireProcessTree: true);
+#else
         try
         {
-#if NET5_0_OR_GREATER
-            process.Kill(entireProcessTree: true);
-#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 using Process taskkill = Process.Start(new ProcessStartInfo("taskkill", $"/PID {process.Id} /T /F") { UseShellExecute = false, CreateNoWindow = true })!;
@@ -164,11 +165,11 @@ internal static class ProcessTermination
                 // Without the .NET 5 API, the descendants of a process cannot be found on Unix.
                 process.Kill();
             }
-#endif
         }
         catch (InvalidOperationException)
         {
             // The process has already exited.
         }
+#endif
     }
 }

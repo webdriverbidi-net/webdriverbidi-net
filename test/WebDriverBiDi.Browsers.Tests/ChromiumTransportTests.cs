@@ -15,6 +15,15 @@ public class ChromiumTransportTests
     private const string ConnectionString = "ws://127.0.0.1:9222/devtools/browser/fake";
 
     [Fact]
+    public void MapperScriptIsEmbedded()
+    {
+        using Stream? resource = typeof(ChromiumTransport).Assembly.GetManifestResourceStream("chromium-bidi-mapper");
+
+        Assert.NotNull(resource);
+        Assert.True(resource.Length > 0);
+    }
+
+    [Fact]
     public async Task ConnectBootstrapsMapperInHiddenTab()
     {
         FakeDevToolsConnection connection = new();

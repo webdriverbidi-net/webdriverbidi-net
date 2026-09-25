@@ -32,6 +32,10 @@
          trip. ReferenceOutputAssembly=false: this project only needs the peer built and copied, not
          referenced as an assembly. -->
     <ProjectReference Include="..\WebDriverBiDi.NamedPipeTestApplication\WebDriverBiDi.NamedPipeTestApplication.csproj" ReferenceOutputAssembly="false" />
+
+    <!-- Referenced so that its executable is built and copied to this project's output directory, where the
+         netstandard2.0 smoke application is handed its path to launch it as a stand-in browser. -->
+    <ProjectReference Include="..\WebDriverBiDi.FakeBrowser\WebDriverBiDi.FakeBrowser.csproj" />
   </ItemGroup>
 
   <ItemGroup>

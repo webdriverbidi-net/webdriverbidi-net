@@ -329,14 +329,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
             // Suppress exceptions from QuitBrowserAsync to ensure StopAsync is called
         }
 
-        try
-        {
-            await this.StopAsync().ConfigureAwait(false);
-        }
-        catch
-        {
-            // Suppress exceptions from StopAsync during disposal
-        }
+        await this.StopAsync().ConfigureAwait(false);
     }
 
     /// <summary>

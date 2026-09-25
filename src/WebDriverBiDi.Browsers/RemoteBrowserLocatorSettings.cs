@@ -37,14 +37,4 @@ internal class RemoteBrowserLocatorSettings : BrowserLocatorSettings
     /// Gets the description of the browser location behavior, which is used for logging and user-facing messages.
     /// </summary>
     public override string BrowserLocationBehaviorDescription => this.BrowserDisplayName;
-
-    /// <summary>
-    /// Gets the name of the driver executable. Not implemented for this locator.
-    /// </summary>
-    public override string DriverExecutableName => throw new NotSupportedException();
-
-    /// <summary>
-    /// Gets the name of the environment variable that can be used to override the driver executable path. Not implemented for this locator.
-    /// </summary>
-    public override string DriverEnvironmentVariableName => throw new NotSupportedException();
 }

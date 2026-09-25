@@ -238,6 +238,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <returns><see langword="true"/> if the header was added; <see langword="false"/> if it cannot be sent as a request header.</returns>
     internal bool TryAddRequestHeader(string name, string value)
     {
+#if NETSTANDARD2_0
         try
         {
             return this.httpClient.DefaultRequestHeaders.TryAddWithoutValidation(name, value);
@@ -247,6 +248,9 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
             // .NET Framework rejects a malformed name by throwing, rather than by returning false.
             return false;
         }
+#else
+        return this.httpClient.DefaultRequestHeaders.TryAddWithoutValidation(name, value);
+#endif
     }
 
     /// <summary>

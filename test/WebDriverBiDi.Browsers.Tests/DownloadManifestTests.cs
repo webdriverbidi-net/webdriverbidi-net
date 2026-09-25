@@ -192,6 +192,20 @@ public class DownloadManifestTests
     }
 
     [Fact]
+    public async Task MilestoneTheManifestDoesNotListIsReported()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ManifestBuilder manifest = new(server);
+        manifest.AddBuild("browsers", "chrome", ChromeVersion, "linux-x64", "chrome.zip", TestArchives.Zip(ChromeExecutable));
+        manifest.Serve();
+        using TemporaryDirectory cache = new();
+
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(() => BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, version: BrowserVersion.Milestone(999), downloadOptions: CreateOptions(server, cache), cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Contains("lists no chrome version of milestone 999", exception.Message);
+    }
+
+    [Fact]
     public async Task GeckoDriverUsesListedLatestVersion()
     {
         await using DownloadServer server = await DownloadServer.StartAsync();

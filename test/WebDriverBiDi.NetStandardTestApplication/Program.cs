@@ -11,7 +11,7 @@ using WebDriverBiDi.Session;
 
 if (args.Length < 1)
 {
-    Console.Error.WriteLine("Usage: WebDriverBiDi.NetStandardTestApplication <websocket-url> [pipe-peer-dll-path]");
+    Console.Error.WriteLine("Usage: WebDriverBiDi.NetStandardTestApplication <websocket-url> [pipe-peer-dll-path] [fake-browser-path]");
     return 1;
 }
 
@@ -20,6 +20,10 @@ string webSocketUrl = args[0];
 // Optional: when supplied, the path to the NamedPipeTestApplication is used to run a PipeConnection
 // round trip that exercises the netstandard2.0 pipe code paths in addition to the WebSocket ones.
 string? pipePeerDllPath = args.Length > 1 ? args[1] : null;
+
+// Optional: when supplied, the path of the fake browser is used to exercise the netstandard2.0 build of
+// WebDriverBiDi.Browsers.
+string? fakeBrowserPath = args.Length > 2 ? args[2] : null;
 
 // Defense-in-depth: confirm this process actually loaded the netstandard2.0 build of
 // WebDriverBiDi. The SetTargetFramework metadata on this project's ProjectReference
@@ -152,6 +156,11 @@ try
     {
         await PipeTransportScenario.RunAsync(pipePeerDllPath);
         Console.WriteLine("Pipe transport round-trip over the netstandard2.0 build succeeded.");
+    }
+
+    if (fakeBrowserPath is not null)
+    {
+        await BrowsersScenario.RunAsync(fakeBrowserPath);
     }
 
     Console.WriteLine("PASS: netstandard2.0 build of WebDriverBiDi connected, exchanged commands, received an event, and surfaced a command failure.");

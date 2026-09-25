@@ -131,7 +131,7 @@ internal sealed class FileDownloader
         byte[] buffer = new byte[BufferSize];
         long totalRead = 0;
         long lastReported = 0;
-        int lastLoggedPercent = -1;
+        int lastLoggedTenth = 0;
         this.progress?.Report(new BrowserDownloadProgress(this.name, 0, totalBytes));
         int bytesRead;
         while ((bytesRead = await ReadAsync(contentStream, buffer, url, cancellationToken).ConfigureAwait(false)) > 0)
@@ -146,13 +146,14 @@ internal sealed class FileDownloader
                 lastReported = totalRead;
             }
 
+            // Logged at each tenth of the download, whichever read reaches it, since one read can span several percent.
             if (totalBytes > 0)
             {
-                int percent = (int)(totalRead * 100 / totalBytes.Value);
-                if (percent != lastLoggedPercent && percent % 10 == 0)
+                int tenth = (int)(totalRead * 10 / totalBytes.Value);
+                if (tenth > lastLoggedTenth)
                 {
-                    await this.logAsync($"  Download progress: {percent}%").ConfigureAwait(false);
-                    lastLoggedPercent = percent;
+                    await this.logAsync($"  Download progress: {tenth * 10}%").ConfigureAwait(false);
+                    lastLoggedTenth = tenth;
                 }
             }
         }

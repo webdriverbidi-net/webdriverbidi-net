@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Runtime.Versioning;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json.Nodes;
@@ -78,6 +79,89 @@ public class DownloadReliabilityTests
         string path = await FindChromeAsync(TestDownloadOptions.Create(server, cache, timeProvider: timeProvider));
 
         Assert.Equal(installedPath, path);
+    }
+
+    // Only a service that cannot be reached, fails, or is rate limited leaves the stale version in use; a refusal is an error.
+    [Fact]
+    public async Task ClientErrorDoesNotFallBackToInstalledVersion()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        server.AddResponses(ChannelDocumentPath, new ServedResponse(HttpStatusCode.NotFound));
+        using TemporaryDirectory cache = new();
+        FakeTimeProvider timeProvider = new(DateTimeOffset.UtcNow);
+        CacheSeeder.SeedInstallation(cache, "chrome/stable", ChromeVersion, ChromeExecutablePath("linux64"));
+        CacheSeeder.SeedResolvedVersion(cache, "chrome/stable", "latest", ChromeVersion, timeProvider.GetUtcNow() - TimeSpan.FromHours(25));
+
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(() => FindChromeAsync(TestDownloadOptions.Create(server, cache, timeProvider: timeProvider)));
+
+        Assert.Contains("404", exception.Message);
+    }
+
+    [Fact]
+    public async Task UnusableResponseDoesNotFallBackToInstalledVersion()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        server.AddText(ChannelDocumentPath, "not a version document");
+        using TemporaryDirectory cache = new();
+        FakeTimeProvider timeProvider = new(DateTimeOffset.UtcNow);
+        CacheSeeder.SeedInstallation(cache, "chrome/stable", ChromeVersion, ChromeExecutablePath("linux64"));
+        CacheSeeder.SeedResolvedVersion(cache, "chrome/stable", "latest", ChromeVersion, timeProvider.GetUtcNow() - TimeSpan.FromHours(25));
+
+        await Assert.ThrowsAsync<BrowserDownloadException>(() => FindChromeAsync(TestDownloadOptions.Create(server, cache, timeProvider: timeProvider)));
+    }
+
+    [Fact]
+    public async Task LargeDownloadReportsProgressAsItArrives()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        byte[] archive = TestArchives.LargeZip(20 * 1024 * 1024, ChromeExecutablePath("linux64"));
+        Serve(server, "Stable", ChromeVersion, archive);
+        using TemporaryDirectory cache = new();
+        RecordingProgress progress = new();
+        BrowserDownloadOptions defaults = TestDownloadOptions.Create(server, cache);
+        BrowserDownloadOptions options = new()
+        {
+            CacheDirectory = defaults.CacheDirectory,
+            Platform = defaults.Platform,
+            ChromeForTestingEndpoint = defaults.ChromeForTestingEndpoint,
+            Progress = progress,
+        };
+
+        await FindChromeAsync(options);
+
+        Assert.True(progress.Reports.Count > 3, $"Expected several progress reports, got {progress.Reports.Count}.");
+        Assert.Equal(archive.Length, progress.Reports[^1].BytesReceived);
+        Assert.All(progress.Reports, report => Assert.Equal(archive.Length, report.TotalBytes));
+    }
+
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public async Task InstalledNightlyIsKeptWhenItCannotBeReplaced()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows() || Environment.UserName == "root", "Needs directory permissions that the user cannot bypass.");
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        string archivePath = "/pub/firefox/nightly/latest-mozilla-central/firefox-133.0a1.en-US.linux-x86_64.tar.xz";
+        byte[] archive = TestArchives.TarGz("firefox/firefox");
+        server.AddRedirect(TestDownloadOptions.FirefoxProductPath, server.UrlFor(archivePath));
+        server.AddFile(archivePath, archive);
+        FirefoxLocatorTests.ServeChecksums(server, archivePath, Sha256Of(archive));
+        using TemporaryDirectory cache = new();
+        FakeTimeProvider timeProvider = new(DateTimeOffset.UtcNow);
+        string installedPath = CacheSeeder.SeedInstallation(cache, "firefox/nightly", "133.0a1", "firefox/firefox");
+        CacheSeeder.SeedResolvedVersion(cache, "firefox/nightly", "latest", "133.0a1", timeProvider.GetUtcNow() - TimeSpan.FromHours(25));
+        string channelDirectory = Path.Combine(cache.Path, "firefox", "nightly");
+        File.WriteAllText(Path.Combine(channelDirectory, ".lock"), string.Empty);
+        File.SetUnixFileMode(channelDirectory, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+        try
+        {
+            string path = await BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, BrowserReleaseChannel.Alpha, downloadOptions: TestDownloadOptions.Create(server, cache, timeProvider: timeProvider), cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(installedPath, path);
+        }
+        finally
+        {
+            File.SetUnixFileMode(channelDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
     }
 
     [Fact]
@@ -455,4 +539,29 @@ public class DownloadReliabilityTests
     private static string Md5Of(byte[] content) => Convert.ToBase64String(MD5.HashData(content));
 
     private static string Sha256Of(byte[] content) => Convert.ToHexStringLower(SHA256.HashData(content));
+
+    // Records reports as they are made, rather than posting them as Progress<T> does.
+    private sealed class RecordingProgress : IProgress<BrowserDownloadProgress>
+    {
+        private readonly List<BrowserDownloadProgress> reports = [];
+
+        public IReadOnlyList<BrowserDownloadProgress> Reports
+        {
+            get
+            {
+                lock (this.reports)
+                {
+                    return [.. this.reports];
+                }
+            }
+        }
+
+        public void Report(BrowserDownloadProgress value)
+        {
+            lock (this.reports)
+            {
+                this.reports.Add(value);
+            }
+        }
+    }
 }

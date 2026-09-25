@@ -7,7 +7,6 @@ namespace WebDriverBiDi.Browsers;
 
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
@@ -143,16 +142,12 @@ public class ChromiumTransport : Transport
 
     // The mapper source is built from the chromium-bidi project (https://github.com/GoogleChromeLabs/chromium-bidi)
     // and embedded from the third_party directory.
-    [ExcludeFromCodeCoverage] // The failures guard against a broken build of this assembly.
+    // A test of the built assembly checks that the resource is present and not empty.
     private static string LoadMapperScript()
     {
-        using Stream? resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("chromium-bidi-mapper")
-            ?? throw new WebDriverBiDiException("Unable to find the Chromium BiDi mapper script as an embedded resource.");
+        using Stream resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("chromium-bidi-mapper")!;
         using StreamReader reader = new(resourceStream);
-        string mapperScript = reader.ReadToEnd();
-        return string.IsNullOrEmpty(mapperScript)
-            ? throw new WebDriverBiDiException("Found an embedded resource for the Chromium BiDi mapper script, but the resource was empty.")
-            : mapperScript;
+        return reader.ReadToEnd();
     }
 
     private async Task InitializeBiDiAsync(bool hideMapperTab = true, CancellationToken cancellationToken = default)

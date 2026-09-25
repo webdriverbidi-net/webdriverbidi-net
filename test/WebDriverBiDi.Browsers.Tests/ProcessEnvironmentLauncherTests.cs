@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Runtime.Versioning;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -172,6 +173,58 @@ public class ProcessEnvironmentLauncherTests
         Assert.Contains("--custom-argument", arguments);
         Assert.Contains("--headless=new", arguments);
         Assert.Null(capabilities["goog:chromeOptions"]);
+    }
+
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public async Task ProfileThatCannotBeDeletedIsLeftBehind()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows() || Environment.UserName == "root", "Needs directory permissions that the user cannot bypass.");
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+        string profile = fakeBrowser.GetLastLaunchArgument("--user-data-dir");
+        string locked = Path.Combine(profile, "locked");
+        Directory.CreateDirectory(locked);
+        File.WriteAllText(Path.Combine(locked, "file"), string.Empty);
+        File.SetUnixFileMode(locked, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+        try
+        {
+            await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
+
+            Assert.True(Directory.Exists(profile));
+        }
+        finally
+        {
+            File.SetUnixFileMode(locked, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            Directory.Delete(profile, true);
+        }
+    }
+
+    // A temporary directory whose contents cannot be listed is not swept for abandoned profiles, but still holds a new one.
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public async Task TemporaryDirectoryThatCannotBeListedStillHoldsAProfile()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows() || Environment.UserName == "root", "Needs directory permissions that the user cannot bypass.");
+        using TemporaryDirectory temporaryDirectory = new();
+        using TemporaryDirectoryOverride temporaryDirectoryOverride = new(temporaryDirectory.Path);
+        File.SetUnixFileMode(temporaryDirectory.Path, UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        try
+        {
+            using FakeBrowserSetup fakeBrowser = new();
+            await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
+            await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+            await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+            Assert.StartsWith(temporaryDirectory.Path, fakeBrowser.GetLastLaunchArgument("--user-data-dir"));
+        }
+        finally
+        {
+            File.SetUnixFileMode(temporaryDirectory.Path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
     }
 
     [Fact]

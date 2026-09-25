@@ -3,11 +3,14 @@
 //   it reports readiness the way that browser does, choosing a free port if given port 0.
 // - Given a driver's "--port=<port>", it answers HTTP requests on that port as a ready driver that
 //   creates sessions, exiting with code 1 if the port is in use.
+// - Given only "/ExtractDir=<directory>", it acts as the Firefox installer for Windows does, writing
+//   core/firefox.exe into the directory, and exits.
 // - Given only "--version", it writes "Fake Browser <version>" as a browser does, and exits; the version is also its
 //   file version on Windows.
 // Environment variables:
 // - WEBDRIVERBIDI_FAKE_BROWSER_MODE: "exit:<code>" writes a line to stderr and exits at once with that code, first
-//   writing numbered lines if given as "exit:<code>:<lines>"; "silent" never reports readiness; "ignore-term" ignores SIGTERM.
+//   writing numbered lines if given as "exit:<code>:<lines>"; "silent" never reports readiness; "ignore-term" ignores SIGTERM;
+//   "hang-version" never answers "--version".
 // - WEBDRIVERBIDI_FAKE_BROWSER_LOG: a file to which each launch appends a JSON line with its arguments
 //   and the value of WEBDRIVERBIDI_FAKE_BROWSER_ECHO, and a driver appends one with each new session
 //   request body.
@@ -21,14 +24,26 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 
-if (args is ["--version"])
+if (args is [var extractArgument] && extractArgument.StartsWith("/ExtractDir=", StringComparison.Ordinal))
 {
-    Console.WriteLine("Fake Browser 130.0.2849.80");
+    string coreDirectory = Directory.CreateDirectory(Path.Combine(extractArgument["/ExtractDir=".Length..], "core")).FullName;
+    File.WriteAllText(Path.Combine(coreDirectory, "firefox.exe"), string.Empty);
     return 0;
 }
 
 const string VariablePrefix = "WEBDRIVERBIDI_FAKE_BROWSER_";
 string? mode = Environment.GetEnvironmentVariable(VariablePrefix + "MODE");
+if (args is ["--version"])
+{
+    if (mode == "hang-version")
+    {
+        Thread.Sleep(Timeout.Infinite);
+    }
+
+    Console.WriteLine("Fake Browser 130.0.2849.80");
+    return 0;
+}
+
 string? logFile = Environment.GetEnvironmentVariable(VariablePrefix + "LOG");
 if (logFile is not null)
 {

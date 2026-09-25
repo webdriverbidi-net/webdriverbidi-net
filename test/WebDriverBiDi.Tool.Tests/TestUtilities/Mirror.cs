@@ -93,7 +93,13 @@ public sealed class Mirror : IDisposable
     /// <inheritdoc/>
     public void Dispose() => this.directory.Dispose();
 
-    private static byte[] Zip(string entryPath, int paddingSize = 0)
+    /// <summary>
+    /// Creates a zip archive holding a file, and optionally an incompressible file of the given size.
+    /// </summary>
+    /// <param name="entryPath">The '/'-separated path of the file.</param>
+    /// <param name="paddingSize">The size of the incompressible file, or 0 for none.</param>
+    /// <returns>The archive contents.</returns>
+    public static byte[] Zip(string entryPath, int paddingSize = 0)
     {
         using MemoryStream stream = new();
         using (ZipArchive archive = new(stream, ZipArchiveMode.Create, leaveOpen: true))

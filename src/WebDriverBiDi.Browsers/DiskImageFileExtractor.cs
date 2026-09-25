@@ -12,8 +12,7 @@ using System.Diagnostics.CodeAnalysis;
 /// mounts the DMG, copies the contents to the specified extraction directory, and then unmounts
 /// and deletes the DMG.
 /// </summary>
-// Runs only on macOS (hdiutil). No CI job runs on macOS, so it is verified locally.
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage] // Runs only on macOS (hdiutil), and no CI job runs on macOS; the tests verify it locally.
 public class DiskImageFileExtractor : FileExtractor
 {
     /// <summary>

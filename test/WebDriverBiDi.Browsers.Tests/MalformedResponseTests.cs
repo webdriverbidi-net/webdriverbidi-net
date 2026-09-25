@@ -40,6 +40,32 @@ public class MalformedResponseTests
     }
 
     [Fact]
+    public async Task NullVersionDocumentIsReportedForDriver()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        Serve(server, "Stable", ChromeVersion);
+        server.AddText(AllVersionsDocumentPath, "null");
+        using TemporaryDirectory cache = new();
+
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(() => DriverLocator.FindDriverAsync(BrowserKind.Chrome, version: BrowserVersion.Specific(ChromeVersion), downloadOptions: TestDownloadOptions.Create(server, cache), cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Contains("Failed to deserialize", exception.Message);
+    }
+
+    // Only a milestone prefix followed by a number requests a milestone; anything else is a version like any other.
+    [Fact]
+    public async Task MilestonePrefixWithoutNumberIsAVersion()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        Serve(server, "Stable", ChromeVersion);
+        using TemporaryDirectory cache = new();
+
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(() => BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, version: BrowserVersion.Specific("milestone-next"), downloadOptions: TestDownloadOptions.Create(server, cache), cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Contains("Chrome version 'milestone-next'", exception.Message);
+    }
+
+    [Fact]
     public async Task UnknownFirefoxChannelIsRejected()
     {
         await Assert.ThrowsAsync<ArgumentException>(() => BrowserLocator.FindBrowserAsync(BrowserKind.Firefox, (BrowserReleaseChannel)99, cancellationToken: TestContext.Current.CancellationToken));

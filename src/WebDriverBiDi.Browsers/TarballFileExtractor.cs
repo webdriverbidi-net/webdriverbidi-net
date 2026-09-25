@@ -5,13 +5,10 @@
 
 namespace WebDriverBiDi.Browsers;
 
-using System.Diagnostics.CodeAnalysis;
-
 /// <summary>
 /// File extractor for files distributed as compressed tarballs. This extractor uses the 'tar' command-line tool
 /// to extract the file from the downloaded tarball to the specified directory, and then deletes the tarball file.
 /// </summary>
-[ExcludeFromCodeCoverage]
 public class TarballFileExtractor : FileExtractor
 {
     /// <summary>
@@ -31,10 +28,7 @@ public class TarballFileExtractor : FileExtractor
         }
         finally
         {
-            if (File.Exists(tarFilePath))
-            {
-                File.Delete(tarFilePath);
-            }
+            File.Delete(tarFilePath);
         }
     }
 }

@@ -34,16 +34,14 @@ internal static class CacheLayout
             {
                 throw new BrowserDownloadException($"The browser cache in {cacheDirectory} has layout version {layout}, which this version of WebDriverBiDi.Browsers cannot use. Update the package, or use another cache directory.");
             }
-
-            return;
         }
-
-        if (markUnmarked)
+        else if (markUnmarked)
         {
             // Written whole and moved into place, so that no reader sees a partly written marker.
             Directory.CreateDirectory(cacheDirectory);
             string temporaryPath = $"{markerPath}.{Guid.NewGuid():N}.tmp";
             File.WriteAllText(temporaryPath, CurrentVersion);
+#if NETSTANDARD2_0
             try
             {
                 File.Move(temporaryPath, markerPath);
@@ -53,6 +51,10 @@ internal static class CacheLayout
                 // Another process marked the cache first.
                 File.Delete(temporaryPath);
             }
+#else
+            // Every writer writes the same marker, so the last one moved into place wins.
+            File.Move(temporaryPath, markerPath, overwrite: true);
+#endif
         }
     }
 }

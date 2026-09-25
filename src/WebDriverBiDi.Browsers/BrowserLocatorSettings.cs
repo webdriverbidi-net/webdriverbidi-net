@@ -87,7 +87,7 @@ internal abstract class BrowserLocatorSettings
     /// Gets a value indicating whether the version specified in the locator settings
     /// is the most recently published version for the channel.
     /// </summary>
-    public bool IsLatestChannelVersion => this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload && this.Version == LatestVersionString;
+    public bool IsLatestChannelVersion => this.Version == LatestVersionString;
 
     /// <summary>
     /// Gets the requested milestone, or <see langword="null"/> if a milestone was not requested.
@@ -123,14 +123,7 @@ internal abstract class BrowserLocatorSettings
     public bool IncludeDriver { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets the location behavior for the driver executable.
-    /// Only used when <see cref="IncludeDriver"/> is true.
-    /// </summary>
-    public FileLocationBehavior DriverLocationBehavior { get; set; } = FileLocationBehavior.AutoLocateAndDownload;
-
-    /// <summary>
-    /// Gets or sets the expected path to the driver executable.
-    /// Only used when <see cref="IncludeDriver"/> is true and <see cref="DriverLocationBehavior"/> is <see cref="FileLocationBehavior.UseCustomLocation"/>.
+    /// Gets or sets the path of a driver that is never downloaded, such as safaridriver.
     /// </summary>
     public string DriverExecutableLocation { get; internal set; } = string.Empty;
 
@@ -149,14 +142,15 @@ internal abstract class BrowserLocatorSettings
     public FileExtractor DriverExtractor { get; protected set; } = new ZipFileExtractor();
 
     /// <summary>
-    /// Gets the name of the driver executable (e.g., "chromedriver", "geckodriver", "chromedriver.exe").
+    /// Gets or sets the name of the driver executable (e.g., "chromedriver", "geckodriver", "chromedriver.exe"), or an
+    /// empty string for a browser that is not launched through a driver.
     /// </summary>
-    public abstract string DriverExecutableName { get; }
+    public string DriverExecutableName { get; protected set; } = string.Empty;
 
     /// <summary>
-    /// Gets the name of the environment variable that can be used to override the driver executable path.
+    /// Gets or sets the name of the environment variable that can be used to override the driver executable path.
     /// </summary>
-    public abstract string DriverEnvironmentVariableName { get; }
+    public string DriverEnvironmentVariableName { get; protected set; } = string.Empty;
 
     /// <summary>
     /// Gets the name of the driver (e.g., "chromedriver"), which names its cache directory.
@@ -195,29 +189,6 @@ internal abstract class BrowserLocatorSettings
     }
 
     /// <summary>
-    /// Gets the browser download information.
-    /// </summary>
-    /// <param name="cancellationToken">A token that cancels the request.</param>
-    /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>
-    /// <exception cref="NotSupportedException">Thrown for a browser that is never downloaded.</exception>
-    public virtual Task<BrowserDownloadInfo> GetBrowserDownloadInfo(CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException($"{this.BrowserDisplayName} is not downloaded.");
-    }
-
-    /// <summary>
-    /// Gets the SHA-256 hash the browser's publisher lists for a download.
-    /// </summary>
-    /// <param name="downloadInfo">The download.</param>
-    /// <param name="cancellationToken">A token that cancels the request.</param>
-    /// <returns>The hash in hexadecimal, or <see langword="null"/> if the publisher lists none.</returns>
-    /// <exception cref="DownloadVerificationException">Thrown when the publisher lists hashes, but none for the download.</exception>
-    public virtual Task<string?> GetBrowserSha256Async(BrowserDownloadInfo downloadInfo, CancellationToken cancellationToken)
-    {
-        return Task.FromResult<string?>(null);
-    }
-
-    /// <summary>
     /// Reads the version of a browser that is not downloaded, when its driver must match it.
     /// </summary>
     /// <param name="executablePath">The path of the browser executable.</param>
@@ -236,18 +207,6 @@ internal abstract class BrowserLocatorSettings
     public virtual string? GetRequiredDriverVersion(string? browserVersion)
     {
         return null;
-    }
-
-    /// <summary>
-    /// Gets the driver download information for a driver that is compatible with this browser.
-    /// </summary>
-    /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
-    /// <param name="cancellationToken">A token that cancels the request.</param>
-    /// <returns>A task representing the asynchronous operation, with the driver download information as the result.</returns>
-    /// <exception cref="NotSupportedException">Thrown for a browser whose driver is never downloaded.</exception>
-    public virtual Task<DriverDownloadInfo> GetMatchingDriverDownloadInfo(string? browserVersion, CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException($"The driver for {this.BrowserDisplayName} is not downloaded.");
     }
 
     /// <summary>

@@ -7,6 +7,7 @@ namespace WebDriverBiDi.Browsers;
 
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 /// <summary>
@@ -53,6 +54,7 @@ internal sealed class TemporaryProfile
     /// Records the process that owns the profile.
     /// </summary>
     /// <param name="process">The owning process.</param>
+    [ExcludeFromCodeCoverage] // The owner can exit before its start time is read.
     public void SetOwner(Process process)
     {
         long startTimeTicks;
@@ -135,11 +137,20 @@ internal sealed class TemporaryProfile
         try
         {
             using Process process = Process.GetProcessById(processId);
-            return Math.Abs(process.StartTime.ToUniversalTime().Ticks - startTimeTicks) < TimeSpan.TicksPerSecond;
+            return IsStartedAt(process, startTimeTicks);
         }
         catch (ArgumentException)
         {
             return false;
+        }
+    }
+
+    [ExcludeFromCodeCoverage] // Whether another user's process's start time can be read depends on the platform.
+    private static bool IsStartedAt(Process process, long startTimeTicks)
+    {
+        try
+        {
+            return Math.Abs(process.StartTime.ToUniversalTime().Ticks - startTimeTicks) < TimeSpan.TicksPerSecond;
         }
         catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception || ex is NotSupportedException)
         {

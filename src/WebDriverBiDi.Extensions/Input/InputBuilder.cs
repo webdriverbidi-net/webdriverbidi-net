@@ -132,9 +132,12 @@ public class InputBuilder
             Append(this.sources[inputAction.SourceId], inputAction);
         }
 
-        foreach (SourceActions idleSource in this.sources.Values.Where(source => !usedSources.Contains(source.Id)))
+        foreach (SourceActions source in this.sources.Values)
         {
-            Append(idleSource, null);
+            if (!usedSources.Contains(source.Id))
+            {
+                Append(source, null);
+            }
         }
 
         return this;

@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Browsers;
 
+using System.Runtime.Versioning;
 using System.Diagnostics;
 using WebDriverBiDi.Browsers.TestUtilities;
 using WebDriverBiDi.Protocol;
@@ -171,6 +172,47 @@ public class LauncherLifecycleTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ChromePipeBrowserCanBeLaunchedAgainAfterItEnds(bool kill)
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome))
+            .AtLocation(FakeBrowserSetup.ExecutablePath)
+            .WithConnection(ConnectionKind.Pipes)
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+        if (kill)
+        {
+            await launcher.KillBrowserAsync(TestContext.Current.CancellationToken);
+        }
+        else
+        {
+            await launcher.QuitBrowserAsync(TestContext.Current.CancellationToken);
+        }
+
+        BrowserInstance instance = await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal($"pipe://chrome:{instance.ProcessId}", instance.ConnectionString);
+        Assert.NotNull(Assert.IsType<ChromeLauncher>(launcher).PipeServerProcess);
+    }
+
+    [Theory]
+    [MemberData(nameof(DirectLaunchBrowsers))]
+    public async Task DisposingBrowserInstanceQuitsBrowser(BrowserKind browser)
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(browser)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+        BrowserInstance instance = await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        await instance.DisposeAsync();
+
+        Assert.False(launcher.IsRunning);
+    }
+
+    [Theory]
     [InlineData(BrowserKind.Chrome, typeof(ChromiumTransport), true)]
     [InlineData(BrowserKind.Firefox, typeof(Transport), true)]
     public async Task DirectLauncherCreatesTransportForBrowser(BrowserKind browser, Type expectedTransportType, bool isCloseAllowed)
@@ -213,6 +255,31 @@ public class LauncherLifecycleTests
             {
                 Directory.Delete(directory, true);
             }
+        }
+    }
+
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public async Task ProfileWhoseOwnerCannotBeReadIsKept()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows() || Environment.UserName == "root", "Needs file permissions that the user cannot bypass.");
+        string profile = await CreateProfileOwnedByExitedProcessAsync();
+        string ownerFile = Path.Combine(profile, ".webdriverbidi-owner");
+        File.SetUnixFileMode(ownerFile, UnixFileMode.None);
+        try
+        {
+            using FakeBrowserSetup fakeBrowser = new();
+            await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome)).AtLocation(FakeBrowserSetup.ExecutablePath).Build();
+            await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+            await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+            Assert.True(Directory.Exists(profile));
+        }
+        finally
+        {
+            File.SetUnixFileMode(ownerFile, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            Directory.Delete(profile, true);
         }
     }
 
