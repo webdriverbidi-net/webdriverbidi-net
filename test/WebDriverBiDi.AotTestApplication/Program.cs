@@ -3,6 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+// Arguments: [browser] [url] [browser executable or grid URL] [grid browser binary]. The browser is firefox (the
+// default), chrome, firefox-driver, chrome-driver, firefox-grid, or chrome-grid. Without a URL, or with an empty one,
+// the application navigates to a page of its own and checks its title; a page at another URL must, like that one, have
+// exactly one heading, an h1.
 using System.Globalization;
 using System.Numerics;
 using System.Text.Json.Serialization;
@@ -16,7 +20,10 @@ using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 
 string browser = args.Length > 0 ? args[0].ToLowerInvariant() : "firefox";
-string url = args.Length > 1 ? args[1].ToLowerInvariant() : "https://github.com";
+// The default page needs no network, and its title is known, so it can be checked.
+const string DefaultPageTitle = "WebDriverBiDi.NET AOT test page";
+bool usesDefaultPage = args.Length <= 1 || args[1].Length == 0;
+string url = usesDefaultPage ? $"data:text/html,<title>{Uri.EscapeDataString(DefaultPageTitle)}</title><h1>WebDriverBiDi.NET</h1><p>Hello</p>" : args[1];
 string browserExecutable = args.Length > 2 ? args[2] : string.Empty;
 Console.WriteLine($"Browser: {browser}");
 
@@ -174,9 +181,9 @@ try
     string? title = success.Result.As<StringRemoteValue>().Value;
     Console.WriteLine($"Page title: {title}");
 
-    if (title is null || !title.Contains("WebDriverBiDi.NET", StringComparison.OrdinalIgnoreCase))
+    if (usesDefaultPage && title != DefaultPageTitle)
     {
-        throw new InvalidOperationException($"Expected page title to contain 'WebDriverBiDi.NET', but got: '{title}'");
+        throw new InvalidOperationException($"Expected page title '{DefaultPageTitle}', but got: '{title}'");
     }
 
     // Call a function with arguments — this exercises the CallFunctionCommandParameters
