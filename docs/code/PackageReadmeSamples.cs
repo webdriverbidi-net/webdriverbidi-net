@@ -284,6 +284,26 @@ public static class PackageReadmeSamples
     }
 
     /// <summary>
+    /// The WebDriverBiDi.Browsers package README's cache management example.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task BrowsersCacheManagement()
+    {
+        #region BrowsersCacheManagement
+        foreach (CachedInstallation installation in BrowserCache.List())
+        {
+            Console.WriteLine($"{installation} ({installation.Channel ?? "driver"}): {installation.Size / (1024 * 1024)} MB");
+
+            // Keeps only what a channel or driver request has resolved to in the last week.
+            if (installation.LastResolved is null || installation.LastResolved < DateTimeOffset.UtcNow.AddDays(-7))
+            {
+                await BrowserCache.RemoveAsync(installation);
+            }
+        }
+        #endregion
+    }
+
+    /// <summary>
     /// The WebDriverBiDi.Browsers package README's download options example.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>

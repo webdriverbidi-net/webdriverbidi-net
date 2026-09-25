@@ -165,8 +165,30 @@ These environment variables set the defaults, so a CI system can configure every
 | `WEBDRIVERBIDI_BROWSERS_PATH` | The cache directory. The default is a `webdriverbidi-net` directory in the local application data directory (Windows), `~/Library/Caches` (macOS), or `$XDG_CACHE_HOME` or `~/.cache` (Linux). |
 | `WEBDRIVERBIDI_SKIP_DOWNLOAD` | Set to `1` or `true` to use only what is already cached, making no network requests. |
 | `WEBDRIVERBIDI_DOWNLOAD_MANIFEST` | The URL or file path of a mirror manifest (below). |
-| `CHROME_EXECUTABLE`, `FIREFOX_EXECUTABLE`, `SAFARI_EXECUTABLE` | A browser executable to use in place of locating one. |
-| `CHROMEDRIVER_EXECUTABLE`, `GECKODRIVER_EXECUTABLE`, `SAFARIDRIVER_EXECUTABLE` | A driver executable to use in place of locating one. |
+| `CHROME_EXECUTABLE`, `FIREFOX_EXECUTABLE`, `EDGE_EXECUTABLE`, `SAFARI_EXECUTABLE` | A browser executable to use in place of locating one. |
+| `CHROMEDRIVER_EXECUTABLE`, `GECKODRIVER_EXECUTABLE`, `MSEDGEDRIVER_EXECUTABLE`, `SAFARIDRIVER_EXECUTABLE` | A driver executable to use in place of locating one. |
+
+### Cleaning Up the Cache
+
+The cache keeps every version it has downloaded. `BrowserCache.List` lists them, with their channel, size, and when a request last resolved to them, and `BrowserCache.RemoveAsync` removes one, waiting for any download into the same channel to finish:
+
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersCacheManagement -->
+```csharp
+using WebDriverBiDi.Browsers;
+
+foreach (CachedInstallation installation in BrowserCache.List())
+{
+    Console.WriteLine($"{installation} ({installation.Channel ?? "driver"}): {installation.Size / (1024 * 1024)} MB");
+
+    // Keeps only what a channel or driver request has resolved to in the last week.
+    if (installation.LastResolved is null || installation.LastResolved < DateTimeOffset.UtcNow.AddDays(-7))
+    {
+        await BrowserCache.RemoveAsync(installation);
+    }
+}
+```
+
+A cache is marked with the version of its layout, and a version of this package that cannot read a cache's layout refuses to use it, rather than misreading it.
 
 ### Mirroring Downloads
 
@@ -209,8 +231,8 @@ To download from an internal mirror rather than the vendors' services, set `Mani
 }
 ```
 
-- **Browsers** are `chrome`, `chrome-headless-shell`, and `firefox`; **drivers** are `chromedriver` and `geckodriver`.
-- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's, and geckodriver's is its `latest`.
+- **Browsers** are `chrome`, `chrome-headless-shell`, and `firefox`; **drivers** are `chromedriver`, `geckodriver`, and `msedgedriver`.
+- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's, msedgedriver's is the installed Edge's, and geckodriver's is its `latest`.
 - **Platforms** are `linux-x64`, `linux-arm64`, `linux-x86`, `macos-x64`, `macos-arm64`, `windows-x64`, `windows-x86`, and `windows-arm64`.
 - **Builds** are each vendor's archive, unchanged. Each lists its SHA-256 hash, which is verified, and optionally its size. A URL may be relative to the manifest, so a directory holding the manifest and the archives serves as a mirror with no server (`file:///…/manifest.json`).
 - **Nightly builds** share version numbers, so give each mirrored Nightly build a distinct version string.

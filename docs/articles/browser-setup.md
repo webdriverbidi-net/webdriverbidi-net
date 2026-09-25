@@ -88,6 +88,14 @@ These environment variables set the defaults, so a CI system can configure every
 | `CHROME_EXECUTABLE`, `FIREFOX_EXECUTABLE`, `EDGE_EXECUTABLE`, `SAFARI_EXECUTABLE` | A browser executable to use in place of locating one. |
 | `CHROMEDRIVER_EXECUTABLE`, `GECKODRIVER_EXECUTABLE`, `MSEDGEDRIVER_EXECUTABLE`, `SAFARIDRIVER_EXECUTABLE` | A driver executable to use in place of locating one. |
 
+#### Cleaning Up the Cache
+
+The cache keeps every version it has downloaded. `BrowserCache.List` lists them as `CachedInstallation` objects, with their channel (none for a driver), size, and when a request for the latest version, or for the driver of a browser version, last resolved to them. `BrowserCache.RemoveAsync` removes one, waiting for any download into the same channel to finish:
+
+[!code-csharp[Cache Management](../code/PackageReadmeSamples.cs#BrowsersCacheManagement)]
+
+A cache is marked with the version of its layout, and a version of this package that cannot read a cache's layout throws `BrowserDownloadException` rather than misreading it, so a newer package can change the layout without an older one corrupting it.
+
 ### Mirroring Downloads
 
 To download from an internal mirror rather than the vendors' services, set `BrowserDownloadOptions.ManifestUrl` (or `WEBDRIVERBIDI_DOWNLOAD_MANIFEST`) to a manifest listing the builds it holds. Every browser and driver is then resolved through the manifest; one it does not list cannot be downloaded. The manifest is JSON:

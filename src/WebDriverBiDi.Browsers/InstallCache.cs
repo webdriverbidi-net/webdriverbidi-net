@@ -50,6 +50,7 @@ internal sealed class InstallCache
     /// <returns>A handle that releases the lock when disposed.</returns>
     public Task<IDisposable> LockAsync(CancellationToken cancellationToken)
     {
+        CacheLayout.EnsureReadable(this.options.CacheDirectory, markUnmarked: true);
         return new FileLock(Path.Combine(this.directory, LockFileName)).AcquireAsync(this.options.LockTimeout, cancellationToken);
     }
 
@@ -97,16 +98,53 @@ internal sealed class InstallCache
     {
         Dictionary<string, ResolvedVersion> resolvedVersions = this.LoadResolvedVersions();
         resolvedVersions[request] = new ResolvedVersion() { Version = version, ResolvedAt = this.options.TimeProvider.GetUtcNow() };
-        string resolvedVersionsFile = Path.Combine(this.directory, ResolvedVersionsFileName);
-        string temporaryFile = $"{resolvedVersionsFile}.{Guid.NewGuid():N}.tmp";
-        File.WriteAllText(temporaryFile, JsonSerializer.Serialize(resolvedVersions, InstallCacheJsonSerializerContext.Default.DictionaryStringResolvedVersion));
-        if (File.Exists(resolvedVersionsFile))
+        this.SaveResolvedVersions(resolvedVersions);
+    }
+
+    /// <summary>
+    /// Gets the completely installed versions, and when a request last resolved to each.
+    /// </summary>
+    /// <returns>The installations.</returns>
+    public IReadOnlyList<InstalledVersion> GetInstallations()
+    {
+        Dictionary<string, ResolvedVersion> resolvedVersions = this.LoadResolvedVersions();
+        return [.. Directory.GetDirectories(this.directory)
+            .Where(subdirectory => !Path.GetFileName(subdirectory).StartsWith(".", StringComparison.Ordinal) && File.Exists(Path.Combine(subdirectory, InstallationMarkerFileName)))
+            .Select(subdirectory =>
+            {
+                string version = Path.GetFileName(subdirectory);
+                DateTimeOffset? lastResolved = resolvedVersions.Values.Where(resolved => resolved.Version == version).Select(resolved => (DateTimeOffset?)resolved.ResolvedAt).Max();
+                return new InstalledVersion(version, subdirectory, lastResolved);
+            })];
+    }
+
+    /// <summary>
+    /// Removes an installed version, and the record of every request that resolved to it.
+    /// </summary>
+    /// <param name="version">The version.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="IOException">Thrown when the version's directory cannot be moved away, as when a browser in it is running on Windows.</exception>
+    public async Task RemoveAsync(string version)
+    {
+        string installDirectory = Path.Combine(this.directory, version);
+        if (Directory.Exists(installDirectory))
         {
-            File.Replace(temporaryFile, resolvedVersionsFile, null);
+            // Moved away first, so that the version disappears at once, even if deleting its files fails.
+            string discardedDirectory = Path.Combine(this.directory, $"{DiscardedDirectoryPrefix}{Guid.NewGuid():N}");
+            await MoveDirectoryAsync(installDirectory, discardedDirectory).ConfigureAwait(false);
+            TryDeleteDirectory(discardedDirectory);
         }
-        else
+
+        Dictionary<string, ResolvedVersion> resolvedVersions = this.LoadResolvedVersions();
+        List<string> requests = [.. resolvedVersions.Where(resolved => resolved.Value.Version == version).Select(resolved => resolved.Key)];
+        if (requests.Count > 0)
         {
-            File.Move(temporaryFile, resolvedVersionsFile);
+            foreach (string request in requests)
+            {
+                resolvedVersions.Remove(request);
+            }
+
+            this.SaveResolvedVersions(resolvedVersions);
         }
     }
 
@@ -213,6 +251,21 @@ internal sealed class InstallCache
         return [];
     }
 
+    private void SaveResolvedVersions(Dictionary<string, ResolvedVersion> resolvedVersions)
+    {
+        string resolvedVersionsFile = Path.Combine(this.directory, ResolvedVersionsFileName);
+        string temporaryFile = $"{resolvedVersionsFile}.{Guid.NewGuid():N}.tmp";
+        File.WriteAllText(temporaryFile, JsonSerializer.Serialize(resolvedVersions, InstallCacheJsonSerializerContext.Default.DictionaryStringResolvedVersion));
+        if (File.Exists(resolvedVersionsFile))
+        {
+            File.Replace(temporaryFile, resolvedVersionsFile, null);
+        }
+        else
+        {
+            File.Move(temporaryFile, resolvedVersionsFile);
+        }
+    }
+
     /// <summary>
     /// The version a request resolved to, and when.
     /// </summary>
@@ -230,6 +283,14 @@ internal sealed class InstallCache
         [JsonPropertyName("resolvedAt")]
         public DateTimeOffset ResolvedAt { get; set; }
     }
+
+    /// <summary>
+    /// A completely installed version.
+    /// </summary>
+    /// <param name="Version">The version.</param>
+    /// <param name="Directory">The directory it is installed in.</param>
+    /// <param name="LastResolved">When a request last resolved to it, or <see langword="null"/> if none has.</param>
+    internal sealed record InstalledVersion(string Version, string Directory, DateTimeOffset? LastResolved);
 }
 
 #pragma warning disable SA1402 // File may only contain a single type
