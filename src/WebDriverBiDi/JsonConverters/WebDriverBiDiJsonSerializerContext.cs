@@ -105,6 +105,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(CommandResponseMessage<StopScreencastCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<TraverseHistoryCommandResult>))]
 [JsonSerializable(typeof(EventMessage<BrowsingContextInfo>))]
+[JsonSerializable(typeof(EventMessage<ContextCreatedEventData>))]
 [JsonSerializable(typeof(EventMessage<NavigationEventArgs>))]
 [JsonSerializable(typeof(EventMessage<DownloadWillBeginEventArgs>))]
 [JsonSerializable(typeof(EventMessage<DownloadEndEventArgs>))]

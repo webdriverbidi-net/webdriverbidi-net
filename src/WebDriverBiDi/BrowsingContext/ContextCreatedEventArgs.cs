@@ -1,4 +1,4 @@
-// <copyright file="BrowsingContextEventArgs.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="ContextCreatedEventArgs.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -6,17 +6,17 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 /// <summary>
-/// Object containing event data for events raised by a browsing context being created or destroyed.
+/// Object containing event data for the browsingContext.contextCreated event.
 /// </summary>
-public record BrowsingContextEventArgs : WebDriverBiDiEventArgs
+public record ContextCreatedEventArgs : WebDriverBiDiEventArgs
 {
-    private readonly BrowsingContextInfo info;
+    private readonly ContextCreatedEventData info;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BrowsingContextEventArgs"/> class.
+    /// Initializes a new instance of the <see cref="ContextCreatedEventArgs"/> class.
     /// </summary>
-    /// <param name="info">The BrowsingContextInfo used to create the event arguments.</param>
-    public BrowsingContextEventArgs(BrowsingContextInfo info)
+    /// <param name="info">The ContextCreatedEventData describing the created browsing context.</param>
+    public ContextCreatedEventArgs(ContextCreatedEventData info)
     {
         this.info = info;
     }
@@ -48,9 +48,8 @@ public record BrowsingContextEventArgs : WebDriverBiDiEventArgs
 
     /// <summary>
     /// Gets the list of the child browsing contexts of the browsing context, or
-    /// <see langword="null"/> if the child contexts were not enumerated (for example, in a
-    /// <c>browsingContext.contextCreated</c> event). An empty list means the context was
-    /// enumerated and has no children.
+    /// <see langword="null"/> if the child contexts were not enumerated. An empty list means the
+    /// context was enumerated and has no children.
     /// </summary>
     public IList<BrowsingContextInfo>? Children => this.info.Children;
 
@@ -58,4 +57,9 @@ public record BrowsingContextEventArgs : WebDriverBiDiEventArgs
     /// Gets the browsing context ID of the parent browsing context.
     /// </summary>
     public string? Parent => this.info.Parent;
+
+    /// <summary>
+    /// Gets a value indicating whether the browsing context will navigate after this event is raised.
+    /// </summary>
+    public bool HasPlannedNavigation => this.info.HasPlannedNavigation;
 }

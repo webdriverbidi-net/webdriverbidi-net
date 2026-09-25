@@ -626,15 +626,16 @@ public static class BrowsingContextModuleSamples
     {
         #region ContextLifecycleEvents
         // New tab/window/iframe created
-        driver.BrowsingContext.OnContextCreated.AddObserver((BrowsingContextEventArgs e) =>
+        driver.BrowsingContext.OnContextCreated.AddObserver((ContextCreatedEventArgs e) =>
         {
             Console.WriteLine($"Context created: {e.BrowsingContextId}");
             Console.WriteLine($"URL: {e.Url}");
             Console.WriteLine($"Original opener: {e.OriginalOpener ?? "user-initiated"}");
+            Console.WriteLine($"Navigation planned: {e.HasPlannedNavigation}");
         });
 
         // Tab/window closed
-        driver.BrowsingContext.OnContextDestroyed.AddObserver((BrowsingContextEventArgs e) =>
+        driver.BrowsingContext.OnContextDestroyed.AddObserver((ContextDestroyedEventArgs e) =>
         {
             Console.WriteLine($"Context destroyed: {e.BrowsingContextId}");
         });

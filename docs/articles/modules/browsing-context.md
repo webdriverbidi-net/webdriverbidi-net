@@ -206,6 +206,13 @@ Three further events accompany a navigation but carry their own argument types: 
 
 ### Context Lifecycle Events
 
+`OnContextCreated` carries `ContextCreatedEventArgs` and `OnContextDestroyed` carries
+`ContextDestroyedEventArgs`. Both expose the same context properties as a `BrowsingContextInfo` in a
+`GetTreeAsync` result (`BrowsingContextId`, `Url`, `UserContextId`, `ClientWindowId`, `OriginalOpener`,
+`Parent`, and `Children`). `ContextCreatedEventArgs` adds `HasPlannedNavigation`,
+which is `true` when the browser will navigate the new context right after the event is sent. In that
+case, `Url` is usually the initial `about:blank` rather than the page the context will load.
+
 [!code-csharp[Context Lifecycle Events](../../code/modules/BrowsingContextModuleSamples.cs#ContextLifecycleEvents)]
 
 ### User Prompt Events
