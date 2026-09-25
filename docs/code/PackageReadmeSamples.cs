@@ -3,8 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for license information.
 // </copyright>
 // Compiled counterparts for the code blocks in the packed package READMEs, src/WebDriverBiDi/README.md,
-// src/WebDriverBiDi.Logging/README.md and src/WebDriverBiDi.Browsers/README.md. The Browsers regions are
-// also shown by docs/articles/browser-setup.md and getting-started.md.
+// src/WebDriverBiDi.Logging/README.md, src/WebDriverBiDi.Browsers/README.md and
+// src/WebDriverBiDi.Extensions/README.md. The Browsers regions are also shown by
+// docs/articles/browser-setup.md and getting-started.md, and the Extensions regions by
+// docs/articles/advanced/webdriverbidi-extensions.md.
 //
 // Those files are shipped inside the NuGet packages and rendered by nuget.org, which knows nothing of
 // DocFX, so their samples cannot be region references. Each fence names the region it mirrors in a
@@ -19,6 +21,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WebDriverBiDi;
 using WebDriverBiDi.Browsers;
+using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Input;
+using WebDriverBiDi.Network;
+using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 
 /// <summary>
@@ -279,6 +285,100 @@ public static class PackageReadmeSamples
         await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithDownloadOptions(downloadOptions)
             .Build();
+        #endregion
+    }
+
+    /// <summary>
+    /// The WebDriverBiDi.Extensions package README's quick start.
+    /// </summary>
+    /// <param name="driver">A connected driver.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task ExtensionsQuickStart(BiDiDriver driver)
+    {
+        #region ExtensionsQuickStart
+        IReadOnlyList<BrowsingContextInfo> tabs = await driver.BrowsingContext.GetTopLevelBrowsingContextsAsync();
+        string contextId = tabs[0].BrowsingContextId;
+
+        await driver.BrowsingContext.NavigateAsync(contextId, "https://example.com", ReadinessState.Complete);
+        StringRemoteValue title = await driver.Script.CallFunctionAsync<StringRemoteValue>(contextId, "() => document.title");
+        byte[] png = await driver.BrowsingContext.CaptureScreenshotAsync(contextId);
+        File.WriteAllBytes("example.png", png);
+        #endregion
+    }
+
+    /// <summary>
+    /// The WebDriverBiDi.Extensions package README's input example.
+    /// </summary>
+    /// <param name="driver">A connected driver.</param>
+    /// <param name="contextId">The browsing context to type into.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task ExtensionsInput(BiDiDriver driver, string contextId)
+    {
+        #region ExtensionsInput
+        IReadOnlyList<SharedReference> searchBoxes = await driver.BrowsingContext.LocateNodesByCssSelectorAsync(contextId, "input[name=q]");
+
+        InputBuilder builder = new InputBuilder()
+            .AddClickOnElementAction(searchBoxes[0])
+            .AddSendKeysToActiveElementAction("WebDriver BiDi")
+            .AddSendKeysToActiveElementAction(Keys.Enter);
+        await driver.Input.PerformActionsAsync(contextId, builder);
+
+        // Releases any keys or buttons an action sequence left pressed.
+        await driver.Input.ReleaseActionsAsync(contextId);
+        #endregion
+    }
+
+    /// <summary>
+    /// The WebDriverBiDi.Extensions package README's network capture example.
+    /// </summary>
+    /// <param name="driver">A connected driver.</param>
+    /// <param name="contextId">The browsing context to monitor.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task ExtensionsNetworkCapture(BiDiDriver driver, string contextId)
+    {
+        #region ExtensionsNetworkCapture
+        NetworkTrafficMonitorOptions options = new();
+        options.BrowsingContextIds.Add(contextId);
+
+        await using NetworkTrafficMonitor monitor = new(driver, options);
+        await monitor.StartMonitoringAsync();
+        await driver.BrowsingContext.NavigateAsync(contextId, "https://example.com", ReadinessState.Complete);
+
+        // Waits up to ten seconds for requests still in flight; any that are still unfinished are kept for the next call.
+        IReadOnlyList<NetworkRequest> traffic = await monitor.GetCapturedTrafficAsync(TimeSpan.FromSeconds(10));
+        foreach (NetworkRequest request in traffic)
+        {
+            Console.WriteLine($"{request.ResponseStatusCode} {request.Method} {request.Url}");
+        }
+
+        File.WriteAllText("example.har", HarGenerator.Generate(traffic));
+        #endregion
+    }
+
+    /// <summary>
+    /// The WebDriverBiDi.Extensions package README's request modification and authentication example.
+    /// </summary>
+    /// <param name="driver">A connected driver.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task ExtensionsNetworkModification(BiDiDriver driver)
+    {
+        #region ExtensionsNetworkModification
+        NetworkTrafficMonitorOptions options = new()
+        {
+            CaptureBodies = false,
+        };
+
+        NetworkRequestModification toStaging = new("https://api.example.com/v1/orders")
+        {
+            ReplacementUrl = "https://staging-api.example.com/v1/orders",
+        };
+        toStaging.AdditionalHeaders["X-Test-Run"] = "nightly";
+        options.RequestModifications.Add(toStaging);
+
+        options.AuthCredentials.Add(new AuthChallengeCredentials("tester", "secret") { Realm = "staging" });
+
+        await using NetworkTrafficMonitor monitor = new(driver, options);
+        await monitor.StartMonitoringAsync();
         #endregion
     }
 }

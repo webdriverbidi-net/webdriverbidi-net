@@ -175,6 +175,18 @@ Locating, downloading, and launching browsers, from the `WebDriverBiDi.Browsers`
 - `RemoteGridOptions` - Capabilities and headers for a session on a remote grid
 - `ChromiumTransport` - A `Transport` that speaks WebDriver BiDi to Chromium through its DevTools endpoint
 
+### WebDriverBiDi.Extensions
+
+Conveniences over the protocol, from the `WebDriverBiDi.Extensions` package. Its types sit in the namespaces of the modules they extend. See the [WebDriverBiDi.Extensions guide](../articles/advanced/webdriverbidi-extensions.md).
+
+**Key Classes:**
+- `SessionModuleExtensions`, `BrowsingContextModuleExtensions`, `ScriptModuleExtensions`, `InputModuleExtensions` - One-call forms of common commands, such as `NavigateAsync(contextId, url)` and `CaptureScreenshotAsync` returning bytes
+- `InputBuilder` - Builds `input.performActions` sequences tick by tick, with `InputBuilderExtensions` for clicks, typing, chords, drag-and-drop, and scrolling; `Keys` names the special keys
+- `NetworkTrafficMonitor` - Captures requests, responses, and bodies, optionally modifying requests and answering authentication challenges; configured with `NetworkTrafficMonitorOptions`
+- `NetworkRequest` - A captured request and its outcome
+- `HarGenerator` - Writes captured traffic as an HTTP Archive (HAR 1.2)
+- `ScriptException` - Thrown when a script called through `CallFunctionAsync` throws
+
 ## Using the API Reference
 
 ### Generating Documentation
@@ -185,11 +197,12 @@ To generate the full API documentation locally:
 # Install DocFX if not already installed
 dotnet tool install -g docfx
 
-# Build the library, the logging package, and the browser management package in Release;
+# Build the library and the logging, browser management, and extensions packages in Release;
 # docfx metadata reads the API surface from each one's bin/Release/netstandard2.0 directory
 dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
 dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release
 dotnet build src/WebDriverBiDi.Browsers/WebDriverBiDi.Browsers.csproj --configuration Release
+dotnet build src/WebDriverBiDi.Extensions/WebDriverBiDi.Extensions.csproj --configuration Release
 
 # Compile the documentation code samples (every [!code-csharp] region must compile)
 dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release

@@ -72,6 +72,8 @@
       href: advanced/observability.md
     - name: Structured Logging (WebDriverBiDi.Logging)
       href: advanced/webdriverbidi-logging.md
+    - name: Conveniences (WebDriverBiDi.Extensions)
+      href: advanced/webdriverbidi-extensions.md
     - name: API Design Guide
       href: advanced/api-design.md
     - name: Error Handling

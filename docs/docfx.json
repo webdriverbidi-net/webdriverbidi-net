@@ -19,6 +19,12 @@
             "WebDriverBiDi.Browsers.dll"
           ],
           "src": "../src/WebDriverBiDi.Browsers/bin/Release/netstandard2.0"
+        },
+        {
+          "files": [
+            "WebDriverBiDi.Extensions.dll"
+          ],
+          "src": "../src/WebDriverBiDi.Extensions/bin/Release/netstandard2.0"
         }
       ],
       "dest": "api",

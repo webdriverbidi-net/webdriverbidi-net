@@ -105,9 +105,13 @@ Use Unicode values for special keys: Enter `\uE007`, Tab `\uE004`, Control `\uE0
 3. **Focus elements**: Click or tab to elements before sending keys
 4. **Check element state**: Ensure elements are visible and enabled
 
-## Helper Libraries
+## Building Action Sequences with InputBuilder
 
-The repository's `WebDriverBiDi.Extensions` library (pre-release, not yet published to NuGet; the demo project uses it) includes an `InputBuilder` helper class that simplifies common input patterns. Consider creating similar helpers for your projects.
+The `WebDriverBiDi.Extensions` package adds an `InputBuilder` that assembles action sequences tick by tick, helpers for clicks, typing, key chords, drag-and-drop, and scrolling, and a `Keys` class naming the special keys:
+
+[!code-csharp[Input Builder](../../code/PackageReadmeSamples.cs#ExtensionsInput)]
+
+See [WebDriverBiDi.Extensions](../advanced/webdriverbidi-extensions.md#input) for how ticks work and how to use several input sources at once.
 
 ## Error Handling
 

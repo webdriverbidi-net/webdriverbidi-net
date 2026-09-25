@@ -43,6 +43,14 @@ The `WebDriverBiDi` package is the protocol client, and connects to a browser th
 dotnet add package WebDriverBiDi.Browsers
 ```
 
+### Optional: Conveniences
+
+The [WebDriverBiDi.Extensions](advanced/webdriverbidi-extensions.md) package adds one-call extension methods for common commands, an input action builder, and network traffic capture with HAR output:
+
+```bash
+dotnet add package WebDriverBiDi.Extensions
+```
+
 ### Optional: Roslyn Analyzers
 
 For compile-time help catching common usage errors, add the [WebDriverBiDi.Analyzers](advanced/analyzers.md) package. See [Roslyn Analyzers](advanced/analyzers.md) for the full list of available analyzers.

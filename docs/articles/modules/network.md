@@ -183,6 +183,14 @@ Cookie commands belong to the **Storage** module (`driver.Storage`), not the Net
 
 [!code-csharp[Get Cookies](../../code/modules/NetworkModuleSamples.cs#GetCookies)]
 
+## Capturing Traffic with NetworkTrafficMonitor
+
+The events, intercepts, and data collectors above are the building blocks for recording traffic. The `WebDriverBiDi.Extensions` package puts them together in `NetworkTrafficMonitor`. It records each request with its response and bodies, keeping each redirect hop separately, and `HarGenerator` writes the result as a HAR file:
+
+[!code-csharp[Network Capture](../../code/PackageReadmeSamples.cs#ExtensionsNetworkCapture)]
+
+The monitor can also modify matching requests and answer authentication challenges. See [WebDriverBiDi.Extensions](../advanced/webdriverbidi-extensions.md#network-capture).
+
 ## Timing Information
 
 [!code-csharp[Timing Information](../../code/modules/NetworkModuleSamples.cs#TimingInformation)]
