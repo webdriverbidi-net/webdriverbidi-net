@@ -14,6 +14,12 @@
 
   </PropertyGroup>
 
+  <!-- docfx reads the API from the netstandard2.0 build, and resolves its references (such as Microsoft.Bcl.AsyncInterfaces)
+       only from files beside it. Packing is unaffected. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
   <PropertyGroup>
     <PackageId>WebDriverBiDi.Browsers</PackageId>
     <Authors>WebDriverBiDi.NET Committers</Authors>
