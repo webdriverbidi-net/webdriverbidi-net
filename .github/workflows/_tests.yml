@@ -119,6 +119,16 @@ jobs:
       - name: Enforce extensions coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-extensions.*.info
 
+      - name: Test command-line tool (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Tool.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Tool]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-tool
+
+      - name: Enforce command-line tool coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-tool.*.info
+
       - name: Enforce combined coverage thresholds
         # Perform an aggregate threshold check
         run: >
@@ -128,6 +138,7 @@ jobs:
           test/coverage/lcov-logging.*.info
           test/coverage/lcov-browsers.*.info
           test/coverage/lcov-extensions.*.info
+          test/coverage/lcov-tool.*.info
 
       # The analyzer package's shipped layout is produced entirely by a pack target that nothing else
       # runs: the Roslyn 5.9 variant is compiled only inside it, every other CI build and test uses the
@@ -213,7 +224,7 @@ jobs:
           # A coveralls.io outage must not fail the job that gates pull requests and the tag release.
           fail-on-error: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info test/coverage/lcov-browsers.*.info test/coverage/lcov-extensions.*.info
+          files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info test/coverage/lcov-browsers.*.info test/coverage/lcov-extensions.*.info test/coverage/lcov-tool.*.info
           format: lcov
 
   # Deliberately a job of its own rather than a `configuration` matrix on unit-tests; see the
@@ -291,6 +302,16 @@ jobs:
       - name: Enforce extensions coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-extensions.*.info
 
+      - name: Test command-line tool (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Tool.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Tool]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-tool
+
+      - name: Enforce command-line tool coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-tool.*.info
+
       - name: Enforce combined coverage thresholds
         run: >
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
@@ -299,6 +320,7 @@ jobs:
           test/coverage-debug/lcov-logging.*.info
           test/coverage-debug/lcov-browsers.*.info
           test/coverage-debug/lcov-extensions.*.info
+          test/coverage-debug/lcov-tool.*.info
 
   unit-tests-windows:
     name: Unit tests (Windows)
@@ -340,6 +362,9 @@ jobs:
 
       - name: Test extensions library
         run: dotnet test --project test/WebDriverBiDi.Extensions.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test command-line tool
+        run: dotnet test --project test/WebDriverBiDi.Tool.Tests --configuration Release --no-build --verbosity normal
 
   # Compatibility tests build and run a separate consumer application against a specific build of
   # the library (currently the netstandard2.0 one) over a scripted WebSocket server. They need no

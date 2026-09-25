@@ -67,15 +67,7 @@ public class DriverLocator
     {
         downloadOptions ??= new BrowserDownloadOptions();
         version ??= BrowserVersion.Latest;
-        BrowserLocatorSettings settings = browser switch
-        {
-            BrowserKind.Chrome => BrowserLocator.CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            BrowserKind.Firefox => BrowserLocator.CreateFirefoxSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            BrowserKind.Safari => BrowserLocator.CreateSafariSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            BrowserKind.Edge => BrowserLocator.CreateEdgeSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            _ => throw new NotSupportedException($"The driver for {browser} cannot be located; this method supports Chrome, Firefox, Safari, and Edge."),
-        };
-
+        BrowserLocatorSettings settings = BrowserLocator.CreateSettings(browser, channel, version, locationBehavior, customPath, downloadOptions);
         settings.IncludeDriver = true;
         if (settings.LocationBehavior != FileLocationBehavior.AutoLocateAndDownload)
         {
@@ -86,6 +78,57 @@ public class DriverLocator
 
         DriverLocator locator = new(settings);
         return await locator.LocateDriverAsync(null, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Resolves the build of a driver that <see cref="FindDriverAsync"/> would download, without downloading it. The
+    /// driver for a browser that is not downloaded, such as msedgedriver, matches the version of the installed browser.
+    /// </summary>
+    /// <param name="browser">The browser whose driver to resolve: Chrome, Firefox, or Edge.</param>
+    /// <param name="channel">The release channel of the browser the driver drives.</param>
+    /// <param name="version">The version of the browser the driver drives, or <see langword="null"/> for <see cref="BrowserVersion.Latest"/>.</param>
+    /// <param name="locationBehavior">The strategy for locating the browser.</param>
+    /// <param name="customPath">The custom path to the browser executable (only used when locationBehavior is UseCustomLocation).</param>
+    /// <param name="downloadOptions">The options controlling where the driver is cached and downloaded from, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels resolving the build.</param>
+    /// <returns>The build.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the driver is never downloaded, as safaridriver is not.</exception>
+    /// <exception cref="ArgumentException">Thrown when the channel or version cannot be used with the browser, or customPath is required but not provided.</exception>
+    /// <exception cref="BrowserDownloadException">Thrown when the build cannot be resolved.</exception>
+    public static async Task<ResolvedDownload> ResolveDownloadAsync(
+        BrowserKind browser,
+        BrowserReleaseChannel channel = BrowserReleaseChannel.Stable,
+        BrowserVersion? version = null,
+        FileLocationBehavior locationBehavior = FileLocationBehavior.AutoLocateAndDownload,
+        string? customPath = null,
+        BrowserDownloadOptions? downloadOptions = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (browser == BrowserKind.Safari)
+        {
+            throw new NotSupportedException("safaridriver is part of macOS, and is never downloaded.");
+        }
+
+        downloadOptions ??= new BrowserDownloadOptions();
+        BrowserLocatorSettings settings = BrowserLocator.CreateSettings(browser, channel, version ?? BrowserVersion.Latest, locationBehavior, customPath, downloadOptions);
+        settings.IncludeDriver = true;
+        DriverLocator locator = new(settings);
+        DriverDownloadInfo downloadInfo;
+        try
+        {
+            string? browserVersion = settings.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload
+                ? null
+                : await new BrowserLocator(settings).LocateBrowserVersionAsync(cancellationToken).ConfigureAwait(false);
+            downloadInfo = await locator.GetDriverDownloadInfoAsync(browserVersion, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not WebDriverBiDiException && !(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        {
+            throw new BrowserDownloadException($"Unable to resolve {settings.DriverName}: {ex.Message}", ex);
+        }
+
+        InstallCache cache = new(Path.Combine(locator.CacheDirectory, "drivers", settings.DriverName), downloadOptions);
+        bool isCached = cache.TryGetInstalledExecutable(downloadInfo.Version, settings.DriverExecutableName, out _);
+        return new ResolvedDownload(settings.DriverName, downloadInfo.Version, new Uri(downloadInfo.DownloadUrl), isCached);
     }
 
     /// <summary>
@@ -129,6 +172,23 @@ public class DriverLocator
     internal async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
         await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets the download of the driver, for the given version of the browser it drives.
+    /// </summary>
+    /// <param name="browserVersion">The version of the browser, or <see langword="null"/> if it is not known.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
+    /// <returns>The driver download information.</returns>
+    internal async Task<DriverDownloadInfo> GetDriverDownloadInfoAsync(string? browserVersion, CancellationToken cancellationToken)
+    {
+        if (this.settings.DownloadOptions.ManifestUrl is null)
+        {
+            return await this.settings.GetMatchingDriverDownloadInfo(browserVersion, cancellationToken).ConfigureAwait(false);
+        }
+
+        DownloadManifest manifest = await DownloadManifest.LoadAsync(this.settings.DownloadOptions, cancellationToken).ConfigureAwait(false);
+        return manifest.ResolveDriver(this.settings, browserVersion);
     }
 
     private async Task<string> LocateCachedDriverAsync(string? browserVersion, CancellationToken cancellationToken)
@@ -214,17 +274,6 @@ public class DriverLocator
         }
 
         return executablePath;
-    }
-
-    private async Task<DriverDownloadInfo> GetDriverDownloadInfoAsync(string? browserVersion, CancellationToken cancellationToken)
-    {
-        if (this.settings.DownloadOptions.ManifestUrl is null)
-        {
-            return await this.settings.GetMatchingDriverDownloadInfo(browserVersion, cancellationToken).ConfigureAwait(false);
-        }
-
-        DownloadManifest manifest = await DownloadManifest.LoadAsync(this.settings.DownloadOptions, cancellationToken).ConfigureAwait(false);
-        return manifest.ResolveDriver(this.settings, browserVersion);
     }
 
     private void ThrowIfDownloadSkipped(string description)

@@ -85,17 +85,59 @@ public class BrowserLocator
             throw new ArgumentException($"{browserOptions.GetType().Name} cannot be used to locate {browser}.", nameof(browserOptions));
         }
 
-        BrowserLocatorSettings settings = browser switch
-        {
-            BrowserKind.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions, browserOptions is ChromeLaunchOptions { UseHeadlessShell: true }),
-            BrowserKind.Firefox => CreateFirefoxSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            BrowserKind.Safari => CreateSafariSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            BrowserKind.Edge => CreateEdgeSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            _ => throw new NotSupportedException($"{browser} cannot be located; this method supports Chrome, Firefox, Safari, and Edge."),
-        };
-
+        BrowserLocatorSettings settings = CreateSettings(browser, channel, version, locationBehavior, customPath, downloadOptions, browserOptions is ChromeLaunchOptions { UseHeadlessShell: true });
         BrowserLocator locator = new(settings);
         return await locator.LocateBrowserAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Resolves the build of a browser that <see cref="FindBrowserAsync"/> would download, without downloading it.
+    /// </summary>
+    /// <param name="browser">The browser, which must be one that is downloaded: Chrome or Firefox.</param>
+    /// <param name="channel">The release channel of the browser.</param>
+    /// <param name="version">The version of the browser, or <see langword="null"/> for <see cref="BrowserVersion.Latest"/>.</param>
+    /// <param name="downloadOptions">The options controlling where the browser is cached and downloaded from, or <see langword="null"/> for the defaults.</param>
+    /// <param name="browserOptions">Browser-specific options that affect which build is resolved, such as <see cref="ChromeLaunchOptions.UseHeadlessShell"/>, or <see langword="null"/> for none.</param>
+    /// <param name="cancellationToken">A token that cancels resolving the build.</param>
+    /// <returns>The build.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the browser is never downloaded.</exception>
+    /// <exception cref="ArgumentException">Thrown when the channel, version, or browser options cannot be used with the browser.</exception>
+    /// <exception cref="BrowserDownloadException">Thrown when the build cannot be resolved.</exception>
+    public static async Task<ResolvedDownload> ResolveDownloadAsync(
+        BrowserKind browser,
+        BrowserReleaseChannel channel = BrowserReleaseChannel.Stable,
+        BrowserVersion? version = null,
+        BrowserDownloadOptions? downloadOptions = null,
+        BrowserLaunchOptions? browserOptions = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (browser != BrowserKind.Chrome && browser != BrowserKind.Firefox)
+        {
+            throw new NotSupportedException($"{browser} is never downloaded; only Chrome and Firefox builds can be resolved.");
+        }
+
+        downloadOptions ??= new BrowserDownloadOptions();
+        if (browserOptions is not null && browserOptions.Browser != browser)
+        {
+            throw new ArgumentException($"{browserOptions.GetType().Name} cannot be used to resolve {browser}.", nameof(browserOptions));
+        }
+
+        BrowserLocatorSettings settings = CreateSettings(browser, channel, version ?? BrowserVersion.Latest, FileLocationBehavior.AutoLocateAndDownload, null, downloadOptions, browserOptions is ChromeLaunchOptions { UseHeadlessShell: true });
+        BrowserLocator locator = new(settings);
+        BrowserDownloadInfo downloadInfo;
+        try
+        {
+            downloadInfo = await locator.GetBrowserDownloadInfoAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not WebDriverBiDiException && !(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        {
+            throw new BrowserDownloadException($"Unable to resolve {settings.BrowserDisplayName}: {ex.Message}", ex);
+        }
+
+        // A channel whose builds share a version number (Firefox Nightly) is downloaded again whatever is cached.
+        InstallCache cache = new(Path.Combine(locator.CacheDirectory, settings.BrowserName, settings.Channel), downloadOptions);
+        bool isCached = !downloadInfo.IgnoreVersionMatch && cache.TryGetInstalledExecutable(downloadInfo.Version, settings.ExpectedExecutablePath, out _);
+        return new ResolvedDownload(settings.BrowserName, downloadInfo.Version, new Uri(downloadInfo.DownloadUrl), isCached);
     }
 
     /// <summary>
@@ -130,6 +172,30 @@ public class BrowserLocator
     {
         LocatedBrowser browser = await this.LocateBrowserPathAsync(cancellationToken).ConfigureAwait(false);
         return browser.Path;
+    }
+
+    /// <summary>
+    /// Creates browser locator settings for a browser.
+    /// </summary>
+    /// <param name="browser">The browser.</param>
+    /// <param name="channel">The release channel.</param>
+    /// <param name="version">The browser version.</param>
+    /// <param name="locationBehavior">The location behavior strategy.</param>
+    /// <param name="customPath">Optional custom path to the browser executable.</param>
+    /// <param name="downloadOptions">The options controlling where the browser is cached and downloaded from.</param>
+    /// <param name="useHeadlessShell">A value indicating whether to locate chrome-headless-shell rather than Chrome.</param>
+    /// <returns>The settings.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the browser is not one this package locates.</exception>
+    internal static BrowserLocatorSettings CreateSettings(BrowserKind browser, BrowserReleaseChannel channel, BrowserVersion version, FileLocationBehavior locationBehavior, string? customPath, BrowserDownloadOptions downloadOptions, bool useHeadlessShell = false)
+    {
+        return browser switch
+        {
+            BrowserKind.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions, useHeadlessShell),
+            BrowserKind.Firefox => CreateFirefoxSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            BrowserKind.Safari => CreateSafariSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            BrowserKind.Edge => CreateEdgeSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            _ => throw new NotSupportedException($"{browser} cannot be located; Chrome, Firefox, Safari, and Edge can."),
+        };
     }
 
     /// <summary>
@@ -306,6 +372,16 @@ public class BrowserLocator
             || exception is OperationCanceledException
             || exception is DownloadServiceException { IsServerError: true }
             || exception is DownloadServiceException { IsRateLimited: true };
+    }
+
+    /// <summary>
+    /// Locates the browser and reads its version, as a driver that must match it needs.
+    /// </summary>
+    /// <param name="cancellationToken">A token that cancels locating the browser.</param>
+    /// <returns>The browser's version, or <see langword="null"/> if it is not known.</returns>
+    internal async Task<string?> LocateBrowserVersionAsync(CancellationToken cancellationToken)
+    {
+        return (await this.LocateBrowserPathAsync(cancellationToken).ConfigureAwait(false)).Version;
     }
 
     /// <summary>
