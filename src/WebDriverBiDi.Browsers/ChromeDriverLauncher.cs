@@ -21,6 +21,9 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
     {
     }
 
+    /// <inheritdoc/>
+    internal override IReadOnlyCollection<string> LaunchCapabilityNames { get; } = ["browserName", "webSocketUrl", "goog:chromeOptions"];
+
     /// <summary>
     /// Creates the WebDriver Classic capabilities used to launch the browser.
     /// </summary>

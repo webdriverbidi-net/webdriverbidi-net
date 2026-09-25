@@ -11,6 +11,7 @@ using System.Text.Json.Nodes;
 using PinchHitter;
 using WebDriverBiDi.Browsers.TestUtilities;
 using WebDriverBiDi.Protocol;
+using WebDriverBiDi.Session;
 
 public class RemoteLaunchTests
 {
@@ -22,22 +23,19 @@ public class RemoteLaunchTests
     {
         await using DownloadServer server = await DownloadServer.StartAsync();
         ServeGrid(server, "/wd/hub");
-        RemoteGridOptions options = new()
+        RemoteGridOptions options = new() { Headers = { ["X-Team"] = "web" } };
+        Dictionary<string, object?> vendorOptions = new()
         {
-            Capabilities =
-            {
-                ["browserVersion"] = "130",
-                ["vendor:options"] = new Dictionary<string, object?>()
-                {
-                    ["numbers"] = new object[] { 1, 2L, 2.5, 3.25m, 1.5f, ulong.MaxValue, (sbyte)-1, (byte)2, (short)3, (ushort)4, 5u },
-                    ["flags"] = new List<bool> { true, false },
-                    ["nothing"] = null,
-                },
-            },
-            Headers = { ["X-Team"] = "web" },
+            ["numbers"] = new object[] { 1, 2L, 2.5, 3.25m, 1.5f, ulong.MaxValue, (sbyte)-1, (byte)2, (short)3, (ushort)4, 5u },
+            ["flags"] = new List<bool> { true, false },
+            ["nothing"] = null,
         };
         Uri gridUrl = new($"http://user:p%40ss@localhost:{server.UrlFor("/").Port}/wd/hub");
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(gridUrl, options).Build();
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
+            .LaunchUsingRemoteGrid(gridUrl, options)
+            .WithSessionCapability("browserVersion", "130")
+            .WithSessionCapability("vendor:options", vendorOptions)
+            .Build();
         await launcher.StartAsync(TestContext.Current.CancellationToken);
 
         BrowserInstance instance = await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
@@ -59,20 +57,79 @@ public class RemoteLaunchTests
         Assert.All(server.Requests, request => Assert.StartsWith("Basic ", request.Headers["Authorization"]));
     }
 
+    [Theory]
+    [InlineData(BrowserKind.Firefox, true, "browserName")]
+    [InlineData(BrowserKind.Chrome, true, "webSocketUrl")]
+    [InlineData(BrowserKind.Chrome, false, "goog:chromeOptions")]
+    [InlineData(BrowserKind.Firefox, false, "moz:firefoxOptions")]
+    [InlineData(BrowserKind.Safari, false, "safari:experimentalWebSocketUrl")]
+    [InlineData(BrowserKind.Safari, false, "safari:options")]
+    public void BuildRejectsCapabilityTheLauncherSets(BrowserKind browser, bool onGrid, string name)
+    {
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(browser);
+        builder = onGrid ? builder.LaunchUsingRemoteGrid(new Uri("http://grid.example/")) : builder.LaunchUsingDriver();
+        if (browser == BrowserKind.Safari)
+        {
+            builder.AtDefaultInstallationLocation();
+        }
+
+        BrowserLauncherConfigurationException exception = Assert.Throws<BrowserLauncherConfigurationException>(builder.WithSessionCapability(name, "value").Build);
+
+        Assert.Contains($"The {name} capability cannot be added", exception.Message);
+    }
+
     [Fact]
-    public async Task LauncherCapabilitiesTakePrecedenceOverGridOptions()
+    public async Task ProxyIsWrittenAsTheCoreLibraryWritesIt()
     {
         await using DownloadServer server = await DownloadServer.StartAsync();
         ServeGrid(server, string.Empty);
-        RemoteGridOptions options = new() { Capabilities = { ["browserName"] = "other", ["webSocketUrl"] = false } };
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Firefox).LaunchUsingRemoteGrid(server.UrlFor("/"), options).Build();
+        ManualProxyConfiguration proxy = new() { HttpProxy = "proxy.local:3128", SocksProxy = "socks.local:1080", SocksVersion = 5 };
+        proxy.NoProxyAddresses.Add("localhost");
+        proxy.AdditionalData["vendor:setting"] = "on";
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(server.UrlFor("/")).WithSessionCapability("proxy", proxy).Build();
+        proxy.HttpProxy = "changed.local:3128";
         await launcher.StartAsync(TestContext.Current.CancellationToken);
 
         await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
 
         JsonNode capabilities = JsonNode.Parse(Assert.Single(server.Requests, request => request.Method == "POST").Body)!["capabilities"]!["firstMatch"]![0]!;
-        Assert.Equal("firefox", (string?)capabilities["browserName"]);
-        Assert.True((bool?)capabilities["webSocketUrl"]);
+        JsonNode expected = JsonNode.Parse("""{"proxyType":"manual","httpProxy":"proxy.local:3128","socksProxy":"socks.local:1080","socksVersion":5,"noProxy":["localhost"],"vendor:setting":"on"}""")!;
+        Assert.True(JsonNode.DeepEquals(expected, capabilities["proxy"]), capabilities["proxy"]!.ToJsonString());
+    }
+
+    [Fact]
+    public void BuildRejectsProxyThatIsNotProxyConfiguration()
+    {
+        Dictionary<string, object?> proxyDictionary = new() { ["proxyType"] = "manual", ["httpProxy"] = "proxy.local:3128" };
+
+        BrowserLauncherConfigurationException dictionary = Assert.Throws<BrowserLauncherConfigurationException>(GridBuilder().WithSessionCapability("proxy", proxyDictionary).Build);
+        BrowserLauncherConfigurationException misplaced = Assert.Throws<BrowserLauncherConfigurationException>(GridBuilder().WithSessionCapability("vendor:proxy", new PacProxyConfiguration("http://proxy.local/proxy.pac")).Build);
+
+        Assert.Contains("must be a ProxyConfiguration", dictionary.Message);
+        Assert.Contains("can only be the value of the proxy capability", misplaced.Message);
+    }
+
+    [Fact]
+    public void BuildRejectsProxyWhoseAdditionalDataRepeatsAPropertyOrCannotBeWritten()
+    {
+        ManualProxyConfiguration repeated = new() { HttpProxy = "proxy.local:3128" };
+        repeated.AdditionalData["httpProxy"] = "other.local:3128";
+        ManualProxyConfiguration unwritable = new();
+        unwritable.AdditionalData["vendor:setting"] = new UnregisteredValue();
+
+        BrowserLauncherConfigurationException repeatedException = Assert.Throws<BrowserLauncherConfigurationException>(GridBuilder().WithSessionCapability("proxy", repeated).Build);
+        BrowserLauncherConfigurationException unwritableException = Assert.Throws<BrowserLauncherConfigurationException>(GridBuilder().WithSessionCapability("proxy", unwritable).Build);
+
+        Assert.Contains("entry named httpProxy", repeatedException.Message);
+        Assert.StartsWith("The proxy capability cannot be written", unwritableException.Message);
+    }
+
+    [Fact]
+    public void BuildRejectsSessionCapabilitiesWhenTheSessionIsNotCreatedByTheLauncher()
+    {
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).WithSessionCapability("browserVersion", "130").Build);
+        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Firefox).ConnectToExisting(new Uri("ws://127.0.0.1:9222/session")).WithSessionCapability("browserVersion", "130").Build);
+        Assert.Throws<ArgumentException>(() => BrowserLauncher.Configure(BrowserKind.Chrome).WithSessionCapability(string.Empty, "value"));
     }
 
     [Fact]
@@ -94,8 +151,7 @@ public class RemoteLaunchTests
     {
         await using DownloadServer server = await DownloadServer.StartAsync();
         ServeGrid(server, string.Empty);
-        RemoteGridOptions options = new() { Capabilities = { ["safari:experimentalWebSocketUrl"] = false } };
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Safari).LaunchUsingRemoteGrid(server.UrlFor("/"), options).Build();
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Safari).LaunchUsingRemoteGrid(server.UrlFor("/")).WithSessionCapability("safari:experimentalWebSocketUrl", false).Build();
         await launcher.StartAsync(TestContext.Current.CancellationToken);
 
         await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
@@ -144,9 +200,7 @@ public class RemoteLaunchTests
     [MemberData(nameof(UnsupportedCapabilities))]
     public void BuildRejectsCapabilityValuesThatAreNotJson(object value, string expectedPath)
     {
-        RemoteGridOptions options = new() { Capabilities = { ["vendor:options"] = new Dictionary<string, object?>() { ["value"] = value } } };
-
-        BrowserLauncherConfigurationException exception = Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(new Uri("http://grid.example/"), options).Build);
+        BrowserLauncherConfigurationException exception = Assert.Throws<BrowserLauncherConfigurationException>(GridBuilder().WithSessionCapability("vendor:options", new Dictionary<string, object?>() { ["value"] = value }).Build);
 
         Assert.Contains(expectedPath, exception.Message);
     }
@@ -232,6 +286,8 @@ public class RemoteLaunchTests
         Assert.IsType(expectedTransportType, transport);
     }
 
+    private static BrowserLauncherBuilder GridBuilder() => BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(new Uri("http://grid.example/"));
+
     private static void ServeGrid(DownloadServer server, string pathPrefix)
     {
         byte[] Json(string text) => Encoding.UTF8.GetBytes(text);
@@ -242,5 +298,9 @@ public class RemoteLaunchTests
             HttpRequestMethod.Post,
             new ServedResponse(HttpStatusCode.OK, Json($"{{\"value\":{{\"sessionId\":\"{SessionId}\",\"capabilities\":{{\"webSocketUrl\":\"{BrowserWebSocketUrl}\"}}}}}}"), ContentType: JsonType));
         server.AddResponses($"{pathPrefix}/session/{SessionId}", HttpRequestMethod.Delete, new ServedResponse(HttpStatusCode.OK, Json("{\"value\":null}"), ContentType: JsonType));
+    }
+
+    private sealed class UnregisteredValue
+    {
     }
 }

@@ -77,16 +77,12 @@ switch (browser)
             vendorOptions["binary"] = args[3];
         }
 
-        RemoteGridOptions gridOptions = new()
-        {
-            Capabilities =
-            {
-                [browser == "chrome-grid" ? "goog:chromeOptions" : "moz:firefoxOptions"] = vendorOptions,
-                ["timeouts"] = new Dictionary<string, object?>() { ["pageLoad"] = 30000L, ["script"] = 10000 },
-            },
-        };
+        // A direct proxy changes nothing, but exercises writing a ProxyConfiguration under native AOT.
         launcher = BrowserLauncher.Configure(browser == "chrome-grid" ? BrowserKind.Chrome : BrowserKind.Firefox)
-            .LaunchUsingRemoteGrid(new Uri(browserExecutable), gridOptions)
+            .LaunchUsingRemoteGrid(new Uri(browserExecutable))
+            .WithSessionCapability(browser == "chrome-grid" ? "goog:chromeOptions" : "moz:firefoxOptions", vendorOptions)
+            .WithSessionCapability("timeouts", new Dictionary<string, object?>() { ["pageLoad"] = 30000L, ["script"] = 10000 })
+            .WithSessionCapability("proxy", new DirectProxyConfiguration())
             .Build();
         break;
     default:

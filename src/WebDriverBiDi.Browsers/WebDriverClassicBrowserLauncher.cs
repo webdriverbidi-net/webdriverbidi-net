@@ -54,11 +54,20 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     public override bool IsBrowserCloseAllowed => this.BrowserLocator.BrowserName != "firefox";
 
     /// <summary>
-    /// Gets or sets additional capabilities to include in the new session request, such as
-    /// <c>browserVersion</c> or vendor-specific options for a remote grid. When a key also appears
-    /// in the result of <see cref="CreateBrowserLaunchCapabilities"/>, that value takes precedence.
+    /// Gets or sets the capabilities the user added to the new session request. The builder rejects any
+    /// named in <see cref="LaunchCapabilityNames"/>.
     /// </summary>
     internal Dictionary<string, object?> AdditionalCapabilities { get; set; } = [];
+
+    /// <summary>
+    /// Gets the capabilities requested unless <see cref="AdditionalCapabilities"/> replaces them.
+    /// </summary>
+    internal Dictionary<string, object?> DefaultCapabilities { get; } = [];
+
+    /// <summary>
+    /// Gets the names of the capabilities <see cref="CreateBrowserLaunchCapabilities"/> can set.
+    /// </summary>
+    internal virtual IReadOnlyCollection<string> LaunchCapabilityNames { get; } = ["browserName", "webSocketUrl"];
 
     /// <summary>
     /// Sets the URL of a remote end not started by this launcher, such as a grid (e.g.,
@@ -137,10 +146,8 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
 
         await this.BrowserLocator.LocateBrowserAsync(cancellationToken).ConfigureAwait(false);
 
-        // The launcher's own capabilities are applied last, so an added capability can never replace
-        // browserName or turn off webSocketUrl, without which no BiDi session is created.
-        Dictionary<string, object?> sessionCapabilities = new(this.AdditionalCapabilities);
-        foreach (KeyValuePair<string, object?> capability in this.CreateBrowserLaunchCapabilities())
+        Dictionary<string, object?> sessionCapabilities = new(this.DefaultCapabilities);
+        foreach (KeyValuePair<string, object?> capability in this.AdditionalCapabilities.Concat(this.CreateBrowserLaunchCapabilities()))
         {
             sessionCapabilities[capability.Key] = capability.Value;
         }

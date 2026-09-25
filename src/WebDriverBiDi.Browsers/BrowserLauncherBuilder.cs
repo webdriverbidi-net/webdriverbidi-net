@@ -6,14 +6,17 @@
 namespace WebDriverBiDi.Browsers;
 
 using WebDriverBiDi.Protocol;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Provides a fluent API for configuring and creating a <see cref="BrowserLauncher"/> instance.
 /// </summary>
 public class BrowserLauncherBuilder
 {
+    private const string ProxyCapabilityName = "proxy";
     private readonly BrowserKind browser;
     private readonly LaunchSettings launchSettings = new();
+    private readonly Dictionary<string, object?> sessionCapabilities = [];
     private BrowserReleaseChannel channel = BrowserReleaseChannel.Stable;
     private BrowserVersion version = BrowserVersion.Latest;
     private FileLocationBehavior locationBehavior = FileLocationBehavior.AutoLocateAndDownload;
@@ -265,6 +268,33 @@ public class BrowserLauncherBuilder
     }
 
     /// <summary>
+    /// Adds a capability to the new session request that a driver or a remote grid receives, such as
+    /// <c>browserVersion</c>, <c>platformName</c>, <c>proxy</c>, or a grid vendor's options. Adding a capability
+    /// again replaces its value. Capabilities apply only with <see cref="LaunchUsingDriver"/> and
+    /// <see cref="LaunchUsingRemoteGrid(Uri, RemoteGridOptions?)"/>; otherwise, the session is created with
+    /// the session.new command, whose <c>CapabilityRequest</c> takes them.
+    /// </summary>
+    /// <param name="name">The capability name.</param>
+    /// <param name="value">
+    /// The value. For <c>proxy</c>, a <see cref="ProxyConfiguration"/>. Otherwise, <see langword="null"/>, a
+    /// <see cref="string"/>, a <see cref="bool"/>, a number, a dictionary with string keys whose values follow
+    /// these rules, or a sequence of such values. Any other value is rejected when the launcher is built, as is
+    /// a capability the launcher sets itself.
+    /// </param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    /// <exception cref="ArgumentException">Thrown when name is null or empty.</exception>
+    public BrowserLauncherBuilder WithSessionCapability(string name, object? value)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException("Capability name cannot be null or empty.", nameof(name));
+        }
+
+        this.sessionCapabilities[name] = value;
+        return this;
+    }
+
+    /// <summary>
     /// Specifies how long to wait for the browser, or the driver, to become ready. Defaults to 20 seconds.
     /// </summary>
     /// <param name="timeout">The timeout.</param>
@@ -296,7 +326,7 @@ public class BrowserLauncherBuilder
     /// The http or https URL of the grid, including any port and path prefix (e.g., "http://selenium-hub:4444"
     /// or "https://user:key@hub.example.com/wd/hub"). Credentials in the URL are sent as Basic authorization.
     /// </param>
-    /// <param name="options">Capabilities and headers for the session, or <see langword="null"/> for none.</param>
+    /// <param name="options">Headers for the requests sent to the grid, or <see langword="null"/> for none.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     /// <exception cref="ArgumentException">Thrown when gridUrl is not an absolute http or https URL.</exception>
     /// <exception cref="BrowserLauncherConfigurationException">Thrown when a conflicting launch strategy has already been specified.</exception>
@@ -349,6 +379,7 @@ public class BrowserLauncherBuilder
     public BrowserLauncher Build()
     {
         this.ValidateConfiguration();
+        Dictionary<string, object?> capabilities = this.PrepareSessionCapabilities();
 
         BrowserLauncher launcher = this.browser switch
         {
@@ -360,6 +391,16 @@ public class BrowserLauncherBuilder
                 "Edge support is planned for a future release."),
             _ => throw new BrowserLauncherConfigurationException($"Unknown browser type: {this.browser}"),
         };
+
+        if (launcher is WebDriverClassicBrowserLauncher classicLauncher)
+        {
+            if (capabilities.Keys.FirstOrDefault(classicLauncher.LaunchCapabilityNames.Contains) is string launcherCapability)
+            {
+                throw new BrowserLauncherConfigurationException($"The {launcherCapability} capability cannot be added; it is {DescribeLaunchCapability(launcherCapability)}.");
+            }
+
+            classicLauncher.AdditionalCapabilities = capabilities;
+        }
 
         // Taken from the browser options as they are now, then copied, so settings changed after Build()
         // do not reach an already-built launcher.
@@ -381,6 +422,17 @@ public class BrowserLauncherBuilder
         }
 
         return launcher;
+    }
+
+    private static string DescribeLaunchCapability(string name)
+    {
+        return name switch
+        {
+            "browserName" => "set from the browser passed to BrowserLauncher.Configure",
+            "webSocketUrl" => "always requested, because the launcher needs a WebDriver BiDi session",
+            SafariLauncher.ExperimentalWebSocketUrlCapabilityName => "required for Safari to create a WebDriver BiDi session",
+            _ => "built by the launcher from settings such as WithArguments, WithHeadlessOption, WithUserDataDirectory, WithReleaseChannel, and WithBrowserOptions",
+        };
     }
 
     private static string[] ValidateArguments(string[] arguments, string parameterName)
@@ -450,6 +502,42 @@ public class BrowserLauncherBuilder
 
             throw new BrowserLauncherConfigurationException($"Cannot specify to {requested}; you already specified to {current}.");
         }
+    }
+
+    // Copied, so capabilities changed after Build() do not reach an already-built launcher. The copy is shallow:
+    // a nested value such as an options dictionary is still shared. A proxy is serialized now, so it is a snapshot.
+    private Dictionary<string, object?> PrepareSessionCapabilities()
+    {
+        if (this.sessionCapabilities.Count > 0 && (this.launchStrategy == LaunchStrategy.Direct || this.launchStrategy == LaunchStrategy.ConnectToExisting))
+        {
+            throw new BrowserLauncherConfigurationException("Session capabilities apply only with LaunchUsingDriver or LaunchUsingRemoteGrid. Otherwise, request them in the session.new command's CapabilityRequest.");
+        }
+
+        Dictionary<string, object?> capabilities = [];
+        foreach (KeyValuePair<string, object?> capability in this.sessionCapabilities)
+        {
+            if (capability.Key == ProxyCapabilityName)
+            {
+                capabilities[capability.Key] = capability.Value is ProxyConfiguration proxy
+                    ? CapabilityWriter.SerializeProxy(proxy)
+                    : throw new BrowserLauncherConfigurationException($"The {ProxyCapabilityName} capability must be a ProxyConfiguration.");
+                continue;
+            }
+
+            if (capability.Value is ProxyConfiguration)
+            {
+                throw new BrowserLauncherConfigurationException($"A ProxyConfiguration can only be the value of the {ProxyCapabilityName} capability, not of {capability.Key}.");
+            }
+
+            if (CapabilityWriter.FindUnsupportedValue(capability.Value, capability.Key) is string unsupported)
+            {
+                throw new BrowserLauncherConfigurationException($"Capability {unsupported}.");
+            }
+
+            capabilities[capability.Key] = capability.Value;
+        }
+
+        return capabilities;
     }
 
     private void ValidateConfiguration()
@@ -527,7 +615,7 @@ public class BrowserLauncherBuilder
     {
         string method = this.launchStrategy == LaunchStrategy.UsingRemoteGrid ? "LaunchUsingRemoteGrid" : "ConnectToExisting";
         string remedy = this.launchStrategy == LaunchStrategy.UsingRemoteGrid
-            ? "Use RemoteGridOptions.Capabilities to configure the browser on the grid."
+            ? "Use WithSessionCapability to configure the browser on the grid."
             : "Configure the browser when starting it.";
         if (this.locationBehavior != FileLocationBehavior.AutoLocateAndDownload || this.downloadOptions is not null)
         {
@@ -553,17 +641,6 @@ public class BrowserLauncherBuilder
         {
             throw new BrowserLauncherConfigurationException($"Pipe connections are not supported with {method}.");
         }
-
-        if (this.remoteGridOptions is not null)
-        {
-            foreach (KeyValuePair<string, object?> capability in this.remoteGridOptions.Capabilities)
-            {
-                if (CapabilityWriter.FindUnsupportedValue(capability.Value, capability.Key) is string unsupported)
-                {
-                    throw new BrowserLauncherConfigurationException($"Capability {unsupported}.");
-                }
-            }
-        }
     }
 
     private BrowserLauncher CreateSafariLauncher()
@@ -578,11 +655,7 @@ public class BrowserLauncherBuilder
             // Safari enables BiDi only when this capability accompanies webSocketUrl. It is a default rather
             // than a launcher-owned capability, so a caller can still replace it once Safari no longer needs it.
             WebDriverClassicBrowserLauncher remoteLauncher = this.CreateRemoteLauncher("safari");
-            if (!remoteLauncher.AdditionalCapabilities.ContainsKey(SafariLauncher.ExperimentalWebSocketUrlCapabilityName))
-            {
-                remoteLauncher.AdditionalCapabilities[SafariLauncher.ExperimentalWebSocketUrlCapabilityName] = true;
-            }
-
+            remoteLauncher.DefaultCapabilities[SafariLauncher.ExperimentalWebSocketUrlCapabilityName] = true;
             return remoteLauncher;
         }
 
@@ -706,9 +779,6 @@ public class BrowserLauncherBuilder
 
         if (this.remoteGridOptions is not null)
         {
-            // Copied, so options changed after Build() do not reach an already-built launcher. The copy
-            // is shallow: a nested value such as an options dictionary is still shared.
-            launcher.AdditionalCapabilities = new Dictionary<string, object?>(this.remoteGridOptions.Capabilities);
             foreach (KeyValuePair<string, string> header in this.remoteGridOptions.Headers)
             {
                 if (!launcher.TryAddRequestHeader(header.Key, header.Value))

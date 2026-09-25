@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using WebDriverBiDi.Browsers.TestUtilities;
 using WebDriverBiDi.Protocol;
+using WebDriverBiDi.Session;
 
 // These tests set environment variables of the test process itself, read by every launcher, so
 // they must not run alongside other tests.
@@ -125,6 +126,28 @@ public class ProcessEnvironmentLauncherTests
         Assert.Equal(["-profile", profile.Path, "--custom-argument"], firefoxOptions["args"]!.Deserialize<string[]>()!);
         Assert.True((bool)firefoxOptions["prefs"]!["custom.boolean"]!);
         Assert.Equal(3, (int)firefoxOptions["prefs"]!["custom.number"]!);
+    }
+
+    [Fact]
+    public async Task DriverLaunchAddsSessionCapabilities()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        using DriverOverride driverOverride = new(BrowserKind.Firefox);
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Firefox))
+            .LaunchUsingDriver()
+            .WithSessionCapability("proxy", new PacProxyConfiguration("http://proxy.local/proxy.pac"))
+            .WithSessionCapability("acceptInsecureCerts", false)
+            .WithSessionCapability("acceptInsecureCerts", true)
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        JsonNode capabilities = fakeBrowser.SessionRequests.Single()["capabilities"]!["firstMatch"]![0]!;
+        JsonNode expectedProxy = JsonNode.Parse("""{"proxyType":"pac","proxyAutoconfigUrl":"http://proxy.local/proxy.pac"}""")!;
+        Assert.True(JsonNode.DeepEquals(expectedProxy, capabilities["proxy"]), capabilities["proxy"]!.ToJsonString());
+        Assert.True((bool?)capabilities["acceptInsecureCerts"]);
+        Assert.Equal(["acceptInsecureCerts", "browserName", "moz:firefoxOptions", "proxy", "webSocketUrl"], capabilities.AsObject().Select(capability => capability.Key).Order(StringComparer.Ordinal));
     }
 
     [Fact]

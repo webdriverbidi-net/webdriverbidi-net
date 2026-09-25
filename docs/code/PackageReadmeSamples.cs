@@ -227,16 +227,31 @@ public static class PackageReadmeSamples
     {
         #region BrowsersRemoteGrid
         RemoteGridOptions gridOptions = new();
-        gridOptions.Capabilities["browserVersion"] = "131";
-        gridOptions.Capabilities["goog:chromeOptions"] = new Dictionary<string, object?>()
-        {
-            ["args"] = new[] { "--headless=new" },
-        };
         gridOptions.Headers["X-Build-Id"] = "nightly-1234";
 
         // Credentials in the URL are sent as Basic authorization.
         await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .LaunchUsingRemoteGrid(new Uri("https://user:access-key@grid.example.com/wd/hub"), gridOptions)
+            .WithSessionCapability("browserVersion", "131")
+            .WithSessionCapability("goog:chromeOptions", new Dictionary<string, object?>() { ["args"] = new[] { "--headless=new" } })
+            .Build();
+        #endregion
+    }
+
+    /// <summary>
+    /// The WebDriverBiDi.Browsers package README's session capabilities example.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task BrowsersSessionCapabilities()
+    {
+        #region BrowsersSessionCapabilities
+        ManualProxyConfiguration proxy = new() { HttpProxy = "proxy.example.com:3128", SslProxy = "proxy.example.com:3128" };
+        proxy.NoProxyAddresses.Add("localhost");
+
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Firefox)
+            .LaunchUsingDriver()
+            .WithSessionCapability("proxy", proxy)
+            .WithSessionCapability("acceptInsecureCerts", true)
             .Build();
         #endregion
     }

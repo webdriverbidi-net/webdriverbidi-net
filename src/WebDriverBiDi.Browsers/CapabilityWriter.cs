@@ -8,11 +8,15 @@ namespace WebDriverBiDi.Browsers;
 using System.Collections;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+using WebDriverBiDi.JsonConverters;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Writes WebDriver capabilities as JSON without reflection, so that it works under native AOT.
 /// A value is <see langword="null"/>, a <see cref="string"/>, a <see cref="bool"/>, a number, a
-/// dictionary with string keys whose values are capability values, or a sequence of capability values.
+/// dictionary with string keys whose values are capability values, a sequence of capability values,
+/// or a <see cref="SerializedValue"/>.
 /// </summary>
 internal static class CapabilityWriter
 {
@@ -39,6 +43,31 @@ internal static class CapabilityWriter
     }
 
     /// <summary>
+    /// Serializes a proxy configuration as the core library writes it in a session.new command.
+    /// </summary>
+    /// <param name="proxy">The proxy configuration.</param>
+    /// <returns>The serialized proxy configuration.</returns>
+    /// <exception cref="BrowserLauncherConfigurationException">Thrown when the proxy configuration cannot be written.</exception>
+    public static SerializedValue SerializeProxy(ProxyConfiguration proxy)
+    {
+        // The transport rejects an extension entry that repeats a property name; serializing with the context alone does not.
+        JsonTypeInfo typeInfo = WebDriverBiDiJsonSerializerContext.Default.GetTypeInfo(proxy.GetType())!;
+        if (proxy.AdditionalData.Keys.FirstOrDefault(key => typeInfo.Properties.Any(property => !property.IsExtensionData && property.Name == key)) is string repeated)
+        {
+            throw new BrowserLauncherConfigurationException($"The proxy capability's AdditionalData has an entry named {repeated}, which the proxy configuration already writes; set its property instead.");
+        }
+
+        try
+        {
+            return new SerializedValue(JsonSerializer.Serialize(proxy, WebDriverBiDiJsonSerializerContext.Default.ProxyConfiguration));
+        }
+        catch (Exception ex) when (ex is NotSupportedException || ex is InvalidOperationException || ex is JsonException)
+        {
+            throw new BrowserLauncherConfigurationException($"The proxy capability cannot be written: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
     /// Finds a value, within a capability value, that cannot be written.
     /// </summary>
     /// <param name="value">The capability value.</param>
@@ -48,7 +77,7 @@ internal static class CapabilityWriter
     {
         switch (value)
         {
-            case null or string or bool:
+            case null or string or bool or SerializedValue:
                 return null;
             case double number when double.IsNaN(number) || double.IsInfinity(number):
                 return $"{path} is {number}, which JSON cannot represent";
@@ -103,6 +132,9 @@ internal static class CapabilityWriter
             case bool flag:
                 writer.WriteBooleanValue(flag);
                 break;
+            case SerializedValue serialized:
+                writer.WriteRawValue(serialized.Json, skipInputValidation: true);
+                break;
             case IDictionary dictionary:
                 writer.WriteStartObject();
                 foreach (DictionaryEntry entry in dictionary)
@@ -141,5 +173,17 @@ internal static class CapabilityWriter
                 writer.WriteNumberValue(Convert.ToInt64(value, CultureInfo.InvariantCulture));
                 break;
         }
+    }
+
+    /// <summary>
+    /// A capability value already serialized as JSON.
+    /// </summary>
+    /// <param name="json">The JSON.</param>
+    internal sealed class SerializedValue(string json)
+    {
+        /// <summary>
+        /// Gets the JSON.
+        /// </summary>
+        public string Json { get; } = json;
     }
 }

@@ -44,9 +44,17 @@ On Linux:
 
 ### Remote Grids and Running Browsers
 
-`LaunchUsingRemoteGrid` creates the session on a Selenium Grid or a cloud service. The URL carries the grid's port and path prefix, credentials in it are sent as Basic authorization, and `RemoteGridOptions` holds the capabilities and headers of the request:
+`LaunchUsingRemoteGrid` creates the session on a Selenium Grid or a cloud service. The URL carries the grid's port and path prefix, credentials in it are sent as Basic authorization, `RemoteGridOptions` holds the headers of the requests, and `WithSessionCapability` adds the capabilities of the session:
 
 [!code-csharp[Remote Grid](../code/PackageReadmeSamples.cs#BrowsersRemoteGrid)]
+
+#### Session Capabilities
+
+`WithSessionCapability` adds a capability to the new session request that a driver or a grid receives. It applies with `LaunchUsingDriver` and `LaunchUsingRemoteGrid`; a browser launched directly, or connected to with `ConnectToExisting`, gets its capabilities from the `CapabilityRequest` of the `session.new` command you send. A capability's value is `null`, a string, a Boolean, a number, a dictionary with string keys, or a sequence of such values. The `proxy` capability takes a `ProxyConfiguration`, which is written as the core library writes it in `session.new`:
+
+[!code-csharp[Session Capabilities](../code/PackageReadmeSamples.cs#BrowsersSessionCapabilities)]
+
+The launcher sets `browserName` and `webSocketUrl` itself, and, through a driver, the browser's options object (`goog:chromeOptions`, `moz:firefoxOptions`, or Safari's), which it builds from `WithArguments`, `WithHeadlessOption`, `WithUserDataDirectory`, and `WithBrowserOptions`. Adding one of these fails when the launcher is built, as does a value that cannot be written.
 
 `ConnectToExisting` attaches to a browser that is already listening, which the launcher neither starts nor stops: closing the `BrowserInstance` only detaches from it. Give it Firefox's WebDriver BiDi URL (`ws://127.0.0.1:9222/session`), or Chrome's DevTools URL, which is reached through the WebDriver BiDi mapper:
 

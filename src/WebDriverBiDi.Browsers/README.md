@@ -77,25 +77,41 @@ await using BrowserLauncher installedChrome = BrowserLauncher.Configure(BrowserK
 
 ## Remote Grids and Running Browsers
 
-`LaunchUsingRemoteGrid` creates the session on a Selenium Grid or a cloud service. The URL carries the grid's port and path, and `RemoteGridOptions` the capabilities and headers of the request:
+`LaunchUsingRemoteGrid` creates the session on a Selenium Grid or a cloud service. The URL carries the grid's port and path, `RemoteGridOptions` the headers of the requests, and `WithSessionCapability` the capabilities of the session:
 
 <!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersRemoteGrid -->
 ```csharp
 using WebDriverBiDi.Browsers;
 
 RemoteGridOptions gridOptions = new();
-gridOptions.Capabilities["browserVersion"] = "131";
-gridOptions.Capabilities["goog:chromeOptions"] = new Dictionary<string, object?>()
-{
-    ["args"] = new[] { "--headless=new" },
-};
 gridOptions.Headers["X-Build-Id"] = "nightly-1234";
 
 // Credentials in the URL are sent as Basic authorization.
 await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
     .LaunchUsingRemoteGrid(new Uri("https://user:access-key@grid.example.com/wd/hub"), gridOptions)
+    .WithSessionCapability("browserVersion", "131")
+    .WithSessionCapability("goog:chromeOptions", new Dictionary<string, object?>() { ["args"] = new[] { "--headless=new" } })
     .Build();
 ```
+
+`WithSessionCapability` also adds capabilities when the browser is launched through its driver. A proxy is given as a `ProxyConfiguration`:
+
+<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersSessionCapabilities -->
+```csharp
+using WebDriverBiDi.Browsers;
+using WebDriverBiDi.Session;
+
+ManualProxyConfiguration proxy = new() { HttpProxy = "proxy.example.com:3128", SslProxy = "proxy.example.com:3128" };
+proxy.NoProxyAddresses.Add("localhost");
+
+await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Firefox)
+    .LaunchUsingDriver()
+    .WithSessionCapability("proxy", proxy)
+    .WithSessionCapability("acceptInsecureCerts", true)
+    .Build();
+```
+
+The capabilities the launcher sets itself (`browserName`, `webSocketUrl`, and, through a driver, the browser's options object such as `goog:chromeOptions`) cannot be added; they come from the builder's other settings. A browser launched directly has no session until you send `session.new`, whose `CapabilityRequest` takes the capabilities instead.
 
 `ConnectToExisting` attaches to a browser that is already listening, which the launcher neither starts nor stops: closing the `BrowserInstance` only detaches from it. Give it Firefox's WebDriver BiDi URL (`ws://127.0.0.1:9222/session`), or Chrome's DevTools URL:
 

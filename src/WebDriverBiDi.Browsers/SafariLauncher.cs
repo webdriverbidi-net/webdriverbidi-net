@@ -34,6 +34,9 @@ public class SafariLauncher : ClassicDriverExecutableBrowserLauncher
     /// </summary>
     public override bool IsBrowserCloseAllowed => false;
 
+    /// <inheritdoc/>
+    internal override IReadOnlyCollection<string> LaunchCapabilityNames { get; } = ["browserName", "webSocketUrl", ExperimentalWebSocketUrlCapabilityName, "safari:options"];
+
     /// <summary>
     /// Creates the WebDriver Classic capabilities used to launch the browser.
     /// </summary>
