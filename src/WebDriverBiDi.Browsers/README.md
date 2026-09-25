@@ -3,7 +3,7 @@
 Locates, downloads, and launches browsers for automation with the [WebDriverBiDi](https://www.nuget.org/packages/WebDriverBiDi) .NET client library.
 
 - Downloads Chrome (from Chrome for Testing) and Firefox, and their drivers, into a shared local cache. Firefox and geckodriver downloads are verified against their published SHA-256 checksums; Chrome for Testing publishes none, so Chrome downloads are checked for corruption in transit.
-- Launches Chrome or Firefox directly, or through chromedriver, geckodriver, or safaridriver.
+- Launches Chrome, Firefox, or the installed Microsoft Edge directly, or through chromedriver, geckodriver, msedgedriver, or safaridriver. msedgedriver is downloaded in the version of the installed Edge; Microsoft publishes Edge itself only as installers, so it is never downloaded.
 - Connects to a browser on a remote WebDriver grid, or to one that is already running.
 - Works on Windows, macOS, and Linux (x64 and Arm64), and with native AOT.
 
@@ -41,12 +41,12 @@ Disposing the launcher closes the browser and deletes its temporary profile.
 
 ## Choosing the Browser
 
-`BrowserLauncher.Configure` takes the browser (Chrome, Firefox, or Safari), and the builder chooses how it is found and launched:
+`BrowserLauncher.Configure` takes the browser (Chrome, Firefox, Edge, or Safari), and the builder chooses how it is found and launched:
 
-- **Channel:** `WithReleaseChannel` picks Stable (the default), Beta, DeveloperPreview (Chrome Dev, Firefox Developer Edition, Safari Technology Preview), Alpha (Chrome Canary, Firefox Nightly), or ExtendedSupport (Firefox ESR).
+- **Channel:** `WithReleaseChannel` picks Stable (the default), Beta, DeveloperPreview (Chrome Dev, Firefox Developer Edition, Edge Dev, Safari Technology Preview), Alpha (Chrome Canary, Firefox Nightly, Edge Canary), or ExtendedSupport (Firefox ESR).
 - **Version:** `WithVersion` takes `BrowserVersion.Latest` (the default), `BrowserVersion.Specific("131.0.6778.204")`, or, for Chrome, `BrowserVersion.Milestone(131)`, the newest release of a major version.
-- **Location:** the browser is downloaded by default; `AtDefaultInstallationLocation()` uses the one installed on the machine, and `AtLocation(path)` a particular executable.
-- **Launch:** the browser is launched directly by default; `LaunchUsingDriver()` launches it through its driver executable, which is downloaded too. Safari is always launched through safaridriver, from its installed location.
+- **Location:** the browser is downloaded by default; `AtDefaultInstallationLocation()` uses the one installed on the machine, and `AtLocation(path)` a particular executable. Edge and Safari are never downloaded, so the installed one of the channel is used unless `AtLocation` names another.
+- **Launch:** the browser is launched directly by default; `LaunchUsingDriver()` launches it through its driver executable, which is downloaded too, in the version that matches the browser, including an installed Chrome or Edge. Safari is always launched through safaridriver, from its installed location.
 - **Settings:** `WithHeadlessOption`, `WithArguments`, `WithoutDefaultArguments`, `WithEnvironmentVariable`, `WithUserDataDirectory`, and `WithLaunchTimeout` apply to any browser; `WithBrowserOptions` takes settings for one browser, such as `ChromeLaunchOptions.UseHeadlessShell` or `FirefoxLaunchOptions.Preferences`.
 
 <!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersChoosingBrowser -->

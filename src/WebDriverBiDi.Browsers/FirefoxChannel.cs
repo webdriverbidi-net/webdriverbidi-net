@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browsers;
 /// <summary>
 /// Defines the distribution channels for the Firefox browser, which include Stable, Beta, Dev, and Nightly.
 /// </summary>
-public enum FirefoxChannel
+internal enum FirefoxChannel
 {
     /// <summary>
     /// The Stable channel, which is the default channel for released versions of

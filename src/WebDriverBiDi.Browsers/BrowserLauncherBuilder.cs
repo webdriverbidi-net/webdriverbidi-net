@@ -386,9 +386,7 @@ public class BrowserLauncherBuilder
             BrowserKind.Chrome => this.CreateChromeLauncher(),
             BrowserKind.Firefox => this.CreateFirefoxLauncher(),
             BrowserKind.Safari => this.CreateSafariLauncher(),
-            BrowserKind.Edge => throw new BrowserLauncherConfigurationException(
-                "Microsoft Edge browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
-                "Edge support is planned for a future release."),
+            BrowserKind.Edge => this.CreateEdgeLauncher(),
             _ => throw new BrowserLauncherConfigurationException($"Unknown browser type: {this.browser}"),
         };
 
@@ -550,9 +548,9 @@ public class BrowserLauncherBuilder
         // Validate pipe connection requirements
         if (this.connectionType == ConnectionKind.Pipes)
         {
-            if (this.browser != BrowserKind.Chrome)
+            if (this.browser != BrowserKind.Chrome && this.browser != BrowserKind.Edge)
             {
-                throw new BrowserLauncherConfigurationException($"Pipe connections are only supported for Chrome browser, not {this.browser}.");
+                throw new BrowserLauncherConfigurationException($"Pipe connections are only supported for Chrome and Edge, not {this.browser}.");
             }
 
             if (this.launchStrategy != LaunchStrategy.Direct)
@@ -592,6 +590,11 @@ public class BrowserLauncherBuilder
         if (this.UseHeadlessShell && this.locationBehavior == FileLocationBehavior.UseSystemInstallLocation)
         {
             throw new BrowserLauncherConfigurationException("chrome-headless-shell is available only from Chrome for Testing; it cannot be used with .AtDefaultInstallationLocation().");
+        }
+
+        if (this.browser == BrowserKind.Edge && !this.IsRemote && this.version != BrowserVersion.Latest)
+        {
+            throw new BrowserLauncherConfigurationException("Edge is never downloaded, so a version cannot be requested; the installed Edge of the release channel is used.");
         }
 
         if (this.version.IsMilestone && this.browser != BrowserKind.Chrome)
@@ -767,6 +770,48 @@ public class BrowserLauncherBuilder
         };
 
         return firefoxLauncher;
+    }
+
+    private BrowserLauncher CreateEdgeLauncher()
+    {
+        if (this.launchStrategy == LaunchStrategy.ConnectToExisting)
+        {
+            return this.CreateExistingBrowserLauncher("MicrosoftEdge");
+        }
+
+        if (this.launchStrategy == LaunchStrategy.UsingRemoteGrid)
+        {
+            return this.CreateRemoteLauncher("MicrosoftEdge");
+        }
+
+        EdgeChannel edgeChannel = this.channel switch
+        {
+            BrowserReleaseChannel.Stable => EdgeChannel.Stable,
+            BrowserReleaseChannel.Beta => EdgeChannel.Beta,
+            BrowserReleaseChannel.DeveloperPreview => EdgeChannel.Dev,
+            BrowserReleaseChannel.Alpha => EdgeChannel.Canary,
+            _ => throw new BrowserLauncherConfigurationException($"Invalid browser release channel for Edge: {this.channel}"),
+        };
+
+        // Edge is never downloaded, so the default location is the installed Edge of the channel.
+        string? customPath = this.locationBehavior == FileLocationBehavior.UseCustomLocation ? this.customBrowserLocation : null;
+        EdgeBrowserLocatorSettings settings = new(edgeChannel, this.downloadOptions ?? new BrowserDownloadOptions(), customPath);
+        if (this.launchStrategy == LaunchStrategy.UsingDriver)
+        {
+            settings.IncludeDriver = true;
+            return new EdgeDriverLauncher(settings)
+            {
+                IsBrowserHeadless = this.headless,
+                Port = this.port,
+            };
+        }
+
+        return new EdgeLauncher(settings)
+        {
+            IsBrowserHeadless = this.headless,
+            Port = this.port,
+            ConnectionType = this.connectionType,
+        };
     }
 
     private WebDriverClassicBrowserLauncher CreateRemoteLauncher(string browserName)

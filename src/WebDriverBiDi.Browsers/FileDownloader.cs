@@ -62,11 +62,17 @@ internal sealed class FileDownloader
         }
     }
 
-    // Google Cloud Storage, which serves Chrome for Testing, sends an MD5 hash of the file. It comes
-    // from the same server as the file, so it detects corruption in transit, not tampering.
+    // Google Cloud Storage, which serves Chrome for Testing, sends an MD5 hash of the file, as does the
+    // msedgedriver server in Content-MD5. It comes from the same server as the file, so it detects
+    // corruption in transit, not tampering.
     private static string? GetStorageMd5(HttpResponseMessage response)
     {
         const string Md5Prefix = "md5=";
+        if (response.Content.Headers.ContentMD5 is byte[] contentMd5)
+        {
+            return Convert.ToBase64String(contentMd5);
+        }
+
         if (response.Headers.TryGetValues("x-goog-hash", out IEnumerable<string>? values))
         {
             foreach (string value in values.SelectMany(value => value.Split(',')))

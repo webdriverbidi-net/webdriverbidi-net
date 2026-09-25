@@ -15,14 +15,24 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
     /// Initializes a new instance of the <see cref="ChromeDriverLauncher" /> class using Chrome browser locator settings.
     /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
-    /// <param name="settings">The Chrome browser locator settings to use for locating the browser and driver executables.</param>
-    internal ChromeDriverLauncher(ChromeBrowserLocatorSettings settings)
+    /// <param name="settings">The browser locator settings to use for locating the browser and driver executables.</param>
+    internal ChromeDriverLauncher(BrowserLocatorSettings settings)
         : base(settings, 0)
     {
     }
 
     /// <inheritdoc/>
-    internal override IReadOnlyCollection<string> LaunchCapabilityNames { get; } = ["browserName", "webSocketUrl", "goog:chromeOptions"];
+    internal override IReadOnlyCollection<string> LaunchCapabilityNames => ["browserName", "webSocketUrl", this.OptionsCapabilityName];
+
+    /// <summary>
+    /// Gets the value of the browserName capability.
+    /// </summary>
+    private protected virtual string BrowserNameCapabilityValue => "chrome";
+
+    /// <summary>
+    /// Gets the name of the capability that carries the browser's launch options.
+    /// </summary>
+    private protected virtual string OptionsCapabilityName => "goog:chromeOptions";
 
     /// <summary>
     /// Creates the WebDriver Classic capabilities used to launch the browser.
@@ -60,9 +70,9 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
         // generation of capabilities.
         Dictionary<string, object?> capabilities = new()
         {
-            ["browserName"] = "chrome",
+            ["browserName"] = this.BrowserNameCapabilityValue,
             ["webSocketUrl"] = true,
-            ["goog:chromeOptions"] = chromeOptions,
+            [this.OptionsCapabilityName] = chromeOptions,
         };
 
         return capabilities;

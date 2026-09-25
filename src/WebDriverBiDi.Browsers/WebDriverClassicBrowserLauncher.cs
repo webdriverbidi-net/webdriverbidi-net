@@ -257,7 +257,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     {
         Dictionary<string, object?> capabilities = new()
         {
-            ["browserName"] = this.BrowserLocator.BrowserName.ToLowerInvariant(),
+            ["browserName"] = this.BrowserLocator.BrowserName,
             ["webSocketUrl"] = true,
         };
 

@@ -151,6 +151,30 @@ public class ProcessEnvironmentLauncherTests
     }
 
     [Fact]
+    public async Task EdgeDriverLaunchPassesLaunchOptionsInEdgeCapabilities()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        using DriverOverride driverOverride = new(BrowserKind.Edge);
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Edge))
+            .LaunchUsingDriver()
+            .WithHeadlessOption()
+            .WithArguments("--custom-argument")
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        JsonNode capabilities = fakeBrowser.SessionRequests.Single()["capabilities"]!["firstMatch"]![0]!;
+        Assert.IsType<EdgeDriverLauncher>(launcher);
+        Assert.Equal("MicrosoftEdge", (string?)capabilities["browserName"]);
+        Assert.Equal(FakeBrowserSetup.ExecutablePath, (string?)capabilities["ms:edgeOptions"]!["binary"]);
+        string[] arguments = capabilities["ms:edgeOptions"]!["args"]!.Deserialize<string[]>()!;
+        Assert.Contains("--custom-argument", arguments);
+        Assert.Contains("--headless=new", arguments);
+        Assert.Null(capabilities["goog:chromeOptions"]);
+    }
+
+    [Fact]
     public async Task EnvironmentVariableSetToNullIsNotInherited()
     {
         Environment.SetEnvironmentVariable(FakeBrowserSetup.EchoVariableName, "inherited");
@@ -470,6 +494,7 @@ public class ProcessEnvironmentLauncherTests
             {
                 BrowserKind.Firefox => ["FIREFOX_EXECUTABLE", "GECKODRIVER_EXECUTABLE"],
                 BrowserKind.Safari => ["SAFARI_EXECUTABLE", "SAFARIDRIVER_EXECUTABLE"],
+                BrowserKind.Edge => ["EDGE_EXECUTABLE", "MSEDGEDRIVER_EXECUTABLE"],
                 _ => ["CHROME_EXECUTABLE", "CHROMEDRIVER_EXECUTABLE"],
             };
             foreach (string name in this.variableNames)

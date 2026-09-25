@@ -51,7 +51,7 @@ it is the user's responsibility to know what the URL of the websocket connection
 browser driven over a remote debugging pipe rather than a websocket is launched the same way, by the user,
 and the session is started with `PipeConnection` in place of the default websocket connection. The companion
 [WebDriverBiDi.Browsers](https://www.nuget.org/packages/WebDriverBiDi.Browsers) package does these things:
-it downloads, launches, and connects to Chrome, Firefox, and Safari, and to browsers on remote grids.
+it downloads, launches, and connects to Chrome, Firefox, Edge, and Safari, and to browsers on remote grids.
 
 ## Getting Started
 The library is built to support .NET Standard 2.0. This should allow the widest usage of the library across

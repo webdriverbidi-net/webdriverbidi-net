@@ -23,6 +23,8 @@ public sealed class ExecutableOverrideFixture : IDisposable
         "GECKODRIVER_EXECUTABLE",
         "SAFARI_EXECUTABLE",
         "SAFARIDRIVER_EXECUTABLE",
+        "EDGE_EXECUTABLE",
+        "MSEDGEDRIVER_EXECUTABLE",
         "WEBDRIVERBIDI_BROWSERS_PATH",
         "WEBDRIVERBIDI_SKIP_DOWNLOAD",
     ];

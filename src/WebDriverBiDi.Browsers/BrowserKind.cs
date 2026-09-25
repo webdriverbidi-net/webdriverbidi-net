@@ -21,20 +21,14 @@ public enum BrowserKind
     Firefox,
 
     /// <summary>
-    /// Microsoft Edge browser. Not yet implemented - will throw <see cref="NotImplementedException"/> when used.
+    /// Microsoft Edge browser, which is never downloaded: the installed Edge of the release channel is launched directly
+    /// or through msedgedriver, which is downloaded in the matching version, or on a remote grid.
     /// </summary>
-    /// <remarks>
-    /// While Edge is Chromium-based, it has different distribution channels and download mechanisms that require
-    /// separate implementation. Support is planned for a future release.
-    /// </remarks>
     Edge,
 
     /// <summary>
-    /// Apple Safari browser. Not yet implemented - will throw <see cref="NotImplementedException"/> when used.
+    /// Apple Safari browser, on macOS only. The installed Safari or Safari Technology Preview is launched through
+    /// safaridriver, or on a remote grid.
     /// </summary>
-    /// <remarks>
-    /// Safari has limited WebDriver BiDi support and is macOS-only. Support is planned for a future release
-    /// pending maturity of Safari's BiDi implementation.
-    /// </remarks>
     Safari,
 }

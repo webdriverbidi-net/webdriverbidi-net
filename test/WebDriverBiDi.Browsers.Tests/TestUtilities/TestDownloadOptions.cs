@@ -29,6 +29,11 @@ public static class TestDownloadOptions
     public const string GeckoDriverReleasesPath = "/gecko/";
 
     /// <summary>
+    /// The base path of the fake msedgedriver download server.
+    /// </summary>
+    public const string EdgeDriverPath = "/edgedriver/";
+
+    /// <summary>
     /// The platform used when a test does not name one.
     /// </summary>
     public static readonly BrowserPlatform DefaultPlatform = new(OperatingSystemFamily.Linux, Architecture.X64);
@@ -55,6 +60,7 @@ public static class TestDownloadOptions
             FirefoxProductEndpoint = server.UrlFor(FirefoxProductPath),
             FirefoxArchiveEndpoint = server.UrlFor(FirefoxArchivePath),
             GeckoDriverReleasesEndpoint = server.UrlFor(GeckoDriverReleasesPath),
+            EdgeDriverEndpoint = server.UrlFor(EdgeDriverPath),
         };
     }
 

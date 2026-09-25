@@ -21,6 +21,7 @@ public class BrowserDownloadOptions
     private Uri firefoxProductEndpoint = new("https://download.mozilla.org/");
     private Uri firefoxArchiveEndpoint = new("https://download-installer.cdn.mozilla.net/pub/");
     private Uri geckoDriverReleasesEndpoint = new("https://api.github.com/repos/mozilla/geckodriver/releases/");
+    private Uri edgeDriverEndpoint = new("https://msedgedriver.microsoft.com/");
     private Uri? manifestUrl = ParseManifestLocation(LauncherEnvironment.GetVariable(LauncherEnvironment.DownloadManifestVariableName));
 
     /// <summary>
@@ -126,7 +127,7 @@ public class BrowserDownloadOptions
     /// </summary>
     /// <remarks>
     /// The manifest is JSON of the form
-    /// <c>{"schemaVersion": 1, "browsers": {"chrome": {"channels": {"stable": "130.0.6723.58"}, "versions": {"130.0.6723.58": {"linux-x64": {"url": "...", "sha256": "...", "size": 123}}}}}, "drivers": {"chromedriver": {"versions": {...}}, "geckodriver": {"latest": "0.36.0", "versions": {...}}}}</c>.
+    /// <c>{"schemaVersion": 1, "browsers": {"chrome": {"channels": {"stable": "130.0.6723.58"}, "versions": {"130.0.6723.58": {"linux-x64": {"url": "...", "sha256": "...", "size": 123}}}}}, "drivers": {"chromedriver": {"versions": {...}}, "geckodriver": {"latest": "0.36.0", "versions": {...}}, "msedgedriver": {"versions": {...}}}}</c>.
     /// Browsers are "chrome", "chrome-headless-shell", and "firefox"; channels are "stable", "beta",
     /// "dev", "canary", "nightly", and "esr"; platforms are "linux-x64", "linux-arm64", "linux-x86",
     /// "macos-x64", "macos-arm64", "windows-x64", "windows-x86", and "windows-arm64". A milestone
@@ -177,6 +178,15 @@ public class BrowserDownloadOptions
     {
         get => this.geckoDriverReleasesEndpoint;
         init => this.geckoDriverReleasesEndpoint = AsBaseUri(value, nameof(this.GeckoDriverReleasesEndpoint));
+    }
+
+    /// <summary>
+    /// Gets the base URL from which msedgedriver is downloaded, as "{version}/edgedriver_{platform}.zip".
+    /// </summary>
+    public Uri EdgeDriverEndpoint
+    {
+        get => this.edgeDriverEndpoint;
+        init => this.edgeDriverEndpoint = AsBaseUri(value, nameof(this.EdgeDriverEndpoint));
     }
 
     /// <summary>

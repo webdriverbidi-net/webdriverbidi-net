@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browsers;
 /// <summary>
 /// Defines the distribution channels for the Safari browser, which include Stable and Technology Preview.
 /// </summary>
-public enum SafariChannel
+internal enum SafariChannel
 {
     /// <summary>
     /// The Stable channel, which is the default channel for released versions of

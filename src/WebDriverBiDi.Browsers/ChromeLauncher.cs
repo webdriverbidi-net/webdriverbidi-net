@@ -78,9 +78,9 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// <summary>
     /// Initializes a new instance of the <see cref="ChromeLauncher"/> class.
     /// </summary>
-    /// <param name="browserLocatorSettings">The <see cref="ChromeBrowserLocatorSettings"/> settings to use for locating the Chrome browser executable.</param>
+    /// <param name="browserLocatorSettings">The settings to use for locating the browser executable.</param>
     /// <param name="port">The port on which the browser should listen for connections.</param>
-    internal ChromeLauncher(ChromeBrowserLocatorSettings browserLocatorSettings, int port = 0)
+    internal ChromeLauncher(BrowserLocatorSettings browserLocatorSettings, int port = 0)
         : base(browserLocatorSettings, port)
     {
     }
@@ -114,6 +114,11 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
     /// </summary>
     protected override ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new("chromeLauncher.logMessage");
+
+    /// <summary>
+    /// Gets the name of the browser in messages, and, in lowercase, in the name of its temporary profile.
+    /// </summary>
+    private protected virtual string ProductName => "Chrome";
 
     private IList<string> CommandLineArguments
     {
@@ -177,11 +182,11 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         }
 
         string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync(cancellationToken).ConfigureAwait(false);
-        await this.LogAsync($"Launching Chrome browser from {browserExecutableLocation}").ConfigureAwait(false);
+        await this.LogAsync($"Launching {this.ProductName} browser from {browserExecutableLocation}").ConfigureAwait(false);
 
         // With port 0, Chrome chooses a free port itself and reports it with its DevTools endpoint.
         this.ConnectionString = string.Empty;
-        this.profile = this.LaunchSettings.UserDataDirectory is null ? TemporaryProfile.Create("chrome") : null;
+        this.profile = this.LaunchSettings.UserDataDirectory is null ? TemporaryProfile.Create(this.ProductName.ToLowerInvariant()) : null;
         try
         {
             Process process = new()
@@ -193,7 +198,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             process.ErrorDataReceived += this.RecordProcessOutput;
             process.OutputDataReceived += this.RecordProcessOutput;
             this.outputTail.Clear();
-            StartProcess(process, "Chrome");
+            StartProcess(process, this.ProductName);
             this.browserProcess = process;
             this.profile?.SetOwner(this.browserProcess);
             this.browserProcess.BeginOutputReadLine();
@@ -214,7 +219,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
                     reason = $"Browser process exited with code {exitCode} before reporting its DevTools endpoint.";
                 }
 
-                throw new BrowserLaunchException($"Unable to launch Chrome browser. {reason}", exitCode, this.outputTail.ToList());
+                throw new BrowserLaunchException($"Unable to launch {this.ProductName} browser. {reason}", exitCode, this.outputTail.ToList());
             }
         }
         catch (Exception)

@@ -21,21 +21,25 @@ A browser launched through its driver executable already has a WebDriver BiDi se
 
 ### Choosing the Browser
 
-`BrowserLauncher.Configure` takes the browser (Chrome, Firefox, or Safari), and the builder chooses how it is found and launched:
+`BrowserLauncher.Configure` takes the browser (Chrome, Firefox, Edge, or Safari), and the builder chooses how it is found and launched:
 
 | Setting | Methods | Default |
 | --- | --- | --- |
-| Channel | `WithReleaseChannel`: `Stable`, `Beta`, `DeveloperPreview` (Chrome Dev, Firefox Developer Edition, Safari Technology Preview), `Alpha` (Chrome Canary, Firefox Nightly), `ExtendedSupport` (Firefox ESR) | `Stable` |
-| Version | `WithVersion`: `BrowserVersion.Latest`, `BrowserVersion.Specific("…")`, or, for Chrome, `BrowserVersion.Milestone(131)` | The latest of the channel |
-| Location | `AtAutomaticallyDownloadedLocation()`, `AtDefaultInstallationLocation()`, `AtLocation(path)` | Downloaded |
-| Launch | Directly, or `LaunchUsingDriver()` through chromedriver, geckodriver, or safaridriver | Directly (Safari: always through safaridriver) |
-| Connection | `WithConnection(ConnectionKind.Pipes)`, for Chrome launched directly | WebSocket |
+| Channel | `WithReleaseChannel`: `Stable`, `Beta`, `DeveloperPreview` (Chrome Dev, Firefox Developer Edition, Edge Dev, Safari Technology Preview), `Alpha` (Chrome Canary, Firefox Nightly, Edge Canary), `ExtendedSupport` (Firefox ESR) | `Stable` |
+| Version | `WithVersion`: `BrowserVersion.Latest`, `BrowserVersion.Specific("…")`, or, for Chrome, `BrowserVersion.Milestone(131)`; not for Edge or Safari, which are never downloaded | The latest of the channel |
+| Location | `AtAutomaticallyDownloadedLocation()`, `AtDefaultInstallationLocation()`, `AtLocation(path)` | Downloaded (Edge and Safari: installed) |
+| Launch | Directly, or `LaunchUsingDriver()` through chromedriver, geckodriver, msedgedriver, or safaridriver | Directly (Safari: always through safaridriver) |
+| Connection | `WithConnection(ConnectionKind.Pipes)`, for Chrome or Edge launched directly | WebSocket |
 | Browser settings | `WithHeadlessOption`, `WithArguments`, `WithoutDefaultArguments`, `WithEnvironmentVariable`, `WithUserDataDirectory`, `WithLaunchTimeout` | |
 | Per-browser settings | `WithBrowserOptions(new ChromeLaunchOptions { … })` or `FirefoxLaunchOptions` | |
 
 [!code-csharp[Choosing the Browser](../code/PackageReadmeSamples.cs#BrowsersChoosingBrowser)]
 
 `Build()` checks that the settings can be used together, and throws `BrowserLauncherConfigurationException` if they cannot.
+
+A driver launched for an installed browser matches it: for an installed Chrome, or one at a location you give, the chromedriver of its version is downloaded, or, for a build Chrome for Testing does not list, the newest chromedriver of the same build, and then of the same major version. If the version cannot be read, the latest chromedriver of the channel is used.
+
+Microsoft publishes Edge only as installers, so the package never downloads it: the installed Edge of the channel is used, or the executable given to `AtLocation`. Launched through its driver, Edge needs the msedgedriver of its own version, so the version of the installed Edge is read, and that msedgedriver is downloaded and checked against the MD5 hash its server reports. Microsoft publishes no Edge for Linux on Arm.
 
 On Linux:
 
@@ -81,8 +85,8 @@ These environment variables set the defaults, so a CI system can configure every
 | `WEBDRIVERBIDI_BROWSERS_PATH` | The cache directory. The default is a `webdriverbidi-net` directory in the local application data directory (Windows), `~/Library/Caches` (macOS), or `$XDG_CACHE_HOME` or `~/.cache` (Linux). |
 | `WEBDRIVERBIDI_SKIP_DOWNLOAD` | Set to `1` or `true` to use only what is already cached, making no network requests. |
 | `WEBDRIVERBIDI_DOWNLOAD_MANIFEST` | The URL or file path of a mirror manifest (below). |
-| `CHROME_EXECUTABLE`, `FIREFOX_EXECUTABLE`, `SAFARI_EXECUTABLE` | A browser executable to use in place of locating one. |
-| `CHROMEDRIVER_EXECUTABLE`, `GECKODRIVER_EXECUTABLE`, `SAFARIDRIVER_EXECUTABLE` | A driver executable to use in place of locating one. |
+| `CHROME_EXECUTABLE`, `FIREFOX_EXECUTABLE`, `EDGE_EXECUTABLE`, `SAFARI_EXECUTABLE` | A browser executable to use in place of locating one. |
+| `CHROMEDRIVER_EXECUTABLE`, `GECKODRIVER_EXECUTABLE`, `MSEDGEDRIVER_EXECUTABLE`, `SAFARIDRIVER_EXECUTABLE` | A driver executable to use in place of locating one. |
 
 ### Mirroring Downloads
 
@@ -125,8 +129,8 @@ To download from an internal mirror rather than the vendors' services, set `Brow
 }
 ```
 
-- **Browsers** are `chrome`, `chrome-headless-shell`, and `firefox`; **drivers** are `chromedriver` and `geckodriver`.
-- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's, and geckodriver's is its `latest`.
+- **Browsers** are `chrome`, `chrome-headless-shell`, and `firefox`; **drivers** are `chromedriver`, `geckodriver`, and `msedgedriver`.
+- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's, msedgedriver's is the installed Edge's, and geckodriver's is its `latest`.
 - **Platforms** are `linux-x64`, `linux-arm64`, `linux-x86`, `macos-x64`, `macos-arm64`, `windows-x64`, `windows-x86`, and `windows-arm64`.
 - **Builds** are each vendor's archive, unchanged. Each lists its SHA-256 hash, which is verified, and optionally its size. A URL may be relative to the manifest, so a directory holding the manifest and the archives serves as a mirror with no server (`file:///…/manifest.json`).
 - **Nightly builds** share version numbers, so give each mirrored Nightly build a distinct version string.

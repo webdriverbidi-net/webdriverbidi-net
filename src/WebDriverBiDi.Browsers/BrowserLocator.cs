@@ -90,7 +90,8 @@ public class BrowserLocator
             BrowserKind.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions, browserOptions is ChromeLaunchOptions { UseHeadlessShell: true }),
             BrowserKind.Firefox => CreateFirefoxSettings(channel, version, locationBehavior, customPath, downloadOptions),
             BrowserKind.Safari => CreateSafariSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            _ => throw new NotSupportedException($"{browser} cannot be located; this method supports Chrome, Firefox, and Safari."),
+            BrowserKind.Edge => CreateEdgeSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            _ => throw new NotSupportedException($"{browser} cannot be located; this method supports Chrome, Firefox, Safari, and Edge."),
         };
 
         BrowserLocator locator = new(settings);
@@ -253,6 +254,46 @@ public class BrowserLocator
     }
 
     /// <summary>
+    /// Creates browser locator settings for Microsoft Edge, which is never downloaded: the installed Edge of the
+    /// channel, or the executable at a custom location, is used.
+    /// </summary>
+    /// <param name="channel">The release channel.</param>
+    /// <param name="version">The browser version, which must be the latest or the system-installed version.</param>
+    /// <param name="locationBehavior">The location behavior strategy; automatic location means the installed Edge.</param>
+    /// <param name="customPath">Optional custom path to the browser executable.</param>
+    /// <param name="downloadOptions">The options controlling where msedgedriver is cached and downloaded from.</param>
+    /// <returns>Configured Edge browser locator settings.</returns>
+    /// <exception cref="ArgumentException">Thrown when the channel or version cannot be used with Edge, or customPath is required but not provided.</exception>
+    internal static BrowserLocatorSettings CreateEdgeSettings(
+        BrowserReleaseChannel channel,
+        BrowserVersion version,
+        FileLocationBehavior locationBehavior,
+        string? customPath,
+        BrowserDownloadOptions downloadOptions)
+    {
+        EdgeChannel edgeChannel = channel switch
+        {
+            BrowserReleaseChannel.Stable => EdgeChannel.Stable,
+            BrowserReleaseChannel.Beta => EdgeChannel.Beta,
+            BrowserReleaseChannel.DeveloperPreview => EdgeChannel.Dev,
+            BrowserReleaseChannel.Alpha => EdgeChannel.Canary,
+            _ => throw new ArgumentException($"Invalid browser release channel for Edge: {channel}", nameof(channel)),
+        };
+
+        if (version != BrowserVersion.Latest && version != BrowserVersion.SystemInstalled)
+        {
+            throw new ArgumentException("Edge cannot be downloaded, so only its installed version can be located.", nameof(version));
+        }
+
+        if (locationBehavior == FileLocationBehavior.UseCustomLocation && string.IsNullOrWhiteSpace(customPath))
+        {
+            throw new ArgumentException("customPath must be provided when locationBehavior is UseCustomLocation.", nameof(customPath));
+        }
+
+        return new EdgeBrowserLocatorSettings(edgeChannel, downloadOptions, locationBehavior == FileLocationBehavior.UseCustomLocation ? customPath : null);
+    }
+
+    /// <summary>
     /// Gets a value indicating whether an exception from a version information request means the
     /// service could not be reached, failed, or refused the request for now, as opposed to it
     /// responding with something unusable.
@@ -285,7 +326,7 @@ public class BrowserLocator
         if (envBrowserPath is not null)
         {
             await this.LogAsync($"Using environment variable '{this.settings.EnvironmentVariableName}': {envBrowserPath}", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-            return new LocatedBrowser(envBrowserPath, null);
+            return new LocatedBrowser(envBrowserPath, await this.GetInstalledVersionForDriverAsync(envBrowserPath, cancellationToken).ConfigureAwait(false));
         }
 
         if (this.settings.LocationBehavior != FileLocationBehavior.AutoLocateAndDownload)
@@ -296,7 +337,7 @@ public class BrowserLocator
                 await this.LogAsync($"Using {this.settings.BrowserLocationBehaviorDescription} browser at: {this.settings.ExpectedExecutablePath}", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
             }
 
-            return new LocatedBrowser(this.settings.ExpectedExecutablePath, null);
+            return new LocatedBrowser(this.settings.ExpectedExecutablePath, await this.GetInstalledVersionForDriverAsync(this.settings.ExpectedExecutablePath, cancellationToken).ConfigureAwait(false));
         }
 
         try
@@ -307,6 +348,16 @@ public class BrowserLocator
         {
             throw new BrowserDownloadException($"Unable to locate or download {this.settings.BrowserDisplayName}: {ex.Message}", ex);
         }
+    }
+
+    // A browser that is not downloaded reports no version, which a driver that must match it needs, unless the
+    // driver is not the one located for it.
+    private async Task<string?> GetInstalledVersionForDriverAsync(string executablePath, CancellationToken cancellationToken)
+    {
+        bool driverIsLocated = this.settings.IncludeDriver
+            && this.settings.DriverLocationBehavior == FileLocationBehavior.AutoLocateAndDownload
+            && LauncherEnvironment.GetVariable(this.settings.DriverEnvironmentVariableName) is null;
+        return driverIsLocated ? await this.settings.GetInstalledBrowserVersionAsync(executablePath, cancellationToken).ConfigureAwait(false) : null;
     }
 
     private async Task<LocatedBrowser> LocateCachedBrowserAsync(CancellationToken cancellationToken)

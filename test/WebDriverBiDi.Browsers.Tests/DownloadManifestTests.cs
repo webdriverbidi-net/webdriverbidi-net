@@ -131,6 +131,20 @@ public class DownloadManifestTests
     }
 
     [Fact]
+    public async Task EdgeDriverIsTheListedBuildOfTheInstalledEdgeVersion()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ManifestBuilder manifest = new(server);
+        manifest.AddBuild("drivers", "msedgedriver", "130.0.2849.80", "linux-x64", "edgedriver_linux64.zip", TestArchives.Zip("msedgedriver"));
+        manifest.Serve();
+        using TemporaryDirectory cache = new();
+
+        string? path = await DriverLocator.FindDriverAsync(BrowserKind.Edge, locationBehavior: FileLocationBehavior.UseCustomLocation, customPath: FakeBrowserSetup.ExecutablePath, downloadOptions: CreateOptions(server, cache), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(Path.Combine(cache.Path, "drivers", "msedgedriver", "130.0.2849.80", "msedgedriver"), path);
+    }
+
+    [Fact]
     public async Task GeckoDriverUsesListedLatestVersion()
     {
         await using DownloadServer server = await DownloadServer.StartAsync();

@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browsers;
 /// <summary>
 /// Defines the distribution channels for the Chrome browser, which include Stable, Beta, Dev, and Canary.
 /// </summary>
-public enum ChromeChannel
+internal enum ChromeChannel
 {
     /// <summary>
     /// The Stable channel, which is the default channel for released versions of

@@ -156,6 +156,17 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     }
 
     /// <summary>
+    /// Reads the version of an installed Chrome, which the chromedriver located for it must match.
+    /// </summary>
+    /// <param name="executablePath">The path of the Chrome executable.</param>
+    /// <param name="cancellationToken">A token that cancels reading the version.</param>
+    /// <returns>The version, or <see langword="null"/> if it cannot be read, when the latest chromedriver of the channel is used.</returns>
+    public override Task<string?> GetInstalledBrowserVersionAsync(string executablePath, CancellationToken cancellationToken)
+    {
+        return InstalledBrowserVersion.ReadAsync(executablePath, cancellationToken);
+    }
+
+    /// <summary>
     /// Gets the chromedriver version that must be used, which is the version of the Chrome it drives.
     /// </summary>
     /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
@@ -180,7 +191,7 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         BinaryVersionInfo binaryVersionInfo;
         if (requiredVersion is not null)
         {
-            binaryVersionInfo = this.GetSpecificBinaryVersionInfo(await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.AllVersionsDownloadInfoUrl, cancellationToken).ConfigureAwait(false), requiredVersion);
+            binaryVersionInfo = this.GetCompatibleDriverVersionInfo(await DownloadHttpClient.GetStringAsync(this.DownloadOptions, this.AllVersionsDownloadInfoUrl, cancellationToken).ConfigureAwait(false), requiredVersion);
         }
         else if (this.Milestone is int milestone)
         {
@@ -272,6 +283,37 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         }
 
         throw new InvalidOperationException($"Failed to find download information for Chrome version '{version}'.");
+    }
+
+    // The chromedriver of the exact version, or else, for a Chrome build that Chrome for Testing does not list (such
+    // as a respin for one platform), the newest of the same build, and then of the same major version.
+    private BinaryVersionInfo GetCompatibleDriverVersionInfo(string json, string version)
+    {
+        ChromeAllVersionsBinaryDownloadInfo? downloadInfo =
+            JsonSerializer.Deserialize(json, ChromeBrowserLocatorSettingsJsonSerializerContext.Default.ChromeAllVersionsBinaryDownloadInfo)
+            ?? throw new InvalidOperationException($"Failed to deserialize Chrome binary download information from {this.AllVersionsDownloadInfoUrl}.");
+        List<BinaryVersionInfo> withDriver = [.. downloadInfo.Versions.Where(versionInfo => versionInfo.Downloads.ContainsKey("chromedriver"))];
+        BinaryVersionInfo? exact = withDriver.FirstOrDefault(versionInfo => versionInfo.Version.Equals(version, StringComparison.OrdinalIgnoreCase));
+        if (exact is not null)
+        {
+            return exact;
+        }
+
+        if (System.Version.TryParse(version, out Version? requested))
+        {
+            List<(BinaryVersionInfo Info, Version Parsed)> sameMajor = [.. withDriver
+                .Select(versionInfo => (Info: versionInfo, Parsed: System.Version.TryParse(versionInfo.Version, out Version? parsed) ? parsed : null))
+                .Where(candidate => candidate.Parsed?.Major == requested.Major)
+                .Select(candidate => (candidate.Info, candidate.Parsed!))
+                .OrderByDescending(candidate => candidate.Item2)];
+            (BinaryVersionInfo Info, Version Parsed) closest = sameMajor.FirstOrDefault(candidate => candidate.Parsed.Minor == requested.Minor && candidate.Parsed.Build == requested.Build);
+            if ((closest.Info ?? sameMajor.FirstOrDefault().Info) is BinaryVersionInfo compatible)
+            {
+                return compatible;
+            }
+        }
+
+        throw new InvalidOperationException($"Failed to find a chromedriver for Chrome version '{version}'.");
     }
 
     private string? GetPlatformIdentifierString()

@@ -15,6 +15,9 @@ public class DriverLocator
     /// </summary>
     public const string LoggerComponentName = "Driver Locator";
 
+    // Prefixes the version request that records which driver matches a required version.
+    private const string MatchRequestPrefix = "match-";
+
     private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent = new("driverLocator.logMessage");
     private readonly BrowserLocatorSettings settings;
 
@@ -69,10 +72,18 @@ public class DriverLocator
             BrowserKind.Chrome => BrowserLocator.CreateChromeSettings(channel, version, locationBehavior, customPath, downloadOptions),
             BrowserKind.Firefox => BrowserLocator.CreateFirefoxSettings(channel, version, locationBehavior, customPath, downloadOptions),
             BrowserKind.Safari => BrowserLocator.CreateSafariSettings(channel, version, locationBehavior, customPath, downloadOptions),
-            _ => throw new NotSupportedException($"The driver for {browser} cannot be located; this method supports Chrome, Firefox, and Safari."),
+            BrowserKind.Edge => BrowserLocator.CreateEdgeSettings(channel, version, locationBehavior, customPath, downloadOptions),
+            _ => throw new NotSupportedException($"The driver for {browser} cannot be located; this method supports Chrome, Firefox, Safari, and Edge."),
         };
 
         settings.IncludeDriver = true;
+        if (settings.LocationBehavior != FileLocationBehavior.AutoLocateAndDownload)
+        {
+            // A driver that must match an installed browser takes the version read when the browser is located.
+            BrowserExecutableInfo executables = await new BrowserLocator(settings).LocateExecutablesAsync(cancellationToken).ConfigureAwait(false);
+            return executables.DriverPath;
+        }
+
         DriverLocator locator = new(settings);
         return await locator.LocateDriverAsync(null, cancellationToken).ConfigureAwait(false);
     }
@@ -128,15 +139,7 @@ public class DriverLocator
         string? requiredVersion = this.settings.GetRequiredDriverVersion(browserVersion);
         if (requiredVersion is not null)
         {
-            if (cache.TryGetInstalledExecutable(requiredVersion, relativeExecutablePath, out string? installedPath))
-            {
-                await this.LogAsync($"Using cached {this.settings.DriverName} {requiredVersion}.", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-                return installedPath;
-            }
-
-            this.ThrowIfDownloadSkipped($"{this.settings.DriverName} {requiredVersion}");
-            DriverDownloadInfo requiredDownloadInfo = await this.GetDriverDownloadInfoAsync(browserVersion, cancellationToken).ConfigureAwait(false);
-            return await this.InstallDriverAsync(cache, requiredDownloadInfo, cancellationToken).ConfigureAwait(false);
+            return await this.LocateMatchingDriverAsync(cache, requiredVersion, browserVersion, cancellationToken).ConfigureAwait(false);
         }
 
         string request = this.settings.DriverVersionRequest;
@@ -165,6 +168,51 @@ public class DriverLocator
             ? currentPath
             : await this.InstallDriverAsync(cache, downloadInfo, cancellationToken).ConfigureAwait(false);
         cache.SaveResolvedVersion(request, downloadInfo.Version);
+        return executablePath;
+    }
+
+    // A driver of another version may be the match for the required one, and is then recorded as its match, rechecked
+    // as a resolved version is, so that it is found without a network request.
+    private async Task<string> LocateMatchingDriverAsync(InstallCache cache, string requiredVersion, string? browserVersion, CancellationToken cancellationToken)
+    {
+        string relativeExecutablePath = this.settings.DriverExecutableName;
+        if (cache.TryGetInstalledExecutable(requiredVersion, relativeExecutablePath, out string? installedPath))
+        {
+            await this.LogAsync($"Using cached {this.settings.DriverName} {requiredVersion}.", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+            return installedPath;
+        }
+
+        string matchRequest = $"{MatchRequestPrefix}{requiredVersion}";
+        string? matchedPath = null;
+        bool isMatchInstalled = cache.TryGetResolvedVersion(matchRequest, out string? matchedVersion, out bool isFresh)
+            && cache.TryGetInstalledExecutable(matchedVersion, relativeExecutablePath, out matchedPath);
+        if (isMatchInstalled && (isFresh || this.settings.DownloadOptions.SkipDownload))
+        {
+            await this.LogAsync($"Using cached {this.settings.DriverName} {matchedVersion}, which matches {requiredVersion}.", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+            return matchedPath!;
+        }
+
+        this.ThrowIfDownloadSkipped($"{this.settings.DriverName} {requiredVersion}");
+        DriverDownloadInfo downloadInfo;
+        try
+        {
+            downloadInfo = await this.GetDriverDownloadInfoAsync(browserVersion, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (isMatchInstalled && BrowserLocator.IsUnreachableServiceException(ex) && !cancellationToken.IsCancellationRequested)
+        {
+            await this.LogAsync($"Could not check for a closer {this.settings.DriverName} ({ex.Message}); using cached version {matchedVersion}.", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+            return matchedPath!;
+        }
+
+        string executablePath = cache.TryGetInstalledExecutable(downloadInfo.Version, relativeExecutablePath, out string? currentPath)
+            ? currentPath
+            : await this.InstallDriverAsync(cache, downloadInfo, cancellationToken).ConfigureAwait(false);
+        if (downloadInfo.Version != requiredVersion)
+        {
+            await this.LogAsync($"No {this.settings.DriverName} {requiredVersion} is published; using {downloadInfo.Version}.", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+            cache.SaveResolvedVersion(matchRequest, downloadInfo.Version);
+        }
+
         return executablePath;
     }
 

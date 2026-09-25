@@ -133,6 +133,20 @@ public class RemoteLaunchTests
     }
 
     [Fact]
+    public async Task EdgeGridSessionIsForMicrosoftEdge()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ServeGrid(server, string.Empty);
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Edge).LaunchUsingRemoteGrid(server.UrlFor("/")).Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        JsonNode capabilities = JsonNode.Parse(Assert.Single(server.Requests, request => request.Method == "POST").Body)!["capabilities"]!["firstMatch"]![0]!;
+        Assert.Equal("MicrosoftEdge", (string?)capabilities["browserName"]);
+    }
+
+    [Fact]
     public async Task SafariGridSessionRequestsExperimentalWebSocketUrl()
     {
         await using DownloadServer server = await DownloadServer.StartAsync();

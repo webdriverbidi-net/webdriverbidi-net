@@ -13,7 +13,7 @@ public class LauncherLifecycleTests
 {
     private static readonly TimeSpan ProcessExitTimeout = TimeSpan.FromSeconds(10);
 
-    public static TheoryData<BrowserKind> DirectLaunchBrowsers => [BrowserKind.Chrome, BrowserKind.Firefox];
+    public static TheoryData<BrowserKind> DirectLaunchBrowsers => [BrowserKind.Chrome, BrowserKind.Firefox, BrowserKind.Edge];
 
     [Theory]
     [MemberData(nameof(DirectLaunchBrowsers))]
@@ -71,6 +71,7 @@ public class LauncherLifecycleTests
 
     [Theory]
     [InlineData(BrowserKind.Chrome, "--user-data-dir")]
+    [InlineData(BrowserKind.Edge, "--user-data-dir")]
     [InlineData(BrowserKind.Firefox, "--profile")]
     public async Task QuitDeletesTemporaryProfile(BrowserKind browser, string profileArgumentName)
     {
@@ -88,6 +89,7 @@ public class LauncherLifecycleTests
 
     [Theory]
     [InlineData(BrowserKind.Chrome, "--user-data-dir")]
+    [InlineData(BrowserKind.Edge, "--user-data-dir")]
     [InlineData(BrowserKind.Firefox, "--profile")]
     public async Task FailedLaunchKillsBrowserAndDeletesProfile(BrowserKind browser, string profileArgumentName)
     {

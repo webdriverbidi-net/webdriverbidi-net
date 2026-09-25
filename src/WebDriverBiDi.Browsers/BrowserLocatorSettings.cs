@@ -212,6 +212,17 @@ internal abstract class BrowserLocatorSettings
     }
 
     /// <summary>
+    /// Reads the version of a browser that is not downloaded, when its driver must match it.
+    /// </summary>
+    /// <param name="executablePath">The path of the browser executable.</param>
+    /// <param name="cancellationToken">A token that cancels reading the version.</param>
+    /// <returns>The version, or <see langword="null"/> if it is not read or cannot be.</returns>
+    public virtual Task<string?> GetInstalledBrowserVersionAsync(string executablePath, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<string?>(null);
+    }
+
+    /// <summary>
     /// Gets the driver version that must be used, if it is known without a network request.
     /// </summary>
     /// <param name="browserVersion">The version of the located browser, or <see langword="null"/> if it is not known.</param>
