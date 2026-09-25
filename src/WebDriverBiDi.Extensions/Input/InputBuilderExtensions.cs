@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.Input;
 
-using System.Globalization;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -53,10 +52,8 @@ public static class InputBuilderExtensions
     public static InputBuilder AddSendKeysToActiveElementAction(this InputBuilder builder, string keysToSend)
     {
         KeyInputSource keyboard = builder.DefaultKeyInputSource;
-        TextElementEnumerator characters = StringInfo.GetTextElementEnumerator(keysToSend);
-        while (characters.MoveNext())
+        foreach (string key in TextElements.Split(keysToSend))
         {
-            string key = characters.GetTextElement();
             builder.AddAction(keyboard.CreateKeyDown(key)).AddAction(keyboard.CreateKeyUp(key));
         }
 

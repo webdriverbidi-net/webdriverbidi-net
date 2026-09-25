@@ -70,7 +70,7 @@ A source created partway through pauses for the ticks that came before it.
 
 Pointer coordinates are fractional CSS pixels. `PointerActionProperties` sets the pen and touch properties the protocol defines: width, height, pressure, tangential pressure, twist, and altitude and azimuth angles.
 
-Typed text is split into user-perceived characters, so an emoji or a letter with combining accents is sent as one key. The exception is .NET Framework, where emoji joined by zero-width joiners are split.
+Typed text is split into user-perceived characters, so an emoji (including a family, a flag, or one with a skin tone) or a letter with combining accents is sent as one key, on .NET Framework too.
 
 ## Network Capture
 

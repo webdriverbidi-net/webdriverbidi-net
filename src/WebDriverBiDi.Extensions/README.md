@@ -55,7 +55,7 @@ await driver.Input.PerformActionsAsync(contextId, builder);
 await driver.Input.ReleaseActionsAsync(contextId);
 ```
 
-Each action added is one tick, in which every other input source pauses; `AddActions` puts several sources' actions in one tick. Text is typed one user-perceived character at a time, so emoji and combining sequences arrive whole (except on .NET Framework, whose text segmentation splits emoji joined by zero-width joiners). `Keys` names the special keys (Enter, Shift, the arrows, and so on). For finer control, create sources with `CreateKeyInputSource`, `CreatePointerInputSource` (mouse, pen, or touch), `CreateWheelInputSource`, and `CreateNoneInputSource`, and add the actions they create.
+Each action added is one tick, in which every other input source pauses; `AddActions` puts several sources' actions in one tick. Text is typed one user-perceived character at a time, so emoji and combining sequences arrive whole, on .NET Framework too. `Keys` names the special keys (Enter, Shift, the arrows, and so on). For finer control, create sources with `CreateKeyInputSource`, `CreatePointerInputSource` (mouse, pen, or touch), `CreateWheelInputSource`, and `CreateNoneInputSource`, and add the actions they create.
 
 ## Network Capture
 
