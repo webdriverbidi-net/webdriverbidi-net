@@ -7,6 +7,7 @@
 namespace WebDriverBiDi.Docs.Code.Examples;
 
 using WebDriverBiDi;
+using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Script;
@@ -23,16 +24,24 @@ public static class FirstApplicationSamples
     public static async Task FullFirstApplication()
     {
         #region FullFirstApplication
-        // Replace with your WebSocket URL from step 4
-        string webSocketUrl = "ws://localhost:9515/session/YOUR-SESSION-ID";
+        // Download Chrome on first use, then launch it. Disposing the launcher closes the browser.
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).Build();
+        Console.WriteLine("Launching Chrome...");
+        BrowserInstance browser = await launcher.LaunchAsync();
 
-        // Create driver with 30 second timeout
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+        // Create a driver with a 30-second command timeout, over the launcher's transport
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
 
         try
         {
+            // Connect to the browser, creating a session unless the launch created one
             Console.WriteLine("Connecting to browser...");
-            await driver.StartAsync(webSocketUrl);
+            await driver.StartAsync(browser.ConnectionString);
+            if (!launcher.IsBiDiSessionInitialized)
+            {
+                await driver.Session.NewSessionAsync(new NewCommandParameters());
+            }
+
             Console.WriteLine("Connected!");
 
             // Set up console log monitoring
@@ -136,7 +145,7 @@ public static class FirstApplicationSamples
         }
         finally
         {
-            // Disconnect from the browser
+            // Disconnect; the launcher closes the browser when it is disposed
             Console.WriteLine("\nDisconnecting from browser...");
             await driver.StopAsync();
             Console.WriteLine("Disconnected!");
@@ -150,9 +159,31 @@ public static class FirstApplicationSamplesIndividual
     /// <summary>
     /// Driver initialization.
     /// </summary>
-    public static async Task DriverInitialization(string webSocketUrl)
+    public static async Task DriverInitialization()
     {
         #region DriverInitialization
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).Build();
+        BrowserInstance browser = await launcher.LaunchAsync();
+
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
+        await driver.StartAsync(browser.ConnectionString);
+        if (!launcher.IsBiDiSessionInitialized)
+        {
+            await driver.Session.NewSessionAsync(new NewCommandParameters());
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// Connecting to a browser started without WebDriverBiDi.Browsers.
+    /// </summary>
+    public static async Task ManualConnection()
+    {
+        #region ManualConnection
+        // The webSocketUrl of a session created through chromedriver, which already exists,
+        // so the application does not call Session.NewSessionAsync.
+        string webSocketUrl = "ws://localhost:9515/session/YOUR-SESSION-ID";
+
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
         #endregion
