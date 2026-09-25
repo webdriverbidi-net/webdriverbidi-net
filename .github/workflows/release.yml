@@ -184,9 +184,11 @@ jobs:
       - name: Pack releasable packages
         # `dotnet pack` on the solution packs only projects with
         # IsPackable=true, which is WebDriverBiDi, WebDriverBiDi.Analyzers,
-        # and WebDriverBiDi.Logging. Symbol-package emission is configured
-        # per-project in the csproj files (only library and logging produce
-        # .snupkg; the analyzer has no managed assembly to symbolicate).
+        # WebDriverBiDi.Logging, WebDriverBiDi.Browsers, WebDriverBiDi.Extensions,
+        # and the WebDriverBiDi.Tool dotnet tool, which bundles the Browsers library
+        # of the same build. Symbol-package emission is configured per-project in the
+        # csproj files (the analyzer has no managed assembly to symbolicate, and the
+        # tool produces none).
         #
         # The version properties are repeated here even though the build step above already
         # passed them and this pack runs --no-build. MSBuild global properties do not carry
@@ -197,7 +199,7 @@ jobs:
         # BuildAnalyzerRoslynVariantsBeforePack in WebDriverBiDi.Analyzers.csproj). Without
         # them here that child build falls back to the SDK default, so the shipped analyzer
         # assemblies report 1.0.0.0 while the package around them carries the release version.
-        # The other two packages are unaffected either way, since --no-build leaves the
+        # The other packages are unaffected either way, since --no-build leaves the
         # assemblies the build step already stamped.
         run: >
           dotnet pack WebDriverBiDi.NET.sln --configuration Release

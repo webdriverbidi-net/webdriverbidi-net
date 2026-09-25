@@ -16,9 +16,6 @@
     <RollForward>Major</RollForward>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>webdriverbidi</ToolCommandName>
-
-    <!-- Becomes packable when its roadmap item (1c.5) is complete. -->
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup>

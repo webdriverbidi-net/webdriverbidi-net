@@ -96,6 +96,21 @@ The cache keeps every version it has downloaded. `BrowserCache.List` lists them 
 
 A cache is marked with the version of its layout, and a version of this package that cannot read a cache's layout throws `BrowserDownloadException` rather than misreading it, so a newer package can change the layout without an older one corrupting it.
 
+#### Installing Ahead of Time
+
+The `webdriverbidi` command-line tool, from the `WebDriverBiDi.Tool` package, installs browsers and drivers into the same cache before anything launches them, as when building a CI machine image or before a test run:
+
+```bash
+dotnet tool install --global WebDriverBiDi.Tool
+webdriverbidi install chrome chromedriver firefox@beta geckodriver
+webdriverbidi list
+webdriverbidi clear chrome@canary
+```
+
+Each target is a name (`chrome`, `chrome-headless-shell`, `firefox`, `chromedriver`, `geckodriver`, or `msedgedriver`), optionally followed by `@` and a channel (`chrome@beta`, `firefox@nightly`), a Chrome milestone (`chromedriver@131`), or a version (`firefox@134.0`). `install --dry-run` shows the version and URL each target resolves to without downloading it. The tool honors the environment variables above, and `--path` chooses another cache. With `WEBDRIVERBIDI_SKIP_DOWNLOAD` set for the test run, a test that needs a browser the tool did not install fails at once rather than downloading it. The [package README](https://www.nuget.org/packages/WebDriverBiDi.Tool) describes every command.
+
+The same abilities are in the library: `BrowserLocator.ResolveDownloadAsync` and `DriverLocator.ResolveDownloadAsync` resolve what `FindBrowserAsync` and `FindDriverAsync` would download, without downloading it.
+
 ### Mirroring Downloads
 
 To download from an internal mirror rather than the vendors' services, set `BrowserDownloadOptions.ManifestUrl` (or `WEBDRIVERBIDI_DOWNLOAD_MANIFEST`) to a manifest listing the builds it holds. Every browser and driver is then resolved through the manifest; one it does not list cannot be downloaded. The manifest is JSON:

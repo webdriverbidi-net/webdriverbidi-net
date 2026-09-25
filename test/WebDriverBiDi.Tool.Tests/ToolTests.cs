@@ -209,6 +209,7 @@ public sealed class ToolTests : IDisposable
         ToolResult unknown = await this.RunAsync("upgrade");
 
         Assert.Equal(0, help.ExitCode);
+        Assert.Contains("webdriverbidi [command] [options]", help.Output);
         Assert.Contains("install", help.Output);
         Assert.Contains("--path", help.Output);
         Assert.Equal(1, unknown.ExitCode);

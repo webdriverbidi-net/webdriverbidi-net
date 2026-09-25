@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Tool;
 
 using System.CommandLine;
+using System.CommandLine.Help;
 using System.Globalization;
 using WebDriverBiDi.Browsers;
 
@@ -14,6 +15,8 @@ using WebDriverBiDi.Browsers;
 /// </summary>
 public static class WebDriverBiDiTool
 {
+    private const string CommandName = "webdriverbidi";
+
     /// <summary>
     /// Runs the tool.
     /// </summary>
@@ -69,8 +72,12 @@ public static class WebDriverBiDiTool
             error,
             token));
 
-        RootCommand root = new("Installs, lists, and removes the browsers and drivers that WebDriverBiDi.Browsers caches.") { install, list, clear };
+        // A RootCommand names itself for the entry assembly, which cannot be named for the command: "webdriverbidi.dll"
+        // and the "WebDriverBiDi.dll" beside it are the same file where file names ignore case.
+        Command root = new(CommandName, "Installs, lists, and removes the browsers and drivers that WebDriverBiDi.Browsers caches.") { install, list, clear };
         root.Options.Add(pathOption);
+        root.Options.Add(new HelpOption());
+        root.Options.Add(new VersionOption());
         return root.Parse(args).InvokeAsync(new InvocationConfiguration() { Output = output, Error = error }, cancellationToken);
     }
 

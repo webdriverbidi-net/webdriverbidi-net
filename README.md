@@ -89,7 +89,7 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 | `src/WebDriverBiDi.Logging` | `Microsoft.Extensions.Logging` (`ILogger`) integration | `WebDriverBiDi.Logging` |
 | `src/WebDriverBiDi.Browsers` | Locates, downloads, and launches browsers for automation | `WebDriverBiDi.Browsers` |
 | `src/WebDriverBiDi.Extensions` | Convenience extension methods, an input action builder, and network traffic capture | `WebDriverBiDi.Extensions` |
-| `src/WebDriverBiDi.Tool` | The `webdriverbidi` command-line tool, which installs, lists, and removes cached browsers and drivers | Pre-release; not yet published |
+| `src/WebDriverBiDi.Tool` | The `webdriverbidi` command-line tool, which installs, lists, and removes cached browsers and drivers | `WebDriverBiDi.Tool` |
 | `src/WebDriverBiDi.Automation` | High-level automation API that waits automatically for elements to be ready for interaction | Pre-release; not yet published |
 
 ### Demo

@@ -190,6 +190,13 @@ foreach (CachedInstallation installation in BrowserCache.List())
 
 A cache is marked with the version of its layout, and a version of this package that cannot read a cache's layout refuses to use it, rather than misreading it.
 
+To install browsers and drivers into the cache ahead of time, as in a CI machine image, use the `webdriverbidi` command-line tool from the [WebDriverBiDi.Tool](https://www.nuget.org/packages/WebDriverBiDi.Tool) package:
+
+```bash
+dotnet tool install --global WebDriverBiDi.Tool
+webdriverbidi install chrome chromedriver firefox geckodriver
+```
+
 ### Mirroring Downloads
 
 To download from an internal mirror rather than the vendors' services, set `ManifestUrl` (or `WEBDRIVERBIDI_DOWNLOAD_MANIFEST`) to a manifest listing the builds it holds. Every browser and driver is then resolved through the manifest; one it does not list cannot be downloaded. The manifest is JSON:

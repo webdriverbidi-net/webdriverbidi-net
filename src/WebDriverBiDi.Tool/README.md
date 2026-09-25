@@ -1,5 +1,70 @@
 # WebDriverBiDi.Tool
 
-The `webdriverbidi` command-line tool for the [WebDriverBiDi](https://www.nuget.org/packages/WebDriverBiDi) .NET client library.
+The `webdriverbidi` command-line tool, which installs, lists, and removes the browsers and drivers that [WebDriverBiDi.Browsers](https://www.nuget.org/packages/WebDriverBiDi.Browsers) keeps in its cache. It is most useful in continuous integration: install the browsers while building a machine image or before the tests run, so that no test waits for a download.
 
-> **Pre-release:** this package is under active development toward production quality.
+It uses the same cache, download sources, and verification as the library, because it is the library: each release of the tool bundles the WebDriverBiDi.Browsers of the same version.
+
+## Installation
+
+```bash
+dotnet tool install --global WebDriverBiDi.Tool
+```
+
+Or, with .NET 10 or later, run it once without installing it:
+
+```bash
+dnx WebDriverBiDi.Tool install chrome
+```
+
+The tool runs on .NET 8 and later.
+
+## Installing Browsers and Drivers
+
+```bash
+webdriverbidi install chrome chromedriver firefox@beta geckodriver
+```
+
+Each target is a name, optionally followed by `@` and a channel, a milestone, or a version:
+
+| Name | Channels | Also accepts |
+| --- | --- | --- |
+| `chrome`, `chrome-headless-shell` | `stable` (the default), `beta`, `dev`, `canary` | A milestone (`chrome@131`, the newest release of Chrome 131) or a version (`chrome@131.0.6778.204`) |
+| `chromedriver` | `stable`, `beta`, `dev`, `canary` | A milestone or version, of the Chrome it drives |
+| `firefox` | `stable`, `beta`, `dev` (Developer Edition), `nightly`, `esr` | A version (`firefox@134.0`) |
+| `geckodriver` | None | Always its latest release |
+| `msedgedriver` | `stable`, `beta`, `dev`, `canary` | Always the version of the installed Edge of the channel |
+
+Microsoft Edge and Safari are never downloaded: install Edge from Microsoft, and Safari comes with macOS. `msedgedriver` downloads the driver that matches the installed Edge.
+
+The tool prints where each target is installed, and reports download progress on standard error. A target that is already cached is not downloaded again. Every target is checked before anything is downloaded, and a target that fails does not stop the others; the exit code is 1 if any failed.
+
+`--dry-run` shows the version and URL each target resolves to, and whether it is already cached, without downloading anything:
+
+```bash
+webdriverbidi install --dry-run chrome@beta geckodriver
+```
+
+## Listing and Removing
+
+```bash
+webdriverbidi list
+webdriverbidi clear chrome@canary chromedriver@131
+webdriverbidi clear
+```
+
+`list` shows each cached browser and driver, as `name@version`, with its channel, size, the date a channel or driver lookup last used it, and its directory. `clear` removes what its targets select (a channel, a milestone, a version, or everything of a name) or, with no targets, everything; `--dry-run` shows what it would remove. Drivers are shared by every channel, so a driver is selected by version, not channel.
+
+## The Cache
+
+Every command takes `--path` to choose the cache directory. Otherwise, the tool uses the same directory as the library: `WEBDRIVERBIDI_BROWSERS_PATH` if it is set, or else the per-user cache directory. The library's other environment variables apply too, such as `WEBDRIVERBIDI_DOWNLOAD_MANIFEST` to download from a mirror. The [Browser Setup Guide](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/browser-setup.html) describes them.
+
+A test run can then use what the tool installed:
+
+```bash
+export WEBDRIVERBIDI_BROWSERS_PATH="$PWD/.browsers"
+webdriverbidi install chrome chromedriver
+export WEBDRIVERBIDI_SKIP_DOWNLOAD=1
+dotnet test
+```
+
+With `WEBDRIVERBIDI_SKIP_DOWNLOAD` set, a test that needs a browser the tool did not install fails at once rather than downloading it.
