@@ -239,7 +239,7 @@ To download from an internal mirror rather than the vendors' services, set `Mani
 ```
 
 - **Browsers** are `chrome`, `chrome-headless-shell`, and `firefox`; **drivers** are `chromedriver`, `geckodriver`, and `msedgedriver`.
-- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's, msedgedriver's is the installed Edge's, and geckodriver's is its `latest`.
+- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's (for an installed Chrome whose own is not listed, the closest listed: the newest of the same build, then of the same major version), msedgedriver's is exactly the installed Edge's, and geckodriver's is its `latest`.
 - **Platforms** are `linux-x64`, `linux-arm64`, `linux-x86`, `macos-x64`, `macos-arm64`, `windows-x64`, `windows-x86`, and `windows-arm64`.
 - **Builds** are each vendor's archive, unchanged. Each lists its SHA-256 hash, which is verified, and optionally its size. A URL may be relative to the manifest, so a directory holding the manifest and the archives serves as a mirror with no server (`file:///…/manifest.json`).
 - **Nightly builds** share version numbers, so give each mirrored Nightly build a distinct version string.

@@ -94,6 +94,11 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
     public override bool DriverVersionFollowsBrowser => true;
 
     /// <summary>
+    /// Gets a value indicating whether a chromedriver of a compatible version drives a Chrome that has none of its own, which it does.
+    /// </summary>
+    public override bool AcceptsCompatibleDriverVersion => true;
+
+    /// <summary>
     /// Gets a message explaining that Windows on Arm runs the x64 build of Chrome under emulation, as
     /// Chrome for Testing publishes no Arm build for Windows.
     /// </summary>
@@ -285,35 +290,16 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         throw new InvalidOperationException($"Failed to find download information for Chrome version '{version}'.");
     }
 
-    // The chromedriver of the exact version, or else, for a Chrome build that Chrome for Testing does not list (such
-    // as a respin for one platform), the newest of the same build, and then of the same major version.
+    // The chromedriver of the exact version, or else the closest compatible one (see CompatibleVersion).
     private BinaryVersionInfo GetCompatibleDriverVersionInfo(string json, string version)
     {
         ChromeAllVersionsBinaryDownloadInfo? downloadInfo =
             JsonSerializer.Deserialize(json, ChromeBrowserLocatorSettingsJsonSerializerContext.Default.ChromeAllVersionsBinaryDownloadInfo)
             ?? throw new InvalidOperationException($"Failed to deserialize Chrome binary download information from {this.AllVersionsDownloadInfoUrl}.");
         List<BinaryVersionInfo> withDriver = [.. downloadInfo.Versions.Where(versionInfo => versionInfo.Downloads.ContainsKey("chromedriver"))];
-        BinaryVersionInfo? exact = withDriver.FirstOrDefault(versionInfo => versionInfo.Version.Equals(version, StringComparison.OrdinalIgnoreCase));
-        if (exact is not null)
-        {
-            return exact;
-        }
-
-        if (System.Version.TryParse(version, out Version? requested))
-        {
-            List<(BinaryVersionInfo Info, Version Parsed)> sameMajor = [.. withDriver
-                .Select(versionInfo => (Info: versionInfo, Parsed: System.Version.TryParse(versionInfo.Version, out Version? parsed) ? parsed : null))
-                .Where(candidate => candidate.Parsed?.Major == requested.Major)
-                .Select(candidate => (candidate.Info, candidate.Parsed!))
-                .OrderByDescending(candidate => candidate.Item2)];
-            (BinaryVersionInfo Info, Version Parsed) closest = sameMajor.FirstOrDefault(candidate => candidate.Parsed.Minor == requested.Minor && candidate.Parsed.Build == requested.Build);
-            if ((closest.Info ?? sameMajor.FirstOrDefault().Info) is BinaryVersionInfo compatible)
-            {
-                return compatible;
-            }
-        }
-
-        throw new InvalidOperationException($"Failed to find a chromedriver for Chrome version '{version}'.");
+        string closest = CompatibleVersion.FindClosest(version, withDriver.Select(versionInfo => versionInfo.Version))
+            ?? throw new InvalidOperationException($"Failed to find a chromedriver for Chrome version '{version}'.");
+        return withDriver.First(versionInfo => versionInfo.Version == closest);
     }
 
     private string? GetPlatformIdentifierString()

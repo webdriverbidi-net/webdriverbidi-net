@@ -144,6 +144,53 @@ public class DownloadManifestTests
         Assert.Equal(Path.Combine(cache.Path, "drivers", "msedgedriver", "130.0.2849.80", "msedgedriver"), path);
     }
 
+    public static TheoryData<string[], string> ListedChromeDriverBuilds => new()
+    {
+        { ["130.0.2849.95:linux-x64", "130.0.2850.1:linux-x64"], "130.0.2849.95" },
+        { ["130.0.2900.1:linux-x64", "129.0.6668.100:linux-x64"], "130.0.2900.1" },
+        { ["130.0.2849.99:windows-x64", "130.0.2849.70:linux-x64"], "130.0.2849.70" },
+    };
+
+    [Theory]
+    [MemberData(nameof(ListedChromeDriverBuilds))]
+    public async Task ChromeDriverForInstalledChromeIsTheClosestListedAndRemembered(string[] listedBuilds, string expectedVersion)
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ManifestBuilder manifest = new(server);
+        foreach (string listed in listedBuilds)
+        {
+            string[] parts = listed.Split(':');
+            manifest.AddBuild("drivers", "chromedriver", parts[0], parts[1], $"chromedriver-{parts[0]}-{parts[1]}.zip", TestArchives.Zip("chromedriver-linux64/chromedriver"));
+        }
+
+        manifest.Serve();
+        using TemporaryDirectory cache = new();
+        BrowserDownloadOptions options = CreateOptions(server, cache);
+
+        string? path = await FindInstalledBrowserDriverAsync(BrowserKind.Chrome, options);
+        string? cachedPath = await FindInstalledBrowserDriverAsync(BrowserKind.Chrome, options);
+
+        Assert.Equal(Path.Combine(cache.Path, "drivers", "chromedriver", expectedVersion, "chromedriver"), path);
+        Assert.Equal(path, cachedPath);
+        Assert.Equal(1, server.RequestCount(ManifestPath));
+    }
+
+    [Theory]
+    [InlineData(BrowserKind.Chrome, "chromedriver", "129.0.6668.100")]
+    [InlineData(BrowserKind.Edge, "msedgedriver", "130.0.2849.95")]
+    public async Task DriverWithoutACompatibleListedVersionFails(BrowserKind browser, string driverName, string listedVersion)
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ManifestBuilder manifest = new(server);
+        manifest.AddBuild("drivers", driverName, listedVersion, "linux-x64", "driver.zip", TestArchives.Zip(driverName));
+        manifest.Serve();
+        using TemporaryDirectory cache = new();
+
+        BrowserDownloadException exception = await Assert.ThrowsAsync<BrowserDownloadException>(() => FindInstalledBrowserDriverAsync(browser, CreateOptions(server, cache)));
+
+        Assert.Contains($"lists no {driverName} 130.0.2849.80", exception.Message);
+    }
+
     [Fact]
     public async Task GeckoDriverUsesListedLatestVersion()
     {
@@ -324,6 +371,12 @@ public class DownloadManifestTests
     private static Task<string> FindChromeAsync(DownloadServer server, TemporaryDirectory cache, BrowserVersion? version = null)
     {
         return BrowserLocator.FindBrowserAsync(BrowserKind.Chrome, version: version, downloadOptions: CreateOptions(server, cache), cancellationToken: TestContext.Current.CancellationToken);
+    }
+
+    // The fake browser, as an installed browser, reports version 130.0.2849.80.
+    private static Task<string?> FindInstalledBrowserDriverAsync(BrowserKind browser, BrowserDownloadOptions options)
+    {
+        return DriverLocator.FindDriverAsync(browser, locationBehavior: FileLocationBehavior.UseCustomLocation, customPath: FakeBrowserSetup.ExecutablePath, downloadOptions: options, cancellationToken: TestContext.Current.CancellationToken);
     }
 
     private static string Sha256Of(byte[] content) => Convert.ToHexStringLower(SHA256.HashData(content));

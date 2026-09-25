@@ -110,6 +110,13 @@ internal sealed class DownloadManifest
         }
 
         version ??= product.Latest ?? throw new DownloadManifestException($"The download manifest {this.url} lists no latest version of {driverName}.");
+        if (settings.AcceptsCompatibleDriverVersion)
+        {
+            // Only versions with a build for the platform can stand in for the one required.
+            string platformKey = GetPlatformKey(settings.DownloadOptions.ResolvedPlatform);
+            version = CompatibleVersion.FindClosest(version, product.Versions.Where(listed => listed.Value.ContainsKey(platformKey)).Select(listed => listed.Key)) ?? version;
+        }
+
         (Uri downloadUrl, ManifestBuild build) = this.GetBuild(product, driverName, version, settings.DownloadOptions.ResolvedPlatform);
         string path = Uri.UnescapeDataString(downloadUrl.AbsolutePath);
         return new DriverDownloadInfo()

@@ -175,6 +175,12 @@ internal abstract class BrowserLocatorSettings
     public virtual bool DriverVersionFollowsBrowser => false;
 
     /// <summary>
+    /// Gets a value indicating whether, when no driver of the required version is published, the closest compatible
+    /// version is used (see <see cref="CompatibleVersion"/>).
+    /// </summary>
+    public virtual bool AcceptsCompatibleDriverVersion => false;
+
+    /// <summary>
     /// Gets the description of the browser location behavior, which is used for logging and user-facing messages.
     /// </summary>
     public virtual string BrowserLocationBehaviorDescription

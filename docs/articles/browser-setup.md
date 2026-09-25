@@ -37,7 +37,7 @@ A browser launched through its driver executable already has a WebDriver BiDi se
 
 `Build()` checks that the settings can be used together, and throws `BrowserLauncherConfigurationException` if they cannot.
 
-A driver launched for an installed browser matches it: for an installed Chrome, or one at a location you give, the chromedriver of its version is downloaded, or, for a build Chrome for Testing does not list, the newest chromedriver of the same build, and then of the same major version. If the version cannot be read, the latest chromedriver of the channel is used.
+A driver launched for an installed browser matches it: for an installed Chrome, or one at a location you give, the chromedriver of its version is downloaded, or, for a build that Chrome for Testing or a mirror does not list, the newest chromedriver of the same build, and then of the same major version. If the version cannot be read, the latest chromedriver of the channel is used.
 
 Microsoft publishes Edge only as installers, so the package never downloads it: the installed Edge of the channel is used, or the executable given to `AtLocation`. Launched through its driver, Edge needs the msedgedriver of its own version, so the version of the installed Edge is read, and that msedgedriver is downloaded and checked against the MD5 hash its server reports. Microsoft publishes no Edge for Linux on Arm.
 
@@ -153,7 +153,7 @@ To download from an internal mirror rather than the vendors' services, set `Brow
 ```
 
 - **Browsers** are `chrome`, `chrome-headless-shell`, and `firefox`; **drivers** are `chromedriver`, `geckodriver`, and `msedgedriver`.
-- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's, msedgedriver's is the installed Edge's, and geckodriver's is its `latest`.
+- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's (for an installed Chrome whose own is not listed, the closest listed: the newest of the same build, then of the same major version), msedgedriver's is exactly the installed Edge's, and geckodriver's is its `latest`.
 - **Platforms** are `linux-x64`, `linux-arm64`, `linux-x86`, `macos-x64`, `macos-arm64`, `windows-x64`, `windows-x86`, and `windows-arm64`.
 - **Builds** are each vendor's archive, unchanged. Each lists its SHA-256 hash, which is verified, and optionally its size. A URL may be relative to the manifest, so a directory holding the manifest and the archives serves as a mirror with no server (`file:///…/manifest.json`).
 - **Nightly builds** share version numbers, so give each mirrored Nightly build a distinct version string.
