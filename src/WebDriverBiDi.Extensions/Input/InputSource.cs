@@ -14,13 +14,8 @@ public abstract class InputSource
     /// Initializes a new instance of the <see cref="InputSource"/> class.
     /// </summary>
     /// <param name="sourceId">The Id of the input source represented by this class.</param>
-    protected InputSource(string sourceId)
+    private protected InputSource(string sourceId)
     {
-        if (string.IsNullOrEmpty(sourceId))
-        {
-            throw new ArgumentException("Device name must not be null or empty", nameof(sourceId));
-        }
-
         this.SourceId = sourceId;
     }
 
@@ -61,15 +56,6 @@ public abstract class InputSource
         }
 
         return new InputAction(this.SourceId, action);
-    }
-
-    /// <summary>
-    /// Returns a hash code for the current <see cref="InputSource"/>.
-    /// </summary>
-    /// <returns>A hash code for the current <see cref="InputSource"/>.</returns>
-    public override int GetHashCode()
-    {
-        return this.SourceId.GetHashCode();
     }
 
     /// <summary>

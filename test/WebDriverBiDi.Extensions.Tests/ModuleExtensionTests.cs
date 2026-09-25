@@ -60,6 +60,17 @@ public class ModuleExtensionTests
     }
 
     [Fact]
+    public async Task CloseSendsTheContext()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await FakeRemoteEnd.ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+
+        await driver.BrowsingContext.CloseAsync("context-1", cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("context-1", (string?)Assert.Single(remoteEnd.CommandsFor("browsingContext.close"))["params"]!["context"]);
+    }
+
+    [Fact]
     public async Task SubscribeSendsEventsAndContextsAndReturnsSubscription()
     {
         (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await FakeRemoteEnd.ConnectAsync();
@@ -222,6 +233,18 @@ public class ModuleExtensionTests
 
         Assert.Equal("Error: boom (line 2, column 7)", thrown.Message);
         Assert.Equal(RemoteValueType.Error, thrown.Details!.Exception.Type);
+    }
+
+    [Fact]
+    public void ScriptExceptionWithoutDetailsHasNone()
+    {
+        InvalidOperationException cause = new();
+
+        ScriptException[] exceptions = [new(), new("failed"), new("failed", cause)];
+
+        Assert.All(exceptions, exception => Assert.Null(exception.Details));
+        Assert.Equal(["The script threw an exception.", "failed", "failed"], exceptions.Select(exception => exception.Message));
+        Assert.Same(cause, exceptions[2].InnerException);
     }
 
     [Fact]

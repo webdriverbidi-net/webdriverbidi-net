@@ -270,21 +270,7 @@ public class NetworkRequest
 
         if (!string.IsNullOrEmpty(this.requestBody))
         {
-            if (this.isRequestBodyBase64Encoded && base64EncodedBodyDisplayBehavior != Base64DisplayBehavior.Display)
-            {
-                if (base64EncodedBodyDisplayBehavior == Base64DisplayBehavior.Decode)
-                {
-                    requestBuilder.Append(Encoding.UTF8.GetString(Convert.FromBase64String(this.requestBody)));
-                }
-                else if (base64EncodedBodyDisplayBehavior == Base64DisplayBehavior.NoDisplay)
-                {
-                    requestBuilder.AppendLine($"[Base64-encoded binary data (length: {this.requestBody.Length})]");
-                }
-            }
-            else
-            {
-                requestBuilder.AppendLine(this.requestBody);
-            }
+            AppendBody(requestBuilder, this.requestBody, this.isRequestBodyBase64Encoded, base64EncodedBodyDisplayBehavior);
         }
 
         return requestBuilder.ToString();
@@ -316,22 +302,7 @@ public class NetworkRequest
             return responseBuilder.ToString();
         }
 
-        if (this.isResponseBodyBase64Encoded && base64EncodedBodyDisplayBehavior != Base64DisplayBehavior.Display)
-        {
-            if (base64EncodedBodyDisplayBehavior == Base64DisplayBehavior.Decode)
-            {
-                responseBuilder.Append(Encoding.UTF8.GetString(Convert.FromBase64String(this.responseBody)));
-            }
-            else if (base64EncodedBodyDisplayBehavior == Base64DisplayBehavior.NoDisplay)
-            {
-                responseBuilder.AppendLine($"[Base64-encoded binary data (length: {this.responseBody.Length})]");
-            }
-        }
-        else
-        {
-            responseBuilder.AppendLine(this.responseBody);
-        }
-
+        AppendBody(responseBuilder, this.responseBody, this.isResponseBodyBase64Encoded, base64EncodedBodyDisplayBehavior);
         return responseBuilder.ToString();
     }
 
@@ -339,13 +310,13 @@ public class NetworkRequest
     /// Sets the response data for the request.
     /// </summary>
     /// <param name="responseData">The data describing the HTTP response.</param>
+    /// <param name="completedTimings">The fetch timing marks reported with the completed response.</param>
     /// <param name="responseBodyRetrieveTask">A <see cref="Task"/> object that will be fulfilled once the response body has been retrieved.</param>
-    /// <param name="completedTimings">The fetch timing marks reported with the completed response, if any.</param>
     /// <remarks>
     /// A request has one outcome: whichever of this method and <see cref="SetFailed"/> is called first stands, and a
     /// later call to either is ignored.
     /// </remarks>
-    internal void SetResponseReceived(ResponseData responseData, Task<GetDataCommandResult>? responseBodyRetrieveTask = null, FetchTimingInfo? completedTimings = null)
+    internal void SetResponseReceived(ResponseData responseData, FetchTimingInfo completedTimings, Task<GetDataCommandResult>? responseBodyRetrieveTask)
     {
         if (!this.TryClaimOutcome())
         {
@@ -353,7 +324,7 @@ public class NetworkRequest
         }
 
         // The marks are complete only once the response is; those sent with the request are mostly unset.
-        this.timings = completedTimings ?? this.timings;
+        this.timings = completedTimings;
 
         this.responseProtocol = responseData.Protocol;
         this.responseStatusCode = responseData.Status;
@@ -403,6 +374,22 @@ public class NetworkRequest
         }
 
         await this.requestBodyCaptureTask.ConfigureAwait(false);
+    }
+
+    private static void AppendBody(StringBuilder builder, string body, bool isBase64, Base64DisplayBehavior behavior)
+    {
+        if (!isBase64 || behavior == Base64DisplayBehavior.Display)
+        {
+            builder.AppendLine(body);
+        }
+        else if (behavior == Base64DisplayBehavior.Decode)
+        {
+            builder.Append(Encoding.UTF8.GetString(Convert.FromBase64String(body)));
+        }
+        else
+        {
+            builder.AppendLine($"[Base64-encoded binary data (length: {body.Length})]");
+        }
     }
 
     /// <summary>

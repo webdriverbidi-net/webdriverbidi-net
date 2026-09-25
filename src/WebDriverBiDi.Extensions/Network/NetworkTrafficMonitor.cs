@@ -318,7 +318,7 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
         Task<GetDataCommandResult>? responseBody = current.CollectorId is not null && !IsRedirect(e.Response.Status)
             ? Task.Run(() => this.driver.Network.GetDataAsync(new GetDataCommandParameters(requestId, DataType.Response) { CollectorId = current.CollectorId, DisownCollectedData = true }))
             : null;
-        networkRequest.SetResponseReceived(e.Response, responseBody, e.Request.Timings);
+        networkRequest.SetResponseReceived(e.Response, e.Request.Timings, responseBody);
     }
 
     private void HandleFetchError(FetchErrorEventArgs e)

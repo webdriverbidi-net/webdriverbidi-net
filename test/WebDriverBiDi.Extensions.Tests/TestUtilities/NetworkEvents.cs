@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.TestUtilities;
 
 using System.Text.Json.Nodes;
+using WebDriverBiDi.Network;
 
 /// <summary>
 /// Raises network events from a <see cref="FakeRemoteEnd"/>, shaped as the protocol requires.
@@ -24,6 +25,32 @@ public static class NetworkEvents
     /// <param name="driver">The driver.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static Task FlushAsync(BiDiDriver driver) => driver.Session.StatusAsync(new WebDriverBiDi.Session.StatusCommandParameters());
+
+    /// <summary>
+    /// Captures, with a monitor using the default options, the requests that the given events describe.
+    /// </summary>
+    /// <param name="raiseEvents">Raises the events.</param>
+    /// <param name="getData">Answers network.getData, or <see langword="null"/> to answer every request with a text body.</param>
+    /// <returns>The captured requests.</returns>
+    public static async Task<IReadOnlyList<NetworkRequest>> CaptureAsync(Func<FakeRemoteEnd, Task> raiseEvents, Func<JsonObject, JsonNode>? getData = null)
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await FakeRemoteEnd.ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        remoteEnd.AnswerWith("network.getData", getData ?? (_ => Bytes("string", "body")));
+        await using NetworkTrafficMonitor monitor = new(driver);
+        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
+        await raiseEvents(remoteEnd);
+        await FlushAsync(driver);
+        return await monitor.GetCapturedTrafficAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Creates a network.getData result.
+    /// </summary>
+    /// <param name="type">The type of the bytes value, "string" or "base64".</param>
+    /// <param name="value">The value.</param>
+    /// <returns>The result.</returns>
+    public static JsonNode Bytes(string type, string value) => new JsonObject() { ["bytes"] = new JsonObject() { ["type"] = type, ["value"] = value } };
 
     /// <summary>
     /// Raises network.beforeRequestSent.
@@ -114,18 +141,25 @@ public static class NetworkEvents
     }
 
     /// <summary>
-    /// Raises network.authRequired for a request blocked by an intercept.
+    /// Raises network.authRequired.
     /// </summary>
     /// <param name="remoteEnd">The remote end.</param>
     /// <param name="requestId">The request ID.</param>
-    /// <param name="interceptId">The intercept blocking the request.</param>
+    /// <param name="interceptId">The intercept blocking the request, or <see langword="null"/> if it is not blocked.</param>
     /// <param name="scheme">The challenge's scheme.</param>
     /// <param name="realm">The challenge's realm.</param>
+    /// <param name="challenges">The challenges, overriding the one described by <paramref name="scheme"/> and <paramref name="realm"/>; an empty string omits them.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static Task AuthRequiredAsync(FakeRemoteEnd remoteEnd, string requestId, string interceptId, string scheme = "Basic", string realm = "site")
+    public static Task AuthRequiredAsync(FakeRemoteEnd remoteEnd, string? interceptId, string requestId = "request-1", string scheme = "Basic", string realm = "site", string? challenges = null)
     {
-        JsonObject parameters = Base(requestId, 0, [interceptId], "https://example.com/", "GET", 0);
-        parameters["response"] = Response(401, null, new JsonArray(new JsonObject() { ["scheme"] = scheme, ["realm"] = realm }));
+        JsonObject parameters = Base(requestId, 0, interceptId is null ? null : [interceptId], "https://example.com/", "GET", 0);
+        JsonArray? authChallenges = challenges switch
+        {
+            null => new JsonArray(new JsonObject() { ["scheme"] = scheme, ["realm"] = realm }),
+            "" => null,
+            _ => JsonNode.Parse(challenges)!.AsArray(),
+        };
+        parameters["response"] = Response(401, null, authChallenges);
         return remoteEnd.RaiseEventAsync("network.authRequired", parameters);
     }
 

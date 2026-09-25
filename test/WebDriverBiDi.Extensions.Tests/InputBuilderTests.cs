@@ -124,6 +124,34 @@ public class InputBuilderTests
     }
 
     [Fact]
+    public async Task SourceAddedLaterPausesThroughEarlierTicks()
+    {
+        InputBuilder builder = new();
+        builder.AddAction(builder.DefaultWheelInputSource.CreateScroll(0, 0, 0, 10));
+        NoneInputSource timer = builder.CreateNoneInputSource();
+        builder.AddAction(timer.CreatePause());
+        builder.AddAction(builder.DefaultKeyInputSource.CreateKeyDown("a"));
+
+        JsonArray sources = await SendAsync(builder);
+
+        Assert.Equal(["scroll", "pause", "pause"], Types(sources[0]!));
+        Assert.Equal(["pause", "pause", "pause"], Types(sources[1]!));
+        Assert.Null(sources[1]!["actions"]![1]!["duration"]);
+        Assert.Equal(["pause", "pause", "keyDown"], Types(sources[2]!));
+        Assert.Same(builder.DefaultKeyInputSource, builder.DefaultKeyInputSource);
+    }
+
+    [Fact]
+    public void SourcesReportTheirKind()
+    {
+        InputBuilder builder = new();
+
+        Assert.Equal(
+            [InputSourceKind.Key, InputSourceKind.Pointer, InputSourceKind.Wheel],
+            new InputSource[] { builder.DefaultKeyInputSource, builder.DefaultPointerInputSource, builder.DefaultWheelInputSource }.Select(source => source.DeviceKind));
+    }
+
+    [Fact]
     public async Task PointerActionsCarryFractionalCoordinatesAndProperties()
     {
         InputBuilder builder = new();

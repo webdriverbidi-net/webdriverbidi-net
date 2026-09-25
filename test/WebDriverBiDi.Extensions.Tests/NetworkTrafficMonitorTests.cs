@@ -86,6 +86,57 @@ public class NetworkTrafficMonitorTests
     }
 
     [Fact]
+    public async Task FailedStartReportsItsOwnFailureWhenCleanupAlsoFails()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        remoteEnd.FailWith("session.subscribe", "invalid argument", "No such event");
+        remoteEnd.FailWith("network.removeDataCollector", "no such network collector", "Gone");
+        await using NetworkTrafficMonitor monitor = new(driver);
+
+        WebDriverBiDiCommandException exception = await Assert.ThrowsAsync<WebDriverBiDiCommandException>(() => monitor.StartMonitoringAsync(TestContext.Current.CancellationToken));
+
+        Assert.Contains("No such event", exception.Message);
+        Assert.False(monitor.IsMonitoring);
+    }
+
+    [Fact]
+    public async Task FirstOutcomeOfARequestStands()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        NetworkTrafficMonitor monitor = new(driver);
+        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
+
+        await BeforeRequestSentAsync(remoteEnd, "request-1");
+        await FetchErrorAsync(remoteEnd, "request-1", "net::ERR_ABORTED");
+        await ResponseCompletedAsync(remoteEnd, "request-1");
+        await BeforeRequestSentAsync(remoteEnd, "request-2");
+        await ResponseCompletedAsync(remoteEnd, "request-2");
+        await FlushAsync(driver);
+        await monitor.DisposeAsync();
+        IReadOnlyList<NetworkRequest> requests = await monitor.GetCapturedTrafficAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(["request-1:net::ERR_ABORTED", "request-2:"], requests.Select(request => $"{request.RequestId}:{request.FetchErrorText}").Order());
+    }
+
+    [Fact]
+    public async Task OutcomesForRequestsNotRecordedAreIgnored()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        await using NetworkTrafficMonitor monitor = new(driver);
+        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
+
+        await ResponseCompletedAsync(remoteEnd, "request-1");
+        await FetchErrorAsync(remoteEnd, "request-2", "net::ERR_FAILED");
+        await FlushAsync(driver);
+
+        Assert.Empty(await monitor.GetCapturedTrafficAsync(TimeSpan.Zero, TestContext.Current.CancellationToken));
+        Assert.Empty(remoteEnd.CommandsFor("network.getData"));
+    }
+
+    [Fact]
     public async Task RequestAndResponseAreCapturedWithBodies()
     {
         (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
@@ -162,8 +213,13 @@ public class NetworkTrafficMonitorTests
         Assert.Equal(45, request.Timings.ResponseEnd);
     }
 
-    [Fact]
-    public async Task EachRedirectHopIsCapturedSeparately()
+    [Theory]
+    [InlineData(301)]
+    [InlineData(302)]
+    [InlineData(303)]
+    [InlineData(307)]
+    [InlineData(308)]
+    public async Task EachRedirectHopIsCapturedSeparately(ulong status)
     {
         (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
         await using BiDiDriver ownedDriver = driver;
@@ -171,14 +227,14 @@ public class NetworkTrafficMonitorTests
         await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
 
         await BeforeRequestSentAsync(remoteEnd, "request-1", url: "https://example.com/old");
-        await ResponseCompletedAsync(remoteEnd, "request-1", 302, headers: new() { ["location"] = "https://example.com/new" });
+        await ResponseCompletedAsync(remoteEnd, "request-1", status, headers: new() { ["location"] = "https://example.com/new" });
         await BeforeRequestSentAsync(remoteEnd, "request-1", redirectCount: 1, url: "https://example.com/new");
         await ResponseCompletedAsync(remoteEnd, "request-1", 200, redirectCount: 1);
 
         await FlushAsync(driver);
         IReadOnlyList<NetworkRequest> requests = await monitor.GetCapturedTrafficAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(["https://example.com/old:0:302", "https://example.com/new:1:200"], requests.Select(request => $"{request.Url}:{request.RedirectCount}:{request.ResponseStatusCode}"));
+        Assert.Equal([$"https://example.com/old:0:{status}", "https://example.com/new:1:200"], requests.Select(request => $"{request.Url}:{request.RedirectCount}:{request.ResponseStatusCode}"));
         Assert.Single(remoteEnd.CommandsFor("network.getData"));
         Assert.Equal(string.Empty, requests[0].ResponseBody);
     }
@@ -304,7 +360,7 @@ public class NetworkTrafficMonitorTests
 
         for (int attempt = 1; attempt <= 3; attempt++)
         {
-            await AuthRequiredAsync(remoteEnd, "request-1", authInterceptId);
+            await AuthRequiredAsync(remoteEnd, authInterceptId);
             await remoteEnd.WaitForCommandAsync("network.continueWithAuth", attempt);
         }
 
@@ -322,9 +378,47 @@ public class NetworkTrafficMonitorTests
         await using NetworkTrafficMonitor monitor = new(driver, options);
         await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
 
-        await AuthRequiredAsync(remoteEnd, "request-1", InterceptIdFor(remoteEnd, 1));
+        await AuthRequiredAsync(remoteEnd, InterceptIdFor(remoteEnd, 1));
 
         Assert.Equal("default", (string?)(await remoteEnd.WaitForCommandAsync("network.continueWithAuth"))["params"]!["action"]);
+    }
+
+    [Fact]
+    public async Task ChallengeNotBlockedByTheMonitorIsLeftAlone()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        NetworkTrafficMonitorOptions options = new();
+        options.AuthCredentials.Add(new AuthChallengeCredentials("user", "password"));
+        await using NetworkTrafficMonitor monitor = new(driver, options);
+        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
+
+        await AuthRequiredAsync(remoteEnd, null, "request-1");
+        await AuthRequiredAsync(remoteEnd, "intercept-other", "request-2");
+        await AuthRequiredAsync(remoteEnd, InterceptIdFor(remoteEnd, 1), "request-3");
+        await remoteEnd.WaitForCommandAsync("network.continueWithAuth");
+        await FlushAsync(driver);
+
+        Assert.Equal("request-3", (string?)Assert.Single(remoteEnd.CommandsFor("network.continueWithAuth"))["params"]!["request"]);
+    }
+
+    [Theory]
+    [InlineData("", null, null, "provideCredentials")]
+    [InlineData("[]", null, null, "provideCredentials")]
+    [InlineData("", "Basic", null, "default")]
+    [InlineData("", null, "site", "default")]
+    public async Task ChallengeThatListsNoSchemesIsAnsweredOnlyByUnrestrictedCredentials(string challenges, string? scheme, string? realm, string expectedAction)
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        NetworkTrafficMonitorOptions options = new();
+        options.AuthCredentials.Add(new AuthChallengeCredentials("user", "password") { Scheme = scheme, Realm = realm });
+        await using NetworkTrafficMonitor monitor = new(driver, options);
+        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
+
+        await AuthRequiredAsync(remoteEnd, InterceptIdFor(remoteEnd, 1), challenges: challenges);
+
+        Assert.Equal(expectedAction, (string?)(await remoteEnd.WaitForCommandAsync("network.continueWithAuth"))["params"]!["action"]);
     }
 
     [Fact]
@@ -338,7 +432,7 @@ public class NetworkTrafficMonitorTests
         await using NetworkTrafficMonitor monitor = new(driver, options);
         await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
 
-        await AuthRequiredAsync(remoteEnd, "request-1", InterceptIdFor(remoteEnd, 1));
+        await AuthRequiredAsync(remoteEnd, InterceptIdFor(remoteEnd, 1));
 
         Assert.Equal("cancel", (string?)(await remoteEnd.WaitForCommandAsync("network.continueWithAuth", 2))["params"]!["action"]);
     }

@@ -264,8 +264,6 @@ public class HarGeneratorTests
         Assert.Equal("My Tool 2.1", $"{customCreator["name"]} {customCreator["version"]}");
     }
 
-    private static JsonNode Bytes(string type, string value) => new JsonObject() { ["bytes"] = new JsonObject() { ["type"] = type, ["value"] = value } };
-
     private static JsonNode GenerateValid(IReadOnlyList<NetworkRequest> requests)
     {
         string har = HarGenerator.Generate(requests);
@@ -281,17 +279,5 @@ public class HarGeneratorTests
         }
 
         return document;
-    }
-
-    private static async Task<IReadOnlyList<NetworkRequest>> CaptureAsync(Func<FakeRemoteEnd, Task> raiseEvents, Func<JsonObject, JsonNode>? getData = null)
-    {
-        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await FakeRemoteEnd.ConnectAsync();
-        await using BiDiDriver ownedDriver = driver;
-        remoteEnd.AnswerWith("network.getData", getData ?? (_ => Bytes("string", "body")));
-        await using NetworkTrafficMonitor monitor = new(driver);
-        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
-        await raiseEvents(remoteEnd);
-        await FlushAsync(driver);
-        return await monitor.GetCapturedTrafficAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
     }
 }
