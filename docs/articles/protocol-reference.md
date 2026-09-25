@@ -89,8 +89,8 @@ Commands for managing browsing contexts (tabs/windows), navigation, and capturin
 
 | Protocol Event | EventArgs API | Module Guide |
 |----------------|---------------|--------------|
-| `browsingContext.contextCreated` | [BrowsingContextEventArgs](xref:WebDriverBiDi.BrowsingContext.BrowsingContextEventArgs) | [Browsing Context Guide](modules/browsing-context.md) |
-| `browsingContext.contextDestroyed` | [BrowsingContextEventArgs](xref:WebDriverBiDi.BrowsingContext.BrowsingContextEventArgs) | [Browsing Context Guide](modules/browsing-context.md) |
+| `browsingContext.contextCreated` | [ContextCreatedEventArgs](xref:WebDriverBiDi.BrowsingContext.ContextCreatedEventArgs) | [Browsing Context Guide](modules/browsing-context.md) |
+| `browsingContext.contextDestroyed` | [ContextDestroyedEventArgs](xref:WebDriverBiDi.BrowsingContext.ContextDestroyedEventArgs) | [Browsing Context Guide](modules/browsing-context.md) |
 | `browsingContext.domContentLoaded` | [NavigationEventArgs](xref:WebDriverBiDi.BrowsingContext.NavigationEventArgs) | [Browsing Context Guide](modules/browsing-context.md) |
 | `browsingContext.downloadEnd` | [DownloadEndEventArgs](xref:WebDriverBiDi.BrowsingContext.DownloadEndEventArgs) | [Browsing Context Guide](modules/browsing-context.md) |
 | `browsingContext.downloadWillBegin` | [DownloadWillBeginEventArgs](xref:WebDriverBiDi.BrowsingContext.DownloadWillBeginEventArgs) | [Browsing Context Guide](modules/browsing-context.md) |

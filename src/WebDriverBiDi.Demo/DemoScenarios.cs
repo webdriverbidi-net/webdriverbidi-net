@@ -926,7 +926,7 @@ public static class DemoScenarios
     public static async Task HandleEventsInMultipleUserContextsAsync(BiDiDriver driver, string baseUrl)
     {
         Dictionary<string, string> userContextMap = [];
-        await using EventObserver<BrowsingContextEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver((e) => userContextMap[e.BrowsingContextId] = e.UserContextId);
+        await using EventObserver<ContextCreatedEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver((e) => userContextMap[e.BrowsingContextId] = e.UserContextId);
         SubscribeCommandResult contextCreatedSubscribeResult = await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.BrowsingContext.OnContextCreated.EventName]));
         string contextCreatedSubscriptionId = contextCreatedSubscribeResult.SubscriptionId;
 

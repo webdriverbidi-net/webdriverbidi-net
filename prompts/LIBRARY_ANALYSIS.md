@@ -188,8 +188,8 @@ private fields and compiler-generated backing fields, and many received records 
 compare by reference: the `ReceivedDataDictionary` on every command result and event args type, the
 `List<T>` backing fields behind read-only projections, lazily populated caches, and the private reference
 a received wrapper holds to the object it projects (`ReadOnlyHeader` over `Header`,
-`UserPromptHandlerResult`, `ProxyConfigurationResult` and its derived records, `BrowsingContextEventArgs`,
-`RealmCreatedEventArgs`, `EntryAddedEventArgs`). Equality of received types is therefore unspecified.
+`UserPromptHandlerResult`, `ProxyConfigurationResult` and its derived records, `ContextCreatedEventArgs`,
+`ContextDestroyedEventArgs`, `RealmCreatedEventArgs`, `EntryAddedEventArgs`). Equality of received types is therefore unspecified.
 Nothing in the library or its samples compares, hashes or de-duplicates them, and the equality assertions
 in the tests compare a record only with its own `with { }` copy, which shares every reference-typed field
 and so compares equal whatever those fields' types do. Do **not** report reference-based or
