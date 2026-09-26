@@ -20,8 +20,8 @@ public class Browser : IAsyncDisposable
     private readonly ElementLocatorSettings locatorSettings;
     private readonly List<Page> pages = [];
     private readonly ElementStateInspector inspector;
-    private EventObserver<BrowsingContextEventArgs>? contextCreatedObserver;
-    private EventObserver<BrowsingContextEventArgs>? contextDestroyedObserver;
+    private EventObserver<ContextCreatedEventArgs>? contextCreatedObserver;
+    private EventObserver<ContextDestroyedEventArgs>? contextDestroyedObserver;
     private string? eventSubscriptionId;
     private bool disposed = false;
 
@@ -135,7 +135,7 @@ public class Browser : IAsyncDisposable
         }
     }
 
-    private void OnContextCreated(BrowsingContextEventArgs args)
+    private void OnContextCreated(ContextCreatedEventArgs args)
     {
         if (args.Parent is not null)
         {
@@ -155,7 +155,7 @@ public class Browser : IAsyncDisposable
         this.pages.Add(new Page(this.driver, args.BrowsingContextId, this.inspector));
     }
 
-    private void OnContextDestroyed(BrowsingContextEventArgs args)
+    private void OnContextDestroyed(ContextDestroyedEventArgs args)
     {
         Page? page = this.pages.FirstOrDefault(p => p.Id == args.BrowsingContextId);
         if (page is not null)

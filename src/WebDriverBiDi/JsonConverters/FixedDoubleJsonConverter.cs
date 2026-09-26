@@ -71,11 +71,10 @@ public class FixedDoubleJsonConverter : JsonConverter<double>
         // Formatting into a stack buffer, rather than to a string, keeps this converter
         // allocation-free; every double of every command is written through it.
         Span<byte> buffer = stackalloc byte[MaxFormattedLength];
-        if (!value.TryFormat(buffer, out int written, "R", CultureInfo.InvariantCulture))
-        {
-            // Unreachable for a finite double, which the guard above has established.
-            throw new JsonException($"The value {value} could not be formatted for serialization");
-        }
+
+        // TryFormat will only return false if the double is infinte, and the above
+        // guard establishes the value is finite.
+        _ = value.TryFormat(buffer, out int written, "R", CultureInfo.InvariantCulture);
 
         ReadOnlySpan<byte> formatted = buffer.Slice(0, written);
         if (formatted.IndexOf((byte)'.') < 0 && formatted.IndexOf((byte)'E') < 0)

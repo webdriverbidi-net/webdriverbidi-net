@@ -500,6 +500,7 @@ public class BrowsingContextModuleTests
                                "url": "https://example.com",
                                "originalOpener": "openerContext",
                                "userContext": "default",
+                               "hasPlannedNavigation": false,
                                "children": []
                              }
                            }
@@ -541,6 +542,7 @@ public class BrowsingContextModuleTests
                                "url": "https://example.com",
                                "originalOpener": "openerContext",
                                "userContext": "default",
+                               "hasPlannedNavigation": false,
                                "children": null
                              }
                            }

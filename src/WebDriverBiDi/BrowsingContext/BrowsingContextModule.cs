@@ -30,8 +30,8 @@ public sealed class BrowsingContextModule : Module
     private const string UserPromptClosedEventName = $"{BrowsingContextModuleName}.userPromptClosed";
     private const string UserPromptOpenedEventName = $"{BrowsingContextModuleName}.userPromptOpened";
 
-    private readonly ObservableEventInvocable<BrowsingContextEventArgs> invocableContextCreatedObservableEvent = new(ContextCreatedEventName);
-    private readonly ObservableEventInvocable<BrowsingContextEventArgs> invocableContextDestroyedObservableEvent = new(ContextDestroyedEventName);
+    private readonly ObservableEventInvocable<ContextCreatedEventArgs> invocableContextCreatedObservableEvent = new(ContextCreatedEventName);
+    private readonly ObservableEventInvocable<ContextDestroyedEventArgs> invocableContextDestroyedObservableEvent = new(ContextDestroyedEventName);
     private readonly ObservableEventInvocable<NavigationEventArgs> invocableNavigationStartedObservableEvent = new(NavigationStartedEventName);
     private readonly ObservableEventInvocable<NavigationEventArgs> invocableFragmentNavigatedObservableEvent = new(FragmentNavigatedEventName);
     private readonly ObservableEventInvocable<NavigationEventArgs> invocableDomContentLoadedObservableEvent = new(DomContentLoadedEventName);
@@ -52,8 +52,8 @@ public sealed class BrowsingContextModule : Module
     public BrowsingContextModule(IBiDiModuleHost driver)
         : base(driver)
     {
-        this.RegisterObservableEvent<BrowsingContextInfo, BrowsingContextEventArgs>(this.invocableContextCreatedObservableEvent, info => new BrowsingContextEventArgs(info));
-        this.RegisterObservableEvent<BrowsingContextInfo, BrowsingContextEventArgs>(this.invocableContextDestroyedObservableEvent, info => new BrowsingContextEventArgs(info));
+        this.RegisterObservableEvent<ContextCreatedEventData, ContextCreatedEventArgs>(this.invocableContextCreatedObservableEvent, info => new ContextCreatedEventArgs(info));
+        this.RegisterObservableEvent<BrowsingContextInfo, ContextDestroyedEventArgs>(this.invocableContextDestroyedObservableEvent, info => new ContextDestroyedEventArgs(info));
         this.RegisterObservableEvent(this.invocableNavigationStartedObservableEvent);
         this.RegisterObservableEvent(this.invocableFragmentNavigatedObservableEvent);
         this.RegisterObservableEvent(this.invocableDomContentLoadedObservableEvent);
@@ -72,13 +72,13 @@ public sealed class BrowsingContextModule : Module
     /// Gets an observable event that notifies when a browsing context is created.
     /// </summary>
     [ObservableEventName(ContextCreatedEventName)]
-    public ObservableEvent<BrowsingContextEventArgs> OnContextCreated => this.invocableContextCreatedObservableEvent;
+    public ObservableEvent<ContextCreatedEventArgs> OnContextCreated => this.invocableContextCreatedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context is destroyed.
     /// </summary>
     [ObservableEventName(ContextDestroyedEventName)]
-    public ObservableEvent<BrowsingContextEventArgs> OnContextDestroyed => this.invocableContextDestroyedObservableEvent;
+    public ObservableEvent<ContextDestroyedEventArgs> OnContextDestroyed => this.invocableContextDestroyedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation is started.
