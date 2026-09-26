@@ -358,7 +358,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        EventObserver<BrowsingContextEventArgs> browsingContextObserver = driver.BrowsingContext.OnContextCreated.AddObserver(async e =>
+        EventObserver<ContextCreatedEventArgs> browsingContextObserver = driver.BrowsingContext.OnContextCreated.AddObserver(async e =>
         {
             try
             {
@@ -388,6 +388,7 @@ public class BiDiDriverTests
                                "url": "http://example.com",
                                "originalOpener": "openerContext",
                                "userContext": "myUserContextId",
+                               "hasPlannedNavigation": false,
                                "children": []
                              }
                            }
@@ -1975,7 +1976,7 @@ public class BiDiDriverTests
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
 
         driver.BrowsingContext.OnContextCreated.AddObserver(
-            async (BrowsingContextEventArgs e) =>
+            async (ContextCreatedEventArgs e) =>
             {
                 if (e.BrowsingContextId == "racedContextId")
                 {
@@ -2019,12 +2020,13 @@ public class BiDiDriverTests
                 "url": "http://example.com",
                 "originalOpener": null,
                 "userContext": "default",
+                "hasPlannedNavigation": false,
                 "children": []
               }
             }
             """;
 
-        EventObserver<BrowsingContextEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver(
+        EventObserver<ContextCreatedEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver(
             _ => { },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 

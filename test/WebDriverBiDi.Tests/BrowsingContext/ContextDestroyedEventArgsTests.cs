@@ -2,7 +2,7 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using WebDriverBiDi.TestUtilities;
 
-public class BrowsingContextEventArgsTests
+public class ContextDestroyedEventArgsTests
 {
     [Fact]
     public async Task TestCanDeserialize()
@@ -10,7 +10,7 @@ public class BrowsingContextEventArgsTests
         string json = """
                       {
                         "type": "event",
-                        "method": "browsingContext.contextCreated",
+                        "method": "browsingContext.contextDestroyed",
                         "params": {
                           "context": "myContextId",
                           "clientWindow": "myClientWindowId",
@@ -21,7 +21,7 @@ public class BrowsingContextEventArgsTests
                         }
                       }
                       """;
-        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        ContextDestroyedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -40,7 +40,7 @@ public class BrowsingContextEventArgsTests
         string json = """
                       {
                         "type": "event",
-                        "method": "browsingContext.contextCreated",
+                        "method": "browsingContext.contextDestroyed",
                         "params": {
                           "context": "myContextId",
                           "clientWindow": "myClientWindowId",
@@ -49,7 +49,7 @@ public class BrowsingContextEventArgsTests
                           "userContext": "default",
                           "children": [
                             {
-                              "context": "childContextId", 
+                              "context": "childContextId",
                               "clientWindow": "myClientWindowId",
                               "url": "http://example.com/subdirectory",
                               "originalOpener": null,
@@ -60,15 +60,13 @@ public class BrowsingContextEventArgsTests
                         }
                       }
                       """;
-        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        ContextDestroyedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
-        Assert.Equal("http://example.com", eventArgs.Url);
-        Assert.Equal("myClientWindowId", eventArgs.ClientWindowId);
-        Assert.Equal("openerContext", eventArgs.OriginalOpener);
         Assert.NotNull(eventArgs.Children);
         Assert.Single(eventArgs.Children);
+        Assert.Equal("childContextId", eventArgs.Children[0].BrowsingContextId);
         Assert.Null(eventArgs.Parent);
     }
 
@@ -78,8 +76,8 @@ public class BrowsingContextEventArgsTests
         string json = """
                       {
                         "type": "event",
-                        "method": "browsingContext.contextCreated",
-                        "params":                         {
+                        "method": "browsingContext.contextDestroyed",
+                        "params": {
                           "context": "myContextId",
                           "clientWindow": "myClientWindowId",
                           "url": "http://example.com",
@@ -90,16 +88,10 @@ public class BrowsingContextEventArgsTests
                         }
                       }
                       """;
-        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        ContextDestroyedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
-        Assert.Equal("http://example.com", eventArgs.Url);
-        Assert.Equal("myClientWindowId", eventArgs.ClientWindowId);
-        Assert.Equal("openerContext", eventArgs.OriginalOpener);
-        Assert.NotNull(eventArgs.Children);
-        Assert.Empty(eventArgs.Children);
-        Assert.NotNull(eventArgs.Parent);
         Assert.Equal("parentContextId", eventArgs.Parent);
     }
 
@@ -109,8 +101,8 @@ public class BrowsingContextEventArgsTests
         string json = """
                       {
                         "type": "event",
-                        "method": "browsingContext.contextCreated",
-                        "params":                         {
+                        "method": "browsingContext.contextDestroyed",
+                        "params": {
                           "context": "myContextId",
                           "clientWindow": "myClientWindowId",
                           "url": "http://example.com",
@@ -120,17 +112,35 @@ public class BrowsingContextEventArgsTests
                         }
                       }
                       """;
-        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        ContextDestroyedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
-        Assert.Equal("http://example.com", eventArgs.Url);
-        Assert.Equal("myClientWindowId", eventArgs.ClientWindowId);
-        Assert.Equal("myUserContextId", eventArgs.UserContextId);
         Assert.Null(eventArgs.OriginalOpener);
-        Assert.NotNull(eventArgs.Children);
-        Assert.Empty(eventArgs.Children);
-        Assert.Null(eventArgs.Parent);
+    }
+
+    [Fact]
+    public async Task TestCanDeserializeWithNullChildren()
+    {
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "browsingContext.contextDestroyed",
+                        "params": {
+                          "context": "myContextId",
+                          "clientWindow": "myClientWindowId",
+                          "url": "http://example.com",
+                          "originalOpener": "openerContext",
+                          "userContext": "myUserContextId",
+                          "children": null
+                        }
+                      }
+                      """;
+        ContextDestroyedEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Null(eventArgs.Children);
     }
 
     [Fact]
@@ -139,8 +149,8 @@ public class BrowsingContextEventArgsTests
         string json = """
                       {
                         "type": "event",
-                        "method": "browsingContext.contextCreated",
-                        "params":                         {
+                        "method": "browsingContext.contextDestroyed",
+                        "params": {
                           "context": "myContextId",
                           "clientWindow": "myClientWindowId",
                           "url": "http://example.com",
@@ -150,20 +160,20 @@ public class BrowsingContextEventArgsTests
                         }
                       }
                       """;
-        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        ContextDestroyedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
-        BrowsingContextEventArgs copy = eventArgs with { };
+        ContextDestroyedEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
     }
 
-    private async Task<BrowsingContextEventArgs?> GenerateEventArgs(string json)
+    private async Task<ContextDestroyedEventArgs?> GenerateEventArgs(string json)
     {
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
 
-        BrowsingContextEventArgs? eventArgs = null;
-        using EventObserver<BrowsingContextEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver(e => eventArgs = e);
+        ContextDestroyedEventArgs? eventArgs = null;
+        using EventObserver<ContextDestroyedEventArgs> observer = driver.BrowsingContext.OnContextDestroyed.AddObserver(e => eventArgs = e);
 
         observer.StartCapturingTasks();
         await connection.RaiseDataReceivedEventAsync(json);
