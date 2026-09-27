@@ -19,13 +19,23 @@ public static class ProtocolJson
     /// <returns>The result.</returns>
     public static JsonObject Nodes(int count)
     {
+        return Nodes([.. Enumerable.Range(1, count).Select(i => $"node-{i}")]);
+    }
+
+    /// <summary>
+    /// Creates a "browsingContext.locateNodes" result with element nodes of the given shared IDs, in order.
+    /// </summary>
+    /// <param name="sharedIds">The nodes' shared IDs, which may repeat.</param>
+    /// <returns>The result.</returns>
+    public static JsonObject Nodes(params string[] sharedIds)
+    {
         JsonArray nodes = [];
-        for (int i = 1; i <= count; i++)
+        foreach (string sharedId in sharedIds)
         {
             nodes.Add(new JsonObject()
             {
                 ["type"] = "node",
-                ["sharedId"] = $"node-{i}",
+                ["sharedId"] = sharedId,
                 ["value"] = new JsonObject() { ["nodeType"] = 1, ["childNodeCount"] = 0 },
             });
         }
