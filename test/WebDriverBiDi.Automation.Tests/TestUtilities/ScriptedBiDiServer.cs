@@ -11,8 +11,9 @@ using PinchHitter;
 
 /// <summary>
 /// A WebSocket server standing in for a browser's WebDriver BiDi endpoint, for code that connects through a
-/// launcher rather than to a <see cref="FakeRemoteEnd"/>. It answers "session.new" with a session and every other
-/// command with an empty result, unless told to fail it, and records the methods it receives.
+/// launcher rather than to a <see cref="FakeRemoteEnd"/>. It answers each command with a result shaped as the
+/// protocol requires, for a browser with only the default user context and no pages, unless told to fail it, and
+/// records the methods it receives.
 /// </summary>
 public sealed class ScriptedBiDiServer : IAsyncDisposable
 {
@@ -84,7 +85,14 @@ public sealed class ScriptedBiDiServer : IAsyncDisposable
         else
         {
             response["type"] = "success";
-            response["result"] = method == "session.new" ? CreateNewSessionResult() : new JsonObject();
+            response["result"] = method switch
+            {
+                "session.new" => CreateNewSessionResult(),
+                "session.subscribe" => new JsonObject() { ["subscription"] = "scripted-subscription" },
+                "browser.getUserContexts" => new JsonObject() { ["userContexts"] = new JsonArray(new JsonObject() { ["userContext"] = "default" }) },
+                "browsingContext.getTree" => new JsonObject() { ["contexts"] = new JsonArray() },
+                _ => new JsonObject(),
+            };
         }
 
         await this.server.SendWebSocketDataAsync(e.ConnectionId, response.ToJsonString());

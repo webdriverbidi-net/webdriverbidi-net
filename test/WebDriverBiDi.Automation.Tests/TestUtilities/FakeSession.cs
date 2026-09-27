@@ -88,6 +88,20 @@ public sealed class FakeSession
     }
 
     /// <summary>
+    /// Adds a user context, as one created before the session started is.
+    /// </summary>
+    /// <returns>The ID of the user context.</returns>
+    public string AddUserContext()
+    {
+        lock (this.lockObject)
+        {
+            string userContextId = this.NextId("user-context");
+            this.userContextIds.Add(userContextId);
+            return userContextId;
+        }
+    }
+
+    /// <summary>
     /// Adds a browsing context without raising an event, as one open before the session started is.
     /// </summary>
     /// <param name="userContextId">The ID of its user context.</param>
