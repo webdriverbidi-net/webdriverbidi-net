@@ -129,6 +129,14 @@ jobs:
       - name: Enforce command-line tool coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-tool.*.info
 
+      # No thresholds until the package is complete.
+      - name: Test automation library (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Automation.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Automation]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-automation
+
       - name: Enforce combined coverage thresholds
         # Perform an aggregate threshold check
         run: >
@@ -312,6 +320,14 @@ jobs:
       - name: Enforce command-line tool coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-tool.*.info
 
+      # No thresholds until the package is complete.
+      - name: Test automation library (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Automation.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Automation]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-automation
+
       - name: Enforce combined coverage thresholds
         run: >
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
@@ -365,6 +381,9 @@ jobs:
 
       - name: Test command-line tool
         run: dotnet test --project test/WebDriverBiDi.Tool.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test automation library
+        run: dotnet test --project test/WebDriverBiDi.Automation.Tests --configuration Release --no-build --verbosity normal
 
       # Runs the netstandard2.0 builds on the real .NET Framework, which only Windows has.
       - name: Test on .NET Framework

@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Automation.Elements;
+namespace WebDriverBiDi.Demo;
 
 /// <summary>
 /// Enumerated values for the types of interaction that can be performed on an element.

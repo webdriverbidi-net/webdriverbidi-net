@@ -14,8 +14,15 @@
     <ProjectReference Include="..\WebDriverBiDi\WebDriverBiDi.csproj" />
     <ProjectReference Include="..\WebDriverBiDi.Browsers\WebDriverBiDi.Browsers.csproj" />
     <ProjectReference Include="..\WebDriverBiDi.Extensions\WebDriverBiDi.Extensions.csproj" />
-    <ProjectReference Include="..\WebDriverBiDi.Automation\WebDriverBiDi.Automation.csproj" />
     <ProjectReference Include="..\WebDriverBiDi.DemoWebSite\WebDriverBiDi.DemoWebSite.csproj" />
+  </ItemGroup>
+
+  <!-- The element state library used by ElementStateInspector, loaded into the page as a preload script. -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(ProjectDir)../../third_party/acquiescence/acquiescence.browser.js">
+      <Visible>False</Visible>
+      <LogicalName>acquiescence-library</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
