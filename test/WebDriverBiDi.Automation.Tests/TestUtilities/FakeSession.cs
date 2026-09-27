@@ -11,7 +11,7 @@ using WebDriverBiDi.Protocol;
 /// <summary>
 /// A browser's user contexts and browsing contexts, kept for a fake remote end. It answers the session,
 /// user context, and browsing context commands from them, and raises the events a browser raises before
-/// answering a command that creates or closes a browsing context.
+/// answering a command that creates, navigates, or closes a browsing context.
 /// </summary>
 public sealed class FakeSession
 {
@@ -39,6 +39,8 @@ public sealed class FakeSession
         remoteEnd.AnswerWith("browsingContext.getTree", parameters => this.GetTree((string?)parameters["root"], (int?)parameters["maxDepth"]));
         remoteEnd.AnswerWith("browsingContext.create", parameters => this.CreateContext((string?)parameters["userContext"] ?? DefaultUserContextId));
         remoteEnd.AnswerWith("browsingContext.close", parameters => this.CloseContext((string)parameters["context"]!));
+        remoteEnd.AnswerWith("browsingContext.navigate", parameters => this.Navigate((string)parameters["context"]!, (string?)parameters["url"]));
+        remoteEnd.AnswerWith("browsingContext.reload", parameters => this.Navigate((string)parameters["context"]!, null));
     }
 
     /// <summary>
@@ -116,6 +118,46 @@ public sealed class FakeSession
             this.contexts.Add(context);
             return context;
         }
+    }
+
+    /// <summary>
+    /// Adds a frame to a browsing context, raising the event a browser raises when a page adds an iframe.
+    /// </summary>
+    /// <param name="parentId">The ID of the browsing context containing the frame.</param>
+    /// <param name="url">The frame's URL.</param>
+    /// <returns>The frame's browsing context.</returns>
+    public async Task<FakeContext> CreateFrameAsync(string parentId, string url = "about:blank")
+    {
+        FakeContext frame;
+        lock (this.lockObject)
+        {
+            FakeContext parent = this.contexts.Single(context => context.Id == parentId);
+            frame = new FakeContext(this.NextId("context"), parent.UserContextId, parentId, url);
+            this.contexts.Add(frame);
+        }
+
+        (string method, JsonObject parameters) = CreatedEvent(frame);
+        await this.RemoteEnd.RaiseEventAsync(method, parameters);
+        return frame;
+    }
+
+    /// <summary>
+    /// Changes a browsing context's URL through the history API, raising the event a browser raises.
+    /// </summary>
+    /// <param name="contextId">The ID of the browsing context.</param>
+    /// <param name="url">The new URL.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public Task RaiseHistoryUpdatedAsync(string contextId, string url)
+    {
+        FakeContext context = this.SetUrl(contextId, url);
+        JsonObject parameters = new()
+        {
+            ["context"] = contextId,
+            ["timestamp"] = 1790000000000,
+            ["url"] = url,
+            ["userContext"] = context.UserContextId,
+        };
+        return this.RemoteEnd.RaiseEventAsync("browsingContext.historyUpdated", parameters);
     }
 
     /// <summary>
@@ -219,6 +261,31 @@ public sealed class FakeSession
             FakeContext context = new(this.NextId("context"), userContextId, null, "about:blank");
             this.contexts.Add(context);
             return new FakeResponse(new JsonObject() { ["context"] = context.Id, ["userContext"] = userContextId }, [CreatedEvent(context)]);
+        }
+    }
+
+    // A reload navigates to the context's current URL.
+    private FakeResponse Navigate(string contextId, string? url)
+    {
+        FakeContext context = this.SetUrl(contextId, url);
+        JsonObject navigation = new()
+        {
+            ["context"] = contextId,
+            ["navigation"] = this.NextId("navigation"),
+            ["timestamp"] = 1790000000000,
+            ["url"] = context.Url,
+        };
+        return new FakeResponse(new JsonObject() { ["navigation"] = navigation["navigation"]!.DeepClone(), ["url"] = context.Url }, [("browsingContext.navigationCommitted", navigation)]);
+    }
+
+    private FakeContext SetUrl(string contextId, string? url)
+    {
+        lock (this.lockObject)
+        {
+            int index = this.contexts.FindIndex(context => context.Id == contextId);
+            FakeContext context = this.contexts[index] with { Url = url ?? this.contexts[index].Url };
+            this.contexts[index] = context;
+            return context;
         }
     }
 

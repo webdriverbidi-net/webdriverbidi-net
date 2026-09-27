@@ -29,8 +29,8 @@ public sealed class BrowserGroup : IAsyncDisposable
     private readonly object lockObject = new();
     private readonly List<Browser> browsers = [];
     private readonly HashSet<string> createdBrowserIds = [];
-    private readonly EventObserver<ContextCreatedEventArgs> contextCreatedObserver;
-    private readonly EventObserver<ContextDestroyedEventArgs> contextDestroyedObserver;
+    private readonly Dictionary<string, Frame> frames = [];
+    private readonly List<IDisposable> observers = [];
     private HashSet<string>? contextsDestroyedWhileStarting = [];
     private string? subscriptionId;
     private int isDisposed;
@@ -41,8 +41,11 @@ public sealed class BrowserGroup : IAsyncDisposable
         this.Options = options;
         this.launcher = launcher;
         this.ownsSession = ownsSession;
-        this.contextCreatedObserver = driver.BrowsingContext.OnContextCreated.AddObserver(this.OnContextCreatedAsync);
-        this.contextDestroyedObserver = driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyedAsync);
+        this.observers.Add(driver.BrowsingContext.OnContextCreated.AddObserver(e => this.AddContextAsync(e.BrowsingContextId, e.Parent, e.UserContextId, e.Url)));
+        this.observers.Add(driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyedAsync));
+        this.observers.Add(driver.BrowsingContext.OnNavigationCommitted.AddObserver(e => this.SetUrl(e.BrowsingContextId, e.Url)));
+        this.observers.Add(driver.BrowsingContext.OnFragmentNavigated.AddObserver(e => this.SetUrl(e.BrowsingContextId, e.Url)));
+        this.observers.Add(driver.BrowsingContext.OnHistoryUpdated.AddObserver(e => this.SetUrl(e.BrowsingContextId, e.Url)));
     }
 
     /// <summary>
@@ -188,8 +191,11 @@ public sealed class BrowserGroup : IAsyncDisposable
             return;
         }
 
-        this.contextCreatedObserver.Dispose();
-        this.contextDestroyedObserver.Dispose();
+        foreach (IDisposable observer in this.observers)
+        {
+            observer.Dispose();
+        }
+
         List<Browser> createdBrowsers;
         lock (this.lockObject)
         {
@@ -222,6 +228,46 @@ public sealed class BrowserGroup : IAsyncDisposable
     }
 
     /// <summary>
+    /// Records a frame by the ID of its browsing context.
+    /// </summary>
+    /// <param name="frame">The frame.</param>
+    internal void RegisterFrame(Frame frame)
+    {
+        lock (this.lockObject)
+        {
+            this.frames[frame.Id] = frame;
+        }
+    }
+
+    /// <summary>
+    /// Detaches a closed browsing context's frame and those within it, closing its page if it is a main frame.
+    /// A context the group does not track, or has already removed, is ignored.
+    /// </summary>
+    /// <param name="contextId">The ID of the browsing context.</param>
+    /// <returns>A task that completes when observers are notified.</returns>
+    internal async Task RemoveContextAsync(string contextId)
+    {
+        Frame? frame;
+        lock (this.lockObject)
+        {
+            if (!this.frames.TryGetValue(contextId, out frame))
+            {
+                return;
+            }
+
+            foreach (Frame removed in frame.Page.RemoveFrame(frame))
+            {
+                this.frames.Remove(removed.Id);
+            }
+        }
+
+        if (frame.IsMainFrame)
+        {
+            await frame.Page.Browser.RemovePageAsync(frame.Page).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
     /// Removes a browser that has closed.
     /// </summary>
     /// <param name="browser">The browser.</param>
@@ -240,7 +286,8 @@ public sealed class BrowserGroup : IAsyncDisposable
     {
         try
         {
-            SubscribeCommandParameters subscription = new([this.Driver.BrowsingContext.OnContextCreated.EventName, this.Driver.BrowsingContext.OnContextDestroyed.EventName]);
+            BrowsingContextModule module = this.Driver.BrowsingContext;
+            SubscribeCommandParameters subscription = new([module.OnContextCreated.EventName, module.OnContextDestroyed.EventName, module.OnNavigationCommitted.EventName, module.OnFragmentNavigated.EventName, module.OnHistoryUpdated.EventName]);
             this.subscriptionId = (await this.Driver.Session.SubscribeAsync(subscription, cancellationToken: cancellationToken).ConfigureAwait(false)).SubscriptionId;
             GetUserContextsCommandResult userContexts = await this.Driver.Browser.GetUserContextsAsync(new GetUserContextsCommandParameters(), cancellationToken: cancellationToken).ConfigureAwait(false);
             foreach (UserContextInfo userContext in userContexts.UserContexts)
@@ -248,7 +295,7 @@ public sealed class BrowserGroup : IAsyncDisposable
                 this.GetOrAddBrowser(userContext.UserContextId);
             }
 
-            GetTreeCommandResult tree = await this.Driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters() { MaxDepth = 0 }, cancellationToken: cancellationToken).ConfigureAwait(false);
+            GetTreeCommandResult tree = await this.Driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters(), cancellationToken: cancellationToken).ConfigureAwait(false);
             HashSet<string> destroyed;
             lock (this.lockObject)
             {
@@ -256,10 +303,7 @@ public sealed class BrowserGroup : IAsyncDisposable
                 this.contextsDestroyedWhileStarting = null;
             }
 
-            foreach (BrowsingContextInfo context in tree.ContextTree.Where(context => !destroyed.Contains(context.BrowsingContextId)))
-            {
-                await this.GetOrAddBrowser(context.UserContextId).AddPageAsync(context.BrowsingContextId).ConfigureAwait(false);
-            }
+            await this.AddTreeAsync(tree.ContextTree, null, destroyed).ConfigureAwait(false);
         }
         catch
         {
@@ -334,39 +378,58 @@ public sealed class BrowserGroup : IAsyncDisposable
         }
     }
 
-    private Browser? FindBrowser(string userContextId)
+    private async Task AddTreeAsync(IList<BrowsingContextInfo> contexts, string? parentId, HashSet<string> destroyed)
     {
-        lock (this.lockObject)
+        foreach (BrowsingContextInfo context in contexts.Where(context => !destroyed.Contains(context.BrowsingContextId)))
         {
-            return this.browsers.Find(candidate => candidate.Id == userContextId);
+            await this.AddContextAsync(context.BrowsingContextId, parentId, context.UserContextId, context.Url).ConfigureAwait(false);
+            if (context.Children is not null)
+            {
+                await this.AddTreeAsync(context.Children, context.BrowsingContextId, destroyed).ConfigureAwait(false);
+            }
         }
     }
 
-    // Frames are child contexts; only top-level contexts are pages.
-    private async Task OnContextCreatedAsync(ContextCreatedEventArgs e)
+    // A top-level context is a page; a child context is a frame of its parent's page, if the group tracks the parent.
+    private async Task AddContextAsync(string contextId, string? parentId, string userContextId, string url)
     {
-        if (e.Parent is null)
+        if (parentId is null)
         {
-            await this.GetOrAddBrowser(e.UserContextId).AddPageAsync(e.BrowsingContextId).ConfigureAwait(false);
-        }
-    }
-
-    private async Task OnContextDestroyedAsync(ContextDestroyedEventArgs e)
-    {
-        if (e.Parent is not null)
-        {
+            await this.GetOrAddBrowser(userContextId).AddPageAsync(contextId, url).ConfigureAwait(false);
             return;
         }
 
         lock (this.lockObject)
         {
+            if (this.frames.ContainsKey(contextId) || !this.frames.TryGetValue(parentId, out Frame? parent))
+            {
+                return;
+            }
+
+            Frame frame = new(parent.Page, contextId, parent, url);
+            parent.Page.AddFrame(frame);
+            this.frames[contextId] = frame;
+        }
+    }
+
+    private Task OnContextDestroyedAsync(ContextDestroyedEventArgs e)
+    {
+        lock (this.lockObject)
+        {
             this.contextsDestroyedWhileStarting?.Add(e.BrowsingContextId);
         }
 
-        Browser? browser = this.FindBrowser(e.UserContextId);
-        if (browser is not null)
+        return this.RemoveContextAsync(e.BrowsingContextId);
+    }
+
+    private void SetUrl(string contextId, string url)
+    {
+        lock (this.lockObject)
         {
-            await browser.RemovePageAsync(e.BrowsingContextId).ConfigureAwait(false);
+            if (this.frames.TryGetValue(contextId, out Frame? frame))
+            {
+                frame.SetUrl(url);
+            }
         }
     }
 

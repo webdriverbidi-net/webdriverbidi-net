@@ -181,8 +181,7 @@ public class BrowserTrackingTests
         FakeContext tab = session.AddContext();
         await using BrowserGroup group = await BrowserGroup.ConnectAsync(driver, cancellationToken: TestContext.Current.CancellationToken);
 
-        await session.RemoteEnd.RaiseEventAsync("browsingContext.contextCreated", CreatedJson("frame-1", Browser.DefaultBrowserId, tab.Id));
-        await session.RemoteEnd.RaiseEventAsync("browsingContext.contextDestroyed", ContextJson(tab.Id, Browser.DefaultBrowserId, "some-parent"));
+        await session.CreateFrameAsync(tab.Id);
         await WaitForEventProcessingAsync(driver);
 
         Assert.Equal([tab.Id], group.DefaultBrowser.Pages.Select(page => page.Id));

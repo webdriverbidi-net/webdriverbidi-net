@@ -113,6 +113,31 @@ public class FakeSessionTests
     }
 
     [Fact]
+    public async Task NavigationFramesAndHistoryUpdateTheModelAndRaiseEvents()
+    {
+        (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        FakeContext tab = session.AddContext();
+        List<string> arrivals = [];
+        driver.BrowsingContext.OnNavigationCommitted.AddObserver(e => arrivals.Add($"committed:{e.Url}"));
+        driver.BrowsingContext.OnContextCreated.AddObserver(e => arrivals.Add($"created:{e.Parent}"));
+        driver.BrowsingContext.OnHistoryUpdated.AddObserver(e => arrivals.Add($"history:{e.Url}"));
+
+        NavigateCommandResult navigated = await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(tab.Id, "https://example.com/"), cancellationToken: TestContext.Current.CancellationToken);
+        arrivals.Add("navigated");
+        NavigateCommandResult reloaded = await driver.BrowsingContext.ReloadAsync(new ReloadCommandParameters(tab.Id), cancellationToken: TestContext.Current.CancellationToken);
+        FakeContext frame = await session.CreateFrameAsync(tab.Id, "https://example.com/frame");
+        await session.RaiseHistoryUpdatedAsync(tab.Id, "https://example.com/pushed");
+        await driver.Session.StatusAsync(new StatusCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("https://example.com/", navigated.Url);
+        Assert.Equal("https://example.com/", reloaded.Url);
+        Assert.Equal(["committed:https://example.com/", "navigated", "committed:https://example.com/", $"created:{tab.Id}", "history:https://example.com/pushed"], arrivals);
+        Assert.Equal(new FakeContext(frame.Id, FakeSession.DefaultUserContextId, tab.Id, "https://example.com/frame"), session.Contexts[1]);
+        Assert.Equal("https://example.com/pushed", session.Contexts[0].Url);
+    }
+
+    [Fact]
     public async Task NavigationEventIsRaised()
     {
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();

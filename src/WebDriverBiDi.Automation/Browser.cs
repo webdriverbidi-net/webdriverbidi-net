@@ -84,7 +84,7 @@ public sealed class Browser
     {
         CreateCommandParameters parameters = new(type) { UserContextId = this.Id };
         CreateCommandResult result = await this.Group.Driver.BrowsingContext.CreateAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return await this.AddPageAsync(result.BrowsingContextId).ConfigureAwait(false);
+        return await this.AddPageAsync(result.BrowsingContextId, "about:blank").ConfigureAwait(false);
     }
 
     /// <summary>
@@ -113,8 +113,9 @@ public sealed class Browser
     /// Adds a page, if the browser does not have it yet, raising <see cref="OnPageCreated"/> for a page it adds.
     /// </summary>
     /// <param name="id">The ID of the page's browsing context.</param>
+    /// <param name="url">The URL of the page's main frame.</param>
     /// <returns>The page.</returns>
-    internal async Task<Page> AddPageAsync(string id)
+    internal async Task<Page> AddPageAsync(string id, string url)
     {
         Page page;
         lock (this.lockObject)
@@ -125,34 +126,29 @@ public sealed class Browser
                 return existing;
             }
 
-            page = new Page(this, id);
+            page = new Page(this, id, url);
             this.pages.Add(page);
         }
 
+        this.Group.RegisterFrame(page.MainFrame);
         await this.onPageCreated.InvokeNotifyObserversAsync(new PageEventArgs(page)).ConfigureAwait(false);
         return page;
     }
 
     /// <summary>
-    /// Removes a page that has closed, raising <see cref="OnPageClosed"/> if the browser had it.
+    /// Removes a page whose frames the group has detached, raising <see cref="OnPageClosed"/> and the page's own
+    /// <see cref="Page.OnClosed"/>.
     /// </summary>
-    /// <param name="id">The ID of the page's browsing context.</param>
+    /// <param name="page">The page.</param>
     /// <returns>A task that completes when observers are notified.</returns>
-    internal async Task RemovePageAsync(string id)
+    internal async Task RemovePageAsync(Page page)
     {
-        Page? page;
         lock (this.lockObject)
         {
-            page = this.pages.Find(candidate => candidate.Id == id);
-            if (page is null)
-            {
-                return;
-            }
-
             this.pages.Remove(page);
-            page.MarkClosed();
         }
 
         await this.onPageClosed.InvokeNotifyObserversAsync(new PageEventArgs(page)).ConfigureAwait(false);
+        await page.NotifyClosedAsync().ConfigureAwait(false);
     }
 }
