@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Automation;
 
+using WebDriverBiDi.BrowsingContext;
+
 /// <summary>
 /// A document of a <see cref="Automation.Page"/>: its main frame, or an iframe within it, each a browsing context.
 /// </summary>
@@ -62,6 +64,16 @@ public sealed class Frame
     /// Gets the frames directly within this one.
     /// </summary>
     public IReadOnlyList<Frame> ChildFrames => this.Page.GetChildFrames(this);
+
+    /// <summary>
+    /// Creates a locator for elements in this frame.
+    /// </summary>
+    /// <param name="locator">How the elements are found, such as a <see cref="CssLocator"/>.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator Locate(Locator locator)
+    {
+        return new ElementLocator(this, locator);
+    }
 
     /// <summary>
     /// Records the frame's new URL.

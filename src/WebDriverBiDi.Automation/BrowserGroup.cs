@@ -41,6 +41,7 @@ public sealed class BrowserGroup : IAsyncDisposable
         this.Options = options;
         this.launcher = launcher;
         this.ownsSession = ownsSession;
+        this.ScriptHost = new ScriptHost(driver, options.SandboxName);
         this.observers.Add(driver.BrowsingContext.OnContextCreated.AddObserver(e => this.AddContextAsync(e.BrowsingContextId, e.Parent, e.UserContextId, e.Url)));
         this.observers.Add(driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyedAsync));
         this.observers.Add(driver.BrowsingContext.OnNavigationCommitted.AddObserver(e => this.SetUrl(e.BrowsingContextId, e.Url)));
@@ -82,6 +83,11 @@ public sealed class BrowserGroup : IAsyncDisposable
     /// Gets the browser of the default user context.
     /// </summary>
     public Browser DefaultBrowser => this.GetOrAddBrowser(Browser.DefaultBrowserId);
+
+    /// <summary>
+    /// Gets the host that runs the library's scripts in pages.
+    /// </summary>
+    internal ScriptHost ScriptHost { get; }
 
     /// <summary>
     /// Launches a browser, connects a driver to it, and starts a session, if the launcher did not start one.
@@ -207,10 +213,15 @@ public sealed class BrowserGroup : IAsyncDisposable
             await this.RunDisposalStepAsync($"Closing browser {browser.Id}", () => browser.CloseAsync()).ConfigureAwait(false);
         }
 
-        // Ending the session removes its subscriptions.
+        // Ending the session removes its subscriptions and preload scripts.
         if (this.subscriptionId is not null && !this.ownsSession)
         {
             await this.RunDisposalStepAsync("Removing the event subscription", () => this.Driver.Session.UnsubscribeAsync(new UnsubscribeByIdsCommandParameters(this.subscriptionId))).ConfigureAwait(false);
+        }
+
+        if (this.ScriptHost.HasPreloadScript && !this.ownsSession)
+        {
+            await this.RunDisposalStepAsync("Removing the preload script", () => this.ScriptHost.RemovePreloadScriptAsync()).ConfigureAwait(false);
         }
 
         if (this.launcher is null)
@@ -289,6 +300,7 @@ public sealed class BrowserGroup : IAsyncDisposable
             BrowsingContextModule module = this.Driver.BrowsingContext;
             SubscribeCommandParameters subscription = new([module.OnContextCreated.EventName, module.OnContextDestroyed.EventName, module.OnNavigationCommitted.EventName, module.OnFragmentNavigated.EventName, module.OnHistoryUpdated.EventName]);
             this.subscriptionId = (await this.Driver.Session.SubscribeAsync(subscription, cancellationToken: cancellationToken).ConfigureAwait(false)).SubscriptionId;
+            await this.ScriptHost.AddPreloadScriptAsync(cancellationToken).ConfigureAwait(false);
             GetUserContextsCommandResult userContexts = await this.Driver.Browser.GetUserContextsAsync(new GetUserContextsCommandParameters(), cancellationToken: cancellationToken).ConfigureAwait(false);
             foreach (UserContextInfo userContext in userContexts.UserContexts)
             {

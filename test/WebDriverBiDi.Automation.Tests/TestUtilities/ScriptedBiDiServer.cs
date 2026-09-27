@@ -89,6 +89,7 @@ public sealed class ScriptedBiDiServer : IAsyncDisposable
             {
                 "session.new" => CreateNewSessionResult(),
                 "session.subscribe" => new JsonObject() { ["subscription"] = "scripted-subscription" },
+                "script.addPreloadScript" => new JsonObject() { ["script"] = "scripted-preload-script" },
                 "browser.getUserContexts" => new JsonObject() { ["userContexts"] = new JsonArray(new JsonObject() { ["userContext"] = "default" }) },
                 "browsingContext.getTree" => new JsonObject() { ["contexts"] = new JsonArray() },
                 _ => new JsonObject(),

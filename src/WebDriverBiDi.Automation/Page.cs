@@ -75,6 +75,16 @@ public sealed class Page
     public ObservableEvent<PageEventArgs> OnClosed => this.onClosed;
 
     /// <summary>
+    /// Creates a locator for elements in the page's main frame.
+    /// </summary>
+    /// <param name="locator">How the elements are found, such as a <see cref="CssLocator"/>.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator Locate(Locator locator)
+    {
+        return this.MainFrame.Locate(locator);
+    }
+
+    /// <summary>
     /// Navigates the page to a URL.
     /// </summary>
     /// <param name="url">The URL.</param>

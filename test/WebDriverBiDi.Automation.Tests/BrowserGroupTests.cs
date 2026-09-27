@@ -22,7 +22,7 @@ public class BrowserGroupTests
 
         Assert.True(wasStarted);
         Assert.Same(options, group.Options);
-        Assert.Equal(["session.new", "session.subscribe", "browser.getUserContexts", "browsingContext.getTree", "session.end"], server.ReceivedMethods);
+        Assert.Equal(["session.new", "session.subscribe", "script.addPreloadScript", "browser.getUserContexts", "browsingContext.getTree", "session.end"], server.ReceivedMethods);
         Assert.False(group.Driver.IsStarted);
     }
 
@@ -103,7 +103,7 @@ public class BrowserGroupTests
         Assert.Same(driver, group.Driver);
         Assert.Same(options, group.Options);
         Assert.True(driver.IsStarted);
-        Assert.Equal(["session.subscribe", "browser.getUserContexts", "browsingContext.getTree", "session.unsubscribe"], session.RemoteEnd.SentCommands.Select(command => (string)command["method"]!));
+        Assert.Equal(["session.subscribe", "script.addPreloadScript", "browser.getUserContexts", "browsingContext.getTree", "session.unsubscribe", "script.removePreloadScript"], session.RemoteEnd.SentCommands.Select(command => (string)command["method"]!));
     }
 
     [Fact]
