@@ -108,7 +108,7 @@ public class BrowserTrackingTests
         await using BiDiDriver ownedDriver = driver;
         BrowserGroup group = await BrowserGroup.ConnectAsync(driver, cancellationToken: TestContext.Current.CancellationToken);
 
-        Browser browser = await group.CreateBrowserAsync(TestContext.Current.CancellationToken);
+        Browser browser = await group.CreateBrowserAsync(cancellationToken: TestContext.Current.CancellationToken);
         Page page = await browser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         bool wasTracked = group.Browsers.Contains(browser);
         await group.DisposeAsync();
@@ -144,7 +144,7 @@ public class BrowserTrackingTests
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
         await using BiDiDriver ownedDriver = driver;
         BrowserGroup group = await BrowserGroup.ConnectAsync(driver, cancellationToken: TestContext.Current.CancellationToken);
-        Browser browser = await group.CreateBrowserAsync(TestContext.Current.CancellationToken);
+        Browser browser = await group.CreateBrowserAsync(cancellationToken: TestContext.Current.CancellationToken);
         Page page = await browser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         await browser.CloseAsync(TestContext.Current.CancellationToken);
@@ -210,7 +210,7 @@ public class BrowserTrackingTests
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
         await using BiDiDriver ownedDriver = driver;
         BrowserGroup group = await BrowserGroup.ConnectAsync(driver, cancellationToken: TestContext.Current.CancellationToken);
-        Browser browser = await group.CreateBrowserAsync(TestContext.Current.CancellationToken);
+        Browser browser = await group.CreateBrowserAsync(cancellationToken: TestContext.Current.CancellationToken);
         session.RemoteEnd.FailWith("browser.removeUserContext", "unknown error", "cannot remove");
         session.RemoteEnd.FailWith("session.unsubscribe", "unknown error", "cannot unsubscribe");
         List<string> messages = [];

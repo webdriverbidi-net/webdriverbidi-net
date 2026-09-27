@@ -8,6 +8,8 @@ namespace WebDriverBiDi.Automation;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Emulation;
+using WebDriverBiDi.Permissions;
 using WebDriverBiDi.Session;
 
 /// <summary>
@@ -136,19 +138,41 @@ public sealed class BrowserGroup : IAsyncDisposable
     }
 
     /// <summary>
-    /// Creates a browser: a new user context.
+    /// Creates a browser: a new user context, with its settings applied before it opens any page. If a setting
+    /// cannot be applied, the user context is removed.
     /// </summary>
-    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <param name="options">The browser's settings, or <see langword="null"/> for the browser's defaults.</param>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
     /// <returns>The browser.</returns>
-    public async Task<Browser> CreateBrowserAsync(CancellationToken cancellationToken = default)
+    public async Task<Browser> CreateBrowserAsync(BrowserOptions? options = null, CancellationToken cancellationToken = default)
     {
-        CreateUserContextCommandResult result = await this.Driver.Browser.CreateUserContextAsync(new CreateUserContextCommandParameters(), cancellationToken: cancellationToken).ConfigureAwait(false);
+        CreateUserContextCommandParameters parameters = new()
+        {
+            AcceptInsecureCerts = options?.AcceptInsecureCerts,
+            Proxy = options?.Proxy,
+            UnhandledPromptBehavior = options?.UnhandledPromptBehavior,
+        };
+        CreateUserContextCommandResult result = await this.Driver.Browser.CreateUserContextAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
         lock (this.lockObject)
         {
             this.createdBrowserIds.Add(result.UserContextId);
         }
 
-        return this.GetOrAddBrowser(result.UserContextId);
+        Browser browser = this.GetOrAddBrowser(result.UserContextId);
+        if (options is not null)
+        {
+            try
+            {
+                await this.ApplyOptionsAsync(browser.Id, options, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                await this.RunDisposalStepAsync($"Closing browser {browser.Id}", () => browser.CloseAsync()).ConfigureAwait(false);
+                throw;
+            }
+        }
+
+        return browser;
     }
 
     /// <summary>
@@ -241,6 +265,57 @@ public sealed class BrowserGroup : IAsyncDisposable
         {
             await this.DisposeAsync().ConfigureAwait(false);
             throw;
+        }
+    }
+
+    private async Task ApplyOptionsAsync(string userContextId, BrowserOptions options, CancellationToken cancellationToken)
+    {
+        if (options.Viewport is not null || options.DevicePixelRatio is not null)
+        {
+            SetViewportCommandParameters viewport = new() { Viewport = options.Viewport, DevicePixelRatio = options.DevicePixelRatio };
+            viewport.UserContexts.Add(userContextId);
+            await this.Driver.BrowsingContext.SetViewportAsync(viewport, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        if (options.Locale is not null)
+        {
+            SetLocaleOverrideCommandParameters locale = new() { Locale = options.Locale };
+            locale.UserContexts.Add(userContextId);
+            await this.Driver.Emulation.SetLocaleOverrideAsync(locale, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        if (options.TimeZone is not null)
+        {
+            SetTimeZoneOverrideCommandParameters timeZone = new() { TimeZone = options.TimeZone };
+            timeZone.UserContexts.Add(userContextId);
+            await this.Driver.Emulation.SetTimeZoneOverrideAsync(timeZone, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        if (options.UserAgent is not null)
+        {
+            SetUserAgentOverrideCommandParameters userAgent = new() { UserAgent = options.UserAgent };
+            userAgent.UserContexts.Add(userContextId);
+            await this.Driver.Emulation.SetUserAgentOverrideAsync(userAgent, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        if (options.MediaFeatures is not null)
+        {
+            SetMediaFeaturesOverrideCommandParameters mediaFeatures = new() { Features = options.MediaFeatures };
+            mediaFeatures.UserContexts.Add(userContextId);
+            await this.Driver.Emulation.SetMediaFeaturesOverrideAsync(mediaFeatures, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        if (options.Geolocation is not null)
+        {
+            SetGeolocationOverrideCoordinatesCommandParameters geolocation = new() { Coordinates = options.Geolocation };
+            geolocation.UserContexts.Add(userContextId);
+            await this.Driver.Emulation.SetGeolocationOverrideAsync(geolocation, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        foreach (PermissionGrant grant in options.Permissions)
+        {
+            SetPermissionCommandParameters permission = new(grant.Descriptor, grant.State, grant.Origin) { UserContextId = userContextId };
+            await this.Driver.Permissions.SetPermissionAsync(permission, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
 
