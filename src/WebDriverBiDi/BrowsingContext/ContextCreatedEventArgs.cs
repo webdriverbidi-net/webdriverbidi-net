@@ -61,5 +61,6 @@ public record ContextCreatedEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Gets a value indicating whether the browsing context will navigate after this event is raised.
     /// </summary>
-    public bool HasPlannedNavigation => this.info.HasPlannedNavigation;
+    // TODO(Issue #279) Make non-nullable when implemented by browser.
+    public bool? HasPlannedNavigation => this.info.HasPlannedNavigation;
 }

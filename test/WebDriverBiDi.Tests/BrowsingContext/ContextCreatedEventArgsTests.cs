@@ -198,8 +198,9 @@ public class ContextCreatedEventArgsTests
         Assert.Equal(eventArgs, copy);
     }
 
-    [Fact]
-    public async Task TestDeserializingWithMissingHasPlannedNavigationFails()
+    /// TODO(Issue #279) Uncomment the below attribute and make method public when implemented by browser.
+    // [Fact]
+    private async Task TestDeserializingWithMissingHasPlannedNavigationFails()
     {
         string json = """
                       {

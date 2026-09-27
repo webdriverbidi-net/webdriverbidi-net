@@ -22,11 +22,12 @@ public record ContextCreatedEventData : BrowsingContextInfo
     {
     }
 
+    /// TODO(Issue #279) Uncomment the below attribute and make non-nullable when implemented by browser.
+    /// [JsonRequired]
     /// <summary>
     /// Gets a value indicating whether the browsing context will navigate after the event is raised.
     /// </summary>
     [JsonPropertyName("hasPlannedNavigation")]
-    [JsonRequired]
     [JsonInclude]
-    public bool HasPlannedNavigation { get; internal set; }
+    public bool? HasPlannedNavigation { get; internal set; }
 }
