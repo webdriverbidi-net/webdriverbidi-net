@@ -129,10 +129,25 @@ public sealed class ElementLocator
     /// </summary>
     /// <param name="role">The role.</param>
     /// <param name="name">The exact accessible name, or <see langword="null"/> for any.</param>
+    /// <param name="states">ARIA states the elements must have, such as checked, or <see langword="null"/> for any.</param>
     /// <returns>The locator.</returns>
-    public ElementLocator GetByRole(string role, string? name = null)
+    public ElementLocator GetByRole(string role, string? name = null, RoleStates? states = null)
     {
-        return this.Append(new LocateStep(ElementQuery.ByRole(role, name)));
+        return new ElementLocator(this.Frame, [.. this.steps, .. RoleSteps(role, name, states)]);
+    }
+
+    /// <summary>
+    /// Creates a locator for elements, within the elements this locator finds, by their labels: the elements their aria-labelledby attribute refers
+    /// to; failing that, their aria-label attribute; failing that, the label elements of a form control. By default a
+    /// label must contain <paramref name="text"/> ignoring case; with <paramref name="exact"/>, it must match it
+    /// exactly, with case. Labels are compared with runs of whitespace collapsed.
+    /// </summary>
+    /// <param name="text">The label text.</param>
+    /// <param name="exact">Whether the whole label must match, with case.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator GetByLabel(string text, bool exact = false)
+    {
+        return this.Append(new LabelStep(text, exact));
     }
 
     /// <summary>
@@ -300,6 +315,56 @@ public sealed class ElementLocator
         return string.Join(" >> ", this.steps.Select(step => step.ToString()));
     }
 
+    /// <summary>
+    /// Creates a locator for elements by role, name, and states, for <see cref="Frame.GetByRole"/>.
+    /// </summary>
+    /// <param name="frame">The frame in which elements are found.</param>
+    /// <param name="role">The role.</param>
+    /// <param name="name">The exact accessible name, or <see langword="null"/> for any.</param>
+    /// <param name="states">The states, or <see langword="null"/> for any.</param>
+    /// <returns>The locator.</returns>
+    internal static ElementLocator ByRole(Frame frame, string role, string? name, RoleStates? states)
+    {
+        return new ElementLocator(frame, RoleSteps(role, name, states));
+    }
+
+    /// <summary>
+    /// Creates a locator for elements by label, for <see cref="Frame.GetByLabel"/>.
+    /// </summary>
+    /// <param name="frame">The frame in which elements are found.</param>
+    /// <param name="text">The label text.</param>
+    /// <param name="exact">Whether the whole label must match, with case.</param>
+    /// <returns>The locator.</returns>
+    internal static ElementLocator ByLabel(Frame frame, string text, bool exact)
+    {
+        return new ElementLocator(frame, [new LabelStep(text, exact)]);
+    }
+
+    // The browser finds elements by role and name; the states, which the protocol cannot express, filter them.
+    private static Step[] RoleSteps(string role, string? name, RoleStates? states)
+    {
+        LocateStep roleStep = new(ElementQuery.ByRole(role, name));
+        return states is null || states.IsEmpty ? [roleStep] : [roleStep, new RoleStatesStep(states)];
+    }
+
+    // A node met again may come back as a bare reference to its earlier entry, with no shared ID; it is dropped
+    // with the other repeats.
+    private static List<NodeRemoteValue> DistinctNodes(IEnumerable<NodeRemoteValue> nodes)
+    {
+        HashSet<string> seen = [];
+        return [.. nodes.Where(node => !string.IsNullOrEmpty(node.SharedId) && seen.Add(node.SharedId!))];
+    }
+
+    private static LocalValue ToggleValue(ToggleState state)
+    {
+        return state switch
+        {
+            ToggleState.On => LocalValue.Boolean(true),
+            ToggleState.Off => LocalValue.Boolean(false),
+            _ => LocalValue.String("mixed"),
+        };
+    }
+
     private static async Task<List<NodeRemoteValue>> KeepByContentAsync(List<NodeRemoteValue> nodes, ElementLocator content, bool keepContaining, TimeBudget budget)
     {
         List<NodeRemoteValue> kept = [];
@@ -349,8 +414,7 @@ public sealed class ElementLocator
     }
 
     // Nested start nodes can find an element twice, so matches are de-duplicated, and the match limit is only
-    // sent where a duplicate cannot use it up. A repeat may come back as a bare reference to the earlier entry,
-    // with no shared ID; it is dropped with the others.
+    // sent where a duplicate cannot use it up.
     private async Task<List<NodeRemoteValue>> LocateAsync(Locator locator, List<NodeRemoteValue>? startNodes, ulong? maxCount, TimeBudget budget)
     {
         if (startNodes is not null && startNodes.Count == 0)
@@ -369,8 +433,65 @@ public sealed class ElementLocator
         }
 
         LocateNodesCommandResult result = await this.Group.Driver.BrowsingContext.LocateNodesAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
-        HashSet<string> seen = [];
-        return [.. result.Nodes.Where(node => !string.IsNullOrEmpty(node.SharedId) && seen.Add(node.SharedId!))];
+        return DistinctNodes(result.Nodes);
+    }
+
+    // The protocol cannot find elements by label, so the library's script does, within the start nodes or the
+    // whole document.
+    private async Task<List<NodeRemoteValue>> LocateByLabelAsync(LabelStep label, List<NodeRemoteValue>? startNodes, TimeBudget budget)
+    {
+        if (startNodes is not null && startNodes.Count == 0)
+        {
+            return startNodes;
+        }
+
+        LocalValue[] arguments = [LocalValue.String(label.Text), LocalValue.Boolean(label.Exact), .. (startNodes ?? []).Select(node => node.ToSharedReference())];
+        RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, text, exact, ...scopes) => inspector.findElementsByLabel(scopes.length > 0 ? scopes : [document], text, exact)", arguments, budget).ConfigureAwait(false);
+        return DistinctNodes(result.As<CollectionRemoteValue>().Value!.Select(node => node.As<NodeRemoteValue>()));
+    }
+
+    private async Task<List<NodeRemoteValue>> KeepByRoleStatesAsync(RoleStates states, List<NodeRemoteValue> nodes, TimeBudget budget)
+    {
+        if (nodes.Count == 0)
+        {
+            return nodes;
+        }
+
+        Dictionary<string, LocalValue> expected = [];
+        if (states.Checked is not null)
+        {
+            expected["checked"] = ToggleValue(states.Checked.Value);
+        }
+
+        if (states.Pressed is not null)
+        {
+            expected["pressed"] = ToggleValue(states.Pressed.Value);
+        }
+
+        if (states.Expanded is not null)
+        {
+            expected["expanded"] = LocalValue.Boolean(states.Expanded.Value);
+        }
+
+        if (states.Selected is not null)
+        {
+            expected["selected"] = LocalValue.Boolean(states.Selected.Value);
+        }
+
+        if (states.Level is not null)
+        {
+            expected["level"] = LocalValue.Number(states.Level.Value);
+        }
+
+        if (states.Disabled is not null)
+        {
+            expected["disabled"] = LocalValue.Boolean(states.Disabled.Value);
+        }
+
+        LocalValue[] arguments = [LocalValue.Object(expected), .. nodes.Select(node => node.ToSharedReference())];
+        RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, states, ...elements) => inspector.elementsMatchAriaStates(elements, states)", arguments, budget).ConfigureAwait(false);
+        RemoteValueList matches = result.As<CollectionRemoteValue>().Value!;
+        return [.. nodes.Where((node, index) => matches[index].As<BooleanRemoteValue>().Value)];
     }
 
     private async Task<List<NodeRemoteValue>> FilterAsync(FilterStep filter, List<NodeRemoteValue> nodes, TimeBudget budget)
@@ -567,6 +688,63 @@ public sealed class ElementLocator
             }
 
             return $"filter({string.Join(", ", conditions)})";
+        }
+    }
+
+    private sealed record RoleStatesStep(RoleStates States) : Step
+    {
+        public override Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget)
+        {
+            return owner.KeepByRoleStatesAsync(this.States, nodes!, budget);
+        }
+
+        public override string ToString()
+        {
+            List<string> states = [];
+            if (this.States.Checked is not null)
+            {
+                states.Add($"checked={this.States.Checked.Value.ToString().ToLowerInvariant()}");
+            }
+
+            if (this.States.Pressed is not null)
+            {
+                states.Add($"pressed={this.States.Pressed.Value.ToString().ToLowerInvariant()}");
+            }
+
+            if (this.States.Expanded is not null)
+            {
+                states.Add($"expanded={this.States.Expanded.Value.ToString().ToLowerInvariant()}");
+            }
+
+            if (this.States.Selected is not null)
+            {
+                states.Add($"selected={this.States.Selected.Value.ToString().ToLowerInvariant()}");
+            }
+
+            if (this.States.Level is not null)
+            {
+                states.Add($"level={this.States.Level.Value}");
+            }
+
+            if (this.States.Disabled is not null)
+            {
+                states.Add($"disabled={this.States.Disabled.Value.ToString().ToLowerInvariant()}");
+            }
+
+            return $"states({string.Join(", ", states)})";
+        }
+    }
+
+    private sealed record LabelStep(string Text, bool Exact) : Step
+    {
+        public override Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget)
+        {
+            return owner.LocateByLabelAsync(this, nodes, budget);
+        }
+
+        public override string ToString()
+        {
+            return this.Exact ? $"getByLabel \"{this.Text}\" exact" : $"getByLabel \"{this.Text}\"";
         }
     }
 }

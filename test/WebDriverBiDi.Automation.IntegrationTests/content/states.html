@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>States and labels</title>
+  </head>
+  <body>
+    <h1>States</h1>
+    <h2>Controls</h2>
+    <input type="checkbox" aria-label="Checked box" checked>
+    <input type="checkbox" aria-label="Unchecked box">
+    <input type="checkbox" aria-label="Mixed box" id="mixed">
+    <button aria-pressed="true">Bold</button>
+    <button aria-pressed="false">Italic</button>
+    <button aria-expanded="true">Menu</button>
+    <button disabled>Unavailable</button>
+    <div role="tablist">
+      <div role="tab" aria-selected="true">First tab</div>
+      <div role="tab" aria-selected="false">Second tab</div>
+    </div>
+    <form id="account">
+      <label for="email">Email   address</label><input id="email">
+      <label>Password <input type="password"></label>
+    </form>
+    <span id="search-caption">Search the site</span><input aria-labelledby="search-caption">
+    <button aria-label="Close dialog">x</button>
+    <script>document.getElementById('mixed').indeterminate = true;</script>
+  </body>
+</html>

@@ -478,6 +478,28 @@ var Acquiescence = (() => {
       ["aria-relevant", void 0],
       ["aria-roledescription", ["generic"]]
     ];
+    ariaCheckedRoles = ["checkbox", "menuitemcheckbox", "option", "radio", "switch", "menuitemradio", "treeitem"];
+    ariaPressedRoles = ["button"];
+    ariaExpandedRoles = [
+      "application",
+      "button",
+      "checkbox",
+      "combobox",
+      "gridcell",
+      "link",
+      "listbox",
+      "menuitem",
+      "row",
+      "rowheader",
+      "tab",
+      "treeitem",
+      "columnheader",
+      "menuitemcheckbox",
+      "menuitemradio",
+      "switch"
+    ];
+    ariaSelectedRoles = ["gridcell", "option", "row", "tab", "rowheader", "columnheader", "treeitem"];
+    ariaLevelRoles = ["heading", "listitem", "row", "treeitem"];
     ariaReadonlyRoles = [
       "checkbox",
       "combobox",
@@ -522,6 +544,95 @@ var Acquiescence = (() => {
      */
     isAriaReadOnlyRole(element) {
       return this.ariaReadonlyRoles.includes(this.getAriaRole(element) ?? "");
+    }
+    /**
+     * Gets the checked state of an element: from a native checkbox or radio button, including an indeterminate
+     * checkbox, or from aria-checked for a role that supports it.
+     * @param element {Element} The element to check.
+     * @returns {boolean | 'mixed' | undefined} The checked state, or undefined if the element cannot be checked.
+     */
+    getAriaChecked(element) {
+      if (element instanceof HTMLInputElement && ["checkbox", "radio"].includes(element.type)) {
+        return element.indeterminate && element.type === "checkbox" ? "mixed" : element.checked;
+      }
+      if (this.ariaCheckedRoles.includes(this.getAriaRole(element) ?? "")) {
+        return this.readTriState(element.getAttribute("aria-checked"));
+      }
+      return void 0;
+    }
+    /**
+     * Gets the pressed state of a toggle button, from aria-pressed.
+     * @param element {Element} The element to check.
+     * @returns {boolean | 'mixed' | undefined} The pressed state, or undefined if the element is not a button.
+     */
+    getAriaPressed(element) {
+      if (this.ariaPressedRoles.includes(this.getAriaRole(element) ?? "")) {
+        return this.readTriState(element.getAttribute("aria-pressed"));
+      }
+      return void 0;
+    }
+    /**
+     * Gets the expanded state of an element: whether a details element is open, or aria-expanded for a role that
+     * supports it.
+     * @param element {Element} The element to check.
+     * @returns {boolean | undefined} The expanded state, or undefined if the element does not expand or does not say.
+     */
+    getAriaExpanded(element) {
+      if (element instanceof HTMLDetailsElement) {
+        return element.open;
+      }
+      if (this.ariaExpandedRoles.includes(this.getAriaRole(element) ?? "")) {
+        const expanded = element.getAttribute("aria-expanded");
+        return expanded === "true" ? true : expanded === "false" ? false : void 0;
+      }
+      return void 0;
+    }
+    /**
+     * Gets the selected state of an element: from a native option, or from aria-selected for a role that supports it.
+     * @param element {Element} The element to check.
+     * @returns {boolean | undefined} The selected state, or undefined if the element cannot be selected.
+     */
+    getAriaSelected(element) {
+      if (element instanceof HTMLOptionElement) {
+        return element.selected;
+      }
+      if (this.ariaSelectedRoles.includes(this.getAriaRole(element) ?? "")) {
+        return element.getAttribute("aria-selected") === "true";
+      }
+      return void 0;
+    }
+    /**
+     * Gets the level of an element: from a native h1 to h6 heading, or from aria-level for a role that supports it.
+     * @param element {Element} The element to check.
+     * @returns {number | undefined} The level, or undefined if the element has none.
+     */
+    getAriaLevel(element) {
+      const headingLevel = /^H([1-6])$/.exec(this.domUtilities.getNormalizedElementTagName(element));
+      if (headingLevel) {
+        return Number(headingLevel[1]);
+      }
+      if (this.ariaLevelRoles.includes(this.getAriaRole(element) ?? "")) {
+        const level = Number(element.getAttribute("aria-level"));
+        return Number.isInteger(level) && level >= 1 ? level : void 0;
+      }
+      return void 0;
+    }
+    /**
+     * Gets the elements an element's aria-labelledby attribute refers to.
+     * @param element {Element} The element to check.
+     * @returns {Element[] | null} The elements, or null if the element has no aria-labelledby attribute.
+     */
+    getAriaLabelledByElements(element) {
+      const ref = element.getAttribute("aria-labelledby");
+      return ref === null ? null : this.getIdRefs(element, ref);
+    }
+    /**
+     * Reads a true/false/mixed ARIA attribute value; anything but "true" or "mixed" is false.
+     * @param value {string | null} The attribute value.
+     * @returns {boolean | 'mixed'} The state.
+     */
+    readTriState(value) {
+      return value === "mixed" ? "mixed" : value === "true";
     }
     /**
      * Gets the ARIA role of an element, taking into account the element's explicit and implicit roles.
@@ -1088,9 +1199,45 @@ var Acquiescence = (() => {
      * @returns {boolean[]} For each element, in order, whether its text contains the string.
      */
     elementsContainText(elements, text) {
-      const normalize = (value) => value.replace(/\s+/g, " ").trim().toLowerCase();
+      const normalize = (value) => this.normalizeWhiteSpace(value).toLowerCase();
       const expected = normalize(text);
       return elements.map((element) => normalize(this.domUtilities.getNodeText(element)).includes(expected));
+    }
+    /**
+     * Checks, for each of several elements, whether it has every given ARIA state. A state that does not apply to
+     * an element, such as checked for a link, does not match.
+     * @param elements The elements to check.
+     * @param states The states each element must have; an omitted state is not checked.
+     * @returns {boolean[]} For each element, in order, whether it has every given state.
+     */
+    elementsMatchAriaStates(elements, states) {
+      return elements.map((element) => (states.checked === void 0 || this.ariaUtilities.getAriaChecked(element) === states.checked) && (states.pressed === void 0 || this.ariaUtilities.getAriaPressed(element) === states.pressed) && (states.expanded === void 0 || this.ariaUtilities.getAriaExpanded(element) === states.expanded) && (states.selected === void 0 || this.ariaUtilities.getAriaSelected(element) === states.selected) && (states.level === void 0 || this.ariaUtilities.getAriaLevel(element) === states.level) && (states.disabled === void 0 || this.isElementDisabled(element) === states.disabled));
+    }
+    /**
+     * Finds the elements within some scopes whose labels match a text. An element's labels are the elements its
+     * aria-labelledby attribute refers to; failing that, its aria-label attribute; failing that, the label elements
+     * of a form control. Labels are compared as elementsContainText compares text; with exact, the whole label must
+     * match, with case.
+     * @param scopes The documents or elements to search within, not including the elements themselves.
+     * @param text The text to match.
+     * @param exact Whether the whole label must match, with case.
+     * @returns {Element[]} The matching elements, in the order found, each once.
+     */
+    findElementsByLabel(scopes, text, exact) {
+      const expected = exact ? this.normalizeWhiteSpace(text) : this.normalizeWhiteSpace(text).toLowerCase();
+      const matches = /* @__PURE__ */ new Set();
+      for (const scope of scopes) {
+        for (const element of Array.from(scope.querySelectorAll("*"))) {
+          const labelMatches = this.getElementLabels(element).some((label) => {
+            const normalized = this.normalizeWhiteSpace(label);
+            return exact ? normalized === expected : normalized.toLowerCase().includes(expected);
+          });
+          if (labelMatches) {
+            matches.add(element);
+          }
+        }
+      }
+      return Array.from(matches);
     }
     /**
      * Checks if an element is disabled.
@@ -1226,6 +1373,31 @@ var Acquiescence = (() => {
      * @param style {CSSStyleDeclaration} The computed style of the element.
      * @returns {boolean} True if the element is hidden by overflow; otherwise, false.
      */
+    /**
+     * Gets the texts of an element's labels.
+     * @param element The element.
+     * @returns {string[]} The texts, or an empty list if the element is not labelled.
+     */
+    getElementLabels(element) {
+      const labelledBy = this.ariaUtilities.getAriaLabelledByElements(element);
+      if (labelledBy) {
+        return labelledBy.map((label) => this.domUtilities.getNodeText(label));
+      }
+      const ariaLabel = element.getAttribute("aria-label");
+      if (ariaLabel !== null && ariaLabel.trim() !== "") {
+        return [ariaLabel];
+      }
+      const labels = element.labels;
+      return labels ? Array.from(labels, (label) => this.domUtilities.getNodeText(label)) : [];
+    }
+    /**
+     * Collapses each run of whitespace to one space and removes whitespace at either end.
+     * @param value The text.
+     * @returns {string} The normalized text.
+     */
+    normalizeWhiteSpace(value) {
+      return value.replace(/\s+/g, " ").trim();
+    }
     isHiddenByOverflow(element, style) {
       if (!this.checkIsHiddenByOverflow(element, style)) {
         return false;

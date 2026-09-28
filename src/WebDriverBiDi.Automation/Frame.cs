@@ -140,10 +140,25 @@ public sealed class Frame
     /// </summary>
     /// <param name="role">The role.</param>
     /// <param name="name">The exact accessible name, or <see langword="null"/> for any.</param>
+    /// <param name="states">ARIA states the elements must have, such as checked, or <see langword="null"/> for any.</param>
     /// <returns>The locator.</returns>
-    public ElementLocator GetByRole(string role, string? name = null)
+    public ElementLocator GetByRole(string role, string? name = null, RoleStates? states = null)
     {
-        return this.Query(ElementQuery.ByRole(role, name));
+        return ElementLocator.ByRole(this, role, name, states);
+    }
+
+    /// <summary>
+    /// Creates a locator for elements, in this frame, by their labels: the elements their aria-labelledby attribute refers
+    /// to; failing that, their aria-label attribute; failing that, the label elements of a form control. By default a
+    /// label must contain <paramref name="text"/> ignoring case; with <paramref name="exact"/>, it must match it
+    /// exactly, with case. Labels are compared with runs of whitespace collapsed.
+    /// </summary>
+    /// <param name="text">The label text.</param>
+    /// <param name="exact">Whether the whole label must match, with case.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator GetByLabel(string text, bool exact = false)
+    {
+        return ElementLocator.ByLabel(this, text, exact);
     }
 
     /// <summary>
