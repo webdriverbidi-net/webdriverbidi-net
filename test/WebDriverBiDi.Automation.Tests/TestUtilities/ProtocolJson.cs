@@ -64,6 +64,16 @@ public static class ProtocolJson
     }
 
     /// <summary>
+    /// Creates a successful "script.callFunction" result returning an array of booleans.
+    /// </summary>
+    /// <param name="values">The booleans.</param>
+    /// <returns>The result.</returns>
+    public static JsonObject Booleans(params bool[] values)
+    {
+        return Success(new JsonObject() { ["type"] = "array", ["value"] = new JsonArray([.. values.Select(value => (JsonNode)new JsonObject() { ["type"] = "boolean", ["value"] = value })]) });
+    }
+
+    /// <summary>
     /// Creates a "script.callFunction" result reporting a thrown exception.
     /// </summary>
     /// <param name="text">The exception's text, such as "Error: failed".</param>

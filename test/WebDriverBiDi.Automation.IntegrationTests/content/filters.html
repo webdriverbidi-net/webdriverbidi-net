@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Filters</title>
+  </head>
+  <body>
+    <ul id="fruit">
+      <li>Apple <span class="badge">new</span></li>
+      <li>  Green
+        APPLE  </li>
+      <li>Banana</li>
+      <li><fruit-label></fruit-label></li>
+      <li>Cherry <script>var ignored = 'apple';</script></li>
+    </ul>
+    <button class="primary">Save</button>
+    <button>Cancel</button>
+    <a class="primary" href="#">Help</a>
+    <script>
+      customElements.define('fruit-label', class extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: 'open' }).innerHTML = '<span>Shadow fruit</span>';
+        }
+      });
+    </script>
+  </body>
+</html>

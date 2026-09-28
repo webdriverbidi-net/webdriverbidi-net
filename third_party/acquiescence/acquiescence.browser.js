@@ -150,6 +150,30 @@ var Acquiescence = (() => {
       return !legendElement?.contains(element);
     }
     /**
+     * Gets the text of a node as it is rendered: text within an open shadow root rather than the shadow host's
+     * own children, the nodes assigned to a slot (or its fallback content when none are), and no text from
+     * script, style, or noscript elements. A closed shadow root cannot be read, so its host's children are used.
+     * @param node {Node} The node whose text to get.
+     * @returns {string} The text, with whitespace as it appears in the document.
+     */
+    getNodeText(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.data;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return "";
+      }
+      const element = node;
+      if (["SCRIPT", "STYLE", "NOSCRIPT"].includes(this.getNormalizedElementTagName(element))) {
+        return "";
+      }
+      let children = element.shadowRoot ? element.shadowRoot.childNodes : element.childNodes;
+      if (element instanceof HTMLSlotElement && element.assignedNodes().length > 0) {
+        children = element.assignedNodes();
+      }
+      return Array.from(children, (child) => this.getNodeText(child)).join("");
+    }
+    /**
      * Gets a value indicating whether an element is natively focusable.
      * @param element {Element} The element to check.
      * @returns {boolean} True if the element is natively focusable; otherwise, false.
@@ -1055,6 +1079,18 @@ var Acquiescence = (() => {
      */
     isElementVisible(element) {
       return this.computeBox(element).visible;
+    }
+    /**
+     * Checks, for each of several elements, whether its rendered text contains a string. Text is compared ignoring
+     * case, with each run of whitespace treated as one space and whitespace at either end ignored.
+     * @param elements The elements to check.
+     * @param text The text to look for; empty text is contained in every element.
+     * @returns {boolean[]} For each element, in order, whether its text contains the string.
+     */
+    elementsContainText(elements, text) {
+      const normalize = (value) => value.replace(/\s+/g, " ").trim().toLowerCase();
+      const expected = normalize(text);
+      return elements.map((element) => normalize(this.domUtilities.getNodeText(element)).includes(expected));
     }
     /**
      * Checks if an element is disabled.

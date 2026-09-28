@@ -88,6 +88,54 @@ public sealed class ElementLocator
     }
 
     /// <summary>
+    /// Creates a locator for the elements this locator and another both find.
+    /// </summary>
+    /// <param name="other">The other locator, which searches the whole frame.</param>
+    /// <returns>The locator.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="other"/> finds elements in another frame.</exception>
+    public ElementLocator And(ElementLocator other)
+    {
+        return this.Append(new AndStep(this.RequireSameFrame(other, nameof(other))));
+    }
+
+    /// <summary>
+    /// Creates a locator for the elements either this locator or another finds: this locator's matches, then the
+    /// other's that this locator does not find.
+    /// </summary>
+    /// <param name="other">The other locator, which searches the whole frame.</param>
+    /// <returns>The locator.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="other"/> finds elements in another frame.</exception>
+    public ElementLocator Or(ElementLocator other)
+    {
+        return this.Append(new OrStep(this.RequireSameFrame(other, nameof(other))));
+    }
+
+    /// <summary>
+    /// Creates a locator for the elements this locator finds that meet every given condition. Text conditions
+    /// compare an element's rendered text ignoring case and runs of whitespace. Element conditions search within
+    /// each element, so they cost a lookup for each element this locator finds.
+    /// </summary>
+    /// <param name="hasText">Text the element's text must contain.</param>
+    /// <param name="hasNotText">Text the element's text must not contain.</param>
+    /// <param name="has">A locator that must find something within the element.</param>
+    /// <param name="hasNot">A locator that must find nothing within the element.</param>
+    /// <returns>The locator.</returns>
+    /// <exception cref="ArgumentException">Thrown when no condition is given, or a locator finds elements in another frame.</exception>
+    public ElementLocator Filter(string? hasText = null, string? hasNotText = null, ElementLocator? has = null, ElementLocator? hasNot = null)
+    {
+        if (hasText is null && hasNotText is null && has is null && hasNot is null)
+        {
+            throw new ArgumentException("A filter needs at least one condition.");
+        }
+
+        return this.Append(new FilterStep(
+            hasText,
+            hasNotText,
+            has is null ? null : this.RequireSameFrame(has, nameof(has)),
+            hasNot is null ? null : this.RequireSameFrame(hasNot, nameof(hasNot))));
+    }
+
+    /// <summary>
     /// Counts the elements that match now, without waiting.
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the command.</param>
@@ -171,6 +219,21 @@ public sealed class ElementLocator
         return string.Join(" >> ", this.steps.Select(step => step.ToString()));
     }
 
+    private static async Task<List<NodeRemoteValue>> KeepByContentAsync(List<NodeRemoteValue> nodes, ElementLocator content, bool keepContaining, TimeBudget budget)
+    {
+        List<NodeRemoteValue> kept = [];
+        foreach (NodeRemoteValue node in nodes)
+        {
+            List<NodeRemoteValue> matches = await content.ResolveWithinAsync([node], null, budget).ConfigureAwait(false);
+            if ((matches.Count > 0) == keepContaining)
+            {
+                kept.Add(node);
+            }
+        }
+
+        return kept;
+    }
+
     private TimeBudget CreateBudget(TimeSpan? timeout, CancellationToken cancellationToken)
     {
         return new TimeBudget(timeout ?? this.Group.Options.ActionTimeout, this.Group.Options.TimeProvider, cancellationToken);
@@ -181,41 +244,91 @@ public sealed class ElementLocator
         return new ElementLocator(this.Frame, [.. this.steps, step]);
     }
 
-    // Each step searches within the previous step's matches. Nested start nodes can find an element twice, so
-    // matches are de-duplicated, and the match limit is only sent where a duplicate cannot use it up. A repeat
-    // may come back as a bare reference to the earlier entry, with no shared ID; it is dropped with the others.
+    private ElementLocator RequireSameFrame(ElementLocator other, string parameterName)
+    {
+        return other.Frame == this.Frame ? other : throw new ArgumentException($"{other} finds elements in another frame than {this}.", parameterName);
+    }
+
     private async Task<IList<NodeRemoteValue>> ResolveAsync(ulong? maxCount, TimeBudget budget)
     {
-        List<NodeRemoteValue>? nodes = null;
+        return await this.ResolveWithinAsync(null, maxCount, budget).ConfigureAwait(false);
+    }
+
+    // Applies each step to the previous step's matches. The first step searches within the start nodes, or the
+    // whole frame when there are none; the match limit applies only to the last step.
+    private async Task<List<NodeRemoteValue>> ResolveWithinAsync(List<NodeRemoteValue>? startNodes, ulong? maxCount, TimeBudget budget)
+    {
+        List<NodeRemoteValue>? nodes = startNodes;
         for (int i = 0; i < this.steps.Count; i++)
         {
-            if (this.steps[i] is IndexStep indexStep)
-            {
-                nodes = indexStep.Select(nodes!);
-                continue;
-            }
-
-            if (nodes is not null && nodes.Count == 0)
-            {
-                return nodes;
-            }
-
-            LocateNodesCommandParameters parameters = new(this.Frame.Id, ((LocateStep)this.steps[i]).Locator)
-            {
-                MaxNodeCount = i == this.steps.Count - 1 && (nodes is null || nodes.Count == 1) ? maxCount : null,
-                SerializationOptions = new SerializationOptions() { MaxDomDepth = 0 },
-            };
-            if (nodes is not null)
-            {
-                parameters.StartNodes.AddRange(nodes.Select(node => node.ToSharedReference()));
-            }
-
-            LocateNodesCommandResult result = await this.Group.Driver.BrowsingContext.LocateNodesAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
-            HashSet<string> seen = [];
-            nodes = [.. result.Nodes.Where(node => !string.IsNullOrEmpty(node.SharedId) && seen.Add(node.SharedId!))];
+            nodes = await this.steps[i].ApplyAsync(this, nodes, i == this.steps.Count - 1 ? maxCount : null, budget).ConfigureAwait(false);
         }
 
         return nodes!;
+    }
+
+    // Nested start nodes can find an element twice, so matches are de-duplicated, and the match limit is only
+    // sent where a duplicate cannot use it up. A repeat may come back as a bare reference to the earlier entry,
+    // with no shared ID; it is dropped with the others.
+    private async Task<List<NodeRemoteValue>> LocateAsync(Locator locator, List<NodeRemoteValue>? startNodes, ulong? maxCount, TimeBudget budget)
+    {
+        if (startNodes is not null && startNodes.Count == 0)
+        {
+            return startNodes;
+        }
+
+        LocateNodesCommandParameters parameters = new(this.Frame.Id, locator)
+        {
+            MaxNodeCount = startNodes is null || startNodes.Count == 1 ? maxCount : null,
+            SerializationOptions = new SerializationOptions() { MaxDomDepth = 0 },
+        };
+        if (startNodes is not null)
+        {
+            parameters.StartNodes.AddRange(startNodes.Select(node => node.ToSharedReference()));
+        }
+
+        LocateNodesCommandResult result = await this.Group.Driver.BrowsingContext.LocateNodesAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        HashSet<string> seen = [];
+        return [.. result.Nodes.Where(node => !string.IsNullOrEmpty(node.SharedId) && seen.Add(node.SharedId!))];
+    }
+
+    private async Task<List<NodeRemoteValue>> FilterAsync(FilterStep filter, List<NodeRemoteValue> nodes, TimeBudget budget)
+    {
+        if (filter.HasText is not null)
+        {
+            nodes = await this.KeepByTextAsync(nodes, filter.HasText, true, budget).ConfigureAwait(false);
+        }
+
+        if (filter.HasNotText is not null)
+        {
+            nodes = await this.KeepByTextAsync(nodes, filter.HasNotText, false, budget).ConfigureAwait(false);
+        }
+
+        if (filter.Has is not null)
+        {
+            nodes = await KeepByContentAsync(nodes, filter.Has, true, budget).ConfigureAwait(false);
+        }
+
+        if (filter.HasNot is not null)
+        {
+            nodes = await KeepByContentAsync(nodes, filter.HasNot, false, budget).ConfigureAwait(false);
+        }
+
+        return nodes;
+    }
+
+    // One call checks every element's text.
+    private async Task<List<NodeRemoteValue>> KeepByTextAsync(List<NodeRemoteValue> nodes, string text, bool keepContaining, TimeBudget budget)
+    {
+        if (nodes.Count == 0)
+        {
+            return nodes;
+        }
+
+        LocalValue[] arguments = [LocalValue.String(text), .. nodes.Select(node => node.ToSharedReference())];
+        RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, text, ...elements) => inspector.elementsContainText(elements, text)", arguments, budget).ConfigureAwait(false);
+        RemoteValueList contains = result.As<CollectionRemoteValue>().Value!;
+        return [.. nodes.Where((node, index) => contains[index].As<BooleanRemoteValue>().Value == keepContaining)];
     }
 
     private async Task<bool> IsVisibleAsync(NodeRemoteValue node, TimeBudget budget)
@@ -255,10 +368,18 @@ public sealed class ElementLocator
         }
     }
 
-    private abstract record Step;
+    private abstract record Step
+    {
+        public abstract Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget);
+    }
 
     private sealed record LocateStep(Locator Locator) : Step
     {
+        public override Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget)
+        {
+            return owner.LocateAsync(this.Locator, nodes, maxCount, budget);
+        }
+
         public override string ToString()
         {
             return this.Locator switch
@@ -277,10 +398,10 @@ public sealed class ElementLocator
     {
         public const int LastIndex = -1;
 
-        public List<NodeRemoteValue> Select(List<NodeRemoteValue> nodes)
+        public override Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget)
         {
-            int position = this.Index == LastIndex ? nodes.Count - 1 : this.Index;
-            return position >= 0 && position < nodes.Count ? [nodes[position]] : [];
+            int position = this.Index == LastIndex ? nodes!.Count - 1 : this.Index;
+            return Task.FromResult<List<NodeRemoteValue>>(position >= 0 && position < nodes!.Count ? [nodes[position]] : []);
         }
 
         public override string ToString()
@@ -291,6 +412,75 @@ public sealed class ElementLocator
                 LastIndex => "last",
                 _ => $"nth={this.Index}",
             };
+        }
+    }
+
+    private sealed record AndStep(ElementLocator Other) : Step
+    {
+        public override async Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget)
+        {
+            if (nodes!.Count == 0)
+            {
+                return nodes;
+            }
+
+            HashSet<string?> others = [.. (await this.Other.ResolveWithinAsync(null, null, budget).ConfigureAwait(false)).Select(node => node.SharedId)];
+            return [.. nodes.Where(node => others.Contains(node.SharedId))];
+        }
+
+        public override string ToString()
+        {
+            return $"and({this.Other})";
+        }
+    }
+
+    private sealed record OrStep(ElementLocator Other) : Step
+    {
+        public override async Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget)
+        {
+            List<NodeRemoteValue> current = nodes!;
+            HashSet<string?> found = [.. current.Select(node => node.SharedId)];
+            List<NodeRemoteValue> others = await this.Other.ResolveWithinAsync(null, null, budget).ConfigureAwait(false);
+            return [.. current, .. others.Where(node => found.Add(node.SharedId))];
+        }
+
+        public override string ToString()
+        {
+            return $"or({this.Other})";
+        }
+    }
+
+    private sealed record FilterStep(string? HasText, string? HasNotText, ElementLocator? Has, ElementLocator? HasNot) : Step
+    {
+        public override Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget)
+        {
+            return owner.FilterAsync(this, nodes!, budget);
+        }
+
+        public override string ToString()
+        {
+            List<string> conditions = [];
+            if (this.HasText is not null)
+            {
+                conditions.Add($"hasText \"{this.HasText}\"");
+            }
+
+            if (this.HasNotText is not null)
+            {
+                conditions.Add($"hasNotText \"{this.HasNotText}\"");
+            }
+
+            if (this.Has is not null)
+            {
+                conditions.Add($"has({this.Has})");
+            }
+
+            if (this.HasNot is not null)
+            {
+                conditions.Add($"hasNot({this.HasNot})");
+            }
+
+            return $"filter({string.Join(", ", conditions)})";
         }
     }
 }
