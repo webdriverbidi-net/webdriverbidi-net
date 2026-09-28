@@ -85,6 +85,77 @@ public sealed class Page
     }
 
     /// <summary>
+    /// Creates a locator for elements, in the page's main frame, by their rendered text: by default, text containing
+    /// <paramref name="text"/> ignoring case; with <paramref name="exact"/>, text matching it exactly, with case.
+    /// The browser compares its own rendering of the text, without collapsing whitespace.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="exact">Whether the whole text must match, with case.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator GetByText(string text, bool exact = false)
+    {
+        return this.MainFrame.GetByText(text, exact);
+    }
+
+    /// <summary>
+    /// Creates a locator for input elements by their placeholder: by default, one containing <paramref name="text"/> ignoring case; with
+    /// <paramref name="exact"/>, one matching it exactly, in the page's main frame.
+    /// </summary>
+    /// <param name="text">The placeholder text.</param>
+    /// <param name="exact">Whether the whole placeholder must match, with case.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator GetByPlaceholder(string text, bool exact = false)
+    {
+        return this.MainFrame.GetByPlaceholder(text, exact);
+    }
+
+    /// <summary>
+    /// Creates a locator for elements, such as images, by their alternative text: by default, text containing <paramref name="text"/>
+    /// ignoring case; with <paramref name="exact"/>, text matching it exactly, in the page's main frame.
+    /// </summary>
+    /// <param name="text">The alternative text.</param>
+    /// <param name="exact">Whether the whole alternative text must match, with case.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator GetByAltText(string text, bool exact = false)
+    {
+        return this.MainFrame.GetByAltText(text, exact);
+    }
+
+    /// <summary>
+    /// Creates a locator for elements by their title attribute: by default, one containing <paramref name="text"/> ignoring case; with
+    /// <paramref name="exact"/>, one matching it exactly, in the page's main frame.
+    /// </summary>
+    /// <param name="text">The title text.</param>
+    /// <param name="exact">Whether the whole title must match, with case.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator GetByTitle(string text, bool exact = false)
+    {
+        return this.MainFrame.GetByTitle(text, exact);
+    }
+
+    /// <summary>
+    /// Creates a locator for elements by their test ID, the value of the <see cref="AutomationOptions.TestIdAttribute"/> attribute, in the page's main frame.
+    /// </summary>
+    /// <param name="testId">The test ID, matched exactly.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator GetByTestId(string testId)
+    {
+        return this.MainFrame.GetByTestId(testId);
+    }
+
+    /// <summary>
+    /// Creates a locator for elements by the accessibility role the browser computes for them, such as "button", and optionally the
+    /// accessible name, which must match exactly, in the page's main frame.
+    /// </summary>
+    /// <param name="role">The role.</param>
+    /// <param name="name">The exact accessible name, or <see langword="null"/> for any.</param>
+    /// <returns>The locator.</returns>
+    public ElementLocator GetByRole(string role, string? name = null)
+    {
+        return this.MainFrame.GetByRole(role, name);
+    }
+
+    /// <summary>
     /// Navigates the page to a URL.
     /// </summary>
     /// <param name="url">The URL.</param>

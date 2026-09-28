@@ -11,7 +11,8 @@ using WebDriverBiDi.Protocol;
 /// <summary>
 /// A browser's user contexts and browsing contexts, kept for a fake remote end. It answers the session,
 /// user context, and browsing context commands from them, and raises the events a browser raises before
-/// answering a command that creates, navigates, or closes a browsing context.
+/// answering a command that creates, navigates, or closes a browsing context. It finds no elements unless a test
+/// answers "browsingContext.locateNodes" itself.
 /// </summary>
 public sealed class FakeSession
 {
@@ -41,6 +42,7 @@ public sealed class FakeSession
         remoteEnd.AnswerWith("browsingContext.close", parameters => this.CloseContext((string)parameters["context"]!));
         remoteEnd.AnswerWith("browsingContext.navigate", parameters => this.Navigate((string)parameters["context"]!, (string?)parameters["url"]));
         remoteEnd.AnswerWith("browsingContext.reload", parameters => this.Navigate((string)parameters["context"]!, null));
+        remoteEnd.AnswerWith("browsingContext.locateNodes", _ => new JsonObject() { ["nodes"] = new JsonArray() });
     }
 
     /// <summary>

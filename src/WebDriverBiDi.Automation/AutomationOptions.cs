@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Automation;
 
+using System.Text.RegularExpressions;
+
 /// <summary>
 /// Options for a <see cref="BrowserGroup"/> and everything it creates, read when the group is launched or connected.
 /// </summary>
@@ -16,6 +18,7 @@ public sealed class AutomationOptions
     private readonly TimeSpan pollInterval = TimeSpan.FromMilliseconds(100);
     private readonly TimeProvider timeProvider = TimeProvider.System;
     private readonly string sandboxName = "webdriverbidi-automation";
+    private readonly string testIdAttribute = "data-testid";
 
     /// <summary>
     /// Gets the time an action, such as a click, waits for its element before failing. Defaults to 30 seconds.
@@ -76,6 +79,19 @@ public sealed class AutomationOptions
     {
         get => this.sandboxName;
         init => this.sandboxName = string.IsNullOrEmpty(value) ? throw new ArgumentException("The sandbox name must not be empty.", nameof(this.SandboxName)) : value;
+    }
+
+    /// <summary>
+    /// Gets the attribute that holds an element's test ID, for <see cref="Frame.GetByTestId"/>. Defaults to
+    /// "data-testid".
+    /// </summary>
+    /// <exception cref="ArgumentException">Thrown when set to something that is not an attribute name: letters, digits, hyphens, and underscores, starting with a letter or underscore.</exception>
+    public string TestIdAttribute
+    {
+        get => this.testIdAttribute;
+        init => this.testIdAttribute = value is not null && Regex.IsMatch(value, "^[A-Za-z_][A-Za-z0-9_-]*$")
+            ? value
+            : throw new ArgumentException($"'{value}' is not an attribute name.", nameof(this.TestIdAttribute));
     }
 
     private static TimeSpan RequirePositive(TimeSpan value, string name)
