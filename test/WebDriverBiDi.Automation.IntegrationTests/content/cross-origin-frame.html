@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Cross-origin frame</title>
+  </head>
+  <body>
+    <p>Host page</p>
+    <script>
+      setTimeout(() => {
+        const frame = document.createElement('iframe');
+        frame.id = 'other-origin';
+        frame.src = `${location.protocol}//127.0.0.1:${location.port}/child.html`;
+        document.body.appendChild(frame);
+      }, 300);
+    </script>
+  </body>
+</html>

@@ -251,6 +251,19 @@ public sealed class BrowserGroup : IAsyncDisposable
     }
 
     /// <summary>
+    /// Finds a tracked frame by the ID of its browsing context.
+    /// </summary>
+    /// <param name="contextId">The ID of the browsing context.</param>
+    /// <returns>The frame, or <see langword="null"/> if the group does not track it.</returns>
+    internal Frame? FindFrame(string contextId)
+    {
+        lock (this.lockObject)
+        {
+            return this.frames.TryGetValue(contextId, out Frame? frame) ? frame : null;
+        }
+    }
+
+    /// <summary>
     /// Detaches a closed browsing context's frame and those within it, closing its page if it is a main frame.
     /// A context the group does not track, or has already removed, is ignored.
     /// </summary>

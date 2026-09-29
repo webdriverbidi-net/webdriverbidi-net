@@ -280,41 +280,29 @@ public sealed class ElementLocator
     public async Task WaitForAsync(ElementState state = ElementState.Visible, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        string? observed = null;
-        while (true)
+        await this.PollAsync(budget, $"{this} to be {state.ToString().ToLowerInvariant()}", async () =>
         {
-            try
-            {
-                bool reached;
-                (reached, observed) = await this.CheckStateAsync(state, budget).ConfigureAwait(false);
-                if (reached)
-                {
-                    return;
-                }
-            }
-            catch (WebDriverBiDiCommandException ex) when (ex.ErrorCode == ErrorCode.NoSuchNode)
-            {
-                observed = "the element was removed while it was checked";
-            }
-            catch (WebDriverBiDiTimeoutException) when (budget.IsExhausted)
-            {
-                // A command cut short by the end of the budget observed nothing; the attempt before it did.
-                observed ??= "a command was still running";
-            }
+            (bool reached, string observed) = await this.CheckStateAsync(state, budget).ConfigureAwait(false);
+            return (reached, reached, observed);
+        }).ConfigureAwait(false);
+    }
 
-            if (budget.IsExhausted)
-            {
-                break;
-            }
-
-            await budget.DelayAsync(this.Group.Options.PollInterval).ConfigureAwait(false);
-            if (budget.IsExhausted)
-            {
-                break;
-            }
-        }
-
-        throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for {this} to be {state.ToString().ToLowerInvariant()}; {observed}.");
+    /// <summary>
+    /// Gets the frame of the iframe or frame element this locator finds, waiting until exactly one element matches
+    /// and its document has been loaded. The frame is found once; if the element's document is later replaced, the
+    /// returned frame reports <see cref="Frame.IsDetached"/>, and this method finds the new one.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The frame.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element is not a frame element.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no frame is found in time.</exception>
+    public async Task<Frame> ContentFrameAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        Frame? frame = await this.PollAsync(budget, $"the frame of {this}", () => this.FindContentFrameAsync(budget)).ConfigureAwait(false);
+        return frame!;
     }
 
     /// <summary>
@@ -585,6 +573,69 @@ public sealed class ElementLocator
     {
         RemoteValue visible = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => inspector.isElementVisible(element)", [node.ToSharedReference()], budget).ConfigureAwait(false);
         return visible.As<BooleanRemoteValue>().Value;
+    }
+
+    // Tries an attempt until it is done or the budget runs out, reporting what the last attempt saw. An element
+    // removed while it is checked is looked up again.
+    private async Task<T> PollAsync<T>(TimeBudget budget, string awaited, Func<Task<(bool Done, T Result, string Observed)>> attempt)
+    {
+        string? observed = null;
+        while (true)
+        {
+            try
+            {
+                (bool done, T result, string seen) = await attempt().ConfigureAwait(false);
+                if (done)
+                {
+                    return result;
+                }
+
+                observed = seen;
+            }
+            catch (WebDriverBiDiCommandException ex) when (ex.ErrorCode == ErrorCode.NoSuchNode)
+            {
+                observed = "the element was removed while it was checked";
+            }
+            catch (WebDriverBiDiTimeoutException) when (budget.IsExhausted)
+            {
+                // A command cut short by the end of the budget observed nothing; the attempt before it did.
+                observed ??= "a command was still running";
+            }
+
+            if (budget.IsExhausted)
+            {
+                break;
+            }
+
+            await budget.DelayAsync(this.Group.Options.PollInterval).ConfigureAwait(false);
+            if (budget.IsExhausted)
+            {
+                break;
+            }
+        }
+
+        throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for {awaited}; {observed}.");
+    }
+
+    // The browser serializes an element's content window as its browsing context ID, which names the frame.
+    private async Task<(bool Found, Frame? Frame, string Observed)> FindContentFrameAsync(TimeBudget budget)
+    {
+        IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
+        this.ThrowIfAmbiguous(nodes);
+        if (nodes.Count == 0)
+        {
+            return (false, null, "no element matched");
+        }
+
+        RemoteValue window = await this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, "(element) => element.contentWindow", [nodes[0].ToSharedReference()], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        return window switch
+        {
+            WindowProxyRemoteValue contentWindow => this.Group.FindFrame(contentWindow.Value.BrowsingContextId) is Frame frame
+                ? (true, frame, string.Empty)
+                : (false, null, "the frame was not tracked yet"),
+            NullRemoteValue => (false, null, "the frame had no document"),
+            _ => throw new InvalidOperationException($"{this} is not a frame element."),
+        };
     }
 
     private async Task<(bool Reached, string Observed)> CheckStateAsync(ElementState state, TimeBudget budget)
