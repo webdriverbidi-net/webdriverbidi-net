@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Shadow DOM</title>
+  </head>
+  <body>
+    <button>Light</button>
+    <div id="open-host"></div>
+    <div id="closed-host"></div>
+    <script>
+      const open = document.getElementById('open-host').attachShadow({ mode: 'open' });
+      open.innerHTML = '<button>Open</button><label for="shadow-email">Shadow email</label><input id="shadow-email"><div id="nested-host"></div>';
+      open.getElementById('nested-host').attachShadow({ mode: 'open' }).innerHTML = '<button>Nested</button>';
+      document.getElementById('closed-host').attachShadow({ mode: 'closed' }).innerHTML = '<button>Closed</button>';
+    </script>
+  </body>
+</html>

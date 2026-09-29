@@ -94,6 +94,15 @@ public sealed class AutomationOptions
             : throw new ArgumentException($"'{value}' is not an attribute name.", nameof(this.TestIdAttribute));
     }
 
+    /// <summary>
+    /// Gets a value indicating whether lookups also search open shadow roots, as if the elements within them were
+    /// part of the document. Each lookup then first finds the open shadow roots within its scope, which costs a
+    /// round trip. Closed shadow roots are never searched this way; <see cref="ElementLocator.ShadowRoot"/> reaches
+    /// them. XPath lookups are not extended, because browsers do not evaluate XPath within a shadow root. Chrome's role
+    /// lookups reach every shadow root, closed ones included, whatever this setting. Defaults to <see langword="false"/>.
+    /// </summary>
+    public bool PierceShadowRoots { get; init; }
+
     private static TimeSpan RequirePositive(TimeSpan value, string name)
     {
         return value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(name, value, "The value must be positive.");

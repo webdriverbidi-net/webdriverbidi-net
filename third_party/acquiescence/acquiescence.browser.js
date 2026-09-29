@@ -150,6 +150,31 @@ var Acquiescence = (() => {
       return !legendElement?.contains(element);
     }
     /**
+     * Gets the open shadow roots within some scopes: that of a scope element itself, those of the elements within
+     * each scope, and those nested within them. Closed shadow roots cannot be reached from script, so they are not
+     * included, and neither is anything within them.
+     * @param scopes {Array<Document | Element | ShadowRoot>} The scopes to search.
+     * @returns {ShadowRoot[]} The shadow roots, each once, in the order found.
+     */
+    getOpenShadowRoots(scopes) {
+      const roots = /* @__PURE__ */ new Set();
+      const visit = (scope) => {
+        const elements = Array.from(scope.querySelectorAll("*"));
+        if (scope instanceof Element) {
+          elements.unshift(scope);
+        }
+        for (const element of elements) {
+          const shadowRoot = element.shadowRoot;
+          if (shadowRoot && !roots.has(shadowRoot)) {
+            roots.add(shadowRoot);
+            visit(shadowRoot);
+          }
+        }
+      };
+      scopes.forEach(visit);
+      return Array.from(roots);
+    }
+    /**
      * Gets the text of a node as it is rendered: text within an open shadow root rather than the shadow host's
      * own children, the nodes assigned to a slot (or its fallback content when none are), and no text from
      * script, style, or noscript elements. A closed shadow root cannot be read, so its host's children are used.
@@ -1202,6 +1227,14 @@ var Acquiescence = (() => {
       const normalize = (value) => this.normalizeWhiteSpace(value).toLowerCase();
       const expected = normalize(text);
       return elements.map((element) => normalize(this.domUtilities.getNodeText(element)).includes(expected));
+    }
+    /**
+     * Finds the open shadow roots within some scopes, including nested ones, so that a search can include them.
+     * @param scopes The documents, elements, or shadow roots to search.
+     * @returns {ShadowRoot[]} The open shadow roots, each once, in the order found.
+     */
+    findOpenShadowRoots(scopes) {
+      return this.domUtilities.getOpenShadowRoots(scopes);
     }
     /**
      * Checks, for each of several elements, whether it has every given ARIA state. A state that does not apply to

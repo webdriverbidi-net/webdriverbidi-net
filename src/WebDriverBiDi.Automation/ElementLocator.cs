@@ -151,6 +151,17 @@ public sealed class ElementLocator
     }
 
     /// <summary>
+    /// Creates a locator for the shadow roots of the elements this locator finds, open or closed, so that the next
+    /// step searches within them. An element without a shadow root is dropped. Browsers do not evaluate XPath within
+    /// a shadow root, so an XPath step cannot follow this one.
+    /// </summary>
+    /// <returns>The locator.</returns>
+    public ElementLocator ShadowRoot()
+    {
+        return this.Append(new ShadowRootStep());
+    }
+
+    /// <summary>
     /// Creates a locator for the first element this locator finds.
     /// </summary>
     /// <returns>The locator.</returns>
@@ -422,6 +433,11 @@ public sealed class ElementLocator
             return startNodes;
         }
 
+        if (this.Group.Options.PierceShadowRoots && locator is not XPathLocator)
+        {
+            startNodes = await this.AddOpenShadowRootsAsync(startNodes, budget).ConfigureAwait(false);
+        }
+
         LocateNodesCommandParameters parameters = new(this.Frame.Id, locator)
         {
             MaxNodeCount = startNodes is null || startNodes.Count == 1 ? maxCount : null,
@@ -445,9 +461,41 @@ public sealed class ElementLocator
             return startNodes;
         }
 
+        if (this.Group.Options.PierceShadowRoots)
+        {
+            startNodes = await this.AddOpenShadowRootsAsync(startNodes, budget).ConfigureAwait(false);
+        }
+
         LocalValue[] arguments = [LocalValue.String(label.Text), LocalValue.Boolean(label.Exact), .. (startNodes ?? []).Select(node => node.ToSharedReference())];
         RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, text, exact, ...scopes) => inspector.findElementsByLabel(scopes.length > 0 ? scopes : [document], text, exact)", arguments, budget).ConfigureAwait(false);
         return DistinctNodes(result.As<CollectionRemoteValue>().Value!.Select(node => node.As<NodeRemoteValue>()));
+    }
+
+    // The scopes (the start nodes, or the document), followed by the open shadow roots within them; the scopes
+    // are left as they were when there are none.
+    private async Task<List<NodeRemoteValue>?> AddOpenShadowRootsAsync(List<NodeRemoteValue>? startNodes, TimeBudget budget)
+    {
+        LocalValue[] arguments = [.. (startNodes ?? []).Select(node => node.ToSharedReference())];
+        RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, ...scopes) => { const searched = scopes.length > 0 ? scopes : [document]; const roots = inspector.findOpenShadowRoots(searched); return roots.length > 0 ? [...searched, ...roots] : null; }", arguments, budget).ConfigureAwait(false);
+        return result is CollectionRemoteValue scopes ? DistinctNodes(scopes.Value!.Select(node => node.As<NodeRemoteValue>())) : startNodes;
+    }
+
+    // The browser serializes each element with its shadow root, open or closed, which script alone could not reach.
+    private async Task<List<NodeRemoteValue>> EnterShadowRootsAsync(List<NodeRemoteValue> nodes, TimeBudget budget)
+    {
+        if (nodes.Count == 0)
+        {
+            return nodes;
+        }
+
+        CallFunctionCommandParameters parameters = new("(...elements) => elements", new ContextTarget(this.Frame.Id) { Sandbox = this.Group.Options.SandboxName }, false)
+        {
+            SerializationOptions = new SerializationOptions() { MaxDomDepth = 0, IncludeShadowTree = IncludeShadowTreeSerializationOption.All },
+        };
+        parameters.Arguments.AddRange(nodes.Select(node => node.ToSharedReference()));
+        EvaluateResult result = await this.Group.Driver.Script.CallFunctionAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        IEnumerable<NodeRemoteValue> elements = result.As<EvaluateResultSuccess>().Result.As<CollectionRemoteValue>().Value!.Select(node => node.As<NodeRemoteValue>());
+        return DistinctNodes(elements.Select(element => element.Value?.ShadowRoot).OfType<NodeRemoteValue>());
     }
 
     private async Task<List<NodeRemoteValue>> KeepByRoleStatesAsync(RoleStates states, List<NodeRemoteValue> nodes, TimeBudget budget)
@@ -745,6 +793,19 @@ public sealed class ElementLocator
         public override string ToString()
         {
             return this.Exact ? $"getByLabel \"{this.Text}\" exact" : $"getByLabel \"{this.Text}\"";
+        }
+    }
+
+    private sealed record ShadowRootStep : Step
+    {
+        public override Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget)
+        {
+            return owner.EnterShadowRootsAsync(nodes!, budget);
+        }
+
+        public override string ToString()
+        {
+            return "shadowRoot";
         }
     }
 }
