@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pointer extras</title>
+    <style>
+      .box { width: 120px; height: 60px; margin: 10px; background: #ddd; }
+    </style>
+  </head>
+  <body>
+    <button id="tap-target">Tap</button>
+    <div id="pointer-source" class="box">Pointer source</div>
+    <div id="pointer-target" class="box">Pointer target</div>
+    <div id="html-source" class="box" draggable="true">HTML source</div>
+    <div id="html-target" class="box">HTML target</div>
+    <div id="dispatch-target" class="box">Dispatch</div>
+    <script>
+      window.events = [];
+      const record = (value) => window.events.push(value);
+      const tap = document.getElementById('tap-target');
+      tap.addEventListener('pointerdown', (e) => record(`pointerdown:${e.pointerType}`));
+      tap.addEventListener('click', () => record('click'));
+
+      let dragging = false;
+      document.getElementById('pointer-source').addEventListener('mousedown', () => { dragging = true; });
+      document.getElementById('pointer-target').addEventListener('mouseup', (e) => { if (dragging) { record(`pointer-drop:${e.shiftKey}`); } dragging = false; });
+
+      const htmlTarget = document.getElementById('html-target');
+      document.getElementById('html-source').addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', 'dragged'); record('dragstart'); });
+      htmlTarget.addEventListener('dragover', (e) => e.preventDefault());
+      htmlTarget.addEventListener('drop', (e) => { e.preventDefault(); record(`drop:${e.dataTransfer.getData('text/plain')}`); });
+
+      const dispatch = document.getElementById('dispatch-target');
+      dispatch.addEventListener('click', (e) => record(`click:${e.constructor.name}:${e.clientX}:${e.bubbles}`));
+      dispatch.addEventListener('my-event', (e) => record(`my-event:${e.constructor.name}:${e.bubbles}`));
+      dispatch.addEventListener('keydown', (e) => { record(`keydown:${e.key}`); e.preventDefault(); });
+      document.body.addEventListener('click', (e) => { if (e.target === dispatch) { record('bubbled'); } });
+    </script>
+  </body>
+</html>

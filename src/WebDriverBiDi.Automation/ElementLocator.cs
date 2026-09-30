@@ -366,6 +366,67 @@ public sealed class ElementLocator
     }
 
     /// <summary>
+    /// Taps the element with a touch pointer, once it is ready, as <see cref="ClickAsync"/> waits.
+    /// </summary>
+    /// <param name="options">The position, modifier keys, and wait, or <see langword="null"/> for a tap at the chosen point.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the tap has been performed.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public Task TapAsync(PointerActionOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new PointerActionOptions();
+        return this.PerformPointerActionAsync("click", "tapped", options, this.CreateBudget(options.Timeout, cancellationToken), (pointer, builder) => builder.AddAction(pointer.CreatePointerDown()).AddAction(pointer.CreatePointerUp()), PointerType.Touch);
+    }
+
+    /// <summary>
+    /// Drags the element onto another with the mouse, once the element is ready to be dragged, as
+    /// <see cref="ClickAsync"/> waits, and the target is visible, stable, and not covered by another element.
+    /// </summary>
+    /// <param name="target">The locator of the element to drop onto, in the same frame.</param>
+    /// <param name="options">The points held and dropped on, modifier keys, and wait, or <see langword="null"/> for the chosen points.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the element has been dropped.</returns>
+    /// <exception cref="ArgumentException">Thrown when the target finds elements in another frame.</exception>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches either locator.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when either element is not ready in time.</exception>
+    public async Task DragToAsync(ElementLocator target, DragOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        this.RequireSameFrame(target, nameof(target));
+        options ??= new DragOptions();
+        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
+        ActionTarget? from = await this.PollAsync(budget, $"{this} to be ready to be dragged", () => this.FindActionTargetAsync("drag", options, budget)).ConfigureAwait(false);
+        PointerActionOptions targetOptions = new() { Offset = options.TargetOffset, Force = options.Force };
+        ActionTarget? to = await target.PollAsync(budget, $"{target} to be ready to be dropped on", () => target.FindActionTargetAsync("drop", targetOptions, budget)).ConfigureAwait(false);
+        await this.PerformPointerInputAsync(options.Modifiers, PointerType.Mouse, budget, (pointer, builder) => builder
+            .AddAction(MoveTo(pointer, from!))
+            .AddAction(pointer.CreatePointerDown())
+            .AddAction(MoveTo(pointer, to!))
+            .AddAction(pointer.CreatePointerUp())).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Dispatches an event to the element, once one matches, created with the interface a user's action would use
+    /// for its type, such as <c>MouseEvent</c> for <c>click</c>. The event bubbles, is cancelable, and crosses shadow
+    /// boundaries, unless the init properties say otherwise.
+    /// </summary>
+    /// <param name="type">The event type, such as <c>click</c>.</param>
+    /// <param name="eventInit">The event's init properties, such as <c>clientX</c>, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the command.</param>
+    /// <returns><see langword="false"/> if a listener canceled the event; otherwise, <see langword="true"/>.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<bool> DispatchEventAsync(string type, IReadOnlyDictionary<string, LocalValue>? eventInit = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        NodeRemoteValue? node = await this.PollAsync(budget, $"{this} to be attached", () => this.TryFindOneAsync(budget)).ConfigureAwait(false);
+        LocalValue init = LocalValue.Object(eventInit?.ToDictionary(property => property.Key, property => property.Value) ?? []);
+        RemoteValue dispatched = await this.Group.ScriptHost.CallActionsAsync(this.Frame.Id, "(actions, element, type, init) => actions.dispatchEvent(element, type, init)", [node!.ToSharedReference(), LocalValue.String(type), init], budget).ConfigureAwait(false);
+        return dispatched.As<BooleanRemoteValue>().Value;
+    }
+
+    /// <summary>
     /// Scrolls the element into view, once it is visible and stable, unless it is in view already.
     /// </summary>
     /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
@@ -645,6 +706,11 @@ public sealed class ElementLocator
             "notconnected" => "the element was removed from the document",
             _ => $"the element was {reason}",
         };
+    }
+
+    private static InputAction MoveTo(PointerInputSource pointer, ActionTarget target)
+    {
+        return pointer.CreatePointerMove(target.Offset.X, target.Offset.Y, Origin.Element(target.Node.ToSharedReference()));
     }
 
     private static int OptionIndex(RemoteValue result)
@@ -971,25 +1037,33 @@ public sealed class ElementLocator
 
     // Waits for the element to be ready for the interaction, then aims the pointer at the point the readiness check
     // chose (or was asked for), relative to the element, which the browser places correctly within frames.
-    private async Task PerformPointerActionAsync(string interactionType, string pastTense, PointerActionOptions options, TimeBudget budget, Action<PointerInputSource, InputBuilder> addActions)
+    private async Task PerformPointerActionAsync(string interactionType, string pastTense, PointerActionOptions options, TimeBudget budget, Action<PointerInputSource, InputBuilder> addActions, PointerType pointerType = PointerType.Mouse)
     {
         ActionTarget? target = await this.PollAsync(budget, $"{this} to be ready to be {pastTense}", () => this.FindActionTargetAsync(interactionType, options, budget)).ConfigureAwait(false);
+        await this.PerformPointerInputAsync(options.Modifiers, pointerType, budget, (pointer, builder) =>
+        {
+            builder.AddAction(MoveTo(pointer, target!));
+            addActions(pointer, builder);
+        }).ConfigureAwait(false);
+    }
+
+    // Holds the modifier keys down around the pointer's actions.
+    private Task PerformPointerInputAsync(KeyModifiers modifiers, PointerType pointerType, TimeBudget budget, Action<PointerInputSource, InputBuilder> addActions)
+    {
         InputBuilder builder = new();
-        string[] modifierKeys = ModifierKeys(options.Modifiers);
+        string[] modifierKeys = ModifierKeys(modifiers);
         foreach (string key in modifierKeys)
         {
             builder.AddAction(builder.DefaultKeyInputSource.CreateKeyDown(key));
         }
 
-        PointerInputSource pointer = builder.DefaultPointerInputSource;
-        builder.AddAction(pointer.CreatePointerMove(target!.Offset.X, target.Offset.Y, Origin.Element(target.Node.ToSharedReference())));
-        addActions(pointer, builder);
+        addActions(builder.CreatePointerInputSource(pointerType), builder);
         foreach (string key in Enumerable.Reverse(modifierKeys))
         {
             builder.AddAction(builder.DefaultKeyInputSource.CreateKeyUp(key));
         }
 
-        await this.Group.Driver.Input.PerformActionsAsync(this.Frame.Id, builder, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        return this.Group.Driver.Input.PerformActionsAsync(this.Frame.Id, builder, budget.Remaining, budget.CancellationToken);
     }
 
     private async Task<(bool Found, ActionTarget? Target, string Observed)> FindActionTargetAsync(string interactionType, PointerActionOptions options, TimeBudget budget)

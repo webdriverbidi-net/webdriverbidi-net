@@ -47,7 +47,7 @@ public class GetByHelperIntegrationTests
     [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
     public async Task TextHelperUsesTheBrowsersOwnComputation(BrowserKind browserKind)
     {
-        Assert.SkipWhen(browserKind == BrowserKind.Firefox, "Firefox does not yet support the innerText locator (a known Firefox bug).");
+        Assert.SkipWhen(browserKind == BrowserKind.Firefox, "Firefox does not yet support the innerText locator (https://bugzilla.mozilla.org/show_bug.cgi?id=1869538).");
         await using TestPageServer server = await TestPageServer.StartAsync();
         await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
