@@ -5,8 +5,10 @@
 
 namespace WebDriverBiDi.Automation;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Script;
 
 /// <summary>
 /// A tab or window of a <see cref="Automation.Browser"/>: a top-level browsing context, and the frames within it.
@@ -288,6 +290,92 @@ public sealed class Page
     public Task<string> RunAndWaitForNavigationAsync(Func<Task> action, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         return this.MainFrame.RunAndWaitForNavigationAsync(action, wait, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Calls a JavaScript function in the page's main frame, as <see cref="Frame.EvaluateAsync(string, IEnumerable{LocalValue}?, TimeSpan?, CancellationToken)"/> does.
+    /// </summary>
+    /// <param name="function">The function's declaration.</param>
+    /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the call.</param>
+    /// <returns>The function's result.</returns>
+    public Task<RemoteValue> EvaluateAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.EvaluateAsync(function, arguments, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Calls a JavaScript function in the page's main frame and converts its result, as
+    /// <see cref="Frame.EvaluateAsync{T}"/> does.
+    /// </summary>
+    /// <typeparam name="T">The type to convert the result to.</typeparam>
+    /// <param name="function">The function's declaration.</param>
+    /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the call.</param>
+    /// <returns>The function's result, converted.</returns>
+    public Task<T> EvaluateAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.EvaluateAsync<T>(function, arguments, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Calls a JavaScript function in the page's main frame until it returns a truthy value, as
+    /// <see cref="Frame.WaitForFunctionAsync(string, IEnumerable{LocalValue}?, TimeSpan?, CancellationToken)"/> does.
+    /// </summary>
+    /// <param name="function">The function's declaration.</param>
+    /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The truthy value.</returns>
+    public Task<RemoteValue> WaitForFunctionAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.WaitForFunctionAsync(function, arguments, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Calls a JavaScript function in the page's main frame until it returns a truthy value, and converts the
+    /// value, as <see cref="Frame.WaitForFunctionAsync{T}"/> does.
+    /// </summary>
+    /// <typeparam name="T">The type to convert the value to.</typeparam>
+    /// <param name="function">The function's declaration.</param>
+    /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The truthy value, converted.</returns>
+    public Task<T> WaitForFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.WaitForFunctionAsync<T>(function, arguments, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Replaces the page's document's contents with HTML, as <see cref="Frame.SetContentAsync"/> does for the main
+    /// frame.
+    /// </summary>
+    /// <param name="html">The HTML.</param>
+    /// <param name="wait">How far the document must load.</param>
+    /// <param name="timeout">The time it may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>A task that completes when the document has loaded as far as the state.</returns>
+    public Task SetContentAsync(string html, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.SetContentAsync(html, wait, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a script that runs in each document the page or its frames load from now on, in the page's own script
+    /// realm, before the document's own scripts. It does not run in documents already loaded.
+    /// </summary>
+    /// <param name="function">The script, as a function of no arguments, such as <c>() =&gt; { window.seed = 42; }</c>.</param>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>The added script, which can be removed.</returns>
+    public async Task<InitScript> AddInitScriptAsync(string function, CancellationToken cancellationToken = default)
+    {
+        AddPreloadScriptCommandParameters parameters = new(function);
+        parameters.Contexts.Add(this.Id);
+        AddPreloadScriptCommandResult result = await this.Browser.Group.Driver.Script.AddPreloadScriptAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return new InitScript(this.Browser.Group.Driver, result.PreloadScriptId);
     }
 
     /// <summary>

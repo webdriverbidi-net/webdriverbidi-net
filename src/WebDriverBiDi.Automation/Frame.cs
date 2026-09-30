@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Automation;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
@@ -324,6 +325,125 @@ public sealed class Frame
     }
 
     /// <summary>
+    /// Calls a JavaScript function in the frame's document, in the page's own script realm, awaiting a promise it
+    /// returns.
+    /// </summary>
+    /// <param name="function">The function's declaration, such as <c>(a, b) =&gt; a + b</c>; an expression is written as a function of no arguments, such as <c>() =&gt; document.title</c>.</param>
+    /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the call.</param>
+    /// <returns>The function's result.</returns>
+    /// <exception cref="ScriptException">Thrown when the function throws.</exception>
+    public Task<RemoteValue> EvaluateAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.Group.Driver.Script.CallFunctionAsync(this.Id, function, arguments, null, timeout ?? this.Group.Options.ActionTimeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Calls a JavaScript function in the frame's document, as <see cref="EvaluateAsync(string, IEnumerable{LocalValue}?, TimeSpan?, CancellationToken)"/>
+    /// does, and converts its result.
+    /// </summary>
+    /// <typeparam name="T">The type to convert the result to: a string, a Boolean, a number type, <see cref="System.Numerics.BigInteger"/>, <see cref="DateTime"/>, or a nullable one of those; <see cref="object"/>, for an untyped tree of those with lists and string-keyed dictionaries; a <see cref="RemoteValue"/> type; an array of any of these, at any depth; or a <see cref="List{T}"/> or <see cref="Dictionary{TKey, TValue}"/> with string keys of any of these, but not within another value.</typeparam>
+    /// <param name="function">The function's declaration.</param>
+    /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the call.</param>
+    /// <returns>The function's result, converted.</returns>
+    /// <exception cref="ScriptException">Thrown when the function throws.</exception>
+    /// <exception cref="InvalidCastException">Thrown when the result cannot be converted to the type.</exception>
+    /// <exception cref="NotSupportedException">Thrown when the type is not one a result converts to.</exception>
+    /// <exception cref="OverflowException">Thrown when a number is outside the range of the type.</exception>
+    public async Task<T> EvaluateAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return RemoteValueConverter.Convert<T>(await this.EvaluateAsync(function, arguments, timeout, cancellationToken).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// Calls a JavaScript function in the frame's document until it returns a truthy value, calling it again after
+    /// <see cref="AutomationOptions.PollInterval"/> each time it does not, and through a navigation of the frame.
+    /// </summary>
+    /// <param name="function">The function's declaration.</param>
+    /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The truthy value.</returns>
+    /// <exception cref="ScriptException">Thrown when the function throws.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the function does not return a truthy value in time.</exception>
+    public async Task<RemoteValue> WaitForFunctionAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        List<LocalValue> argumentList = [.. arguments ?? []];
+        TimeBudget budget = new(timeout ?? this.Group.Options.ActionTimeout, this.Group.Options.TimeProvider, cancellationToken);
+        string observed = "it was still running";
+        while (true)
+        {
+            int navigationsStarted = this.NavigationsStarted;
+            try
+            {
+                RemoteValue result = await this.Group.Driver.Script.CallFunctionAsync(this.Id, function, argumentList, null, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+                if (IsTruthy(result))
+                {
+                    return result;
+                }
+
+                observed = $"it last returned {DescribeFalsy(result)}";
+            }
+            catch (WebDriverBiDiCommandException) when (this.NavigationsStarted != navigationsStarted)
+            {
+                observed = "the frame navigated while it ran";
+            }
+            catch (WebDriverBiDiTimeoutException) when (budget.IsExhausted)
+            {
+            }
+
+            if (budget.IsExhausted)
+            {
+                throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for the function to return a truthy value; {observed}.");
+            }
+
+            await budget.DelayAsync(this.Group.Options.PollInterval).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Calls a JavaScript function in the frame's document until it returns a truthy value, as
+    /// <see cref="WaitForFunctionAsync(string, IEnumerable{LocalValue}?, TimeSpan?, CancellationToken)"/> does, and
+    /// converts the value.
+    /// </summary>
+    /// <typeparam name="T">The type to convert the value to, as for <see cref="EvaluateAsync{T}"/>.</typeparam>
+    /// <param name="function">The function's declaration.</param>
+    /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The truthy value, converted.</returns>
+    /// <exception cref="ScriptException">Thrown when the function throws.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the function does not return a truthy value in time.</exception>
+    public async Task<T> WaitForFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return RemoteValueConverter.Convert<T>(await this.WaitForFunctionAsync(function, arguments, timeout, cancellationToken).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// Replaces the frame's document's contents with HTML, then waits for it to load as far as a state.
+    /// </summary>
+    /// <param name="html">The HTML.</param>
+    /// <param name="wait">How far the document must load.</param>
+    /// <param name="timeout">The time it may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>A task that completes when the document has loaded as far as the state.</returns>
+    public async Task SetContentAsync(string html, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        string state = wait switch
+        {
+            ReadinessState.Complete => "complete",
+            ReadinessState.Interactive => "interactive",
+            _ => "none",
+        };
+        await this.Group.ScriptHost.CallActionsAsync(this.Id, "(actions, html, state) => actions.setContent(html, state)", [LocalValue.String(html), LocalValue.String(state)], budget).ConfigureAwait(false);
+        this.RecordLoadState(wait == ReadinessState.Complete ? LoadState.Complete : null);
+    }
+
+    /// <summary>
     /// Creates a locator for a GetBy helper's query.
     /// </summary>
     /// <param name="query">The query.</param>
@@ -388,8 +508,8 @@ public sealed class Frame
     /// <summary>
     /// Records how far the frame's document has loaded.
     /// </summary>
-    /// <param name="state">The state.</param>
-    internal void RecordLoadState(LoadState state)
+    /// <param name="state">The state, or <see langword="null"/> when it is unknown.</param>
+    internal void RecordLoadState(LoadState? state)
     {
         lock (this.stateLock)
         {
@@ -408,6 +528,32 @@ public sealed class Frame
             this.isDetached = true;
             this.SignalStateChange();
         }
+    }
+
+    private static bool IsTruthy(RemoteValue value)
+    {
+        return value switch
+        {
+            NullRemoteValue or UndefinedRemoteValue => false,
+            BooleanRemoteValue boolean => boolean.Value,
+            NumberRemoteValue number => number.Value != 0 && !double.IsNaN(number.Value),
+            StringRemoteValue text => text.Value.Length > 0,
+            BigIntegerRemoteValue bigInteger => !bigInteger.Value.IsZero,
+            _ => true,
+        };
+    }
+
+    private static string DescribeFalsy(RemoteValue value)
+    {
+        return value switch
+        {
+            NullRemoteValue => "null",
+            BooleanRemoteValue => "false",
+            NumberRemoteValue number => number.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            StringRemoteValue => "an empty string",
+            BigIntegerRemoteValue => "0n",
+            _ => "undefined",
+        };
     }
 
     private static LoadState ParseReadyState(string readyState)

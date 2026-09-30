@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Automation;
 
+using System.Diagnostics.CodeAnalysis;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Script;
@@ -834,6 +835,46 @@ public sealed class ElementLocator
             return (true, Convert.FromBase64String(result.Data), string.Empty);
         }).ConfigureAwait(false);
         return image!;
+    }
+
+    /// <summary>
+    /// Calls a JavaScript function with the element as its first argument, once one matches, in the page's own
+    /// script realm, awaiting a promise it returns.
+    /// </summary>
+    /// <param name="function">The function's declaration, such as <c>(element, name) =&gt; element.dataset[name]</c>.</param>
+    /// <param name="arguments">The arguments after the element, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time to wait for the element, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the call.</param>
+    /// <returns>The function's result.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="ScriptException">Thrown when the function throws.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<RemoteValue> EvaluateAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        List<LocalValue> argumentList = [.. arguments ?? []];
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        RemoteValue? result = await this.PollElementAsync(budget, async node =>
+        {
+            RemoteValue value = await this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, function, [node.ToSharedReference(), .. argumentList], null, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+            return (true, value, string.Empty);
+        }).ConfigureAwait(false);
+        return result!;
+    }
+
+    /// <summary>
+    /// Calls a JavaScript function with the element as its first argument, as
+    /// <see cref="EvaluateAsync(string, IEnumerable{LocalValue}?, TimeSpan?, CancellationToken)"/> does, and converts
+    /// its result, as <see cref="Frame.EvaluateAsync{T}"/> does.
+    /// </summary>
+    /// <typeparam name="T">The type to convert the result to.</typeparam>
+    /// <param name="function">The function's declaration.</param>
+    /// <param name="arguments">The arguments after the element, or <see langword="null"/> for none.</param>
+    /// <param name="timeout">The time to wait for the element, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the call.</param>
+    /// <returns>The function's result, converted.</returns>
+    public async Task<T> EvaluateAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return RemoteValueConverter.Convert<T>(await this.EvaluateAsync(function, arguments, timeout, cancellationToken).ConfigureAwait(false));
     }
 
     /// <summary>

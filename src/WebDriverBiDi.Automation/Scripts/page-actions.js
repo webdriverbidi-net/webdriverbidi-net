@@ -99,5 +99,20 @@
       const EventInterface = (name && globalThis[name]) || Event;
       return element.dispatchEvent(new EventInterface(type, { bubbles: true, cancelable: true, composed: true, ...init }));
     },
+
+    /**
+     * Replaces the document's contents with HTML, then waits for it to load as far as a state.
+     * @param {string} html The HTML.
+     * @param {'none' | 'interactive' | 'complete'} state How far the document must load.
+     * @returns {Promise<void>} A promise that resolves when the document has loaded that far.
+     */
+    async setContent(html, state) {
+      document.open();
+      document.write(html);
+      document.close();
+      if (state === 'complete' && document.readyState !== 'complete') {
+        await new Promise((resolve) => window.addEventListener('load', resolve, { once: true }));
+      }
+    },
   };
 })()
