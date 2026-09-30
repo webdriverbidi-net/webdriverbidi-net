@@ -100,8 +100,8 @@ public sealed class BrowserGroup : IAsyncDisposable
     internal ScriptHost ScriptHost { get; }
 
     /// <summary>
-    /// Launches a browser, connects a driver to it, and starts a session, if the launcher did not start one.
-    /// Disposing the group ends that session and closes the browser.
+    /// Launches a browser, connects a driver to it, and starts a session, if the launcher did not start one, with
+    /// the session capabilities given to the builder. Disposing the group ends that session and closes the browser.
     /// </summary>
     /// <param name="launcherBuilder">The configured builder of the browser's launcher.</param>
     /// <param name="options">The options for the group, or <see langword="null"/> for the defaults.</param>
@@ -120,7 +120,8 @@ public sealed class BrowserGroup : IAsyncDisposable
             bool ownsSession = !launcher.IsBiDiSessionInitialized;
             if (ownsSession)
             {
-                await driver.Session.NewSessionAsync(new NewCommandParameters(), cancellationToken: cancellationToken).ConfigureAwait(false);
+                NewCommandParameters parameters = new() { Capabilities = new CapabilitiesRequest() { AlwaysMatch = launcher.CreateCapabilityRequest() } };
+                await driver.Session.NewSessionAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
             group = new BrowserGroup(driver, options ?? new AutomationOptions(), launcher, ownsSession);

@@ -5,8 +5,10 @@
 
 namespace WebDriverBiDi.Automation;
 
+using System.Text.Json.Nodes;
 using WebDriverBiDi.Automation.TestUtilities;
 using WebDriverBiDi.Browsers;
+using WebDriverBiDi.Session;
 
 public class BrowserGroupTests
 {
@@ -24,6 +26,23 @@ public class BrowserGroupTests
         Assert.Same(options, group.Options);
         Assert.Equal(["session.new", "session.subscribe", "script.addPreloadScript", "browser.getUserContexts", "browsingContext.getTree", "session.end"], server.ReceivedMethods);
         Assert.False(group.Driver.IsStarted);
+    }
+
+    [Fact]
+    public async Task LaunchedGroupRequestsTheBuildersSessionCapabilities()
+    {
+        await using ScriptedBiDiServer server = await ScriptedBiDiServer.StartAsync();
+        BrowserLauncherBuilder builder = Launcher(server)
+            .WithSessionCapability("unhandledPromptBehavior", new UserPromptHandler() { Default = UserPromptHandlerType.Ignore })
+            .WithSessionCapability("acceptInsecureCerts", true)
+            .WithSessionCapability("vendor:options", new Dictionary<string, object?>() { ["flag"] = true });
+
+        await using BrowserGroup group = await BrowserGroup.LaunchAsync(builder, cancellationToken: TestContext.Current.CancellationToken);
+
+        JsonObject alwaysMatch = server.ReceivedCommands.First(command => (string?)command["method"] == "session.new")["params"]!["capabilities"]!["alwaysMatch"]!.AsObject();
+        Assert.Equal("ignore", (string?)alwaysMatch["unhandledPromptBehavior"]!["default"]);
+        Assert.True((bool?)alwaysMatch["acceptInsecureCerts"]);
+        Assert.True((bool?)alwaysMatch["vendor:options"]!["flag"]);
     }
 
     [Fact]

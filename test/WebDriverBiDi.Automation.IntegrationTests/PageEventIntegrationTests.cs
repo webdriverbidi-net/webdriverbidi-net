@@ -91,6 +91,26 @@ public class PageEventIntegrationTests
 
     [Theory]
     [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task DialogsTheSessionLeavesOpenAreAnsweredFromTheObserver(BrowserKind browserKind)
+    {
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind, configure: builder => builder.WithSessionCapability("unhandledPromptBehavior", new UserPromptHandler() { Default = UserPromptHandlerType.Ignore }));
+        Page page = await OpenAsync(group.DefaultBrowser, server);
+        List<UserPromptHandlerType> handlers = [];
+        page.OnDialog.AddObserver(async e =>
+        {
+            handlers.Add(e.Dialog.Handler);
+            await e.Dialog.AcceptAsync();
+        });
+
+        await page.Locate(new CssLocator("#confirm")).ClickAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal([UserPromptHandlerType.Ignore], handlers);
+        Assert.True(await page.EvaluateAsync<bool>("() => window.confirmed", cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
     public async Task DialogsTheBrowserHandlesAreReportedAndCannotBeAnswered(BrowserKind browserKind)
     {
         Assert.SkipWhen(browserKind == BrowserKind.Firefox, "Firefox ignores the unhandledPromptBehavior parameter of browser.createUserContext (https://bugzilla.mozilla.org/show_bug.cgi?id=1975279).");

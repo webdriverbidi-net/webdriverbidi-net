@@ -18,7 +18,7 @@ using PinchHitter;
 public sealed class ScriptedBiDiServer : IAsyncDisposable
 {
     private readonly Server server = new();
-    private readonly ConcurrentQueue<string> receivedMethods = new();
+    private readonly ConcurrentQueue<JsonObject> receivedCommands = new();
     private readonly ConcurrentDictionary<string, (string Error, string Message)> errors = new();
 
     private ScriptedBiDiServer()
@@ -34,7 +34,12 @@ public sealed class ScriptedBiDiServer : IAsyncDisposable
     /// <summary>
     /// Gets the methods of the commands received, in order.
     /// </summary>
-    public IReadOnlyList<string> ReceivedMethods => [.. this.receivedMethods];
+    public IReadOnlyList<string> ReceivedMethods => [.. this.receivedCommands.Select(command => (string)command["method"]!)];
+
+    /// <summary>
+    /// Gets the commands received, in order.
+    /// </summary>
+    public IReadOnlyList<JsonObject> ReceivedCommands => [.. this.receivedCommands];
 
     /// <summary>
     /// Starts a server.
@@ -74,7 +79,7 @@ public sealed class ScriptedBiDiServer : IAsyncDisposable
 
         JsonObject command = JsonNode.Parse(e.Data)!.AsObject();
         string method = (string)command["method"]!;
-        this.receivedMethods.Enqueue(method);
+        this.receivedCommands.Enqueue(command);
         JsonObject response = new() { ["id"] = (long)command["id"]! };
         if (this.errors.TryGetValue(method, out (string Error, string Message) error))
         {
