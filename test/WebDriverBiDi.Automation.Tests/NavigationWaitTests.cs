@@ -78,6 +78,38 @@ public class NavigationWaitTests
         await Assert.ThrowsAsync<WebDriverBiDiCommandException>(() => page.WaitForLoadStateAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
+    // A browser may not answer while a new document settles; the events tell the state instead.
+    [Fact]
+    public async Task UnansweredQuestionIsDroppedWhenAnEventTellsTheState()
+    {
+        (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.NeverAnswer("script.callFunction");
+
+        Task loaded = page.WaitForLoadStateAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await WaitForScriptCallsAsync(driver, session, 1);
+        await session.RaiseNavigationEventAsync("browsingContext.load", page.Id, PageUrl);
+        await loaded.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Assert.Single(session.RemoteEnd.CommandsFor("script.callFunction"));
+    }
+
+    [Fact]
+    public async Task ChangeThatLeavesTheStateUnknownAsksAgain()
+    {
+        (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.NeverAnswer("script.callFunction");
+
+        Task loaded = page.WaitForLoadStateAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await WaitForScriptCallsAsync(driver, session, 1);
+        AnswerReadyState(session, "complete");
+        await session.RaiseHistoryUpdatedAsync(page.Id, PageUrl + "/pushed");
+        await loaded.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, session.RemoteEnd.CommandsFor("script.callFunction").Count);
+    }
+
     [Fact]
     public async Task LoadStateThatNeverComesTimesOutSayingWhatWasSeen()
     {

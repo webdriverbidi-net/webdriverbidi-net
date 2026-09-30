@@ -560,6 +560,18 @@ public sealed class Frame
         };
     }
 
+    // Waits for a command no longer needed to finish, however it finishes.
+    private static async Task IgnoreFailureAsync(Task command)
+    {
+        try
+        {
+            await command.ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or WebDriverBiDiException)
+        {
+        }
+    }
+
     private static LoadState ParseReadyState(string readyState)
     {
         return readyState switch
@@ -600,37 +612,54 @@ public sealed class Frame
         await this.WaitUntilAsync(() => this.loadState >= target, $"the frame's document to be {target.ToString().ToLowerInvariant()}", () => $"it was {this.loadState?.ToString().ToLowerInvariant() ?? "unknown"}", budget).ConfigureAwait(false);
     }
 
-    // A document whose state no event has reported is asked; its answer is kept only if no event reported a newer
-    // state meanwhile.
+    // A document whose state no event has reported is asked. An event that changes the frame's state while it is
+    // asked makes the answer stale, so the question is dropped, and asked again only if the state is still unknown;
+    // a browser may not answer at all while a new document settles, when the events tell the state anyway.
     private async Task ReadUnknownLoadStateAsync(TimeBudget budget)
     {
-        int version;
-        lock (this.stateLock)
+        while (true)
         {
-            if (this.loadState is not null)
+            int version;
+            Task changed;
+            lock (this.stateLock)
             {
+                if (this.loadState is not null)
+                {
+                    return;
+                }
+
+                version = this.stateVersion;
+                changed = this.stateChanged.Task;
+            }
+
+            using CancellationTokenSource readCancellation = CancellationTokenSource.CreateLinkedTokenSource(budget.CancellationToken);
+            Task<RemoteValue> read = this.Group.Driver.Script.CallFunctionAsync(this.Id, "() => document.readyState", [], this.Group.Options.SandboxName, budget.Remaining, readCancellation.Token);
+            await Task.WhenAny(read, changed).ConfigureAwait(false);
+            if (this.StateChangedSince(version))
+            {
+                readCancellation.Cancel();
+                await IgnoreFailureAsync(read).ConfigureAwait(false);
+                continue;
+            }
+
+            RemoteValue readyState;
+            try
+            {
+                readyState = await read.ConfigureAwait(false);
+            }
+            catch (WebDriverBiDiTimeoutException)
+            {
+                // The question was given the rest of the budget, so the wait that asked it has timed out.
                 return;
             }
 
-            version = this.stateVersion;
-        }
-
-        RemoteValue readyState;
-        try
-        {
-            readyState = await this.Group.Driver.Script.CallFunctionAsync(this.Id, "() => document.readyState", [], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
-        }
-        catch (WebDriverBiDiCommandException) when (this.StateChangedSince(version))
-        {
-            return;
-        }
-
-        lock (this.stateLock)
-        {
-            if (this.stateVersion == version)
+            lock (this.stateLock)
             {
-                this.loadState = ParseReadyState(readyState.As<StringRemoteValue>().Value);
-                this.SignalStateChange();
+                if (this.stateVersion == version)
+                {
+                    this.loadState = ParseReadyState(readyState.As<StringRemoteValue>().Value);
+                    this.SignalStateChange();
+                }
             }
         }
     }

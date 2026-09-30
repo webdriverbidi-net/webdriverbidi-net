@@ -70,6 +70,7 @@ public sealed class FakeRemoteEnd : Connection
     {
         this.results[method] = createResponse;
         this.errors.TryRemove(method, out _);
+        this.unansweredMethods.TryRemove(method, out _);
     }
 
     /// <summary>
