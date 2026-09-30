@@ -88,6 +88,37 @@ public sealed class Browser
     }
 
     /// <summary>
+    /// Allows the browser's pages to download files, saving them in a folder.
+    /// </summary>
+    /// <param name="destinationFolder">The folder, on the machine the browser runs on.</param>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>A task that completes when the behavior is set.</returns>
+    public Task AllowDownloadsAsync(string destinationFolder, CancellationToken cancellationToken = default)
+    {
+        return this.SetDownloadBehaviorAsync(new DownloadBehaviorAllowed(destinationFolder), cancellationToken);
+    }
+
+    /// <summary>
+    /// Stops the browser's pages from downloading files; a download they begin is canceled.
+    /// </summary>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>A task that completes when the behavior is set.</returns>
+    public Task DenyDownloadsAsync(CancellationToken cancellationToken = default)
+    {
+        return this.SetDownloadBehaviorAsync(new DownloadBehaviorDenied(), cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns the browser's downloads to the behavior the session started with.
+    /// </summary>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>A task that completes when the behavior is reset.</returns>
+    public Task ResetDownloadBehaviorAsync(CancellationToken cancellationToken = default)
+    {
+        return this.SetDownloadBehaviorAsync(null, cancellationToken);
+    }
+
+    /// <summary>
     /// Closes the browser, removing its user context and closing its pages. The default browser cannot be removed,
     /// so closing it closes its pages and leaves it in the group.
     /// </summary>
@@ -157,5 +188,12 @@ public sealed class Browser
 
         await this.onPageClosed.InvokeNotifyObserversAsync(new PageEventArgs(page)).ConfigureAwait(false);
         await page.NotifyClosedAsync().ConfigureAwait(false);
+    }
+
+    private Task SetDownloadBehaviorAsync(DownloadBehavior? behavior, CancellationToken cancellationToken)
+    {
+        SetDownloadBehaviorCommandParameters parameters = new() { DownloadBehavior = behavior };
+        parameters.UserContexts.Add(this.Id);
+        return this.Group.Driver.Browser.SetDownloadBehaviorAsync(parameters, cancellationToken: cancellationToken);
     }
 }

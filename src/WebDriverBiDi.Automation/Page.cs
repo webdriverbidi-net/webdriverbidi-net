@@ -22,6 +22,8 @@ public sealed class Page
     private readonly ObservableEventInvocable<PageErrorEventArgs> onPageError = new("automation.pageError");
     private readonly ObservableEventInvocable<DialogEventArgs> onDialog = new("automation.dialog");
     private readonly ObservableEventInvocable<PageEventArgs> onPopup = new("automation.popup");
+    private readonly ObservableEventInvocable<DownloadEventArgs> onDownload = new("automation.download");
+    private readonly List<TaskCompletionSource<Download>> downloadWaiters = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Page"/> class.
@@ -109,6 +111,11 @@ public sealed class Page
     /// Gets an observable event raised when the page opens another page, once that page is tracked.
     /// </summary>
     public ObservableEvent<PageEventArgs> OnPopup => this.onPopup;
+
+    /// <summary>
+    /// Gets an observable event raised when a document of the page begins a download.
+    /// </summary>
+    public ObservableEvent<DownloadEventArgs> OnDownload => this.onDownload;
 
     /// <summary>
     /// Creates a locator for elements in the page's main frame.
@@ -412,6 +419,38 @@ public sealed class Page
     }
 
     /// <summary>
+    /// Runs an action that makes the page begin a download, such as a click on a link, and waits for the download
+    /// to begin.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The download.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no download begins in time.</exception>
+    public async Task<Download> RunAndWaitForDownloadAsync(Func<Task> action, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = new(timeout ?? this.Browser.Group.Options.NavigationTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
+        TaskCompletionSource<Download> next = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (this.lockObject)
+        {
+            this.downloadWaiters.Add(next);
+        }
+
+        try
+        {
+            await action().ConfigureAwait(false);
+            return await budget.WaitAsync(next.Task, "a download to begin").ConfigureAwait(false);
+        }
+        finally
+        {
+            lock (this.lockObject)
+            {
+                this.downloadWaiters.Remove(next);
+            }
+        }
+    }
+
+    /// <summary>
     /// Brings the page to the front of its window, making it the active tab.
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the command.</param>
@@ -530,6 +569,24 @@ public sealed class Page
     internal Task NotifyPopupAsync(Page popup)
     {
         return this.onPopup.InvokeNotifyObserversAsync(new PageEventArgs(popup));
+    }
+
+    /// <summary>
+    /// Hands a download to those waiting for one, then raises <see cref="OnDownload"/>.
+    /// </summary>
+    /// <param name="download">The download.</param>
+    /// <returns>A task that completes when observers are notified.</returns>
+    internal Task NotifyDownloadAsync(Download download)
+    {
+        lock (this.lockObject)
+        {
+            foreach (TaskCompletionSource<Download> waiter in this.downloadWaiters)
+            {
+                waiter.TrySetResult(download);
+            }
+        }
+
+        return this.onDownload.InvokeNotifyObserversAsync(new DownloadEventArgs(download));
     }
 
     // History traversal has no wait of its own, so the navigation it causes is awaited from the frame's events.

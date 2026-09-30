@@ -69,4 +69,30 @@ internal readonly struct TimeBudget
         return this.timeProvider.Delay(delay, this.CancellationToken);
 #endif
     }
+
+    /// <summary>
+    /// Waits for a task to complete within the rest of the budget.
+    /// </summary>
+    /// <typeparam name="T">The task's result type.</typeparam>
+    /// <param name="task">The task.</param>
+    /// <param name="awaited">What the task stands for, for a timeout's message, such as "a download to begin".</param>
+    /// <returns>The task's result.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the task does not complete in time.</exception>
+    public async Task<T> WaitAsync<T>(Task<T> task, string awaited)
+    {
+        using CancellationTokenSource delayCancellation = CancellationTokenSource.CreateLinkedTokenSource(this.CancellationToken);
+#if NET8_0_OR_GREATER
+        Task timedOut = Task.Delay(this.Remaining, this.timeProvider, delayCancellation.Token);
+#else
+        Task timedOut = this.timeProvider.Delay(this.Remaining, delayCancellation.Token);
+#endif
+        if (await Task.WhenAny(task, timedOut).ConfigureAwait(false) == task)
+        {
+            delayCancellation.Cancel();
+            return await task.ConfigureAwait(false);
+        }
+
+        await timedOut.ConfigureAwait(false);
+        throw new WebDriverBiDiTimeoutException($"Timed out after {this.Duration.TotalSeconds} seconds waiting for {awaited}.");
+    }
 }

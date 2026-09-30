@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Automation;
 
+using System.Collections.Concurrent;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
@@ -31,6 +32,7 @@ public sealed class BrowserGroup : IAsyncDisposable
     private readonly List<Browser> browsers = [];
     private readonly HashSet<string> createdBrowserIds = [];
     private readonly Dictionary<string, Frame> frames = [];
+    private readonly ConcurrentDictionary<string, Download> downloads = new();
     private readonly List<IDisposable> observers = [];
     private HashSet<string>? contextsDestroyedWhileStarting = [];
     private string? subscriptionId;
@@ -50,6 +52,8 @@ public sealed class BrowserGroup : IAsyncDisposable
         this.observers.Add(driver.BrowsingContext.OnContextCreated.AddObserver(e => this.AddContextAsync(e.BrowsingContextId, e.Parent, e.UserContextId, e.Url, e.OriginalOpener), ObservableEventHandlerOptions.RunHandlerAsynchronously));
         this.observers.Add(driver.Log.OnEntryAdded.AddObserver(this.OnLogEntryAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously));
         this.observers.Add(driver.BrowsingContext.OnUserPromptOpened.AddObserver(this.OnUserPromptOpenedAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously));
+        this.observers.Add(driver.BrowsingContext.OnDownloadWillBegin.AddObserver(this.OnDownloadWillBeginAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously));
+        this.observers.Add(driver.BrowsingContext.OnDownloadEnd.AddObserver(this.OnDownloadEnd));
         this.observers.Add(driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyedAsync));
         this.observers.Add(driver.BrowsingContext.OnNavigationStarted.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordNavigationStarted()));
         this.observers.Add(driver.BrowsingContext.OnNavigationCommitted.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordNewDocument(e.Url)));
@@ -322,7 +326,7 @@ public sealed class BrowserGroup : IAsyncDisposable
         try
         {
             BrowsingContextModule module = this.Driver.BrowsingContext;
-            SubscribeCommandParameters subscription = new([module.OnContextCreated.EventName, module.OnContextDestroyed.EventName, module.OnNavigationStarted.EventName, module.OnNavigationCommitted.EventName, module.OnFragmentNavigated.EventName, module.OnHistoryUpdated.EventName, module.OnDomContentLoaded.EventName, module.OnLoad.EventName, module.OnUserPromptOpened.EventName, this.Driver.Log.OnEntryAdded.EventName]);
+            SubscribeCommandParameters subscription = new([module.OnContextCreated.EventName, module.OnContextDestroyed.EventName, module.OnNavigationStarted.EventName, module.OnNavigationCommitted.EventName, module.OnFragmentNavigated.EventName, module.OnHistoryUpdated.EventName, module.OnDomContentLoaded.EventName, module.OnLoad.EventName, module.OnUserPromptOpened.EventName, module.OnDownloadWillBegin.EventName, module.OnDownloadEnd.EventName, this.Driver.Log.OnEntryAdded.EventName]);
             this.subscriptionId = (await this.Driver.Session.SubscribeAsync(subscription, cancellationToken: cancellationToken).ConfigureAwait(false)).SubscriptionId;
             await this.ScriptHost.AddPreloadScriptAsync(cancellationToken).ConfigureAwait(false);
             GetUserContextsCommandResult userContexts = await this.Driver.Browser.GetUserContextsAsync(new GetUserContextsCommandParameters(), cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -467,6 +471,27 @@ public sealed class BrowserGroup : IAsyncDisposable
     {
         Frame? frame = this.FindFrame(e.BrowsingContextId);
         return frame is null ? Task.CompletedTask : frame.Page.NotifyDialogAsync(new Dialog(frame, e.PromptType, e.Message, e.DefaultValue, e.Handler));
+    }
+
+    private Task OnDownloadWillBeginAsync(DownloadWillBeginEventArgs e)
+    {
+        Frame? frame = this.FindFrame(e.BrowsingContextId);
+        if (frame is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        Download download = new(frame, e.Url, e.SuggestedFileName);
+        this.downloads[e.DownloadId] = download;
+        return frame.Page.NotifyDownloadAsync(download);
+    }
+
+    private void OnDownloadEnd(DownloadEndEventArgs e)
+    {
+        if (this.downloads.TryRemove(e.DownloadId, out Download? download))
+        {
+            download.RecordEnd(new DownloadOutcome(e.Status, e is DownloadCompleteEventArgs complete ? complete.FilePath : null));
+        }
     }
 
     private Task OnContextDestroyedAsync(ContextDestroyedEventArgs e)
