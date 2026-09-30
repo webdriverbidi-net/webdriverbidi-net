@@ -7,6 +7,8 @@ namespace WebDriverBiDi.Automation;
 
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Network;
+using WebDriverBiDi.Storage;
 
 /// <summary>
 /// A user context of a <see cref="BrowserGroup"/>: pages with their own cookies, storage, and cache, isolated from
@@ -119,6 +121,62 @@ public sealed class Browser
     }
 
     /// <summary>
+    /// Gets the browser's cookies, optionally only those of a domain or with a name.
+    /// </summary>
+    /// <param name="domain">The domain, or <see langword="null"/> for any.</param>
+    /// <param name="name">The name, or <see langword="null"/> for any.</param>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>The cookies.</returns>
+    public async Task<IReadOnlyList<BrowserCookie>> GetCookiesAsync(string? domain = null, string? name = null, CancellationToken cancellationToken = default)
+    {
+        GetCookiesCommandParameters parameters = new() { Filter = CreateFilter(domain, name), Partition = this.CreatePartition() };
+        GetCookiesCommandResult result = await this.Group.Driver.Storage.GetCookiesAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return [.. result.Cookies.Select(cookie => new BrowserCookie(cookie.Name, ReadValue(cookie.Value), cookie.Domain)
+        {
+            Path = cookie.Path,
+            HttpOnly = cookie.HttpOnly,
+            Secure = cookie.Secure,
+            SameSite = cookie.SameSite,
+            Expires = cookie.Expires,
+        })];
+    }
+
+    /// <summary>
+    /// Adds cookies to the browser, replacing any with the same name, domain, and path.
+    /// </summary>
+    /// <param name="cookies">The cookies.</param>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns>A task that completes when the cookies are added.</returns>
+    public async Task AddCookiesAsync(IEnumerable<BrowserCookie> cookies, CancellationToken cancellationToken = default)
+    {
+        foreach (BrowserCookie cookie in cookies)
+        {
+            PartialCookie partial = new(cookie.Name, BytesValue.FromString(cookie.Value), cookie.Domain)
+            {
+                Path = cookie.Path,
+                HttpOnly = cookie.HttpOnly,
+                Secure = cookie.Secure,
+                SameSite = cookie.SameSite,
+                Expires = cookie.Expires,
+            };
+            await this.Group.Driver.Storage.SetCookieAsync(new SetCookieCommandParameters(partial) { Partition = this.CreatePartition() }, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Deletes the browser's cookies, optionally only those of a domain or with a name.
+    /// </summary>
+    /// <param name="domain">The domain, or <see langword="null"/> for any.</param>
+    /// <param name="name">The name, or <see langword="null"/> for any.</param>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>A task that completes when the cookies are deleted.</returns>
+    public Task ClearCookiesAsync(string? domain = null, string? name = null, CancellationToken cancellationToken = default)
+    {
+        DeleteCookiesCommandParameters parameters = new() { Filter = CreateFilter(domain, name), Partition = this.CreatePartition() };
+        return this.Group.Driver.Storage.DeleteCookiesAsync(parameters, cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
     /// Closes the browser, removing its user context and closing its pages. The default browser cannot be removed,
     /// so closing it closes its pages and leaves it in the group.
     /// </summary>
@@ -188,6 +246,22 @@ public sealed class Browser
 
         await this.onPageClosed.InvokeNotifyObserversAsync(new PageEventArgs(page)).ConfigureAwait(false);
         await page.NotifyClosedAsync().ConfigureAwait(false);
+    }
+
+    private static CookieFilter? CreateFilter(string? domain, string? name)
+    {
+        return domain is null && name is null ? null : new CookieFilter() { Domain = domain, Name = name };
+    }
+
+    private static string ReadValue(BytesValue value)
+    {
+        return value.Type == BytesValueType.String ? value.Value : System.Text.Encoding.UTF8.GetString(value.ValueAsByteArray);
+    }
+
+    // Cookies are kept per user context, which is the browser.
+    private StorageKeyPartitionDescriptor CreatePartition()
+    {
+        return new StorageKeyPartitionDescriptor() { UserContextId = this.Id };
     }
 
     private Task SetDownloadBehaviorAsync(DownloadBehavior? behavior, CancellationToken cancellationToken)
