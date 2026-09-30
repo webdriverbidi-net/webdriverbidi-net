@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Automation;
 
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Input;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -306,6 +307,71 @@ public sealed class ElementLocator
     }
 
     /// <summary>
+    /// Clicks the element, once it is visible, stable, enabled, and not covered by another element, scrolling it
+    /// into view if needed.
+    /// </summary>
+    /// <param name="options">The button, click count, position, modifier keys, and wait, or <see langword="null"/> for a single left click at the chosen point.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the click has been performed.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public Task ClickAsync(ClickOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new ClickOptions();
+        return this.PerformPointerActionAsync(options.ClickCount > 1 ? "doubleclick" : "click", "clicked", options, cancellationToken, (pointer, builder) =>
+        {
+            for (int click = 0; click < options.ClickCount; click++)
+            {
+                builder.AddAction(pointer.CreatePointerDown(options.Button)).AddAction(pointer.CreatePointerUp(options.Button));
+            }
+        });
+    }
+
+    /// <summary>
+    /// Double-clicks the element, once it is ready, as <see cref="ClickAsync"/> waits.
+    /// </summary>
+    /// <param name="options">The button, position, modifier keys, and wait; the click count is always 2.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the double click has been performed.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public Task DblClickAsync(ClickOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new ClickOptions();
+        return this.ClickAsync(
+            new ClickOptions() { Button = options.Button, ClickCount = 2, Offset = options.Offset, Modifiers = options.Modifiers, Force = options.Force, Timeout = options.Timeout },
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Moves the pointer over the element, once it is visible, stable, enabled, and not covered by another element,
+    /// scrolling it into view if needed.
+    /// </summary>
+    /// <param name="options">The position, modifier keys, and wait, or <see langword="null"/> for the chosen point.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the pointer is over the element.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public Task HoverAsync(PointerActionOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return this.PerformPointerActionAsync("hover", "hovered", options ?? new PointerActionOptions(), cancellationToken, (_, _) => { });
+    }
+
+    /// <summary>
+    /// Scrolls the element into view, once it is visible and stable, unless it is in view already.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>A task that completes when the element is in view.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not in view in time.</exception>
+    public async Task ScrollIntoViewIfNeededAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        await this.PollAsync(budget, $"{this} to be in view", () => this.TryScrollIntoViewAsync(budget)).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Describes how the locator finds elements, such as <c>css "form" &gt;&gt; css "input" &gt;&gt; nth=1</c>.
     /// </summary>
     /// <returns>The description.</returns>
@@ -352,6 +418,52 @@ public sealed class ElementLocator
     {
         HashSet<string> seen = [];
         return [.. nodes.Where(node => !string.IsNullOrEmpty(node.SharedId) && seen.Add(node.SharedId!))];
+    }
+
+    private static RemoteValue Property(RemoteValue value, string name)
+    {
+        return value.As<KeyValuePairCollectionRemoteValue>().Value!.First(property => property.Key is string key && key == name).Value;
+    }
+
+    // The library's names for the checks an element failed, in the terms of a timeout message.
+    private static string DescribeNotReady(string reason)
+    {
+        return reason switch
+        {
+            "hidden" => "the element was not visible",
+            "disabled" => "the element was disabled",
+            "readOnly" => "the element was read-only",
+            "stable" => "the element was still moving",
+            "unviewable" => "the element could not be scrolled into view",
+            "notconnected" => "the element was removed from the document",
+            _ => $"the element was {reason}",
+        };
+    }
+
+    private static string[] ModifierKeys(KeyModifiers modifiers)
+    {
+        List<string> keys = [];
+        if (modifiers.HasFlag(KeyModifiers.Alt))
+        {
+            keys.Add(Keys.Alt);
+        }
+
+        if (modifiers.HasFlag(KeyModifiers.Control))
+        {
+            keys.Add(Keys.Control);
+        }
+
+        if (modifiers.HasFlag(KeyModifiers.Meta))
+        {
+            keys.Add(Keys.Meta);
+        }
+
+        if (modifiers.HasFlag(KeyModifiers.Shift))
+        {
+            keys.Add(Keys.Shift);
+        }
+
+        return [.. keys];
     }
 
     private static LocalValue ToggleValue(ToggleState state)
@@ -576,12 +688,15 @@ public sealed class ElementLocator
     }
 
     // Tries an attempt until it is done or the budget runs out, reporting what the last attempt saw. An element
-    // removed while it is checked is looked up again.
+    // removed while it is checked is looked up again, and so is one whose document was being replaced: a command
+    // failing while a navigation starts in the frame is retried whatever the error, as browsers do not all report
+    // that case with the protocol's own errors.
     private async Task<T> PollAsync<T>(TimeBudget budget, string awaited, Func<Task<(bool Done, T Result, string Observed)>> attempt)
     {
         string? observed = null;
         while (true)
         {
+            int navigationsStarted = this.Frame.NavigationsStarted;
             try
             {
                 (bool done, T result, string seen) = await attempt().ConfigureAwait(false);
@@ -595,6 +710,10 @@ public sealed class ElementLocator
             catch (WebDriverBiDiCommandException ex) when (ex.ErrorCode == ErrorCode.NoSuchNode)
             {
                 observed = "the element was removed while it was checked";
+            }
+            catch (WebDriverBiDiCommandException) when (this.Frame.NavigationsStarted != navigationsStarted)
+            {
+                observed = "the frame navigated while the element was checked";
             }
             catch (WebDriverBiDiTimeoutException) when (budget.IsExhausted)
             {
@@ -636,6 +755,91 @@ public sealed class ElementLocator
             NullRemoteValue => (false, null, "the frame had no document"),
             _ => throw new InvalidOperationException($"{this} is not a frame element."),
         };
+    }
+
+    // Waits for the element to be ready for the interaction, then aims the pointer at the point the readiness check
+    // chose (or was asked for), relative to the element, which the browser places correctly within frames.
+    private async Task PerformPointerActionAsync(string interactionType, string pastTense, PointerActionOptions options, CancellationToken cancellationToken, Action<PointerInputSource, InputBuilder> addActions)
+    {
+        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
+        ActionTarget? target = await this.PollAsync(budget, $"{this} to be ready to be {pastTense}", () => this.FindActionTargetAsync(interactionType, options, budget)).ConfigureAwait(false);
+        InputBuilder builder = new();
+        string[] modifierKeys = ModifierKeys(options.Modifiers);
+        foreach (string key in modifierKeys)
+        {
+            builder.AddAction(builder.DefaultKeyInputSource.CreateKeyDown(key));
+        }
+
+        PointerInputSource pointer = builder.DefaultPointerInputSource;
+        builder.AddAction(pointer.CreatePointerMove(target!.Offset.X, target.Offset.Y, Origin.Element(target.Node.ToSharedReference())));
+        addActions(pointer, builder);
+        foreach (string key in Enumerable.Reverse(modifierKeys))
+        {
+            builder.AddAction(builder.DefaultKeyInputSource.CreateKeyUp(key));
+        }
+
+        await this.Group.Driver.Input.PerformActionsAsync(this.Frame.Id, builder, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<(bool Found, ActionTarget? Target, string Observed)> FindActionTargetAsync(string interactionType, PointerActionOptions options, TimeBudget budget)
+    {
+        IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
+        this.ThrowIfAmbiguous(nodes);
+        if (nodes.Count == 0)
+        {
+            return (false, null, "no element matched");
+        }
+
+        NodeRemoteValue node = nodes[0];
+        PointerOffset requested = options.Offset ?? default;
+        if (options.Force)
+        {
+            await this.ScrollIntoViewAsync(node, onlyIfOutOfView: true, budget).ConfigureAwait(false);
+            return (true, new ActionTarget(node, requested), string.Empty);
+        }
+
+        LocalValue offset = LocalValue.Object(new Dictionary<string, LocalValue>() { ["x"] = LocalValue.Number(requested.X), ["y"] = LocalValue.Number(requested.Y) });
+        RemoteValue readiness = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element, type, offset) => inspector.isInteractionReady(element, type, offset)", [node.ToSharedReference(), LocalValue.String(interactionType), offset], budget).ConfigureAwait(false);
+        switch (Property(readiness, "status").As<StringRemoteValue>().Value)
+        {
+            case "ready":
+                RemoteValue actual = Property(readiness, "interactionOffset");
+                return (true, new ActionTarget(node, new PointerOffset(Property(actual, "x").As<NumberRemoteValue>().Value, Property(actual, "y").As<NumberRemoteValue>().Value)), string.Empty);
+            case "needsscroll":
+                await this.ScrollIntoViewAsync(node, onlyIfOutOfView: false, budget).ConfigureAwait(false);
+                return (false, null, "the element was scrolled into view");
+            default:
+                return (false, null, DescribeNotReady(Property(readiness, "reason").As<StringRemoteValue>().Value));
+        }
+    }
+
+    private async Task<(bool InView, bool Unused, string Observed)> TryScrollIntoViewAsync(TimeBudget budget)
+    {
+        IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
+        this.ThrowIfAmbiguous(nodes);
+        if (nodes.Count == 0)
+        {
+            return (false, false, "no element matched");
+        }
+
+        RemoteValue states = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => inspector.queryElementStates(element, ['stable', 'visible', 'inview'])", [nodes[0].ToSharedReference()], budget).ConfigureAwait(false);
+        switch (Property(states, "status").As<StringRemoteValue>().Value)
+        {
+            case "success":
+                return (true, true, string.Empty);
+            case "failure" when Property(states, "missingState").As<StringRemoteValue>().Value == "notinview":
+                await this.ScrollIntoViewAsync(nodes[0], onlyIfOutOfView: false, budget).ConfigureAwait(false);
+                return (false, false, "the element was scrolled into view");
+            case "failure":
+                return (false, false, DescribeNotReady(Property(states, "missingState").As<StringRemoteValue>().Value));
+            default:
+                return (false, false, DescribeNotReady(Property(states, "message").As<StringRemoteValue>().Value));
+        }
+    }
+
+    private Task ScrollIntoViewAsync(NodeRemoteValue node, bool onlyIfOutOfView, TimeBudget budget)
+    {
+        return this.Group.ScriptHost.CallAsync(this.Frame.Id, "async (inspector, element, onlyIfOutOfView) => { if (!onlyIfOutOfView || !(await inspector.isElementInViewPort(element))) { element.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' }); } }", [node.ToSharedReference(), LocalValue.Boolean(onlyIfOutOfView)], budget);
     }
 
     private async Task<(bool Reached, string Observed)> CheckStateAsync(ElementState state, TimeBudget budget)
@@ -859,4 +1063,6 @@ public sealed class ElementLocator
             return "shadowRoot";
         }
     }
+
+    private sealed record ActionTarget(NodeRemoteValue Node, PointerOffset Offset);
 }

@@ -44,6 +44,7 @@ public sealed class BrowserGroup : IAsyncDisposable
         this.ScriptHost = new ScriptHost(driver, options.SandboxName);
         this.observers.Add(driver.BrowsingContext.OnContextCreated.AddObserver(e => this.AddContextAsync(e.BrowsingContextId, e.Parent, e.UserContextId, e.Url)));
         this.observers.Add(driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyedAsync));
+        this.observers.Add(driver.BrowsingContext.OnNavigationStarted.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordNavigationStarted()));
         this.observers.Add(driver.BrowsingContext.OnNavigationCommitted.AddObserver(e => this.SetUrl(e.BrowsingContextId, e.Url)));
         this.observers.Add(driver.BrowsingContext.OnFragmentNavigated.AddObserver(e => this.SetUrl(e.BrowsingContextId, e.Url)));
         this.observers.Add(driver.BrowsingContext.OnHistoryUpdated.AddObserver(e => this.SetUrl(e.BrowsingContextId, e.Url)));
@@ -311,7 +312,7 @@ public sealed class BrowserGroup : IAsyncDisposable
         try
         {
             BrowsingContextModule module = this.Driver.BrowsingContext;
-            SubscribeCommandParameters subscription = new([module.OnContextCreated.EventName, module.OnContextDestroyed.EventName, module.OnNavigationCommitted.EventName, module.OnFragmentNavigated.EventName, module.OnHistoryUpdated.EventName]);
+            SubscribeCommandParameters subscription = new([module.OnContextCreated.EventName, module.OnContextDestroyed.EventName, module.OnNavigationStarted.EventName, module.OnNavigationCommitted.EventName, module.OnFragmentNavigated.EventName, module.OnHistoryUpdated.EventName]);
             this.subscriptionId = (await this.Driver.Session.SubscribeAsync(subscription, cancellationToken: cancellationToken).ConfigureAwait(false)).SubscriptionId;
             await this.ScriptHost.AddPreloadScriptAsync(cancellationToken).ConfigureAwait(false);
             GetUserContextsCommandResult userContexts = await this.Driver.Browser.GetUserContextsAsync(new GetUserContextsCommandParameters(), cancellationToken: cancellationToken).ConfigureAwait(false);

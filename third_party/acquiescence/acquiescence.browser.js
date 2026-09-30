@@ -1112,22 +1112,25 @@ var Acquiescence = (() => {
       }
       const result = await this.queryElementStates(element, states);
       if (result.status === "error") {
-        throw new Error("element not connected");
+        return { status: "notready", reason: result.message };
       }
       if (result.status === "failure") {
-        if (result.missingState === "unviewable") {
-          throw new Error("element is not in view port, and cannot be scrolled into view due to overflow");
-        }
         if (result.missingState === "notinview") {
           return { status: "needsscroll" };
         }
-        return { status: "notready" };
+        return { status: "notready", reason: result.missingState };
       }
       const clickPoint = await this.getElementClickPoint(element, hitPointOffset);
       if (clickPoint.status === "error") {
-        throw new Error(clickPoint.message);
+        return { status: "notready", reason: clickPoint.message };
       }
-      return { status: "ready", interactionPoint: clickPoint.hitPoint };
+      const hitPoint = clickPoint.hitPoint;
+      const center = this.getInViewCenterPoint(element);
+      return {
+        status: "ready",
+        interactionPoint: hitPoint,
+        interactionOffset: { x: hitPoint.x - center.x, y: hitPoint.y - center.y }
+      };
     }
     /**
      * Waits for an element to be ready for an interaction.
@@ -1345,7 +1348,7 @@ var Acquiescence = (() => {
       if (hitElement === targetElement) {
         return { status: "success", hitPoint };
       }
-      return { status: "error", message: this.createElementObscuredErrorMessage(targetElement, hitParents) };
+      return { status: "error", message: `obscured by ${this.createElementObscuredErrorMessage(targetElement, hitParents)}` };
     }
     /**
      * Gets a list of the document or shadow root elements that contain the target element.
@@ -1575,6 +1578,20 @@ var Acquiescence = (() => {
      * @param hitParents {Element[]} The elements that are in the chain of the target element.
      * @returns {string} The error message.
      */
+    /**
+     * Gets an element's in-view center point, as WebDriver defines it: the center of the element's first client
+     * rectangle, clipped to the viewport, with each coordinate rounded down.
+     * @param element The element.
+     * @returns The point, in viewport coordinates.
+     */
+    getInViewCenterPoint(element) {
+      const rect = element.getClientRects()[0];
+      const left = Math.max(0, Math.min(rect.left, rect.right));
+      const right = Math.min(window.innerWidth, Math.max(rect.left, rect.right));
+      const top = Math.max(0, Math.min(rect.top, rect.bottom));
+      const bottom = Math.min(window.innerHeight, Math.max(rect.top, rect.bottom));
+      return { x: Math.floor((left + right) / 2), y: Math.floor((top + bottom) / 2) };
+    }
     createElementObscuredErrorMessage(targetElement, hitParents) {
       const hitTargetDescription = this.nodePreviewer.previewNode(hitParents[0] || document.documentElement);
       let rootHitTargetDescription;

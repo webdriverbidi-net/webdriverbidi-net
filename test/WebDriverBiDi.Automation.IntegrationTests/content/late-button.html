@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <script>
+      window.clicked = false;
+      setTimeout(() => {
+        const button = document.createElement('button');
+        button.id = 'late-button';
+        button.textContent = 'Late';
+        button.addEventListener('click', () => { window.clicked = true; });
+        document.body.appendChild(button);
+      }, 300);
+    </script>
+  </body>
+</html>

@@ -81,6 +81,28 @@ public class FakeRemoteEndTests
     }
 
     [Fact]
+    public async Task EventsOfAnErrorArriveBeforeIt()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await FakeRemoteEnd.ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        List<string> arrivals = [];
+        driver.BrowsingContext.OnNavigationStarted.AddObserver(e => arrivals.Add($"event:{e.BrowsingContextId}"));
+        JsonObject eventParameters = new()
+        {
+            ["context"] = "context-1",
+            ["navigation"] = "navigation-1",
+            ["timestamp"] = 1790000000000,
+            ["url"] = "https://example.com/",
+        };
+        remoteEnd.AnswerWith("browsingContext.close", _ => FakeResponse.Failure("unknown error", "gone", ("browsingContext.navigationStarted", eventParameters)));
+
+        await Assert.ThrowsAsync<WebDriverBiDiCommandException>(() => driver.BrowsingContext.CloseAsync(new CloseCommandParameters("context-1"), cancellationToken: TestContext.Current.CancellationToken));
+        arrivals.Add("error");
+
+        Assert.Equal(["event:context-1", "error"], arrivals);
+    }
+
+    [Fact]
     public async Task EventsOfAResponseArriveBeforeIt()
     {
         (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await FakeRemoteEnd.ConnectAsync();

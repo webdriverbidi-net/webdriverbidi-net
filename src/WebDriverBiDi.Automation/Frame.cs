@@ -14,6 +14,7 @@ public sealed class Frame
 {
     private volatile string url;
     private volatile bool isDetached;
+    private int navigationsStarted;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Frame"/> class.
@@ -64,6 +65,12 @@ public sealed class Frame
     /// Gets the frames directly within this one.
     /// </summary>
     public IReadOnlyList<Frame> ChildFrames => this.Page.GetChildFrames(this);
+
+    /// <summary>
+    /// Gets the number of navigations the browser has reported starting in the frame, so that an operation can tell
+    /// whether its document may have been replaced while it ran.
+    /// </summary>
+    internal int NavigationsStarted => Volatile.Read(ref this.navigationsStarted);
 
     /// <summary>
     /// Creates a locator for elements in this frame.
@@ -169,6 +176,14 @@ public sealed class Frame
     internal ElementLocator Query(ElementQuery query)
     {
         return new ElementLocator(this, query);
+    }
+
+    /// <summary>
+    /// Records that a navigation started in the frame.
+    /// </summary>
+    internal void RecordNavigationStarted()
+    {
+        Interlocked.Increment(ref this.navigationsStarted);
     }
 
     /// <summary>

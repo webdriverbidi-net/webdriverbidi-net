@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <div style="height: 80px">Inner spacer</div>
+    <button id="inner-button" style="margin-left: 60px">Inner</button>
+    <script>
+      window.clicked = false;
+      document.getElementById('inner-button').addEventListener('click', () => { window.clicked = true; });
+    </script>
+  </body>
+</html>

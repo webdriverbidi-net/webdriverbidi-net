@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Actions</title>
+    <style>
+      #overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.3); }
+      #far { margin-top: 3000px; }
+    </style>
+  </head>
+  <body>
+    <button id="record">Record</button>
+    <button id="double">Double</button>
+    <div id="hover-target" style="width: 100px; height: 40px; background: #ccc">Hover</div>
+    <button id="covered">Covered</button>
+    <button id="later" disabled>Later</button>
+    <div id="overlay"></div>
+    <button id="far">Far</button>
+    <script>
+      window.events = [];
+      document.getElementById('record').addEventListener('click', (e) => window.events.push(`click:${e.button}:${e.detail}:${e.shiftKey}:${e.altKey}`));
+      document.getElementById('record').addEventListener('auxclick', (e) => window.events.push(`auxclick:${e.button}`));
+      document.getElementById('record').addEventListener('contextmenu', (e) => e.preventDefault());
+      document.getElementById('double').addEventListener('dblclick', () => window.events.push('dblclick'));
+      document.getElementById('hover-target').addEventListener('mouseenter', () => window.events.push('hover'));
+      document.getElementById('covered').addEventListener('click', () => window.events.push('covered'));
+      document.getElementById('later').addEventListener('click', () => window.events.push('later'));
+      document.getElementById('far').addEventListener('click', () => window.events.push('far'));
+      setTimeout(() => document.getElementById('overlay').remove(), 300);
+      setTimeout(() => { document.getElementById('later').disabled = false; }, 300);
+    </script>
+  </body>
+</html>

@@ -195,10 +195,20 @@ public sealed class FakeRemoteEnd : Connection
         else
         {
             JsonObject parameters = command["params"]?.AsObject() ?? [];
-            response["type"] = "success";
             FakeResponse answer = this.results.TryGetValue(method, out Func<JsonObject, FakeResponse>? createResponse) ? createResponse(parameters) : new FakeResponse(this.CreateDefaultResult(method));
-            this.sentResults.Enqueue((method, answer.Result.DeepClone()));
-            response["result"] = answer.Result;
+            if (answer.Error is null)
+            {
+                response["type"] = "success";
+                this.sentResults.Enqueue((method, answer.Result.DeepClone()));
+                response["result"] = answer.Result;
+            }
+            else
+            {
+                response["type"] = "error";
+                response["error"] = answer.Error;
+                response["message"] = answer.ErrorMessage;
+            }
+
             events = [.. answer.EventsBefore.Select(e => new JsonObject() { ["type"] = "event", ["method"] = e.Method, ["params"] = e.Parameters })];
         }
 
