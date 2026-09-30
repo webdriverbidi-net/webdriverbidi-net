@@ -451,6 +451,71 @@ public sealed class Page
     }
 
     /// <summary>
+    /// Captures an image of what the page's viewport shows, or of its whole document.
+    /// </summary>
+    /// <param name="options">The part to capture and the format, or <see langword="null"/> for the viewport as PNG.</param>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>The image.</returns>
+    public async Task<byte[]> ScreenshotAsync(PageScreenshotOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new PageScreenshotOptions();
+        CaptureScreenshotCommandParameters parameters = new(this.Id)
+        {
+            Origin = options.FullPage ? ScreenshotOrigin.Document : ScreenshotOrigin.Viewport,
+            Clip = options.Clip,
+            Format = options.Format,
+        };
+        CaptureScreenshotCommandResult result = await this.Browser.Group.Driver.BrowsingContext.CaptureScreenshotAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return Convert.FromBase64String(result.Data);
+    }
+
+    /// <summary>
+    /// Prints the page as a PDF.
+    /// </summary>
+    /// <param name="options">The page setup, or <see langword="null"/> for the browser's defaults.</param>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>The PDF document.</returns>
+    public async Task<byte[]> PdfAsync(PdfOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new PdfOptions();
+        PrintCommandParameters parameters = new(this.Id)
+        {
+            Background = options.Background,
+            Margins = options.Margins,
+            Orientation = options.Orientation,
+            Page = options.PageSize,
+            Scale = options.Scale,
+            ShrinkToFit = options.ShrinkToFit,
+        };
+        parameters.PageRanges.AddRange(options.PageRanges);
+        PrintCommandResult result = await this.Browser.Group.Driver.BrowsingContext.PrintAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return Convert.FromBase64String(result.Data);
+    }
+
+    /// <summary>
+    /// Sets the size of the page's viewport, in CSS pixels, overriding the size of its window or the browser's
+    /// setting.
+    /// </summary>
+    /// <param name="width">The width.</param>
+    /// <param name="height">The height.</param>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>A task that completes when the viewport has the size.</returns>
+    public Task SetViewportSizeAsync(ulong width, ulong height, CancellationToken cancellationToken = default)
+    {
+        return this.SetViewportAsync(new Viewport() { Width = width, Height = height }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns the page's viewport to its default size.
+    /// </summary>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>A task that completes when the viewport has its default size.</returns>
+    public Task ResetViewportSizeAsync(CancellationToken cancellationToken = default)
+    {
+        return this.SetViewportAsync(SetViewportCommandParameters.ResetToDefaultViewport, cancellationToken);
+    }
+
+    /// <summary>
     /// Brings the page to the front of its window, making it the active tab.
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the command.</param>
@@ -587,6 +652,11 @@ public sealed class Page
         }
 
         return this.onDownload.InvokeNotifyObserversAsync(new DownloadEventArgs(download));
+    }
+
+    private Task SetViewportAsync(Viewport viewport, CancellationToken cancellationToken)
+    {
+        return this.Browser.Group.Driver.BrowsingContext.SetViewportAsync(new SetViewportCommandParameters() { BrowsingContextId = this.Id, Viewport = viewport }, cancellationToken: cancellationToken);
     }
 
     // History traversal has no wait of its own, so the navigation it causes is awaited from the frame's events.
