@@ -471,6 +471,45 @@ public sealed class Frame
     }
 
     /// <summary>
+    /// Gets where the frame's content starts within its parent frame's viewport: the content box of its frame
+    /// element, found as the element whose window is this frame's.
+    /// </summary>
+    /// <param name="budget">The time the lookup may take.</param>
+    /// <returns>The distances from the parent's viewport's left and top edges.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the frame's element is not found.</exception>
+    internal async Task<(double X, double Y)> GetOffsetInParentAsync(TimeBudget budget)
+    {
+        Frame parent = this.ParentFrame!;
+        LocateNodesCommandResult located = await this.Group.Driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(parent.Id, new CssLocator("iframe, frame")), budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        if (located.Nodes.Count > 0)
+        {
+            RemoteValue offsets = await this.Group.Driver.Script.CallFunctionAsync(parent.Id, "(...elements) => elements.map((element) => { const rect = element.getBoundingClientRect(); const style = getComputedStyle(element); return [element.contentWindow, rect.left + element.clientLeft + parseFloat(style.paddingLeft), rect.top + element.clientTop + parseFloat(style.paddingTop)]; })", [.. located.Nodes.Select(node => node.ToSharedReference())], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+            foreach (RemoteValue entry in offsets.As<CollectionRemoteValue>().Value!)
+            {
+                RemoteValueList values = entry.As<CollectionRemoteValue>().Value!;
+                if (values[0] is WindowProxyRemoteValue window && window.Value.BrowsingContextId == this.Id)
+                {
+                    return (values[1].As<NumberRemoteValue>().Value, values[2].As<NumberRemoteValue>().Value);
+                }
+            }
+        }
+
+        throw new InvalidOperationException($"The element of frame {this.Id} was not found in its parent frame; a frame element within a shadow root is not searched.");
+    }
+
+    /// <summary>
+    /// Gets how far the frame's document is scrolled.
+    /// </summary>
+    /// <param name="budget">The time the read may take.</param>
+    /// <returns>The distances scrolled right and down.</returns>
+    internal async Task<(double X, double Y)> GetScrollPositionAsync(TimeBudget budget)
+    {
+        RemoteValue scroll = await this.Group.Driver.Script.CallFunctionAsync(this.Id, "() => [window.scrollX, window.scrollY]", [], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        RemoteValueList values = scroll.As<CollectionRemoteValue>().Value!;
+        return (values[0].As<NumberRemoteValue>().Value, values[1].As<NumberRemoteValue>().Value);
+    }
+
+    /// <summary>
     /// Records that a navigation started in the frame.
     /// </summary>
     internal void RecordNavigationStarted()

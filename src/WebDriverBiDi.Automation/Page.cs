@@ -37,6 +37,8 @@ public sealed class Page
         this.Browser = browser;
         this.Id = id;
         this.Opener = opener;
+        this.Mouse = new Mouse(this);
+        this.Keyboard = new Keyboard(this);
         this.MainFrame = new Frame(this, id, null, url);
         this.frames.Add(this.MainFrame);
     }
@@ -84,6 +86,16 @@ public sealed class Page
     /// Gets an observable event raised when the page closes.
     /// </summary>
     public ObservableEvent<PageEventArgs> OnClosed => this.onClosed;
+
+    /// <summary>
+    /// Gets the page's mouse, driven by viewport coordinates.
+    /// </summary>
+    public Mouse Mouse { get; }
+
+    /// <summary>
+    /// Gets the page's keyboard.
+    /// </summary>
+    public Keyboard Keyboard { get; }
 
     /// <summary>
     /// Gets the page that opened this one, such as with <c>window.open</c> or a link with a target, or

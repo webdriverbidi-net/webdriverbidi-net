@@ -484,7 +484,7 @@ public sealed class ElementLocator
         options ??= new KeyActionOptions();
         TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
         await this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)).ConfigureAwait(false);
-        await this.PerformKeyActionsAsync(new InputBuilder().AddKeyChordAction([.. ModifierKeys(options.Modifiers), key]), budget).ConfigureAwait(false);
+        await this.PerformKeyActionsAsync(new InputBuilder().AddKeyChordAction([.. ModifierKeyValues.For(options.Modifiers), key]), budget).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -793,7 +793,8 @@ public sealed class ElementLocator
     }
 
     /// <summary>
-    /// Gets the box the element occupies, in its frame's viewport, once one matches.
+    /// Gets the box the element occupies, in its frame's viewport, once one matches. For the box in the page's
+    /// coordinates, such as for <see cref="Page.Mouse"/>, see <see cref="BoundingBox.ToTopLevelAsync"/>.
     /// </summary>
     /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
@@ -806,7 +807,7 @@ public sealed class ElementLocator
         return await this.PollElementAsync(budget, async node =>
         {
             RemoteValue box = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => { if (!inspector.isElementVisible(element)) { return null; } const { x, y, width, height } = element.getBoundingClientRect(); return { x, y, width, height }; }", [node.ToSharedReference()], budget).ConfigureAwait(false);
-            return (true, box is NullRemoteValue ? null : new BoundingBox(Number(box, "x"), Number(box, "y"), Number(box, "width"), Number(box, "height")), string.Empty);
+            return (true, box is NullRemoteValue ? null : new BoundingBox(this.Frame, Number(box, "x"), Number(box, "y"), Number(box, "width"), Number(box, "height")), string.Empty);
         }).ConfigureAwait(false);
     }
 
@@ -959,32 +960,6 @@ public sealed class ElementLocator
     private static int OptionIndex(RemoteValue result)
     {
         return (int)Number(result, "index");
-    }
-
-    private static string[] ModifierKeys(KeyModifiers modifiers)
-    {
-        List<string> keys = [];
-        if (modifiers.HasFlag(KeyModifiers.Alt))
-        {
-            keys.Add(Keys.Alt);
-        }
-
-        if (modifiers.HasFlag(KeyModifiers.Control))
-        {
-            keys.Add(Keys.Control);
-        }
-
-        if (modifiers.HasFlag(KeyModifiers.Meta))
-        {
-            keys.Add(Keys.Meta);
-        }
-
-        if (modifiers.HasFlag(KeyModifiers.Shift))
-        {
-            keys.Add(Keys.Shift);
-        }
-
-        return [.. keys];
     }
 
     private static LocalValue ToggleValue(ToggleState state)
@@ -1292,7 +1267,7 @@ public sealed class ElementLocator
     private Task PerformPointerInputAsync(KeyModifiers modifiers, PointerType pointerType, TimeBudget budget, Action<PointerInputSource, InputBuilder> addActions)
     {
         InputBuilder builder = new();
-        string[] modifierKeys = ModifierKeys(modifiers);
+        string[] modifierKeys = ModifierKeyValues.For(modifiers);
         foreach (string key in modifierKeys)
         {
             builder.AddAction(builder.DefaultKeyInputSource.CreateKeyDown(key));

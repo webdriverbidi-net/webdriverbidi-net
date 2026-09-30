@@ -186,7 +186,7 @@ public class ReadTests
             ? ProtocolJson.Success(Object(("x", Number(20.5)), ("y", Number(30)), ("width", Number(100)), ("height", Number(50))))
             : ProtocolJson.Success(new JsonObject() { ["type"] = "null" }));
 
-        Assert.Equal(new BoundingBox(20.5, 30, 100, 50), await page.Locate(new CssLocator("div")).BoundingBoxAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(new BoundingBox(page.MainFrame, 20.5, 30, 100, 50), await page.Locate(new CssLocator("div")).BoundingBoxAsync(cancellationToken: TestContext.Current.CancellationToken));
         Assert.Null(await page.Locate(new CssLocator("div")).BoundingBoxAsync(cancellationToken: TestContext.Current.CancellationToken));
         Assert.Contains("inspector.isElementVisible(element)", (string?)session.RemoteEnd.CommandsFor("script.callFunction")[0]["params"]!["functionDeclaration"]);
     }

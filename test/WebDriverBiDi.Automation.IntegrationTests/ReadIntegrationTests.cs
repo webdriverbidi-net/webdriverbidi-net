@@ -63,7 +63,7 @@ public class ReadIntegrationTests
         await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
         Page page = await OpenAsync(group, server);
 
-        Assert.Equal(new BoundingBox(20, 30, 100, 50), await page.Locate(new CssLocator("#box")).BoundingBoxAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(new BoundingBox(page.MainFrame, 20, 30, 100, 50), await page.Locate(new CssLocator("#box")).BoundingBoxAsync(cancellationToken: TestContext.Current.CancellationToken));
         Assert.Null(await page.Locate(new CssLocator("#invisible")).BoundingBoxAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 

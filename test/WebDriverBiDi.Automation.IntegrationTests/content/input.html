@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Input</title>
+    <style>
+      html, body { margin: 0; }
+      body { height: 3000px; }
+      #target { position: absolute; left: 50px; top: 60px; width: 120px; height: 80px; background: #ccc; }
+      #field { position: absolute; left: 50px; top: 200px; }
+    </style>
+  </head>
+  <body>
+    <div id="target">Target</div>
+    <input id="field">
+    <script>
+      window.events = [];
+      const target = document.getElementById('target');
+      for (const type of ['mousedown', 'mouseup']) {
+        target.addEventListener(type, (e) => window.events.push(`${type}:${e.button}`));
+      }
+      target.addEventListener('click', (e) => window.events.push(`click:${e.detail}:${e.shiftKey}`));
+      target.addEventListener('dblclick', () => window.events.push('dblclick'));
+      target.addEventListener('contextmenu', (e) => e.preventDefault());
+      document.getElementById('field').addEventListener('keydown', (e) => window.events.push(`keydown:${e.key.toLowerCase()}:${e.shiftKey}`));
+    </script>
+  </body>
+</html>
