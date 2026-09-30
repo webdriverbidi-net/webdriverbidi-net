@@ -19,6 +19,13 @@ public sealed class ElementLocator
 {
     // Enough to tell one match from several without serializing every match.
     private const ulong StrictMatchLimit = 2;
+    private const string FocusFunction = "(element) => element.focus()";
+
+    // Input types whose value is chosen, such as a date or a checked box, rather than typed.
+    private static readonly HashSet<string> UntypeableInputTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "button", "checkbox", "color", "date", "datetime-local", "file", "hidden", "image", "month", "radio", "range", "reset", "submit", "time", "week",
+    };
 
     private readonly IReadOnlyList<Step> steps;
 
@@ -369,6 +376,100 @@ public sealed class ElementLocator
     {
         TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
         await this.PollAsync(budget, $"{this} to be in view", () => this.TryScrollIntoViewAsync(budget)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Focuses the element, once one matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>A task that completes when the element has been focused.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task FocusAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        await this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Removes focus from the element, once one matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>A task that completes when focus has been removed from the element.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task BlurAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        await this.PollAsync(budget, $"{this} to be blurred", () => this.TryCallOnElementAsync("(element) => element.blur()", budget)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Focuses the element, once one matches, and presses a key, holding down any modifier keys.
+    /// </summary>
+    /// <param name="key">The key: a special key from <see cref="Keys"/>, such as <see cref="Keys.Enter"/>, or a single character.</param>
+    /// <param name="options">The modifier keys and wait, or <see langword="null"/> for the key alone.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the key has been pressed and released.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task PressAsync(string key, KeyActionOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new KeyActionOptions();
+        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
+        await this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)).ConfigureAwait(false);
+        await this.PerformKeyActionsAsync(new InputBuilder().AddKeyChordAction([.. ModifierKeys(options.Modifiers), key]), budget).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Focuses the element, once one matches, and types text into it one key at a time, as a press and a release
+    /// of each character, without clearing what it holds.
+    /// </summary>
+    /// <param name="text">The text, which may include special keys from <see cref="Keys"/>.</param>
+    /// <param name="options">The delay between keys and the wait, or <see langword="null"/> for no delay.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the text has been typed.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task PressSequentiallyAsync(string text, PressSequentiallyOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new PressSequentiallyOptions();
+        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
+        await this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)).ConfigureAwait(false);
+        await this.PerformKeyActionsAsync(new InputBuilder().AddSendKeysToActiveElementAction(text, options.Delay), budget).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Replaces the text of an input, a text area, or an editable element, once it is visible, stable, enabled,
+    /// editable, and not covered by another element: its text is selected, and the new text typed over it.
+    /// </summary>
+    /// <param name="value">The text; empty clears the element.</param>
+    /// <param name="options">The wait, or <see langword="null"/> for the default.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the text has been typed.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element cannot be edited, or is an input, such as a date or a checkbox, whose value is not typed.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public Task FillAsync(string value, FillOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return this.ReplaceTextAsync(value, "type", "filled", options ?? new FillOptions(), cancellationToken);
+    }
+
+    /// <summary>
+    /// Clears the text of an input, a text area, or an editable element, once it is ready, as
+    /// <see cref="FillAsync"/> waits.
+    /// </summary>
+    /// <param name="options">The wait, or <see langword="null"/> for the default.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the text has been deleted.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element cannot be edited, or is an input, such as a date or a checkbox, whose value is not typed.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public Task ClearAsync(FillOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return this.ReplaceTextAsync(string.Empty, "clear", "cleared", options ?? new FillOptions(), cancellationToken);
     }
 
     /// <summary>
@@ -811,6 +912,72 @@ public sealed class ElementLocator
             default:
                 return (false, null, DescribeNotReady(Property(readiness, "reason").As<StringRemoteValue>().Value));
         }
+    }
+
+    private async Task<(bool Done, bool Unused, string Observed)> TryCallOnElementAsync(string functionDeclaration, TimeBudget budget)
+    {
+        IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
+        this.ThrowIfAmbiguous(nodes);
+        if (nodes.Count == 0)
+        {
+            return (false, false, "no element matched");
+        }
+
+        await this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, functionDeclaration, [nodes[0].ToSharedReference()], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        return (true, true, string.Empty);
+    }
+
+    private Task PerformKeyActionsAsync(InputBuilder builder, TimeBudget budget)
+    {
+        return this.Group.Driver.Input.PerformActionsAsync(this.Frame.Id, builder, budget.Remaining, budget.CancellationToken);
+    }
+
+    // Selecting the element's text, then typing, replaces the text as a user would, with the events a user's typing
+    // causes; an empty value deletes the selection.
+    private async Task ReplaceTextAsync(string value, string interactionType, string pastTense, FillOptions options, CancellationToken cancellationToken)
+    {
+        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
+        await this.PollAsync(budget, $"{this} to be ready to be {pastTense}", () => this.TrySelectTextAsync(interactionType, options.Force, budget)).ConfigureAwait(false);
+        InputBuilder builder = new();
+        await this.PerformKeyActionsAsync(value.Length == 0 ? builder.AddKeyChordAction(Keys.Delete) : builder.AddSendKeysToActiveElementAction(value), budget).ConfigureAwait(false);
+    }
+
+    private async Task<(bool Selected, bool Unused, string Observed)> TrySelectTextAsync(string interactionType, bool force, TimeBudget budget)
+    {
+        IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
+        this.ThrowIfAmbiguous(nodes);
+        if (nodes.Count == 0)
+        {
+            return (false, false, "no element matched");
+        }
+
+        NodeRemoteValue node = nodes[0];
+        NodeProperties properties = node.GetNodeProperties();
+        if (properties.LocalName == "input" && properties.Attributes is not null && properties.Attributes.TryGetValue("type", out string? type) && UntypeableInputTypes.Contains(type.Trim()))
+        {
+            throw new InvalidOperationException($"{this} is an input of type \"{type}\", whose value cannot be typed.");
+        }
+
+        if (!force)
+        {
+            RemoteValue readiness = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element, type) => inspector.isInteractionReady(element, type)", [node.ToSharedReference(), LocalValue.String(interactionType)], budget).ConfigureAwait(false);
+            switch (Property(readiness, "status").As<StringRemoteValue>().Value)
+            {
+                case "ready":
+                    break;
+                case "needsscroll":
+                    await this.ScrollIntoViewAsync(node, onlyIfOutOfView: false, budget).ConfigureAwait(false);
+                    return (false, false, "the element was scrolled into view");
+                default:
+                    string reason = Property(readiness, "reason").As<StringRemoteValue>().Value;
+                    return reason == "noteditable"
+                        ? throw new InvalidOperationException($"{this} is not an editable element.")
+                        : (false, false, DescribeNotReady(reason));
+            }
+        }
+
+        RemoteValue selected = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => inspector.selectText(element)", [node.ToSharedReference()], budget).ConfigureAwait(false);
+        return selected.As<BooleanRemoteValue>().Value ? (true, true, string.Empty) : (false, false, DescribeNotReady("notconnected"));
     }
 
     private async Task<(bool InView, bool Unused, string Observed)> TryScrollIntoViewAsync(TimeBudget budget)

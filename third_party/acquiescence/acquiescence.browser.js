@@ -1010,9 +1010,10 @@ var Acquiescence = (() => {
      * A Promise that resolves to an object with the status of the query.
      * - 'success' if all states are present.
      * - 'failure' if at least one state is missing.
-     * - 'error' if the node is not connected.
+     * - 'error' if the node is not connected, or cannot have a queried state.
      * - 'missingState' is the state that is missing.
-     * - 'message' is the message of the error.
+     * - 'message' is the message of the error: 'notconnected', or 'noteditable' for an element that is not an <input>,
+     * <textarea>, <select> or [contenteditable] and does not have a role allowing [aria-readonly].
      */
     async queryElementStates(node, states) {
       if (states.includes("stable")) {
@@ -1027,8 +1028,8 @@ var Acquiescence = (() => {
       for (const state of states) {
         if (state !== "stable") {
           const result = await this.queryElementState(node, state);
-          if (result.received === "error:notconnected") {
-            return { status: "error", message: "notconnected" };
+          if (result.received === "error:notconnected" || result.received === "error:noteditable") {
+            return { status: "error", message: result.received.substring("error:".length) };
           }
           if (!result.matches) {
             return { status: "failure", missingState: result.received };
@@ -1043,7 +1044,8 @@ var Acquiescence = (() => {
      * @param state {ElementStateWithoutStable} The state to query.
      * @returns {Promise<ElementStateQueryResult>} A Promise that resolves to an object with the status of the query.
      * - 'matches' is true if the state is present.
-     * - 'received' is the state that was received, or 'error:notconnected' if the element is not connected.
+     * - 'received' is the state that was received, 'error:notconnected' if the element is not connected, or
+     * 'error:noteditable' if the editable state is queried for an element that cannot be edited.
      * @throws {Error} If an invalid state is provided.
      */
     async queryElementState(node, state) {
@@ -1069,7 +1071,7 @@ var Acquiescence = (() => {
         const disabled = this.isElementDisabled(element);
         const readonly = this.isElementReadOnly(element);
         if (readonly === "error") {
-          throw this.createError("Element is not an <input>, <textarea>, <select> or [contenteditable] and does not have a role allowing [aria-readonly]");
+          return { matches: false, received: "error:noteditable" };
         }
         return {
           matches: !disabled && !readonly,
@@ -1096,11 +1098,9 @@ var Acquiescence = (() => {
      * - 'status' is the status of the check.
      * - 'interactionPoint' is the hit point of the interaction, if the element is ready for the interaction.
      * - 'needsscroll' if the element is not in the view port, and cannot be scrolled into view due to overflow.
-     * - 'notready' if the element is not ready for the interaction.
-     * @throws {Error} If the element is
-     * - not connected;
-     * - not in the view port, and cannot be scrolled into view due to overflow
-     * - is obscured by another element
+     * - 'notready' if the element is not ready for the interaction, with a 'reason': the state seen (such as 'hidden',
+     * 'disabled', 'readOnly', 'stable' or 'unviewable'), 'notconnected', 'noteditable' for typing into an element that
+     * cannot be edited, or 'obscured by' and a preview of the element hit instead.
      */
     async isInteractionReady(element, interactionType, hitPointOffset) {
       const states = ["stable", "visible", "inview"];
@@ -1165,6 +1165,32 @@ var Acquiescence = (() => {
       } catch {
         throw new Error("timeout waiting for interaction to be ready");
       }
+    }
+    /**
+     * Focuses an element and selects its text, so that typing replaces it: the value of an <input> or <textarea>,
+     * or the contents of any other element, such as a [contenteditable] one.
+     * @param element {Element} The element whose text to select.
+     * @returns {boolean} True if the text was selected; false if the element is not connected.
+     */
+    selectText(element) {
+      if (!element.isConnected) {
+        return false;
+      }
+      const tagName = this.domUtilities.getNormalizedElementTagName(element);
+      if (tagName === "INPUT" || tagName === "TEXTAREA") {
+        element.select();
+        element.focus();
+        return true;
+      }
+      const range = element.ownerDocument.createRange();
+      range.selectNodeContents(element);
+      const selection = element.ownerDocument.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      element.focus();
+      return true;
     }
     /**
      * Gets the bounding rectangle of an element in the view port.

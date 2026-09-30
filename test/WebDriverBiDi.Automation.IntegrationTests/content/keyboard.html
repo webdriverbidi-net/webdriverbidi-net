@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Keyboard</title>
+  </head>
+  <body>
+    <input id="name" value="old name">
+    <input id="email" type="email" value="old@example.com">
+    <input id="number" type="number" value="5">
+    <textarea id="notes">old notes</textarea>
+    <div id="rich" contenteditable="true"><b>old</b> rich text</div>
+    <input id="later" value="old later" disabled>
+    <input id="locked" value="locked" readonly>
+    <input id="date" type="date">
+    <div id="label">Not editable</div>
+    <input id="keys">
+    <script>
+      window.events = [];
+      const name = document.getElementById('name');
+      name.addEventListener('focus', () => window.events.push('focus'));
+      name.addEventListener('blur', () => window.events.push('blur'));
+      name.addEventListener('input', () => window.events.push('input'));
+      document.getElementById('keys').addEventListener('keydown', (e) => window.events.push(`keydown:${e.key.toLowerCase()}:${e.shiftKey}`));
+      setTimeout(() => { document.getElementById('later').disabled = false; }, 300);
+    </script>
+  </body>
+</html>

@@ -3,6 +3,7 @@
   <body>
     <div style="height: 80px">Inner spacer</div>
     <button id="inner-button" style="margin-left: 60px">Inner</button>
+    <input id="inner-input" value="old inner">
     <script>
       window.clicked = false;
       document.getElementById('inner-button').addEventListener('click', () => { window.clicked = true; });

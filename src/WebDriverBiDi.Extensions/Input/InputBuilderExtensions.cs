@@ -48,13 +48,20 @@ public static class InputBuilderExtensions
     /// </summary>
     /// <param name="builder">The builder.</param>
     /// <param name="keysToSend">The text, which may include special keys from <see cref="Keys"/>.</param>
+    /// <param name="delayBetweenKeys">The time the browser waits between one key and the next. Defaults to no wait.</param>
     /// <returns>The builder, for chaining.</returns>
-    public static InputBuilder AddSendKeysToActiveElementAction(this InputBuilder builder, string keysToSend)
+    public static InputBuilder AddSendKeysToActiveElementAction(this InputBuilder builder, string keysToSend, TimeSpan delayBetweenKeys = default)
     {
         KeyInputSource keyboard = builder.DefaultKeyInputSource;
-        foreach (string key in TextElements.Split(keysToSend))
+        List<string> keys = TextElements.Split(keysToSend);
+        for (int i = 0; i < keys.Count; i++)
         {
-            builder.AddAction(keyboard.CreateKeyDown(key)).AddAction(keyboard.CreateKeyUp(key));
+            if (i > 0 && delayBetweenKeys > TimeSpan.Zero)
+            {
+                builder.AddAction(keyboard.CreatePause(delayBetweenKeys));
+            }
+
+            builder.AddAction(keyboard.CreateKeyDown(keys[i])).AddAction(keyboard.CreateKeyUp(keys[i]));
         }
 
         return builder;

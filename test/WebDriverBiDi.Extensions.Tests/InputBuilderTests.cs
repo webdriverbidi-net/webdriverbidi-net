@@ -195,6 +195,17 @@ public class InputBuilderTests
     }
 
     [Fact]
+    public async Task TypingWithADelayPausesBetweenKeys()
+    {
+        InputBuilder builder = new();
+
+        builder.AddSendKeysToActiveElementAction("ab", TimeSpan.FromMilliseconds(50));
+
+        JsonArray actions = (await SendAsync(builder))[0]!["actions"]!.AsArray();
+        Assert.Equal(["keyDown:a", "keyUp:a", "pause:50", "keyDown:b", "keyUp:b"], actions.Select(action => $"{action!["type"]}:{action["value"] ?? action["duration"]}"));
+    }
+
+    [Fact]
     public async Task ChordPressesKeysInOrderAndReleasesInReverse()
     {
         InputBuilder builder = new();
