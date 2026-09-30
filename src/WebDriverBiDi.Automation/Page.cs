@@ -18,6 +18,10 @@ public sealed class Page
     private readonly object lockObject = new();
     private readonly List<Frame> frames = [];
     private readonly ObservableEventInvocable<PageEventArgs> onClosed = new("automation.pageClosed");
+    private readonly ObservableEventInvocable<ConsoleMessageEventArgs> onConsoleMessage = new("automation.consoleMessage");
+    private readonly ObservableEventInvocable<PageErrorEventArgs> onPageError = new("automation.pageError");
+    private readonly ObservableEventInvocable<DialogEventArgs> onDialog = new("automation.dialog");
+    private readonly ObservableEventInvocable<PageEventArgs> onPopup = new("automation.popup");
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Page"/> class.
@@ -25,10 +29,12 @@ public sealed class Page
     /// <param name="browser">The browser the page belongs to.</param>
     /// <param name="id">The ID of the page's browsing context.</param>
     /// <param name="url">The URL of the page's main frame.</param>
-    internal Page(Browser browser, string id, string url)
+    /// <param name="opener">The page that opened this one, or <see langword="null"/> if none did or it is not tracked.</param>
+    internal Page(Browser browser, string id, string url, Page? opener)
     {
         this.Browser = browser;
         this.Id = id;
+        this.Opener = opener;
         this.MainFrame = new Frame(this, id, null, url);
         this.frames.Add(this.MainFrame);
     }
@@ -76,6 +82,33 @@ public sealed class Page
     /// Gets an observable event raised when the page closes.
     /// </summary>
     public ObservableEvent<PageEventArgs> OnClosed => this.onClosed;
+
+    /// <summary>
+    /// Gets the page that opened this one, such as with <c>window.open</c> or a link with a target, or
+    /// <see langword="null"/> if none did or the group was not tracking it.
+    /// </summary>
+    public Page? Opener { get; }
+
+    /// <summary>
+    /// Gets an observable event raised when a document of the page calls a <c>console</c> method.
+    /// </summary>
+    public ObservableEvent<ConsoleMessageEventArgs> OnConsoleMessage => this.onConsoleMessage;
+
+    /// <summary>
+    /// Gets an observable event raised when a script of the page throws an error it does not catch.
+    /// </summary>
+    public ObservableEvent<PageErrorEventArgs> OnPageError => this.onPageError;
+
+    /// <summary>
+    /// Gets an observable event raised when a document of the page opens a dialog. See <see cref="Dialog"/> for
+    /// how dialogs are handled.
+    /// </summary>
+    public ObservableEvent<DialogEventArgs> OnDialog => this.onDialog;
+
+    /// <summary>
+    /// Gets an observable event raised when the page opens another page, once that page is tracked.
+    /// </summary>
+    public ObservableEvent<PageEventArgs> OnPopup => this.onPopup;
 
     /// <summary>
     /// Creates a locator for elements in the page's main frame.
@@ -457,6 +490,46 @@ public sealed class Page
     internal Task NotifyClosedAsync()
     {
         return this.onClosed.InvokeNotifyObserversAsync(new PageEventArgs(this));
+    }
+
+    /// <summary>
+    /// Raises <see cref="OnConsoleMessage"/>.
+    /// </summary>
+    /// <param name="args">The message.</param>
+    /// <returns>A task that completes when observers are notified.</returns>
+    internal Task NotifyConsoleMessageAsync(ConsoleMessageEventArgs args)
+    {
+        return this.onConsoleMessage.InvokeNotifyObserversAsync(args);
+    }
+
+    /// <summary>
+    /// Raises <see cref="OnPageError"/>.
+    /// </summary>
+    /// <param name="args">The error.</param>
+    /// <returns>A task that completes when observers are notified.</returns>
+    internal Task NotifyPageErrorAsync(PageErrorEventArgs args)
+    {
+        return this.onPageError.InvokeNotifyObserversAsync(args);
+    }
+
+    /// <summary>
+    /// Raises <see cref="OnDialog"/>.
+    /// </summary>
+    /// <param name="dialog">The dialog.</param>
+    /// <returns>A task that completes when observers are notified.</returns>
+    internal Task NotifyDialogAsync(Dialog dialog)
+    {
+        return this.onDialog.InvokeNotifyObserversAsync(new DialogEventArgs(dialog));
+    }
+
+    /// <summary>
+    /// Raises <see cref="OnPopup"/>.
+    /// </summary>
+    /// <param name="popup">The page this one opened.</param>
+    /// <returns>A task that completes when observers are notified.</returns>
+    internal Task NotifyPopupAsync(Page popup)
+    {
+        return this.onPopup.InvokeNotifyObserversAsync(new PageEventArgs(popup));
     }
 
     // History traversal has no wait of its own, so the navigation it causes is awaited from the frame's events.

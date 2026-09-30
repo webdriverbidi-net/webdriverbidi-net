@@ -163,6 +163,19 @@ public class ScriptTests
         Assert.EndsWith("; it was still running.", running.Message);
     }
 
+    // The group's clock never moves here, so only the driver's own command timer ends the call.
+    [Fact]
+    public async Task CallTimingOutEndsTheWaitWhateverTheBudgetsClockSays()
+    {
+        (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.NeverAnswer("script.callFunction");
+
+        WebDriverBiDiTimeoutException exception = await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.WaitForFunctionAsync("() => true", timeout: TimeSpan.FromMilliseconds(200), cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Equal("Timed out after 0.2 seconds waiting for the function to return a truthy value; it was still running.", exception.Message);
+    }
+
     [Fact]
     public async Task WaitForFunctionLetsOtherScriptErrorsThrough()
     {

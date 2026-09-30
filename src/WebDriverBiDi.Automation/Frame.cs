@@ -391,17 +391,21 @@ public sealed class Frame
             {
                 observed = "the frame navigated while it ran";
             }
-            catch (WebDriverBiDiTimeoutException) when (budget.IsExhausted)
+            catch (WebDriverBiDiTimeoutException)
             {
+                // The call was given the rest of the budget, so timing out means the budget is spent.
+                break;
             }
 
+            // The delay ends with the budget, at once if none is left.
+            await budget.DelayAsync(this.Group.Options.PollInterval).ConfigureAwait(false);
             if (budget.IsExhausted)
             {
-                throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for the function to return a truthy value; {observed}.");
+                break;
             }
-
-            await budget.DelayAsync(this.Group.Options.PollInterval).ConfigureAwait(false);
         }
+
+        throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for the function to return a truthy value; {observed}.");
     }
 
     /// <summary>

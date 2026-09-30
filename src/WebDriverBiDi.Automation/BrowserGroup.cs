@@ -9,6 +9,7 @@ using WebDriverBiDi.Browser;
 using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Emulation;
+using WebDriverBiDi.Log;
 using WebDriverBiDi.Permissions;
 using WebDriverBiDi.Session;
 
@@ -42,7 +43,13 @@ public sealed class BrowserGroup : IAsyncDisposable
         this.launcher = launcher;
         this.ownsSession = ownsSession;
         this.ScriptHost = new ScriptHost(driver, options.SandboxName);
-        this.observers.Add(driver.BrowsingContext.OnContextCreated.AddObserver(e => this.AddContextAsync(e.BrowsingContextId, e.Parent, e.UserContextId, e.Url)));
+
+        // Observers that raise the group's own events run apart from the driver's message thread once they await,
+        // so that an observer of those events can send commands and wait for events; the group's own bookkeeping
+        // still runs, in order, before the first await.
+        this.observers.Add(driver.BrowsingContext.OnContextCreated.AddObserver(e => this.AddContextAsync(e.BrowsingContextId, e.Parent, e.UserContextId, e.Url, e.OriginalOpener), ObservableEventHandlerOptions.RunHandlerAsynchronously));
+        this.observers.Add(driver.Log.OnEntryAdded.AddObserver(this.OnLogEntryAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously));
+        this.observers.Add(driver.BrowsingContext.OnUserPromptOpened.AddObserver(this.OnUserPromptOpenedAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously));
         this.observers.Add(driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyedAsync));
         this.observers.Add(driver.BrowsingContext.OnNavigationStarted.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordNavigationStarted()));
         this.observers.Add(driver.BrowsingContext.OnNavigationCommitted.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordNewDocument(e.Url)));
@@ -314,7 +321,7 @@ public sealed class BrowserGroup : IAsyncDisposable
         try
         {
             BrowsingContextModule module = this.Driver.BrowsingContext;
-            SubscribeCommandParameters subscription = new([module.OnContextCreated.EventName, module.OnContextDestroyed.EventName, module.OnNavigationStarted.EventName, module.OnNavigationCommitted.EventName, module.OnFragmentNavigated.EventName, module.OnHistoryUpdated.EventName, module.OnDomContentLoaded.EventName, module.OnLoad.EventName]);
+            SubscribeCommandParameters subscription = new([module.OnContextCreated.EventName, module.OnContextDestroyed.EventName, module.OnNavigationStarted.EventName, module.OnNavigationCommitted.EventName, module.OnFragmentNavigated.EventName, module.OnHistoryUpdated.EventName, module.OnDomContentLoaded.EventName, module.OnLoad.EventName, module.OnUserPromptOpened.EventName, this.Driver.Log.OnEntryAdded.EventName]);
             this.subscriptionId = (await this.Driver.Session.SubscribeAsync(subscription, cancellationToken: cancellationToken).ConfigureAwait(false)).SubscriptionId;
             await this.ScriptHost.AddPreloadScriptAsync(cancellationToken).ConfigureAwait(false);
             GetUserContextsCommandResult userContexts = await this.Driver.Browser.GetUserContextsAsync(new GetUserContextsCommandParameters(), cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -410,7 +417,7 @@ public sealed class BrowserGroup : IAsyncDisposable
     {
         foreach (BrowsingContextInfo context in contexts.Where(context => !destroyed.Contains(context.BrowsingContextId)))
         {
-            await this.AddContextAsync(context.BrowsingContextId, parentId, context.UserContextId, context.Url).ConfigureAwait(false);
+            await this.AddContextAsync(context.BrowsingContextId, parentId, context.UserContextId, context.Url, context.OriginalOpener).ConfigureAwait(false);
             if (context.Children is not null)
             {
                 await this.AddTreeAsync(context.Children, context.BrowsingContextId, destroyed).ConfigureAwait(false);
@@ -419,11 +426,12 @@ public sealed class BrowserGroup : IAsyncDisposable
     }
 
     // A top-level context is a page; a child context is a frame of its parent's page, if the group tracks the parent.
-    private async Task AddContextAsync(string contextId, string? parentId, string userContextId, string url)
+    private async Task AddContextAsync(string contextId, string? parentId, string userContextId, string url, string? originalOpener)
     {
         if (parentId is null)
         {
-            await this.GetOrAddBrowser(userContextId).AddPageAsync(contextId, url).ConfigureAwait(false);
+            Page? opener = originalOpener is null ? null : this.FindFrame(originalOpener)?.Page;
+            await this.GetOrAddBrowser(userContextId).AddPageAsync(contextId, url, opener).ConfigureAwait(false);
             return;
         }
 
@@ -438,6 +446,26 @@ public sealed class BrowserGroup : IAsyncDisposable
             parent.Page.AddFrame(frame);
             this.frames[contextId] = frame;
         }
+    }
+
+    // Console calls and uncaught errors are reported for the frame whose document made them; entries from workers,
+    // which have no frame, and other kinds of entry are not.
+    private Task OnLogEntryAsync(EntryAddedEventArgs e)
+    {
+        Frame? frame = e.Source.BrowsingContextId is string contextId ? this.FindFrame(contextId) : null;
+        return (frame, e.Type) switch
+        {
+            (null, _) => Task.CompletedTask,
+            (_, "console") => frame.Page.NotifyConsoleMessageAsync(new ConsoleMessageEventArgs(frame, e.Method!, e.Level, e.Text ?? string.Empty, [.. e.Arguments!], e.StackTrace, e.Timestamp)),
+            (_, "javascript") => frame.Page.NotifyPageErrorAsync(new PageErrorEventArgs(frame, e.Text ?? string.Empty, e.StackTrace, e.Timestamp)),
+            _ => Task.CompletedTask,
+        };
+    }
+
+    private Task OnUserPromptOpenedAsync(UserPromptOpenedEventArgs e)
+    {
+        Frame? frame = this.FindFrame(e.BrowsingContextId);
+        return frame is null ? Task.CompletedTask : frame.Page.NotifyDialogAsync(new Dialog(frame, e.PromptType, e.Message, e.DefaultValue, e.Handler));
     }
 
     private Task OnContextDestroyedAsync(ContextDestroyedEventArgs e)

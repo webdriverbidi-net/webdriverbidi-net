@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Events</title>
+  </head>
+  <body>
+    <button id="log" onclick="console.log('hello', 42); console.warn('careful')">Log</button>
+    <button id="throw" onclick="setTimeout(() => { throw new Error('boom'); }, 0)">Throw</button>
+    <button id="alert" onclick="alert('Hi')">Alert</button>
+    <button id="confirm" onclick="window.confirmed = confirm('Sure?')">Confirm</button>
+    <button id="prompt" onclick="window.prompted = prompt('Name?', 'Ada')">Prompt</button>
+    <button id="popup" onclick="window.open('second.html')">Popup</button>
+    <iframe id="frame" src="dialog-child.html"></iframe>
+  </body>
+</html>

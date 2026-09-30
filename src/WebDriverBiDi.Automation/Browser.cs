@@ -110,12 +110,14 @@ public sealed class Browser
     }
 
     /// <summary>
-    /// Adds a page, if the browser does not have it yet, raising <see cref="OnPageCreated"/> for a page it adds.
+    /// Adds a page, if the browser does not have it yet, raising <see cref="OnPageCreated"/> for a page it adds,
+    /// then its opener's <see cref="Page.OnPopup"/>.
     /// </summary>
     /// <param name="id">The ID of the page's browsing context.</param>
     /// <param name="url">The URL of the page's main frame.</param>
+    /// <param name="opener">The page that opened this one, or <see langword="null"/> if none did or it is not tracked.</param>
     /// <returns>The page.</returns>
-    internal async Task<Page> AddPageAsync(string id, string url)
+    internal async Task<Page> AddPageAsync(string id, string url, Page? opener = null)
     {
         Page page;
         lock (this.lockObject)
@@ -126,12 +128,17 @@ public sealed class Browser
                 return existing;
             }
 
-            page = new Page(this, id, url);
+            page = new Page(this, id, url, opener);
             this.pages.Add(page);
         }
 
         this.Group.RegisterFrame(page.MainFrame);
         await this.onPageCreated.InvokeNotifyObserversAsync(new PageEventArgs(page)).ConfigureAwait(false);
+        if (opener is not null)
+        {
+            await opener.NotifyPopupAsync(page).ConfigureAwait(false);
+        }
+
         return page;
     }
 

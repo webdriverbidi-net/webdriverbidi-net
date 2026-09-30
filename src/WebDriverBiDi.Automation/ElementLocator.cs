@@ -1236,17 +1236,15 @@ public sealed class ElementLocator
             {
                 observed = "the frame navigated while the element was checked";
             }
-            catch (WebDriverBiDiTimeoutException) when (budget.IsExhausted)
+            catch (WebDriverBiDiTimeoutException)
             {
-                // A command cut short by the end of the budget observed nothing; the attempt before it did.
+                // Each command is given the rest of the budget, so one that times out has spent it, whatever the
+                // budget's own clock says; it observed nothing, and the attempt before it did.
                 observed ??= "a command was still running";
-            }
-
-            if (budget.IsExhausted)
-            {
                 break;
             }
 
+            // The delay ends with the budget, at once if none is left.
             await budget.DelayAsync(this.Group.Options.PollInterval).ConfigureAwait(false);
             if (budget.IsExhausted)
             {

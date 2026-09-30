@@ -199,6 +199,22 @@ public class ElementLocatorTests
         Assert.EndsWith("a command was still running.", exception.Message);
     }
 
+    // The group's clock never moves, so only the driver's own command timer can end the command: the wait must
+    // treat that as its budget being spent, however far apart the two clocks are.
+    [Fact]
+    public async Task CommandTimingOutEndsTheWaitWhateverTheBudgetsClockSays()
+    {
+        (BiDiDriver driver, FakeSession session, BrowserGroup group) = await ConnectAsync(new FakeTimeProvider());
+        await using BiDiDriver ownedDriver = driver;
+        await using BrowserGroup ownedGroup = group;
+        Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        session.RemoteEnd.NeverAnswer("browsingContext.locateNodes");
+
+        WebDriverBiDiTimeoutException exception = await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.Locate(new CssLocator("#slow")).WaitForAsync(timeout: TimeSpan.FromMilliseconds(200), cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Equal("Timed out after 0.2 seconds waiting for css \"#slow\" to be visible; a command was still running.", exception.Message);
+    }
+
     [Fact]
     public async Task CancelledWaitStops()
     {
