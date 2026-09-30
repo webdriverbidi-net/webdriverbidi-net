@@ -118,7 +118,7 @@ public class KeyboardActionTests
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("input-1"));
         AnswerScripts(session, [Readiness("ready")], [true]);
 
-        await page.Locate(new CssLocator("input")).ClearAsync(new FillOptions() { Timeout = TimeSpan.FromSeconds(1) }, TestContext.Current.CancellationToken);
+        await page.Locate(new CssLocator("input")).ClearAsync(new ActionOptions() { Timeout = TimeSpan.FromSeconds(1) }, TestContext.Current.CancellationToken);
 
         Assert.Equal("clear", (string?)Assert.Single(ScriptCalls(session, "isInteractionReady"))["params"]!["arguments"]![1]!["value"]);
         Assert.Single(ScriptCalls(session, "selectText"));
@@ -133,7 +133,7 @@ public class KeyboardActionTests
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("input-1"));
         AnswerScripts(session, [NotReady("hidden")], [true]);
 
-        await page.Locate(new CssLocator("input")).FillAsync("x", new FillOptions() { Force = true }, TestContext.Current.CancellationToken);
+        await page.Locate(new CssLocator("input")).FillAsync("x", new ActionOptions() { Force = true }, TestContext.Current.CancellationToken);
 
         Assert.Empty(ScriptCalls(session, "isInteractionReady"));
         Assert.Single(ScriptCalls(session, "selectText"));
@@ -167,7 +167,7 @@ public class KeyboardActionTests
         await using BiDiDriver ownedDriver = driver;
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", Element("input", inputType));
 
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("#field")).FillAsync("2026-09-30", new FillOptions() { Force = true }, TestContext.Current.CancellationToken));
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("#field")).FillAsync("2026-09-30", new ActionOptions() { Force = true }, TestContext.Current.CancellationToken));
 
         Assert.Equal($"css \"#field\" is an input of type \"{inputType}\", whose value cannot be typed.", exception.Message);
         Assert.Empty(session.RemoteEnd.CommandsFor("script.callFunction"));
@@ -199,7 +199,7 @@ public class KeyboardActionTests
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes(matches));
         AnswerScripts(session, [reason is null ? Readiness("ready") : NotReady(reason)], [selected]);
 
-        Task fill = page.Locate(new CssLocator("input")).FillAsync("x", new FillOptions() { Timeout = TimeSpan.FromSeconds(1) }, TestContext.Current.CancellationToken);
+        Task fill = page.Locate(new CssLocator("input")).FillAsync("x", new ActionOptions() { Timeout = TimeSpan.FromSeconds(1) }, TestContext.Current.CancellationToken);
         WebDriverBiDiTimeoutException exception = await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => DriveAsync(time, fill));
 
         Assert.Equal($"Timed out after 1 seconds waiting for css \"input\" to be ready to be filled; {observed}.", exception.Message);
@@ -223,8 +223,8 @@ public class KeyboardActionTests
         Assert.Null(new KeyActionOptions().Timeout);
         Assert.Equal(TimeSpan.Zero, new PressSequentiallyOptions().Delay);
         Assert.Null(new PressSequentiallyOptions().Timeout);
-        Assert.False(new FillOptions().Force);
-        Assert.Null(new FillOptions().Timeout);
+        Assert.False(new ActionOptions().Force);
+        Assert.Null(new ActionOptions().Timeout);
     }
 
     private static async Task<(BiDiDriver Driver, FakeSession Session, Page Page, FakeTimeProvider Time)> OpenPageAsync()

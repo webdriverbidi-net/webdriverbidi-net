@@ -1,4 +1,4 @@
-// <copyright file="FillOptions.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="ActionOptions.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -6,13 +6,13 @@
 namespace WebDriverBiDi.Automation;
 
 /// <summary>
-/// Options for filling or clearing an editable element.
+/// Options for an action on an element that waits for the element to be ready, such as filling it.
 /// </summary>
-public sealed class FillOptions
+public class ActionOptions
 {
     /// <summary>
-    /// Gets a value indicating whether to act without waiting for the element to be visible, stable, enabled,
-    /// editable, and uncovered.
+    /// Gets a value indicating whether to act without waiting for the element to be ready for the action, such as
+    /// visible, enabled, and uncovered.
     /// </summary>
     public bool Force { get; init; }
 

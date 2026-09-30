@@ -325,7 +325,7 @@ public sealed class ElementLocator
     public Task ClickAsync(ClickOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new ClickOptions();
-        return this.PerformPointerActionAsync(options.ClickCount > 1 ? "doubleclick" : "click", "clicked", options, cancellationToken, (pointer, builder) =>
+        return this.PerformPointerActionAsync(options.ClickCount > 1 ? "doubleclick" : "click", "clicked", options, this.CreateBudget(options.Timeout, cancellationToken), (pointer, builder) =>
         {
             for (int click = 0; click < options.ClickCount; click++)
             {
@@ -361,7 +361,8 @@ public sealed class ElementLocator
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
     public Task HoverAsync(PointerActionOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return this.PerformPointerActionAsync("hover", "hovered", options ?? new PointerActionOptions(), cancellationToken, (_, _) => { });
+        options ??= new PointerActionOptions();
+        return this.PerformPointerActionAsync("hover", "hovered", options, this.CreateBudget(options.Timeout, cancellationToken), (_, _) => { });
     }
 
     /// <summary>
@@ -452,9 +453,9 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the element cannot be edited, or is an input, such as a date or a checkbox, whose value is not typed.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
-    public Task FillAsync(string value, FillOptions? options = null, CancellationToken cancellationToken = default)
+    public Task FillAsync(string value, ActionOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return this.ReplaceTextAsync(value, "type", "filled", options ?? new FillOptions(), cancellationToken);
+        return this.ReplaceTextAsync(value, "type", "filled", options ?? new ActionOptions(), cancellationToken);
     }
 
     /// <summary>
@@ -467,9 +468,114 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the element cannot be edited, or is an input, such as a date or a checkbox, whose value is not typed.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
-    public Task ClearAsync(FillOptions? options = null, CancellationToken cancellationToken = default)
+    public Task ClearAsync(ActionOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return this.ReplaceTextAsync(string.Empty, "clear", "cleared", options ?? new FillOptions(), cancellationToken);
+        return this.ReplaceTextAsync(string.Empty, "clear", "cleared", options ?? new ActionOptions(), cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks a checkbox or radio button, unless it is checked already, by clicking it once it is ready, as
+    /// <see cref="ClickAsync"/> waits, then confirms that the click checked it.
+    /// </summary>
+    /// <param name="options">The position, modifier keys, and wait, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the element is checked.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element cannot be checked, or clicking it did not check it.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public Task CheckAsync(PointerActionOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return this.SetCheckedAsync(true, options, cancellationToken);
+    }
+
+    /// <summary>
+    /// Unchecks a checkbox, unless it is unchecked already, by clicking it once it is ready, as
+    /// <see cref="ClickAsync"/> waits, then confirms that the click unchecked it.
+    /// </summary>
+    /// <param name="options">The position, modifier keys, and wait, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the element is unchecked.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element cannot be checked, is a checked radio button, which clicking cannot uncheck, or clicking it did not uncheck it.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public Task UncheckAsync(PointerActionOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return this.SetCheckedAsync(false, options, cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks or unchecks a checkbox or radio button, as <see cref="CheckAsync"/> and <see cref="UncheckAsync"/> do.
+    /// An element in a mixed state counts as unchecked.
+    /// </summary>
+    /// <param name="isChecked">Whether the element is to be checked.</param>
+    /// <param name="options">The position, modifier keys, and wait, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>A task that completes when the element is in the state.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element cannot be checked, is a checked radio button being unchecked, or clicking it did not change its state.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public async Task SetCheckedAsync(bool isChecked, PointerActionOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new PointerActionOptions();
+        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
+        string awaited = $"{this} to report whether it is checked";
+        CheckedState? state = await this.PollAsync(budget, awaited, () => this.TryReadCheckedStateAsync(budget)).ConfigureAwait(false);
+        if (state!.IsChecked == isChecked)
+        {
+            return;
+        }
+
+        if (!isChecked && state.IsRadio)
+        {
+            throw new InvalidOperationException($"{this} is a radio button, which clicking cannot uncheck.");
+        }
+
+        await this.PerformPointerActionAsync("click", "clicked", options, budget, (pointer, builder) => builder.AddAction(pointer.CreatePointerDown()).AddAction(pointer.CreatePointerUp())).ConfigureAwait(false);
+        state = await this.PollAsync(budget, awaited, () => this.TryReadCheckedStateAsync(budget)).ConfigureAwait(false);
+        if (state!.IsChecked != isChecked)
+        {
+            throw new InvalidOperationException($"Clicking {this} did not {(isChecked ? "check" : "uncheck")} it.");
+        }
+    }
+
+    /// <summary>
+    /// Selects options of a <c>&lt;select&gt;</c> element, deselecting the others, once the element is visible and
+    /// enabled and every option exists and is enabled, then fires the <c>input</c> and <c>change</c> events a user's
+    /// choice would.
+    /// </summary>
+    /// <param name="selections">The options; none deselects every option.</param>
+    /// <param name="options">The wait, or <see langword="null"/> for the default.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the action.</param>
+    /// <returns>The values of the options now selected.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element is not a <c>&lt;select&gt;</c> element, or several options are given for one that takes one.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element or an option is not ready in time.</exception>
+    public async Task<IReadOnlyList<string>> SelectOptionAsync(IEnumerable<SelectOption> selections, ActionOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        options ??= new ActionOptions();
+        List<SelectOption> chosen = [.. selections];
+        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
+        IReadOnlyList<string>? values = await this.PollAsync(budget, $"{this} to be ready to have options selected", () => this.TrySelectOptionsAsync(chosen, options.Force, budget)).ConfigureAwait(false);
+        return values!;
+    }
+
+    /// <summary>
+    /// Sets the files of a file input, once one matches. The paths are on the machine the browser runs on.
+    /// </summary>
+    /// <param name="files">The paths of the files; none clears the input.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the command.</param>
+    /// <returns>A task that completes when the files have been set.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiCommandException">Thrown when the browser cannot set the files, such as for an element that is not a file input, or several files for an input that takes one.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task SetInputFilesAsync(IEnumerable<string> files, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        NodeRemoteValue? node = await this.PollAsync(budget, $"{this} to be attached", () => this.TryFindOneAsync(budget)).ConfigureAwait(false);
+        SetFilesCommandParameters parameters = new(this.Frame.Id, node!.ToSharedReference());
+        parameters.Files.AddRange(files);
+        await this.Group.Driver.Input.SetFilesAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -539,6 +645,11 @@ public sealed class ElementLocator
             "notconnected" => "the element was removed from the document",
             _ => $"the element was {reason}",
         };
+    }
+
+    private static int OptionIndex(RemoteValue result)
+    {
+        return (int)Property(result, "index").As<NumberRemoteValue>().Value;
     }
 
     private static string[] ModifierKeys(KeyModifiers modifiers)
@@ -860,9 +971,8 @@ public sealed class ElementLocator
 
     // Waits for the element to be ready for the interaction, then aims the pointer at the point the readiness check
     // chose (or was asked for), relative to the element, which the browser places correctly within frames.
-    private async Task PerformPointerActionAsync(string interactionType, string pastTense, PointerActionOptions options, CancellationToken cancellationToken, Action<PointerInputSource, InputBuilder> addActions)
+    private async Task PerformPointerActionAsync(string interactionType, string pastTense, PointerActionOptions options, TimeBudget budget, Action<PointerInputSource, InputBuilder> addActions)
     {
-        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
         ActionTarget? target = await this.PollAsync(budget, $"{this} to be ready to be {pastTense}", () => this.FindActionTargetAsync(interactionType, options, budget)).ConfigureAwait(false);
         InputBuilder builder = new();
         string[] modifierKeys = ModifierKeys(options.Modifiers);
@@ -914,17 +1024,83 @@ public sealed class ElementLocator
         }
     }
 
-    private async Task<(bool Done, bool Unused, string Observed)> TryCallOnElementAsync(string functionDeclaration, TimeBudget budget)
+    private async Task<(bool Found, NodeRemoteValue? Node, string Observed)> TryFindOneAsync(TimeBudget budget)
     {
         IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
         this.ThrowIfAmbiguous(nodes);
-        if (nodes.Count == 0)
+        return nodes.Count == 0 ? (false, null, "no element matched") : (true, nodes[0], string.Empty);
+    }
+
+    private async Task<(bool Done, bool Unused, string Observed)> TryCallOnElementAsync(string functionDeclaration, TimeBudget budget)
+    {
+        (bool found, NodeRemoteValue? node, string observed) = await this.TryFindOneAsync(budget).ConfigureAwait(false);
+        if (!found)
         {
-            return (false, false, "no element matched");
+            return (false, false, observed);
         }
 
-        await this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, functionDeclaration, [nodes[0].ToSharedReference()], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        await this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, functionDeclaration, [node!.ToSharedReference()], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
         return (true, true, string.Empty);
+    }
+
+    private async Task<(bool Read, CheckedState? State, string Observed)> TryReadCheckedStateAsync(TimeBudget budget)
+    {
+        (bool found, NodeRemoteValue? node, string observed) = await this.TryFindOneAsync(budget).ConfigureAwait(false);
+        if (!found)
+        {
+            return (false, null, observed);
+        }
+
+        RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => inspector.queryElementState(element, 'checked')", [node!.ToSharedReference()], budget).ConfigureAwait(false);
+        string received = Property(result, "received").As<StringRemoteValue>().Value;
+        if (received == "error:notcheckable")
+        {
+            throw new InvalidOperationException($"{this} is not a checkbox or radio button.");
+        }
+
+        return received == "error:notconnected"
+            ? (false, null, DescribeNotReady("notconnected"))
+            : (true, new CheckedState(received == "checked", Property(result, "isRadio").As<BooleanRemoteValue>().Value), string.Empty);
+    }
+
+    private async Task<(bool Selected, IReadOnlyList<string>? Values, string Observed)> TrySelectOptionsAsync(List<SelectOption> selections, bool force, TimeBudget budget)
+    {
+        (bool found, NodeRemoteValue? node, string observed) = await this.TryFindOneAsync(budget).ConfigureAwait(false);
+        if (!found)
+        {
+            return (false, null, observed);
+        }
+
+        if (!force)
+        {
+            RemoteValue states = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => inspector.queryElementStates(element, ['visible', 'enabled'])", [node!.ToSharedReference()], budget).ConfigureAwait(false);
+            switch (Property(states, "status").As<StringRemoteValue>().Value)
+            {
+                case "success":
+                    break;
+                case "failure":
+                    return (false, null, DescribeNotReady(Property(states, "missingState").As<StringRemoteValue>().Value));
+                default:
+                    return (false, null, DescribeNotReady(Property(states, "message").As<StringRemoteValue>().Value));
+            }
+        }
+
+        RemoteValue result = await this.Group.ScriptHost.CallActionsAsync(this.Frame.Id, "(actions, element, options) => actions.selectOptions(element, options)", [node!.ToSharedReference(), LocalValue.Array([.. selections.Select(selection => selection.ToLocalValue())])], budget).ConfigureAwait(false);
+        switch (Property(result, "status").As<StringRemoteValue>().Value)
+        {
+            case "selected":
+                return (true, [.. Property(result, "values").As<CollectionRemoteValue>().Value!.Select(value => value.As<StringRemoteValue>().Value)], string.Empty);
+            case "notselect":
+                throw new InvalidOperationException($"{this} is not a <select> element.");
+            case "notmultiple":
+                throw new InvalidOperationException($"{this} is a <select> element that takes one option, but {selections.Count} were given.");
+            case "missing":
+                return (false, null, $"no option matched {selections[OptionIndex(result)]}");
+            case "disabled":
+                return (false, null, $"the option matching {selections[OptionIndex(result)]} was disabled");
+            default:
+                return (false, null, DescribeNotReady("notconnected"));
+        }
     }
 
     private Task PerformKeyActionsAsync(InputBuilder builder, TimeBudget budget)
@@ -934,7 +1110,7 @@ public sealed class ElementLocator
 
     // Selecting the element's text, then typing, replaces the text as a user would, with the events a user's typing
     // causes; an empty value deletes the selection.
-    private async Task ReplaceTextAsync(string value, string interactionType, string pastTense, FillOptions options, CancellationToken cancellationToken)
+    private async Task ReplaceTextAsync(string value, string interactionType, string pastTense, ActionOptions options, CancellationToken cancellationToken)
     {
         TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
         await this.PollAsync(budget, $"{this} to be ready to be {pastTense}", () => this.TrySelectTextAsync(interactionType, options.Force, budget)).ConfigureAwait(false);
@@ -976,7 +1152,7 @@ public sealed class ElementLocator
             }
         }
 
-        RemoteValue selected = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => inspector.selectText(element)", [node.ToSharedReference()], budget).ConfigureAwait(false);
+        RemoteValue selected = await this.Group.ScriptHost.CallActionsAsync(this.Frame.Id, "(actions, element) => actions.selectText(element)", [node.ToSharedReference()], budget).ConfigureAwait(false);
         return selected.As<BooleanRemoteValue>().Value ? (true, true, string.Empty) : (false, false, DescribeNotReady("notconnected"));
     }
 
@@ -1232,4 +1408,6 @@ public sealed class ElementLocator
     }
 
     private sealed record ActionTarget(NodeRemoteValue Node, PointerOffset Offset);
+
+    private sealed record CheckedState(bool IsChecked, bool IsRadio);
 }

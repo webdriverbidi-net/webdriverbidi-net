@@ -10,20 +10,17 @@ using WebDriverBiDi.Script;
 
 /// <summary>
 /// Runs the library's scripts in a sandbox, isolated from the page's own scripts, with the Acquiescence element
-/// state library installed: by a preload script in documents loaded after the group starts, and on first use in
-/// documents loaded before it.
+/// state library and the page actions installed: by a preload script in documents loaded after the group starts,
+/// and on first use in documents loaded before it.
 /// </summary>
 internal sealed class ScriptHost
 {
     private const string InspectorName = "webdriverbidiAutomationInspector";
-    private const string MissingInspectorMessage = "webdriverbidi-automation: inspector not installed";
+    private const string ActionsName = "webdriverbidiAutomationActions";
+    private const string MissingMessage = "webdriverbidi-automation: scripts not installed";
 
     private static readonly Lazy<string> InstallFunction = new(() =>
-    {
-        using Stream library = Assembly.GetExecutingAssembly().GetManifestResourceStream("acquiescence-library")!;
-        using StreamReader reader = new(library);
-        return $"() => {{\n{reader.ReadToEnd()}\nwindow.{InspectorName} = new Acquiescence.ElementStateInspector();\n}}";
-    });
+        $"() => {{\n{ReadResource("acquiescence-library")}\nwindow.{InspectorName} = new Acquiescence.ElementStateInspector();\nwindow.{ActionsName} = {ReadResource("page-actions")};\n}}");
 
     private readonly BiDiDriver driver;
     private readonly string sandboxName;
@@ -67,21 +64,47 @@ internal sealed class ScriptHost
 
     /// <summary>
     /// Calls a function in the sandbox of a browsing context, passing the library's inspector as its first
-    /// argument, and installing the library first if the document does not have it.
+    /// argument, and installing the scripts first if the document does not have them.
     /// </summary>
     /// <param name="contextId">The ID of the browsing context.</param>
     /// <param name="functionDeclaration">The function, taking the inspector and then the arguments.</param>
     /// <param name="arguments">The arguments after the inspector.</param>
     /// <param name="budget">The time the call may take.</param>
     /// <returns>The function's result.</returns>
-    public async Task<RemoteValue> CallAsync(string contextId, string functionDeclaration, IReadOnlyList<LocalValue> arguments, TimeBudget budget)
+    public Task<RemoteValue> CallAsync(string contextId, string functionDeclaration, IReadOnlyList<LocalValue> arguments, TimeBudget budget)
     {
-        string wrapped = $"(...args) => {{ const inspector = window.{InspectorName}; if (!inspector) {{ throw new Error('{MissingInspectorMessage}'); }} return ({functionDeclaration})(inspector, ...args); }}";
+        return this.CallWithAsync(InspectorName, contextId, functionDeclaration, arguments, budget);
+    }
+
+    /// <summary>
+    /// Calls a function in the sandbox of a browsing context, passing the page actions as its first argument, and
+    /// installing the scripts first if the document does not have them.
+    /// </summary>
+    /// <param name="contextId">The ID of the browsing context.</param>
+    /// <param name="functionDeclaration">The function, taking the page actions and then the arguments.</param>
+    /// <param name="arguments">The arguments after the page actions.</param>
+    /// <param name="budget">The time the call may take.</param>
+    /// <returns>The function's result.</returns>
+    public Task<RemoteValue> CallActionsAsync(string contextId, string functionDeclaration, IReadOnlyList<LocalValue> arguments, TimeBudget budget)
+    {
+        return this.CallWithAsync(ActionsName, contextId, functionDeclaration, arguments, budget);
+    }
+
+    private static string ReadResource(string name)
+    {
+        using Stream resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(name)!;
+        using StreamReader reader = new(resource);
+        return reader.ReadToEnd();
+    }
+
+    private async Task<RemoteValue> CallWithAsync(string globalName, string contextId, string functionDeclaration, IReadOnlyList<LocalValue> arguments, TimeBudget budget)
+    {
+        string wrapped = $"(...args) => {{ const installed = window.{globalName}; if (!installed) {{ throw new Error('{MissingMessage}'); }} return ({functionDeclaration})(installed, ...args); }}";
         try
         {
             return await this.CallFunctionAsync(contextId, wrapped, arguments, budget).ConfigureAwait(false);
         }
-        catch (ScriptException ex) when (ex.Message.Contains(MissingInspectorMessage))
+        catch (ScriptException ex) when (ex.Message.Contains(MissingMessage))
         {
             await this.CallFunctionAsync(contextId, InstallFunction.Value, [], budget).ConfigureAwait(false);
             return await this.CallFunctionAsync(contextId, wrapped, arguments, budget).ConfigureAwait(false);

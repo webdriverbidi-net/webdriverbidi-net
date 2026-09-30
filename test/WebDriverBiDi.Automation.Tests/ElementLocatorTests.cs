@@ -225,7 +225,7 @@ public class ElementLocatorTests
         await using BrowserGroup ownedGroup = group;
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes(1));
-        AnswerInTurn(session, "script.callFunction", ProtocolJson.Exception("Error: webdriverbidi-automation: inspector not installed"), ProtocolJson.Success(new JsonObject() { ["type"] = "undefined" }), ProtocolJson.Boolean(true));
+        AnswerInTurn(session, "script.callFunction", ProtocolJson.Exception("Error: webdriverbidi-automation: scripts not installed"), ProtocolJson.Success(new JsonObject() { ["type"] = "undefined" }), ProtocolJson.Boolean(true));
 
         bool visible = await page.Locate(new CssLocator("#status")).IsVisibleAsync(TestContext.Current.CancellationToken);
 
@@ -233,6 +233,7 @@ public class ElementLocatorTests
         IReadOnlyList<JsonObject> calls = session.RemoteEnd.CommandsFor("script.callFunction");
         Assert.Equal(3, calls.Count);
         Assert.Contains("Acquiescence", (string?)calls[1]["params"]!["functionDeclaration"]);
+        Assert.Contains("selectOptions(element, options)", (string?)calls[1]["params"]!["functionDeclaration"]);
         Assert.Equal(group.Options.SandboxName, (string?)calls[1]["params"]!["target"]!["sandbox"]);
         Assert.Equal((string?)calls[0]["params"]!["functionDeclaration"], (string?)calls[2]["params"]!["functionDeclaration"]);
     }

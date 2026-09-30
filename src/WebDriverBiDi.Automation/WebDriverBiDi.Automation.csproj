@@ -67,6 +67,9 @@
       <Visible>False</Visible>
       <LogicalName>acquiescence-library</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Scripts/page-actions.js">
+      <LogicalName>page-actions</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

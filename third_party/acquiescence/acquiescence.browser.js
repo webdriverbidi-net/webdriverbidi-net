@@ -586,6 +586,15 @@ var Acquiescence = (() => {
       return void 0;
     }
     /**
+     * Gets a value indicating whether an element is a radio button, native or by role, which clicking checks but
+     * cannot uncheck.
+     * @param element {Element} The element to check.
+     * @returns {boolean} True if the element is a radio button; otherwise, false.
+     */
+    isAriaRadio(element) {
+      return ["radio", "menuitemradio"].includes(this.getAriaRole(element) ?? "");
+    }
+    /**
      * Gets the pressed state of a toggle button, from aria-pressed.
      * @param element {Element} The element to check.
      * @returns {boolean | 'mixed' | undefined} The pressed state, or undefined if the element is not a button.
@@ -1012,8 +1021,9 @@ var Acquiescence = (() => {
      * - 'failure' if at least one state is missing.
      * - 'error' if the node is not connected, or cannot have a queried state.
      * - 'missingState' is the state that is missing.
-     * - 'message' is the message of the error: 'notconnected', or 'noteditable' for an element that is not an <input>,
-     * <textarea>, <select> or [contenteditable] and does not have a role allowing [aria-readonly].
+     * - 'message' is the message of the error: 'notconnected'; 'noteditable' for an element that is not an <input>,
+     * <textarea>, <select> or [contenteditable] and does not have a role allowing [aria-readonly]; or 'notcheckable'
+     * for an element that is not a checkbox or radio button and does not have a role allowing [aria-checked].
      */
     async queryElementStates(node, states) {
       if (states.includes("stable")) {
@@ -1028,7 +1038,7 @@ var Acquiescence = (() => {
       for (const state of states) {
         if (state !== "stable") {
           const result = await this.queryElementState(node, state);
-          if (result.received === "error:notconnected" || result.received === "error:noteditable") {
+          if (result.received === "error:notconnected" || result.received === "error:noteditable" || result.received === "error:notcheckable") {
             return { status: "error", message: result.received.substring("error:".length) };
           }
           if (!result.matches) {
@@ -1044,8 +1054,10 @@ var Acquiescence = (() => {
      * @param state {ElementStateWithoutStable} The state to query.
      * @returns {Promise<ElementStateQueryResult>} A Promise that resolves to an object with the status of the query.
      * - 'matches' is true if the state is present.
-     * - 'received' is the state that was received, 'error:notconnected' if the element is not connected, or
-     * 'error:noteditable' if the editable state is queried for an element that cannot be edited.
+     * - 'received' is the state that was received, 'error:notconnected' if the element is not connected,
+     * 'error:noteditable' if the editable state is queried for an element that cannot be edited, or
+     * 'error:notcheckable' if a checked state is queried for an element that cannot be checked.
+     * - 'isRadio', for a checked state, is true if the element is a radio button, which clicking cannot uncheck.
      * @throws {Error} If an invalid state is provided.
      */
     async queryElementState(node, state) {
@@ -1077,6 +1089,14 @@ var Acquiescence = (() => {
           matches: !disabled && !readonly,
           received: disabled ? "disabled" : readonly ? "readOnly" : "editable"
         };
+      }
+      if (state === "checked" || state === "unchecked" || state === "indeterminate") {
+        const checked = this.ariaUtilities.getAriaChecked(element);
+        if (checked === void 0) {
+          return { matches: false, received: "error:notcheckable" };
+        }
+        const received = checked === "mixed" ? "indeterminate" : checked ? "checked" : "unchecked";
+        return { matches: received === state, received, isRadio: this.ariaUtilities.isAriaRadio(element) };
       }
       if (state === "inview") {
         const inView = await this.isElementInViewPort(element);
@@ -1165,32 +1185,6 @@ var Acquiescence = (() => {
       } catch {
         throw new Error("timeout waiting for interaction to be ready");
       }
-    }
-    /**
-     * Focuses an element and selects its text, so that typing replaces it: the value of an <input> or <textarea>,
-     * or the contents of any other element, such as a [contenteditable] one.
-     * @param element {Element} The element whose text to select.
-     * @returns {boolean} True if the text was selected; false if the element is not connected.
-     */
-    selectText(element) {
-      if (!element.isConnected) {
-        return false;
-      }
-      const tagName = this.domUtilities.getNormalizedElementTagName(element);
-      if (tagName === "INPUT" || tagName === "TEXTAREA") {
-        element.select();
-        element.focus();
-        return true;
-      }
-      const range = element.ownerDocument.createRange();
-      range.selectNodeContents(element);
-      const selection = element.ownerDocument.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-      element.focus();
-      return true;
     }
     /**
      * Gets the bounding rectangle of an element in the view port.

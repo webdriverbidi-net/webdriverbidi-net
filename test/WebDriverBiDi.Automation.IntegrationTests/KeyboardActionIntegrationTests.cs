@@ -59,7 +59,7 @@ public class KeyboardActionIntegrationTests
         await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
         Page page = await OpenAsync(group, server, "keyboard.html");
 
-        WebDriverBiDiTimeoutException readOnly = await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.Locate(new CssLocator("#locked")).FillAsync("x", new FillOptions() { Timeout = TimeSpan.FromSeconds(1) }, TestContext.Current.CancellationToken));
+        WebDriverBiDiTimeoutException readOnly = await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.Locate(new CssLocator("#locked")).FillAsync("x", new ActionOptions() { Timeout = TimeSpan.FromSeconds(1) }, TestContext.Current.CancellationToken));
         InvalidOperationException notEditable = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("#label")).FillAsync("x", cancellationToken: TestContext.Current.CancellationToken));
         InvalidOperationException date = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("#date")).FillAsync("2026-09-30", cancellationToken: TestContext.Current.CancellationToken));
 

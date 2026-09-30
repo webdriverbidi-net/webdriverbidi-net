@@ -6,9 +6,10 @@
 namespace WebDriverBiDi.Automation;
 
 /// <summary>
-/// Options for a pointer action on an element, such as hovering over it.
+/// Options for a pointer action on an element, such as hovering over it. A forced pointer action still scrolls the
+/// element into view.
 /// </summary>
-public class PointerActionOptions
+public class PointerActionOptions : ActionOptions
 {
     /// <summary>
     /// Gets where on the element the pointer goes, relative to the center of its visible part, or
@@ -21,16 +22,4 @@ public class PointerActionOptions
     /// Gets the modifier keys held down during the action.
     /// </summary>
     public KeyModifiers Modifiers { get; init; }
-
-    /// <summary>
-    /// Gets a value indicating whether to act without waiting for the element to be visible, stable, enabled, and
-    /// uncovered. The element is still scrolled into view.
-    /// </summary>
-    public bool Force { get; init; }
-
-    /// <summary>
-    /// Gets the time the action may wait for the element, or <see langword="null"/> for
-    /// <see cref="AutomationOptions.ActionTimeout"/>.
-    /// </summary>
-    public TimeSpan? Timeout { get; init; }
 }

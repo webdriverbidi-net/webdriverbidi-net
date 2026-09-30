@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Forms</title>
+  </head>
+  <body>
+    <input id="agree" type="checkbox">
+    <input id="subscribed" type="checkbox" checked>
+    <input id="stuck" type="checkbox" onclick="return false">
+    <input id="small" type="radio" name="size" checked>
+    <input id="large" type="radio" name="size">
+    <div id="toggle" role="checkbox" aria-checked="false" tabindex="0">Toggle</div>
+    <button id="plain">Plain</button>
+    <select id="color">
+      <option value="red">Red</option>
+      <option value="green">Green</option>
+      <option value="blue" disabled>Blue</option>
+    </select>
+    <select id="toppings" multiple>
+      <option value="cheese">Cheese</option>
+      <option value="olives">Olives</option>
+      <option value="peppers">Peppers</option>
+    </select>
+    <select id="later"></select>
+    <input id="upload" type="file">
+    <input id="uploads" type="file" multiple>
+    <script>
+      window.events = [];
+      const toggle = document.getElementById('toggle');
+      toggle.addEventListener('click', () => toggle.setAttribute('aria-checked', toggle.getAttribute('aria-checked') === 'true' ? 'false' : 'true'));
+      const color = document.getElementById('color');
+      color.addEventListener('input', () => window.events.push(`input:${color.value}`));
+      color.addEventListener('change', () => window.events.push(`change:${color.value}`));
+      setTimeout(() => {
+        const option = document.createElement('option');
+        option.value = 'loaded';
+        option.textContent = 'Loaded';
+        document.getElementById('later').appendChild(option);
+      }, 300);
+    </script>
+  </body>
+</html>
