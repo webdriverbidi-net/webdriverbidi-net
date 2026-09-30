@@ -14,6 +14,19 @@ using WebDriverBiDi.Session;
 public class BrowserLauncherBuilder
 {
     private const string ProxyCapabilityName = "proxy";
+    private const string UserPromptHandlerCapabilityName = "unhandledPromptBehavior";
+
+    // The capabilities the core library's capability request types, which take a value only of their type.
+    private static readonly Dictionary<string, Type> TypedCapabilities = new()
+    {
+        ["acceptInsecureCerts"] = typeof(bool),
+        ["browserName"] = typeof(string),
+        ["browserVersion"] = typeof(string),
+        ["platformName"] = typeof(string),
+        [ProxyCapabilityName] = typeof(ProxyConfiguration),
+        [UserPromptHandlerCapabilityName] = typeof(UserPromptHandler),
+    };
+
     private readonly BrowserKind browser;
     private readonly LaunchSettings launchSettings = new();
     private readonly Dictionary<string, object?> sessionCapabilities = [];
@@ -268,18 +281,20 @@ public class BrowserLauncherBuilder
     }
 
     /// <summary>
-    /// Adds a capability to the new session request that a driver or a remote grid receives, such as
-    /// <c>browserVersion</c>, <c>platformName</c>, <c>proxy</c>, or a grid vendor's options. Adding a capability
-    /// again replaces its value. Capabilities apply only with <see cref="LaunchUsingDriver"/> and
-    /// <see cref="LaunchUsingRemoteGrid(Uri, RemoteGridOptions?)"/>; otherwise, the session is created with
-    /// the session.new command, whose <c>CapabilityRequest</c> takes them.
+    /// Adds a capability to the request for the new session, such as <c>browserVersion</c>, <c>proxy</c>,
+    /// <c>unhandledPromptBehavior</c>, or a grid vendor's options. Adding a capability again replaces its value.
+    /// With <see cref="LaunchUsingDriver"/> and <see cref="LaunchUsingRemoteGrid(Uri, RemoteGridOptions?)"/>, the
+    /// launcher sends them when it creates the session; otherwise, whoever sends the session.new command sends
+    /// them, from <see cref="BrowserLauncher.CreateCapabilityRequest"/>.
     /// </summary>
     /// <param name="name">The capability name.</param>
     /// <param name="value">
-    /// The value. For <c>proxy</c>, a <see cref="ProxyConfiguration"/>. Otherwise, <see langword="null"/>, a
-    /// <see cref="string"/>, a <see cref="bool"/>, a number, a dictionary with string keys whose values follow
-    /// these rules, or a sequence of such values. Any other value is rejected when the launcher is built, as is
-    /// a capability the launcher sets itself.
+    /// The value. For <c>proxy</c>, a <see cref="ProxyConfiguration"/>; for <c>unhandledPromptBehavior</c>, a
+    /// <see cref="UserPromptHandler"/>; for <c>acceptInsecureCerts</c>, a <see cref="bool"/>; for
+    /// <c>browserName</c>, <c>browserVersion</c>, and <c>platformName</c>, a <see cref="string"/>. Otherwise,
+    /// <see langword="null"/>, a <see cref="string"/>, a <see cref="bool"/>, a number, a dictionary with string
+    /// keys whose values follow these rules, or a sequence of such values. Any other value is rejected when the
+    /// launcher is built, as is a capability the launcher sets itself.
     /// </param>
     /// <returns>The current builder instance for method chaining.</returns>
     /// <exception cref="ArgumentException">Thrown when name is null or empty.</exception>
@@ -390,6 +405,7 @@ public class BrowserLauncherBuilder
             _ => throw new BrowserLauncherConfigurationException($"Unknown browser type: {this.browser}"),
         };
 
+        launcher.SessionCapabilities = new Dictionary<string, object?>(this.sessionCapabilities);
         if (launcher is WebDriverClassicBrowserLauncher classicLauncher)
         {
             if (capabilities.Keys.FirstOrDefault(classicLauncher.LaunchCapabilityNames.Contains) is string launcherCapability)
@@ -506,25 +522,29 @@ public class BrowserLauncherBuilder
     // a nested value such as an options dictionary is still shared. A proxy is serialized now, so it is a snapshot.
     private Dictionary<string, object?> PrepareSessionCapabilities()
     {
-        if (this.sessionCapabilities.Count > 0 && (this.launchStrategy == LaunchStrategy.Direct || this.launchStrategy == LaunchStrategy.ConnectToExisting))
-        {
-            throw new BrowserLauncherConfigurationException("Session capabilities apply only with LaunchUsingDriver or LaunchUsingRemoteGrid. Otherwise, request them in the session.new command's CapabilityRequest.");
-        }
-
         Dictionary<string, object?> capabilities = [];
         foreach (KeyValuePair<string, object?> capability in this.sessionCapabilities)
         {
-            if (capability.Key == ProxyCapabilityName)
+            if (TypedCapabilities.TryGetValue(capability.Key, out Type? type))
             {
-                capabilities[capability.Key] = capability.Value is ProxyConfiguration proxy
-                    ? CapabilityWriter.SerializeProxy(proxy)
-                    : throw new BrowserLauncherConfigurationException($"The {ProxyCapabilityName} capability must be a ProxyConfiguration.");
+                if (capability.Value is not null && !type.IsInstanceOfType(capability.Value))
+                {
+                    throw new BrowserLauncherConfigurationException($"The {capability.Key} capability must be a {type.Name}.");
+                }
+
+                capabilities[capability.Key] = capability.Value switch
+                {
+                    ProxyConfiguration proxy => CapabilityWriter.SerializeProxy(proxy),
+                    UserPromptHandler handler => CapabilityWriter.SerializeUserPromptHandler(handler),
+                    _ => capability.Value,
+                };
                 continue;
             }
 
-            if (capability.Value is ProxyConfiguration)
+            if (capability.Value is ProxyConfiguration or UserPromptHandler)
             {
-                throw new BrowserLauncherConfigurationException($"A ProxyConfiguration can only be the value of the {ProxyCapabilityName} capability, not of {capability.Key}.");
+                string ownCapability = capability.Value is ProxyConfiguration ? ProxyCapabilityName : UserPromptHandlerCapabilityName;
+                throw new BrowserLauncherConfigurationException($"A {capability.Value.GetType().Name} can only be the value of the {ownCapability} capability, not of {capability.Key}.");
             }
 
             if (CapabilityWriter.FindUnsupportedValue(capability.Value, capability.Key) is string unsupported)

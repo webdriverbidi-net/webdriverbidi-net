@@ -68,6 +68,16 @@ internal static class CapabilityWriter
     }
 
     /// <summary>
+    /// Serializes a user prompt handler as the core library writes it in a session.new command.
+    /// </summary>
+    /// <param name="handler">The user prompt handler.</param>
+    /// <returns>The serialized user prompt handler.</returns>
+    public static SerializedValue SerializeUserPromptHandler(UserPromptHandler handler)
+    {
+        return new SerializedValue(JsonSerializer.Serialize(handler, WebDriverBiDiJsonSerializerContext.Default.UserPromptHandler));
+    }
+
+    /// <summary>
     /// Finds a value, within a capability value, that cannot be written.
     /// </summary>
     /// <param name="value">The capability value.</param>

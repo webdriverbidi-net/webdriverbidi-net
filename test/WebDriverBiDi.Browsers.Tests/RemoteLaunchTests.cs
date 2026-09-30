@@ -125,11 +125,69 @@ public class RemoteLaunchTests
     }
 
     [Fact]
-    public void BuildRejectsSessionCapabilitiesWhenTheSessionIsNotCreatedByTheLauncher()
+    public async Task LaunchersThatDoNotCreateTheSessionHandTheCapabilitiesToWhoeverDoes()
     {
-        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Chrome).WithSessionCapability("browserVersion", "130").Build);
-        Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Firefox).ConnectToExisting(new Uri("ws://127.0.0.1:9222/session")).WithSessionCapability("browserVersion", "130").Build);
+        ManualProxyConfiguration proxy = new() { HttpProxy = "proxy.local:3128" };
+        UserPromptHandler prompts = new() { Default = UserPromptHandlerType.Ignore };
+        Dictionary<string, object?> vendor = new() { ["flag"] = true };
+        await using BrowserLauncher direct = BrowserLauncher.Configure(BrowserKind.Chrome)
+            .WithSessionCapability("acceptInsecureCerts", true)
+            .WithSessionCapability("browserName", "chrome")
+            .WithSessionCapability("browserVersion", "130")
+            .WithSessionCapability("platformName", "linux")
+            .WithSessionCapability("proxy", proxy)
+            .WithSessionCapability("unhandledPromptBehavior", prompts)
+            .WithSessionCapability("vendor:options", vendor)
+            .Build();
+        await using BrowserLauncher connected = BrowserLauncher.Configure(BrowserKind.Firefox).ConnectToExisting(new Uri("ws://127.0.0.1:9222/session")).WithSessionCapability("browserVersion", null).Build();
+
+        CapabilityRequest request = direct.CreateCapabilityRequest();
+        CapabilityRequest empty = connected.CreateCapabilityRequest();
+
+        Assert.True(request.AcceptInsecureCerts);
+        Assert.Equal("chrome", request.BrowserName);
+        Assert.Equal("130", request.BrowserVersion);
+        Assert.Equal("linux", request.PlatformName);
+        Assert.Same(proxy, request.Proxy);
+        Assert.Same(prompts, request.UnhandledPromptBehavior);
+        Assert.Same(vendor, Assert.Single(request.AdditionalCapabilities).Value);
+        Assert.Null(empty.BrowserVersion);
+        Assert.Empty(empty.AdditionalCapabilities);
         Assert.Throws<ArgumentException>(() => BrowserLauncher.Configure(BrowserKind.Chrome).WithSessionCapability(string.Empty, "value"));
+    }
+
+    [Theory]
+    [InlineData("acceptInsecureCerts", "yes", "The acceptInsecureCerts capability must be a Boolean.")]
+    [InlineData("browserName", 1, "The browserName capability must be a String.")]
+    [InlineData("unhandledPromptBehavior", "ignore", "The unhandledPromptBehavior capability must be a UserPromptHandler.")]
+    public void CapabilitiesTheCoreTypesTakeOnlyTheirType(string name, object value, string message)
+    {
+        BrowserLauncherConfigurationException exception = Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.Configure(BrowserKind.Firefox).WithSessionCapability(name, value).Build);
+
+        Assert.Equal(message, exception.Message);
+    }
+
+    [Fact]
+    public void UserPromptHandlerIsOnlyTheValueOfItsOwnCapability()
+    {
+        BrowserLauncherConfigurationException exception = Assert.Throws<BrowserLauncherConfigurationException>(GridBuilder().WithSessionCapability("vendor:prompts", new UserPromptHandler()).Build);
+
+        Assert.Equal("A UserPromptHandler can only be the value of the unhandledPromptBehavior capability, not of vendor:prompts.", exception.Message);
+    }
+
+    [Fact]
+    public async Task UserPromptHandlerIsWrittenAsTheCoreLibraryWritesIt()
+    {
+        await using DownloadServer server = await DownloadServer.StartAsync();
+        ServeGrid(server, string.Empty);
+        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).LaunchUsingRemoteGrid(server.UrlFor("/")).WithSessionCapability("unhandledPromptBehavior", new UserPromptHandler() { Default = UserPromptHandlerType.Ignore, BeforeUnload = UserPromptHandlerType.Accept }).Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        JsonNode capabilities = JsonNode.Parse(Assert.Single(server.Requests, request => request.Method == "POST").Body)!["capabilities"]!["firstMatch"]![0]!;
+        JsonNode expected = JsonNode.Parse("{\"default\":\"ignore\",\"beforeUnload\":\"accept\"}")!;
+        Assert.True(JsonNode.DeepEquals(expected, capabilities["unhandledPromptBehavior"]), capabilities["unhandledPromptBehavior"]!.ToJsonString());
     }
 
     [Fact]

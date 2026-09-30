@@ -11,6 +11,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using WebDriverBiDi.Protocol;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Abstract base class for launching a browser to connect to using a WebDriverBiDi session.
@@ -107,6 +108,11 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// Gets or sets the settings for the launched browser process.
     /// </summary>
     internal LaunchSettings LaunchSettings { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the session capabilities the builder was given, with their values as given.
+    /// </summary>
+    internal Dictionary<string, object?> SessionCapabilities { get; set; } = [];
 
     /// <summary>
     /// Gets the identity of the most recent successful launch, so that a <see cref="BrowserInstance"/>
@@ -218,6 +224,47 @@ public abstract class BrowserLauncher : IAsyncDisposable
     public virtual Task KillBrowserAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Creates the capability request for the session.new command that starts a session with the browser, holding
+    /// the capabilities given with <see cref="BrowserLauncherBuilder.WithSessionCapability"/>. A launcher whose
+    /// <see cref="IsBiDiSessionInitialized"/> is <see langword="true"/> has sent them already; otherwise, whoever
+    /// sends session.new sends this. A dictionary or sequence value is shared with the builder, not copied.
+    /// </summary>
+    /// <returns>The capability request.</returns>
+    public CapabilityRequest CreateCapabilityRequest()
+    {
+        CapabilityRequest request = new();
+        foreach (KeyValuePair<string, object?> capability in this.SessionCapabilities)
+        {
+            switch (capability.Key)
+            {
+                case "acceptInsecureCerts":
+                    request.AcceptInsecureCerts = (bool?)capability.Value;
+                    break;
+                case "browserName":
+                    request.BrowserName = (string?)capability.Value;
+                    break;
+                case "browserVersion":
+                    request.BrowserVersion = (string?)capability.Value;
+                    break;
+                case "platformName":
+                    request.PlatformName = (string?)capability.Value;
+                    break;
+                case "proxy":
+                    request.Proxy = (ProxyConfiguration?)capability.Value;
+                    break;
+                case "unhandledPromptBehavior":
+                    request.UnhandledPromptBehavior = (UserPromptHandler?)capability.Value;
+                    break;
+                default:
+                    request.AdditionalCapabilities[capability.Key] = capability.Value;
+                    break;
+            }
+        }
+
+        return request;
     }
 
     /// <summary>

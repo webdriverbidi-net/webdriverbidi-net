@@ -94,7 +94,7 @@ await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chr
     .Build();
 ```
 
-`WithSessionCapability` also adds capabilities when the browser is launched through its driver. A proxy is given as a `ProxyConfiguration`:
+`WithSessionCapability` also adds capabilities when the browser is launched through its driver. A proxy is given as a `ProxyConfiguration`, and a user prompt handler as a `UserPromptHandler`. For a browser launched directly or connected to, the capabilities go in the `session.new` command that starts the session, from `BrowserLauncher.CreateCapabilityRequest()`:
 
 <!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersSessionCapabilities -->
 ```csharp

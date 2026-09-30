@@ -54,7 +54,7 @@ On Linux:
 
 #### Session Capabilities
 
-`WithSessionCapability` adds a capability to the new session request that a driver or a grid receives. It applies with `LaunchUsingDriver` and `LaunchUsingRemoteGrid`; a browser launched directly, or connected to with `ConnectToExisting`, gets its capabilities from the `CapabilityRequest` of the `session.new` command you send. A capability's value is `null`, a string, a Boolean, a number, a dictionary with string keys, or a sequence of such values. The `proxy` capability takes a `ProxyConfiguration`, which is written as the core library writes it in `session.new`:
+`WithSessionCapability` adds a capability to the request for the new session. With `LaunchUsingDriver` and `LaunchUsingRemoteGrid`, the launcher sends it when it creates the session. A browser launched directly, or connected to with `ConnectToExisting`, gets it from the `session.new` command whoever starts the session sends: `BrowserLauncher.CreateCapabilityRequest()` returns the `CapabilityRequest` to send, and `BrowserGroup.LaunchAsync` in WebDriverBiDi.Automation sends it for you. A capability's value is `null`, a string, a Boolean, a number, a dictionary with string keys, or a sequence of such values. The capabilities the core library types take their type: `proxy` a `ProxyConfiguration`, `unhandledPromptBehavior` a `UserPromptHandler`, `acceptInsecureCerts` a Boolean, and `browserName`, `browserVersion` and `platformName` a string; the first two are written as the core library writes them in `session.new`:
 
 [!code-csharp[Session Capabilities](../code/PackageReadmeSamples.cs#BrowsersSessionCapabilities)]
 
