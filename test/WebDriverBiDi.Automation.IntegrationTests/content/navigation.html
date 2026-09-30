@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Navigation</title>
+  </head>
+  <body>
+    <a id="next" href="second.html">Next</a>
+    <a id="fragment" href="#part">Part</a>
+    <button id="push" onclick="history.pushState({}, '', 'pushed')">Push</button>
+    <button id="later" onclick="setTimeout(() => { location.href = 'second.html'; }, 200)">Later</button>
+    <p id="part">Part</p>
+  </body>
+</html>

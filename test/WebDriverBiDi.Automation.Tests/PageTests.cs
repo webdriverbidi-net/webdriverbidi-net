@@ -140,7 +140,7 @@ public class PageTests
         await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.NavigateAsync("https://example.com/", cancellationToken: TestContext.Current.CancellationToken));
         await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.ReloadAsync(timeout: TimeSpan.FromMilliseconds(100), cancellationToken: TestContext.Current.CancellationToken));
         await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken));
-        await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.GoForwardAsync(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.GoForwardAsync(timeout: TimeSpan.FromMilliseconds(100), cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -150,6 +150,8 @@ public class PageTests
         await using BiDiDriver ownedDriver = driver;
         await using BrowserGroup group = await BrowserGroup.ConnectAsync(driver, cancellationToken: TestContext.Current.CancellationToken);
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        session.RemoteEnd.AnswerWith("browsingContext.traverseHistory", parameters => new FakeResponse(new JsonObject(), [("browsingContext.historyUpdated", new JsonObject() { ["context"] = (string)parameters["context"]!, ["timestamp"] = 1790000000000, ["url"] = "https://example.com/other" })]));
+        session.RemoteEnd.AnswerWith("script.callFunction", ProtocolJson.Success(new JsonObject() { ["type"] = "string", ["value"] = "complete" }));
 
         await page.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
         await page.GoForwardAsync(cancellationToken: TestContext.Current.CancellationToken);

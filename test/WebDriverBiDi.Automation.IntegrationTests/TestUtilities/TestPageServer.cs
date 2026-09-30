@@ -12,7 +12,11 @@ using PinchHitter;
 /// </summary>
 public sealed class TestPageServer : IAsyncDisposable
 {
+    // A one-pixel GIF.
+    private static readonly byte[] GatedImage = Convert.FromBase64String("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+
     private readonly Server server = new();
+    private readonly TaskCompletionSource<bool> gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private TestPageServer()
     {
@@ -20,6 +24,8 @@ public sealed class TestPageServer : IAsyncDisposable
         {
             this.server.RegisterHandler($"/{Path.GetFileName(file)}", new WebResourceRequestHandler(File.ReadAllBytes(file)) { MimeType = "text/html;charset=utf-8" });
         }
+
+        this.server.RegisterHandler("/gated.gif", new GatedHandler(this.gate.Task));
     }
 
     /// <summary>
@@ -40,9 +46,32 @@ public sealed class TestPageServer : IAsyncDisposable
     /// <returns>The URL.</returns>
     public string UrlFor(string page) => $"http://localhost:{this.server.Port}/{page}";
 
+    /// <summary>
+    /// Lets requests for "gated.gif", which the server holds until now, complete, so that a page loading it can
+    /// finish loading.
+    /// </summary>
+    public void ReleaseGatedResource()
+    {
+        this.gate.TrySetResult(true);
+    }
+
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
+        this.ReleaseGatedResource();
         await this.server.StopAsync();
+    }
+
+    private sealed class GatedHandler(Task released) : HttpRequestHandler([])
+    {
+        protected override async Task<HttpResponse> ProcessRequestAsync(HttpRequest request)
+        {
+            await released;
+            this.MimeType = "image/gif";
+            HttpResponse response = this.CreateHttpResponse(request.Id, System.Net.HttpStatusCode.OK);
+            response.SetBodyContent(GatedImage);
+            this.AddStandardResponseHeaders(response);
+            return response;
+        }
     }
 }

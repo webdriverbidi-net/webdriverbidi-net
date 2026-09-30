@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Automation;
 
+using System.Text.RegularExpressions;
 using WebDriverBiDi.BrowsingContext;
 
 /// <summary>
@@ -178,11 +179,9 @@ public sealed class Page
     /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the navigation.</param>
     /// <returns>The URL navigated to, after any redirects.</returns>
-    public async Task<string> NavigateAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<string> NavigateAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        NavigateCommandParameters parameters = new(this.Id, url) { Wait = wait };
-        NavigateCommandResult result = await this.Browser.Group.Driver.BrowsingContext.NavigateAsync(parameters, this.NavigationTimeout(timeout), cancellationToken).ConfigureAwait(false);
-        return result.Url;
+        return this.MainFrame.NavigateAsync(url, wait, timeout, cancellationToken);
     }
 
     /// <summary>
@@ -192,35 +191,103 @@ public sealed class Page
     /// <param name="timeout">The time the reload may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the reload.</param>
     /// <returns>The URL reloaded.</returns>
-    public async Task<string> ReloadAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<string> ReloadAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        ReloadCommandParameters parameters = new(this.Id) { Wait = wait };
-        ReloadCommandResult result = await this.Browser.Group.Driver.BrowsingContext.ReloadAsync(parameters, this.NavigationTimeout(timeout), cancellationToken).ConfigureAwait(false);
-        return result.Url;
+        return this.MainFrame.ReloadAsync(wait, timeout, cancellationToken);
     }
 
     /// <summary>
-    /// Navigates back one step in the page's history. It completes once the history has moved, without waiting
-    /// for a document to load.
+    /// Navigates back one step in the page's history, then waits for the navigation: a document, loaded as far as
+    /// a state, or a change of URL within the document.
     /// </summary>
-    /// <param name="timeout">The time the command may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
-    /// <param name="cancellationToken">A token that cancels the command.</param>
-    /// <returns>A task that completes when the history has moved.</returns>
-    public Task GoBackAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    /// <param name="wait">How far a new document must load.</param>
+    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the navigation.</param>
+    /// <returns>The page's URL after the navigation.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the page does not navigate, or the document does not load, in time.</exception>
+    public Task<string> GoBackAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.Browser.Group.Driver.BrowsingContext.TraverseHistoryAsync(new TraverseHistoryCommandParameters(this.Id, -1), this.NavigationTimeout(timeout), cancellationToken);
+        return this.TraverseHistoryAsync(-1, wait, timeout, cancellationToken);
     }
 
     /// <summary>
-    /// Navigates forward one step in the page's history. It completes once the history has moved, without waiting
-    /// for a document to load.
+    /// Navigates forward one step in the page's history, then waits for the navigation: a document, loaded as far
+    /// as a state, or a change of URL within the document.
     /// </summary>
-    /// <param name="timeout">The time the command may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
-    /// <param name="cancellationToken">A token that cancels the command.</param>
-    /// <returns>A task that completes when the history has moved.</returns>
-    public Task GoForwardAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    /// <param name="wait">How far a new document must load.</param>
+    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the navigation.</param>
+    /// <returns>The page's URL after the navigation.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the page does not navigate, or the document does not load, in time.</exception>
+    public Task<string> GoForwardAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.Browser.Group.Driver.BrowsingContext.TraverseHistoryAsync(new TraverseHistoryCommandParameters(this.Id, 1), this.NavigationTimeout(timeout), cancellationToken);
+        return this.TraverseHistoryAsync(1, wait, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Waits for the page's document to load as far as a state, as <see cref="Frame.WaitForLoadStateAsync(ReadinessState, TimeSpan?, CancellationToken)"/> does
+    /// for the main frame.
+    /// </summary>
+    /// <param name="state">The state.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>A task that completes when the document has loaded as far as the state.</returns>
+    public Task WaitForLoadStateAsync(ReadinessState state = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.WaitForLoadStateAsync(state, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Waits for the page's URL to be exactly a URL, as <see cref="Frame.WaitForUrlAsync(string, ReadinessState, TimeSpan?, CancellationToken)"/> does for the main frame.
+    /// </summary>
+    /// <param name="url">The full URL.</param>
+    /// <param name="wait">How far the document must load once the URL matches.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The page's URL.</returns>
+    public Task<string> WaitForUrlAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.WaitForUrlAsync(url, wait, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Waits for the page's URL to match a regular expression, as <see cref="Frame.WaitForUrlAsync(Regex, ReadinessState, TimeSpan?, CancellationToken)"/> does for the main frame.
+    /// </summary>
+    /// <param name="url">The regular expression, matched against the full URL.</param>
+    /// <param name="wait">How far the document must load once the URL matches.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The page's URL.</returns>
+    public Task<string> WaitForUrlAsync(Regex url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.WaitForUrlAsync(url, wait, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Waits for the page's URL to satisfy a condition, as <see cref="Frame.WaitForUrlAsync(Func{string, bool}, ReadinessState, TimeSpan?, CancellationToken)"/> does for the main frame.
+    /// </summary>
+    /// <param name="url">The condition, given the full URL.</param>
+    /// <param name="wait">How far the document must load once the URL matches.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The page's URL.</returns>
+    public Task<string> WaitForUrlAsync(Func<string, bool> url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.WaitForUrlAsync(url, wait, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs an action that navigates the page, and waits for the navigation, as
+    /// <see cref="Frame.RunAndWaitForNavigationAsync"/> does for the main frame.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="wait">How far a new document must load.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The page's URL after the navigation.</returns>
+    public Task<string> RunAndWaitForNavigationAsync(Func<Task> action, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.MainFrame.RunAndWaitForNavigationAsync(action, wait, timeout, cancellationToken);
     }
 
     /// <summary>
@@ -304,8 +371,13 @@ public sealed class Page
         return this.onClosed.InvokeNotifyObserversAsync(new PageEventArgs(this));
     }
 
-    private TimeSpan NavigationTimeout(TimeSpan? timeout)
+    // History traversal has no wait of its own, so the navigation it causes is awaited from the frame's events.
+    private async Task<string> TraverseHistoryAsync(long delta, ReadinessState wait, TimeSpan? timeout, CancellationToken cancellationToken)
     {
-        return timeout ?? this.Browser.Group.Options.NavigationTimeout;
+        TimeBudget budget = new(timeout ?? this.Browser.Group.Options.NavigationTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
+        int before = this.MainFrame.Navigations;
+        await this.Browser.Group.Driver.BrowsingContext.TraverseHistoryAsync(new TraverseHistoryCommandParameters(this.Id, delta), budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        await this.MainFrame.WaitForNavigationAsync(before, wait, budget).ConfigureAwait(false);
+        return this.Url;
     }
 }
