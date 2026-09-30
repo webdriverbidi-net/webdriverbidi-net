@@ -20,6 +20,7 @@ public sealed class ElementLocator
     // Enough to tell one match from several without serializing every match.
     private const ulong StrictMatchLimit = 2;
     private const string FocusFunction = "(element) => element.focus()";
+    private const string HtmlNamespace = "http://www.w3.org/1999/xhtml";
 
     // Input types whose value is chosen, such as a date or a checked box, rather than typed.
     private static readonly HashSet<string> UntypeableInputTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -640,6 +641,202 @@ public sealed class ElementLocator
     }
 
     /// <summary>
+    /// Gets a value indicating whether the element is hidden now, without waiting. No matching element is hidden.
+    /// </summary>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns><see langword="true"/> if no element matches or the element is not visible; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    public async Task<bool> IsHiddenAsync(CancellationToken cancellationToken = default)
+    {
+        return !await this.IsVisibleAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the element is enabled, once one matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns><see langword="true"/> if the element is enabled; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<bool> IsEnabledAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return await this.QueryStateAsync("enabled", timeout, cancellationToken).ConfigureAwait(false) == "enabled";
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the element is disabled, once one matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns><see langword="true"/> if the element is disabled; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<bool> IsDisabledAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return !await this.IsEnabledAsync(timeout, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the element can be edited, being neither disabled nor read-only, once one
+    /// matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns><see langword="true"/> if the element can be edited; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element is not an input, a text area, a select, or an editable element.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<bool> IsEditableAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        string received = await this.QueryStateAsync("editable", timeout, cancellationToken).ConfigureAwait(false);
+        return received == "error:noteditable" ? throw new InvalidOperationException($"{this} is not an editable element.") : received == "editable";
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a checkbox or radio button is checked, once one matches. An element in a
+    /// mixed state is not checked.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns><see langword="true"/> if the element is checked; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element cannot be checked.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<bool> IsCheckedAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        CheckedState? state = await this.PollAsync(budget, $"{this} to report whether it is checked", () => this.TryReadCheckedStateAsync(budget)).ConfigureAwait(false);
+        return state!.IsChecked;
+    }
+
+    /// <summary>
+    /// Gets the text content of the element, which includes the text of hidden descendants, once one matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The text content.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public Task<string> TextContentAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.ReadStringAsync("(element) => element.textContent", [], timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the text of the element as it is rendered, once one matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The rendered text.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element is not an HTML element, such as an SVG one.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<string> InnerTextAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        string? text = await this.PollElementAsync(budget, async node => node.GetNodeProperties().NamespaceUri == HtmlNamespace
+            ? (true, await this.ReadStringAsync(node, "(element) => element.innerText", [], budget).ConfigureAwait(false), string.Empty)
+            : throw new InvalidOperationException($"{this} is not an HTML element.")).ConfigureAwait(false);
+        return text!;
+    }
+
+    /// <summary>
+    /// Gets the HTML of the element's contents, once one matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The HTML.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public Task<string> InnerHtmlAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.ReadStringAsync("(element) => element.innerHTML", [], timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the value of an input, a text area, or a select, once one matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The value; for a select, the value of its first selected option, or empty if none is selected.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the element is not an input, a text area, or a select.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<string> InputValueAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        string? value = await this.PollElementAsync(budget, async node => node.GetNodeProperties().LocalName is "input" or "textarea" or "select"
+            ? (true, await this.ReadStringAsync(node, "(element) => element.value", [], budget).ConfigureAwait(false), string.Empty)
+            : throw new InvalidOperationException($"{this} is not an input, a text area, or a select.")).ConfigureAwait(false);
+        return value!;
+    }
+
+    /// <summary>
+    /// Gets the value of an attribute of the element, once one matches.
+    /// </summary>
+    /// <param name="name">The attribute's name.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The value, or <see langword="null"/> if the element does not have the attribute.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<string?> GetAttributeAsync(string name, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        return await this.PollElementAsync(budget, async node =>
+        {
+            RemoteValue value = await this.CallOnElementAsync(node, "(element, name) => element.getAttribute(name)", [LocalValue.String(name)], budget).ConfigureAwait(false);
+            return (true, value is StringRemoteValue text ? text.Value : null, string.Empty);
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets the box the element occupies, in its frame's viewport, once one matches.
+    /// </summary>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The box, or <see langword="null"/> if the element is not visible.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    public async Task<BoundingBox?> BoundingBoxAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        return await this.PollElementAsync(budget, async node =>
+        {
+            RemoteValue box = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => { if (!inspector.isElementVisible(element)) { return null; } const { x, y, width, height } = element.getBoundingClientRect(); return { x, y, width, height }; }", [node.ToSharedReference()], budget).ConfigureAwait(false);
+            return (true, box is NullRemoteValue ? null : new BoundingBox(Number(box, "x"), Number(box, "y"), Number(box, "width"), Number(box, "height")), string.Empty);
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Captures an image of the element, once it is visible and stable, whether or not it is scrolled into view.
+    /// </summary>
+    /// <param name="format">The image format, or <see langword="null"/> for PNG.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the capture.</param>
+    /// <returns>The image.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
+    public async Task<byte[]> ScreenshotAsync(ImageFormat? format = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        byte[]? image = await this.PollElementAsync(budget, async node =>
+        {
+            string? notReady = await this.CheckStatesAsync(node, "['stable', 'visible']", budget).ConfigureAwait(false);
+            if (notReady is not null)
+            {
+                return (false, null, notReady);
+            }
+
+            CaptureScreenshotCommandParameters parameters = new(this.Frame.Id) { Clip = new ElementClipRectangle(node.ToSharedReference()), Format = format, Origin = ScreenshotOrigin.Document };
+            CaptureScreenshotCommandResult result = await this.Group.Driver.BrowsingContext.CaptureScreenshotAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+            return (true, Convert.FromBase64String(result.Data), string.Empty);
+        }).ConfigureAwait(false);
+        return image!;
+    }
+
+    /// <summary>
     /// Describes how the locator finds elements, such as <c>css "form" &gt;&gt; css "input" &gt;&gt; nth=1</c>.
     /// </summary>
     /// <returns>The description.</returns>
@@ -713,9 +910,14 @@ public sealed class ElementLocator
         return pointer.CreatePointerMove(target.Offset.X, target.Offset.Y, Origin.Element(target.Node.ToSharedReference()));
     }
 
+    private static double Number(RemoteValue value, string name)
+    {
+        return Property(value, name).As<NumberRemoteValue>().Value;
+    }
+
     private static int OptionIndex(RemoteValue result)
     {
-        return (int)Property(result, "index").As<NumberRemoteValue>().Value;
+        return (int)Number(result, "index");
     }
 
     private static string[] ModifierKeys(KeyModifiers modifiers)
@@ -1105,6 +1307,60 @@ public sealed class ElementLocator
         return nodes.Count == 0 ? (false, null, "no element matched") : (true, nodes[0], string.Empty);
     }
 
+    // Waits for exactly one element to match, then makes an attempt on it, until the attempt is done.
+    private Task<T?> PollElementAsync<T>(TimeBudget budget, Func<NodeRemoteValue, Task<(bool Done, T? Result, string Observed)>> attempt)
+    {
+        return this.PollAsync(budget, $"{this} to be attached", async () =>
+        {
+            (bool found, NodeRemoteValue? node, string observed) = await this.TryFindOneAsync(budget).ConfigureAwait(false);
+            return found ? await attempt(node!).ConfigureAwait(false) : (false, default, observed);
+        });
+    }
+
+    private Task<RemoteValue> CallOnElementAsync(NodeRemoteValue node, string functionDeclaration, IEnumerable<LocalValue> arguments, TimeBudget budget)
+    {
+        return this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, functionDeclaration, [node.ToSharedReference(), .. arguments], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken);
+    }
+
+    private async Task<string> ReadStringAsync(string functionDeclaration, IEnumerable<LocalValue> arguments, TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        string? value = await this.PollElementAsync(budget, async node => (true, await this.ReadStringAsync(node, functionDeclaration, arguments, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
+        return value!;
+    }
+
+    private async Task<string> ReadStringAsync(NodeRemoteValue node, string functionDeclaration, IEnumerable<LocalValue> arguments, TimeBudget budget)
+    {
+        RemoteValue value = await this.CallOnElementAsync(node, functionDeclaration, arguments, budget).ConfigureAwait(false);
+        return value.As<StringRemoteValue>().Value;
+    }
+
+    // The state the library reports for the element, such as "enabled" or "error:noteditable"; an element removed
+    // while it is checked is looked up again.
+    private async Task<string> QueryStateAsync(string state, TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        string? received = await this.PollElementAsync(budget, async node =>
+        {
+            RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element, state) => inspector.queryElementState(element, state)", [node.ToSharedReference(), LocalValue.String(state)], budget).ConfigureAwait(false);
+            string received = Property(result, "received").As<StringRemoteValue>().Value;
+            return received == "error:notconnected" ? (false, null, DescribeNotReady("notconnected")) : (true, received, string.Empty);
+        }).ConfigureAwait(false);
+        return received!;
+    }
+
+    // Null when the element has every state; otherwise, the first missing one, in the terms of a timeout message.
+    private async Task<string?> CheckStatesAsync(NodeRemoteValue node, string states, TimeBudget budget)
+    {
+        RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, $"(inspector, element) => inspector.queryElementStates(element, {states})", [node.ToSharedReference()], budget).ConfigureAwait(false);
+        return Property(result, "status").As<StringRemoteValue>().Value switch
+        {
+            "success" => null,
+            "failure" => DescribeNotReady(Property(result, "missingState").As<StringRemoteValue>().Value),
+            _ => DescribeNotReady(Property(result, "message").As<StringRemoteValue>().Value),
+        };
+    }
+
     private async Task<(bool Done, bool Unused, string Observed)> TryCallOnElementAsync(string functionDeclaration, TimeBudget budget)
     {
         (bool found, NodeRemoteValue? node, string observed) = await this.TryFindOneAsync(budget).ConfigureAwait(false);
@@ -1145,18 +1401,10 @@ public sealed class ElementLocator
             return (false, null, observed);
         }
 
-        if (!force)
+        string? notReady = force ? null : await this.CheckStatesAsync(node!, "['visible', 'enabled']", budget).ConfigureAwait(false);
+        if (notReady is not null)
         {
-            RemoteValue states = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => inspector.queryElementStates(element, ['visible', 'enabled'])", [node!.ToSharedReference()], budget).ConfigureAwait(false);
-            switch (Property(states, "status").As<StringRemoteValue>().Value)
-            {
-                case "success":
-                    break;
-                case "failure":
-                    return (false, null, DescribeNotReady(Property(states, "missingState").As<StringRemoteValue>().Value));
-                default:
-                    return (false, null, DescribeNotReady(Property(states, "message").As<StringRemoteValue>().Value));
-            }
+            return (false, null, notReady);
         }
 
         RemoteValue result = await this.Group.ScriptHost.CallActionsAsync(this.Frame.Id, "(actions, element, options) => actions.selectOptions(element, options)", [node!.ToSharedReference(), LocalValue.Array([.. selections.Select(selection => selection.ToLocalValue())])], budget).ConfigureAwait(false);

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Reads</title>
+    <style>
+      body { margin: 0; }
+      #box { position: absolute; left: 20px; top: 30px; width: 100px; height: 50px; background: rgb(255, 0, 0); }
+      #far { position: absolute; left: 0; top: 3000px; width: 60px; height: 40px; background: rgb(0, 0, 255); }
+    </style>
+  </head>
+  <body>
+    <div id="box"></div>
+    <div style="height: 120px"></div>
+    <p id="text">Visible <span style="display: none">hidden</span> text</p>
+    <div id="html"><b>bold</b> text</div>
+    <input id="name" value="Ada" data-role="person">
+    <textarea id="notes">Some notes</textarea>
+    <select id="color"><option value="red">Red</option><option value="green" selected>Green</option></select>
+    <div id="plain">Plain</div>
+    <svg><text id="svg-text" x="0" y="15">SVG</text></svg>
+    <div id="invisible" style="display: none">Invisible</div>
+    <button id="enabled">Enabled</button>
+    <button id="disabled" disabled>Disabled</button>
+    <input id="readonly" value="fixed" readonly>
+    <input id="checked" type="checkbox" checked>
+    <input id="mixed" type="checkbox">
+    <iframe id="frame" src="action-child.html"></iframe>
+    <div id="far"></div>
+    <script>
+      document.getElementById('mixed').indeterminate = true;
+    </script>
+  </body>
+</html>
