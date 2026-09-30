@@ -11,6 +11,7 @@ using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Log;
+using WebDriverBiDi.Network;
 using WebDriverBiDi.Permissions;
 using WebDriverBiDi.Session;
 
@@ -33,9 +34,12 @@ public sealed class BrowserGroup : IAsyncDisposable
     private readonly HashSet<string> createdBrowserIds = [];
     private readonly Dictionary<string, Frame> frames = [];
     private readonly ConcurrentDictionary<string, Download> downloads = new();
+    private readonly ConcurrentDictionary<string, bool> interceptIds = new();
+    private readonly SemaphoreSlim networkSubscriptionLock = new(1, 1);
     private readonly List<IDisposable> observers = [];
     private HashSet<string>? contextsDestroyedWhileStarting = [];
     private string? subscriptionId;
+    private string? networkSubscriptionId;
     private int isDisposed;
 
     private BrowserGroup(BiDiDriver driver, AutomationOptions options, BrowserLauncher? launcher, bool ownsSession)
@@ -54,6 +58,8 @@ public sealed class BrowserGroup : IAsyncDisposable
         this.observers.Add(driver.BrowsingContext.OnUserPromptOpened.AddObserver(this.OnUserPromptOpenedAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously));
         this.observers.Add(driver.BrowsingContext.OnDownloadWillBegin.AddObserver(this.OnDownloadWillBeginAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously));
         this.observers.Add(driver.BrowsingContext.OnDownloadEnd.AddObserver(this.OnDownloadEnd));
+        this.observers.Add(driver.Network.OnBeforeRequestSent.AddObserver(this.OnBeforeRequestSentAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously));
+        this.observers.Add(driver.Network.OnResponseCompleted.AddObserver(e => this.FindFrame(e.BrowsingContextId ?? string.Empty)?.Page.NotifyResponse(e)));
         this.observers.Add(driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyedAsync));
         this.observers.Add(driver.BrowsingContext.OnNavigationStarted.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordNavigationStarted()));
         this.observers.Add(driver.BrowsingContext.OnNavigationCommitted.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordNewDocument(e.Url)));
@@ -234,6 +240,19 @@ public sealed class BrowserGroup : IAsyncDisposable
             await this.RunDisposalStepAsync("Removing the event subscription", () => this.Driver.Session.UnsubscribeAsync(new UnsubscribeByIdsCommandParameters(this.subscriptionId))).ConfigureAwait(false);
         }
 
+        foreach (string interceptId in this.interceptIds.Keys)
+        {
+            if (!this.ownsSession)
+            {
+                await this.RunDisposalStepAsync($"Removing network intercept {interceptId}", () => this.Driver.Network.RemoveInterceptAsync(new RemoveInterceptCommandParameters(interceptId))).ConfigureAwait(false);
+            }
+        }
+
+        if (this.networkSubscriptionId is not null && !this.ownsSession)
+        {
+            await this.RunDisposalStepAsync("Removing the network event subscription", () => this.Driver.Session.UnsubscribeAsync(new UnsubscribeByIdsCommandParameters(this.networkSubscriptionId))).ConfigureAwait(false);
+        }
+
         if (this.ScriptHost.HasPreloadScript && !this.ownsSession)
         {
             await this.RunDisposalStepAsync("Removing the preload script", () => this.ScriptHost.RemovePreloadScriptAsync()).ConfigureAwait(false);
@@ -317,6 +336,76 @@ public sealed class BrowserGroup : IAsyncDisposable
             this.browsers.Remove(browser);
             this.createdBrowserIds.Remove(browser.Id);
         }
+    }
+
+    /// <summary>
+    /// Subscribes to the network events the group's routes and waits use, once.
+    /// </summary>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>A task that completes when the group receives the events.</returns>
+    internal async Task EnsureNetworkEventsAsync(CancellationToken cancellationToken)
+    {
+        await this.networkSubscriptionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (this.networkSubscriptionId is null)
+            {
+                SubscribeCommandParameters subscription = new([this.Driver.Network.OnBeforeRequestSent.EventName, this.Driver.Network.OnResponseCompleted.EventName]);
+                this.networkSubscriptionId = (await this.Driver.Session.SubscribeAsync(subscription, cancellationToken: cancellationToken).ConfigureAwait(false)).SubscriptionId;
+            }
+        }
+        finally
+        {
+            this.networkSubscriptionLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Records a network intercept the group added, so that the requests it stops are handled and it is removed
+    /// with the group.
+    /// </summary>
+    /// <param name="interceptId">The intercept's ID.</param>
+    internal void TrackIntercept(string interceptId)
+    {
+        this.interceptIds[interceptId] = true;
+    }
+
+    /// <summary>
+    /// Forgets a network intercept the group removed.
+    /// </summary>
+    /// <param name="interceptId">The intercept's ID.</param>
+    internal void UntrackIntercept(string interceptId)
+    {
+        this.interceptIds.TryRemove(interceptId, out _);
+    }
+
+    /// <summary>
+    /// Lets a stopped request continue as it was, reporting that it did, or a failure rather than throwing it.
+    /// </summary>
+    /// <param name="request">The request.</param>
+    /// <returns>A task that completes when the request continues.</returns>
+    internal async Task ContinueRequestAsync(RequestData request)
+    {
+        try
+        {
+            await this.Driver.Network.ContinueRequestAsync(new ContinueRequestCommandParameters(request.RequestId)).ConfigureAwait(false);
+            await this.LogAsync($"A request to {request.Url} that no route decided was continued as it was.", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+        }
+        catch (WebDriverBiDiException ex)
+        {
+            await this.LogAsync($"A request to {request.Url} could not be continued: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Raises <see cref="OnLogMessage"/>.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="level">The message's level.</param>
+    /// <returns>A task that completes when observers are notified.</returns>
+    internal Task LogAsync(string message, WebDriverBiDiLogLevel level)
+    {
+        return this.onLogMessage.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName));
     }
 
     // Subscribes before reading the current contexts, so none can be missed; a context closed in between is
@@ -494,6 +583,20 @@ public sealed class BrowserGroup : IAsyncDisposable
         }
     }
 
+    // A request is offered to the waits of its frame's page; one stopped by the group's intercepts goes to that
+    // page's routes, or, from a frame the group does not track, such as a worker's, continues as it was.
+    private Task OnBeforeRequestSentAsync(BeforeRequestSentEventArgs e)
+    {
+        Frame? frame = e.BrowsingContextId is string contextId ? this.FindFrame(contextId) : null;
+        frame?.Page.NotifyRequest(e);
+        if (!e.IsBlocked || e.Intercepts is null || !e.Intercepts.Any(this.interceptIds.ContainsKey))
+        {
+            return Task.CompletedTask;
+        }
+
+        return frame is null ? this.ContinueRequestAsync(e.Request) : frame.Page.HandleBlockedRequestAsync(frame, e);
+    }
+
     private Task OnContextDestroyedAsync(ContextDestroyedEventArgs e)
     {
         lock (this.lockObject)
@@ -514,10 +617,5 @@ public sealed class BrowserGroup : IAsyncDisposable
         {
             await this.LogAsync($"{description} failed: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
         }
-    }
-
-    private Task LogAsync(string message, WebDriverBiDiLogLevel level)
-    {
-        return this.onLogMessage.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName));
     }
 }

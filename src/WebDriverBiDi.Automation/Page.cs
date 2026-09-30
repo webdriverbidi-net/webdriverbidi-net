@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Automation;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Network;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -24,6 +25,9 @@ public sealed class Page
     private readonly ObservableEventInvocable<PageEventArgs> onPopup = new("automation.popup");
     private readonly ObservableEventInvocable<DownloadEventArgs> onDownload = new("automation.download");
     private readonly List<TaskCompletionSource<Download>> downloadWaiters = [];
+    private readonly List<RouteRegistration> routes = [];
+    private readonly List<NetworkWaiter<BeforeRequestSentEventArgs>> requestWaiters = [];
+    private readonly List<NetworkWaiter<ResponseCompletedEventArgs>> responseWaiters = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Page"/> class.
@@ -528,6 +532,153 @@ public sealed class Page
     }
 
     /// <summary>
+    /// Adds a route for requests the page and its frames make to a URL.
+    /// </summary>
+    /// <param name="url">The request's full URL.</param>
+    /// <param name="handler">The handler, which answers, continues, or aborts each request.</param>
+    /// <param name="filter">A pattern the browser matches first, so that only requests it matches are stopped, or <see langword="null"/> to stop every request of the page while the route exists.</param>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    public Task<RouteRegistration> RouteAsync(string url, Func<Route, Task> handler, UrlPattern? filter = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddRouteAsync(request => request.Url == url, url, handler, filter, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a route for requests the page and its frames make to URLs matching a regular expression.
+    /// </summary>
+    /// <param name="url">The regular expression, matched against the request's full URL.</param>
+    /// <param name="handler">The handler, which answers, continues, or aborts each request.</param>
+    /// <param name="filter">A pattern the browser matches first, so that only requests it matches are stopped, or <see langword="null"/> to stop every request of the page while the route exists.</param>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    public Task<RouteRegistration> RouteAsync(Regex url, Func<Route, Task> handler, UrlPattern? filter = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddRouteAsync(request => url.IsMatch(request.Url), $"URLs matching {url}", handler, filter, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a route for requests the page and its frames make that satisfy a condition. Requests are stopped
+    /// before they are sent and handed to the route's handler, which answers, continues, or aborts each. Routes are
+    /// tried newest first; a handler that does none of these passes the request to the next route that matches it,
+    /// and a request no route decides, or whose handler throws, continues as it was, the exception reported on
+    /// <see cref="BrowserGroup.OnLogMessage"/>.
+    /// </summary>
+    /// <param name="request">The condition, given the request.</param>
+    /// <param name="handler">The handler, which answers, continues, or aborts each request.</param>
+    /// <param name="filter">A pattern the browser matches first, so that only requests it matches are stopped, or <see langword="null"/> to stop every request of the page while the route exists. A pattern's parts are matched exactly; a part left out matches anything.</param>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    public Task<RouteRegistration> RouteAsync(Func<RequestData, bool> request, Func<Route, Task> handler, UrlPattern? filter = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddRouteAsync(request, "requests satisfying the condition", handler, filter, cancellationToken);
+    }
+
+    /// <summary>
+    /// Removes every route of the page. A request already stopped is still handled.
+    /// </summary>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns>A task that completes when the routes are removed.</returns>
+    public async Task UnrouteAllAsync(CancellationToken cancellationToken = default)
+    {
+        List<RouteRegistration> removed;
+        lock (this.lockObject)
+        {
+            removed = [.. this.routes];
+        }
+
+        foreach (RouteRegistration route in removed)
+        {
+            await route.RemoveAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Runs an action and waits for the page or its frames to send a request to a URL.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="url">The request's full URL.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The request's event.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such request is sent in time.</exception>
+    public Task<BeforeRequestSentEventArgs> RunAndWaitForRequestAsync(Func<Task> action, string url, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.RunAndWaitForNetworkEventAsync(this.requestWaiters, action, request => request.Url == url, $"a request to {url}", timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs an action and waits for the page or its frames to send a request to a URL matching a regular expression.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="url">The regular expression, matched against the request's full URL.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The request's event.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such request is sent in time.</exception>
+    public Task<BeforeRequestSentEventArgs> RunAndWaitForRequestAsync(Func<Task> action, Regex url, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.RunAndWaitForNetworkEventAsync(this.requestWaiters, action, request => url.IsMatch(request.Url), $"a request to a URL matching {url}", timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs an action and waits for the page or its frames to send a request that satisfies a condition.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="request">The condition, given the request.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The request's event.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such request is sent in time.</exception>
+    public Task<BeforeRequestSentEventArgs> RunAndWaitForRequestAsync(Func<Task> action, Func<RequestData, bool> request, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.RunAndWaitForNetworkEventAsync(this.requestWaiters, action, request, "a request satisfying the condition", timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs an action and waits for the response to a request the page or its frames send to a URL.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="url">The request's full URL.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The event of the completed response.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such response completes in time.</exception>
+    public Task<ResponseCompletedEventArgs> RunAndWaitForResponseAsync(Func<Task> action, string url, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.RunAndWaitForNetworkEventAsync(this.responseWaiters, action, request => request.Url == url, $"a response to a request to {url}", timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs an action and waits for the response to a request the page or its frames send to a URL matching a
+    /// regular expression.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="url">The regular expression, matched against the request's full URL.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The event of the completed response.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such response completes in time.</exception>
+    public Task<ResponseCompletedEventArgs> RunAndWaitForResponseAsync(Func<Task> action, Regex url, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.RunAndWaitForNetworkEventAsync(this.responseWaiters, action, request => url.IsMatch(request.Url), $"a response to a request to a URL matching {url}", timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs an action and waits for the response to a request the page or its frames send that satisfies a condition.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="request">The condition, given the request.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The event of the completed response.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such response completes in time.</exception>
+    public Task<ResponseCompletedEventArgs> RunAndWaitForResponseAsync(Func<Task> action, Func<RequestData, bool> request, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.RunAndWaitForNetworkEventAsync(this.responseWaiters, action, request, "a response to a request satisfying the condition", timeout, cancellationToken);
+    }
+
+    /// <summary>
     /// Brings the page to the front of its window, making it the active tab.
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the command.</param>
@@ -666,9 +817,143 @@ public sealed class Page
         return this.onDownload.InvokeNotifyObserversAsync(new DownloadEventArgs(download));
     }
 
+    /// <summary>
+    /// Hands a request the page's routes stopped to their handlers, newest first, continuing it if none decides.
+    /// </summary>
+    /// <param name="frame">The frame that made the request.</param>
+    /// <param name="e">The request's event.</param>
+    /// <returns>A task that completes when the request has been handled.</returns>
+    internal async Task HandleBlockedRequestAsync(Frame frame, BeforeRequestSentEventArgs e)
+    {
+        List<RouteRegistration> stopping;
+        lock (this.lockObject)
+        {
+            stopping = this.routes.FindAll(route => e.Intercepts!.Contains(route.InterceptId));
+        }
+
+        Route routed = new(this, frame, e.Request);
+        foreach (RouteRegistration route in stopping)
+        {
+            try
+            {
+                if (!route.Matches(e.Request))
+                {
+                    continue;
+                }
+
+                await route.Handler(routed).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                await this.Browser.Group.LogAsync($"The route for {route.Description} failed handling a request to {e.Request.Url}: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+                break;
+            }
+
+            if (routed.IsHandled)
+            {
+                return;
+            }
+        }
+
+        if (!routed.IsHandled)
+        {
+            await this.Browser.Group.ContinueRequestAsync(e.Request).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Forgets a route that was removed.
+    /// </summary>
+    /// <param name="route">The route.</param>
+    internal void RemoveRoute(RouteRegistration route)
+    {
+        lock (this.lockObject)
+        {
+            this.routes.Remove(route);
+        }
+    }
+
+    /// <summary>
+    /// Offers a request's event to those waiting for one.
+    /// </summary>
+    /// <param name="e">The event.</param>
+    internal void NotifyRequest(BeforeRequestSentEventArgs e)
+    {
+        lock (this.lockObject)
+        {
+            foreach (NetworkWaiter<BeforeRequestSentEventArgs> waiter in this.requestWaiters)
+            {
+                waiter.Offer(e, e.Request);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Offers a completed response's event to those waiting for one.
+    /// </summary>
+    /// <param name="e">The event.</param>
+    internal void NotifyResponse(ResponseCompletedEventArgs e)
+    {
+        lock (this.lockObject)
+        {
+            foreach (NetworkWaiter<ResponseCompletedEventArgs> waiter in this.responseWaiters)
+            {
+                waiter.Offer(e, e.Request);
+            }
+        }
+    }
+
     private Task SetViewportAsync(Viewport viewport, CancellationToken cancellationToken)
     {
         return this.Browser.Group.Driver.BrowsingContext.SetViewportAsync(new SetViewportCommandParameters() { BrowsingContextId = this.Id, Viewport = viewport }, cancellationToken: cancellationToken);
+    }
+
+    // Each route has its own intercept, with its filter, limited to the page; the browser marks a request with every
+    // intercept that stopped it.
+    private async Task<RouteRegistration> AddRouteAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken)
+    {
+        BrowserGroup group = this.Browser.Group;
+        await group.EnsureNetworkEventsAsync(cancellationToken).ConfigureAwait(false);
+        AddInterceptCommandParameters parameters = new(InterceptPhase.BeforeRequestSent);
+        parameters.Contexts.Add(this.Id);
+        if (filter is not null)
+        {
+            parameters.UrlPatterns.Add(filter);
+        }
+
+        string interceptId = (await group.Driver.Network.AddInterceptAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false)).InterceptId;
+        group.TrackIntercept(interceptId);
+        RouteRegistration route = new(this, matches, description, handler, interceptId);
+        lock (this.lockObject)
+        {
+            this.routes.Insert(0, route);
+        }
+
+        return route;
+    }
+
+    private async Task<T> RunAndWaitForNetworkEventAsync<T>(List<NetworkWaiter<T>> waiters, Func<Task> action, Func<RequestData, bool> matches, string awaited, TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        TimeBudget budget = new(timeout ?? this.Browser.Group.Options.NavigationTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
+        await this.Browser.Group.EnsureNetworkEventsAsync(cancellationToken).ConfigureAwait(false);
+        NetworkWaiter<T> waiter = new(matches);
+        lock (this.lockObject)
+        {
+            waiters.Add(waiter);
+        }
+
+        try
+        {
+            await action().ConfigureAwait(false);
+            return await budget.WaitAsync(waiter.Found.Task, awaited).ConfigureAwait(false);
+        }
+        finally
+        {
+            lock (this.lockObject)
+            {
+                waiters.Remove(waiter);
+            }
+        }
     }
 
     // History traversal has no wait of its own, so the navigation it causes is awaited from the frame's events.

@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Network</title>
+  </head>
+  <body>
+    <button id="fetch-api" onclick="window.api = undefined; fetch('api/data.json').then((r) => r.text()).then((t) => { window.api = t; }, () => { window.api = 'failed'; })">API</button>
+    <button id="fetch-file" onclick="window.file = undefined; fetch('data.txt').then((r) => r.text()).then((t) => { window.file = t; }, () => { window.file = 'failed'; })">File</button>
+  </body>
+</html>
