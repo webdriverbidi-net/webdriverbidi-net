@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Expect</title>
+    <style>
+      #far { position: absolute; left: 0; top: 3000px; width: 60px; height: 40px; }
+    </style>
+  </head>
+  <body>
+    <p id="visible">Visible</p>
+    <p id="invisible" style="display: none">Invisible</p>
+    <button id="enabled">Enabled</button>
+    <button id="disabled" disabled>Disabled</button>
+    <input id="name" value="Ada">
+    <input id="readonly" value="Fixed" readonly>
+    <input id="empty-input">
+    <div id="empty-div">
+    </div>
+    <div id="with-child"><span></span></div>
+    <input id="check" type="checkbox" checked>
+    <input id="mixed" type="checkbox">
+    <ul><li>One</li><li>Two</li><li>Three</li></ul>
+    <p id="later" style="display: none">Later</p>
+    <button id="reveal" onclick="setTimeout(() => { document.getElementById('later').style.display = 'block'; document.querySelector('ul').append(document.createElement('li')); }, 200)">Reveal</button>
+    <div id="host"></div>
+    <div id="far">Far</div>
+    <script>
+      document.getElementById('mixed').indeterminate = true;
+      document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML = '<input id="inner">';
+    </script>
+  </body>
+</html>

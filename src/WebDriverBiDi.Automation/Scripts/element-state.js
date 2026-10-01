@@ -28,5 +28,19 @@
     readAttribute(element, name) {
       return element.getAttribute(name);
     },
+
+    // An input or a text area without a value, or another element with no child elements and only white space.
+    isEmpty(element) {
+      if (element.localName === 'input' || element.localName === 'textarea') {
+        return !element.value;
+      }
+
+      return element.children.length === 0 && !element.textContent.trim();
+    },
+
+    // Whether the element has focus within its document or shadow root.
+    isFocused(element) {
+      return element.getRootNode().activeElement === element;
+    },
   };
 })()

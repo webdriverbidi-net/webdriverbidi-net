@@ -689,8 +689,7 @@ public sealed class ElementLocator
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
     public async Task<bool> IsEditableAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        string received = await this.QueryStateAsync("editable", timeout, cancellationToken).ConfigureAwait(false);
-        return received == "error:noteditable" ? throw new InvalidOperationException($"{this} is not an editable element.") : received == "editable";
+        return await this.QueryStateAsync("editable", timeout, cancellationToken).ConfigureAwait(false) == "editable";
     }
 
     /// <summary>
@@ -911,6 +910,111 @@ public sealed class ElementLocator
     internal static ElementLocator ByLabel(Frame frame, string text, bool exact)
     {
         return new ElementLocator(frame, [new LabelStep(text, exact)]);
+    }
+
+    /// <summary>
+    /// Checks an expectation until its condition, negated if asked, holds, or the time runs out.
+    /// </summary>
+    /// <param name="expected">What the expectation requires, negation included, such as <c>not to be visible</c>.</param>
+    /// <param name="isNot">A value indicating whether the expectation is negated.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the expectation.</param>
+    /// <param name="observe">One check, returning <see langword="null"/> when the element was removed while it was checked.</param>
+    /// <returns>A task that completes when the expectation is met.</returns>
+    /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>
+    internal async Task ExpectAsync(string expected, bool isNot, TimeSpan? timeout, CancellationToken cancellationToken, Func<TimeBudget, Task<Observation?>> observe)
+    {
+        TimeBudget budget = new(timeout ?? this.Group.Options.ExpectTimeout, this.Group.Options.TimeProvider, cancellationToken);
+        string? actual = null;
+        (bool met, bool _, string? observed) = await this.TryPollAsync(budget, async () =>
+        {
+            Observation? observation = await observe(budget).ConfigureAwait(false);
+            if (observation is null)
+            {
+                return (false, false, DescribeNotReady("notconnected"));
+            }
+
+            actual = observation.Actual;
+            bool holds = observation.Holds != isNot;
+            return (holds, holds, actual is null ? "no element matched" : $"received {actual}");
+        }).ConfigureAwait(false);
+        if (!met)
+        {
+            throw new ExpectationFailedException($"Expected {this} {expected}; {observed} after {budget.Duration.TotalSeconds} seconds.", expected, actual, budget.Duration);
+        }
+    }
+
+    /// <summary>
+    /// Finds the one element the locator matches now.
+    /// </summary>
+    /// <param name="budget">The time the commands may take.</param>
+    /// <returns>The element, or <see langword="null"/> if none matches.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    internal async Task<NodeRemoteValue?> FindOneAsync(TimeBudget budget)
+    {
+        IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
+        this.ThrowIfAmbiguous(nodes);
+        return nodes.Count == 0 ? null : nodes[0];
+    }
+
+    /// <summary>
+    /// Counts the elements the locator matches now.
+    /// </summary>
+    /// <param name="budget">The time the commands may take.</param>
+    /// <returns>The number of matching elements.</returns>
+    internal async Task<int> CountMatchesAsync(TimeBudget budget)
+    {
+        return (await this.ResolveAsync(null, budget).ConfigureAwait(false)).Count;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether an element is visible.
+    /// </summary>
+    /// <param name="node">The element.</param>
+    /// <param name="budget">The time the command may take.</param>
+    /// <returns><see langword="true"/> if the element is visible; otherwise, <see langword="false"/>.</returns>
+    internal async Task<bool> IsVisibleAsync(NodeRemoteValue node, TimeBudget budget)
+    {
+        RemoteValue visible = await this.CallInspectorAsync(node, "(inspector, element) => inspector.isElementVisible(element)", budget).ConfigureAwait(false);
+        return visible.As<BooleanRemoteValue>().Value;
+    }
+
+    /// <summary>
+    /// Reads the state the element state library reports for an element, such as <c>enabled</c>.
+    /// </summary>
+    /// <param name="node">The element.</param>
+    /// <param name="state">The state to query, such as <c>enabled</c>.</param>
+    /// <param name="budget">The time the command may take.</param>
+    /// <returns>The reported state, or <see langword="null"/> if the element was removed while it was checked.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the element cannot have the state.</exception>
+    internal async Task<string?> ReadElementStateAsync(NodeRemoteValue node, string state, TimeBudget budget)
+    {
+        RemoteValue? result = await this.QueryElementStateAsync(node, state, budget).ConfigureAwait(false);
+        return result is null ? null : Property(result, "received").As<StringRemoteValue>().Value;
+    }
+
+    /// <summary>
+    /// Calls a function in the sandbox with the element state library and an element.
+    /// </summary>
+    /// <param name="node">The element.</param>
+    /// <param name="functionDeclaration">The function, taking the library and the element.</param>
+    /// <param name="budget">The time the command may take.</param>
+    /// <returns>The function's result.</returns>
+    internal Task<RemoteValue> CallInspectorAsync(NodeRemoteValue node, string functionDeclaration, TimeBudget budget)
+    {
+        return this.Group.ScriptHost.CallAsync(this.Frame.Id, functionDeclaration, [node.ToSharedReference()], budget);
+    }
+
+    /// <summary>
+    /// Calls a function in the sandbox with the element state reads and an element.
+    /// </summary>
+    /// <param name="node">The element.</param>
+    /// <param name="functionDeclaration">The function, taking the reads and the element.</param>
+    /// <param name="budget">The time the command may take.</param>
+    /// <returns>The function's result.</returns>
+    internal Task<RemoteValue> CallStateAsync(NodeRemoteValue node, string functionDeclaration, TimeBudget budget)
+    {
+        return this.Group.ScriptHost.CallStateAsync(this.Frame.Id, functionDeclaration, [node.ToSharedReference()], budget);
     }
 
     // The browser finds elements by role and name; the states, which the protocol cannot express, filter them.
@@ -1183,17 +1287,17 @@ public sealed class ElementLocator
         return [.. nodes.Where((node, index) => contains[index].As<BooleanRemoteValue>().Value == keepContaining)];
     }
 
-    private async Task<bool> IsVisibleAsync(NodeRemoteValue node, TimeBudget budget)
-    {
-        RemoteValue visible = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => inspector.isElementVisible(element)", [node.ToSharedReference()], budget).ConfigureAwait(false);
-        return visible.As<BooleanRemoteValue>().Value;
-    }
-
     // Tries an attempt until it is done or the budget runs out, reporting what the last attempt saw. An element
     // removed while it is checked is looked up again, and so is one whose document was being replaced: a command
     // failing while a navigation starts in the frame is retried whatever the error, as browsers do not all report
     // that case with the protocol's own errors.
     private async Task<T> PollAsync<T>(TimeBudget budget, string awaited, Func<Task<(bool Done, T Result, string Observed)>> attempt)
+    {
+        (bool done, T result, string? observed) = await this.TryPollAsync(budget, attempt).ConfigureAwait(false);
+        return done ? result : throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for {awaited}; {observed}.");
+    }
+
+    private async Task<(bool Done, T Result, string? Observed)> TryPollAsync<T>(TimeBudget budget, Func<Task<(bool Done, T Result, string Observed)>> attempt)
     {
         string? observed = null;
         while (true)
@@ -1204,7 +1308,7 @@ public sealed class ElementLocator
                 (bool done, T result, string seen) = await attempt().ConfigureAwait(false);
                 if (done)
                 {
-                    return result;
+                    return (true, result, null);
                 }
 
                 observed = seen;
@@ -1233,7 +1337,7 @@ public sealed class ElementLocator
             }
         }
 
-        throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for {awaited}; {observed}.");
+        return (false, default!, observed);
     }
 
     // The browser serializes an element's content window as its browsing context ID, which names the frame.
@@ -1322,9 +1426,8 @@ public sealed class ElementLocator
 
     private async Task<(bool Found, NodeRemoteValue? Node, string Observed)> TryFindOneAsync(TimeBudget budget)
     {
-        IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
-        this.ThrowIfAmbiguous(nodes);
-        return nodes.Count == 0 ? (false, null, "no element matched") : (true, nodes[0], string.Empty);
+        NodeRemoteValue? node = await this.FindOneAsync(budget).ConfigureAwait(false);
+        return node is null ? (false, null, "no element matched") : (true, node, string.Empty);
     }
 
     // Waits for exactly one element to match, then makes an attempt on it, until the attempt is done.
@@ -1362,16 +1465,28 @@ public sealed class ElementLocator
         return AsString(texts.As<CollectionRemoteValue>().Value![0]);
     }
 
-    // The state the library reports for the element, such as "enabled" or "error:noteditable"; an element removed
-    // while it is checked is looked up again.
+    // Null when the element was removed while it was checked.
+    private async Task<RemoteValue?> QueryElementStateAsync(NodeRemoteValue node, string state, TimeBudget budget)
+    {
+        RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, $"(inspector, element) => inspector.queryElementState(element, '{state}')", [node.ToSharedReference()], budget).ConfigureAwait(false);
+        return Property(result, "received").As<StringRemoteValue>().Value switch
+        {
+            "error:notconnected" => null,
+            "error:noteditable" => throw new InvalidOperationException($"{this} is not an editable element."),
+            "error:notcheckable" => throw new InvalidOperationException($"{this} is not a checkbox or radio button."),
+            _ => result,
+        };
+    }
+
+    // The state the library reports for the element, such as "enabled"; an element removed while it is checked is
+    // looked up again.
     private async Task<string> QueryStateAsync(string state, TimeSpan? timeout, CancellationToken cancellationToken)
     {
         TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
         string? received = await this.PollElementAsync(budget, async node =>
         {
-            RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element, state) => inspector.queryElementState(element, state)", [node.ToSharedReference(), LocalValue.String(state)], budget).ConfigureAwait(false);
-            string received = Property(result, "received").As<StringRemoteValue>().Value;
-            return received == "error:notconnected" ? (false, null, DescribeNotReady("notconnected")) : (true, received, string.Empty);
+            string? received = await this.ReadElementStateAsync(node, state, budget).ConfigureAwait(false);
+            return received is null ? (false, null, DescribeNotReady("notconnected")) : (true, received, string.Empty);
         }).ConfigureAwait(false);
         return received!;
     }
@@ -1408,16 +1523,10 @@ public sealed class ElementLocator
             return (false, null, observed);
         }
 
-        RemoteValue result = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => inspector.queryElementState(element, 'checked')", [node!.ToSharedReference()], budget).ConfigureAwait(false);
-        string received = Property(result, "received").As<StringRemoteValue>().Value;
-        if (received == "error:notcheckable")
-        {
-            throw new InvalidOperationException($"{this} is not a checkbox or radio button.");
-        }
-
-        return received == "error:notconnected"
+        RemoteValue? result = await this.QueryElementStateAsync(node!, "checked", budget).ConfigureAwait(false);
+        return result is null
             ? (false, null, DescribeNotReady("notconnected"))
-            : (true, new CheckedState(received == "checked", Property(result, "isRadio").As<BooleanRemoteValue>().Value), string.Empty);
+            : (true, new CheckedState(Property(result, "received").As<StringRemoteValue>().Value == "checked", Property(result, "isRadio").As<BooleanRemoteValue>().Value), string.Empty);
     }
 
     private async Task<(bool Selected, IReadOnlyList<string>? Values, string Observed)> TrySelectOptionsAsync(List<SelectOption> selections, bool force, TimeBudget budget)

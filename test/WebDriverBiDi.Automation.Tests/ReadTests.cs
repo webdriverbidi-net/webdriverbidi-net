@@ -40,9 +40,9 @@ public class ReadTests
         Assert.Equal(enabled, await page.Locate(new CssLocator("button")).IsEnabledAsync(cancellationToken: TestContext.Current.CancellationToken));
         Assert.Equal(!enabled, await page.Locate(new CssLocator("button")).IsDisabledAsync(cancellationToken: TestContext.Current.CancellationToken));
 
-        JsonArray arguments = session.RemoteEnd.CommandsFor("script.callFunction")[0]["params"]!["arguments"]!.AsArray();
-        Assert.Equal("button-1", (string?)arguments[0]!["sharedId"]);
-        Assert.Equal("enabled", (string?)arguments[1]!["value"]);
+        JsonObject call = session.RemoteEnd.CommandsFor("script.callFunction")[0]["params"]!.AsObject();
+        Assert.Equal("button-1", (string?)call["arguments"]![0]!["sharedId"]);
+        Assert.Contains("inspector.queryElementState(element, 'enabled')", (string?)call["functionDeclaration"]);
     }
 
     [Fact]
