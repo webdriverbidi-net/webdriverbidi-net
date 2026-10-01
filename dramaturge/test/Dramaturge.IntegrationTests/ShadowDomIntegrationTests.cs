@@ -35,7 +35,7 @@ public class ShadowDomIntegrationTests
     public async Task PiercingSearchesOpenRootsButNotClosedOnes(BrowserKind browserKind)
     {
         await using TestPageServer server = await TestPageServer.StartAsync();
-        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind, new AutomationOptions() { PierceShadowRoots = true });
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind, new DramaturgeOptions() { PierceShadowRoots = true });
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         await page.NavigateAsync(server.UrlFor("shadow-dom.html"), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -56,7 +56,7 @@ public class ShadowDomIntegrationTests
         await using BrowserGroup plain = await TestBrowsers.LaunchAsync(browserKind);
         Page plainPage = await plain.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         await plainPage.NavigateAsync(server.UrlFor("shadow-dom.html"), cancellationToken: TestContext.Current.CancellationToken);
-        await using BrowserGroup piercing = await TestBrowsers.LaunchAsync(browserKind, new AutomationOptions() { PierceShadowRoots = true });
+        await using BrowserGroup piercing = await TestBrowsers.LaunchAsync(browserKind, new DramaturgeOptions() { PierceShadowRoots = true });
         Page piercingPage = await piercing.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         await piercingPage.NavigateAsync(server.UrlFor("shadow-dom.html"), cancellationToken: TestContext.Current.CancellationToken);
 

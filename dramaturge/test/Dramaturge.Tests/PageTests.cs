@@ -132,7 +132,7 @@ public class PageTests
     {
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
         await using BiDiDriver ownedDriver = driver;
-        await using BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new AutomationOptions() { NavigationTimeout = TimeSpan.FromMilliseconds(200) }, TestContext.Current.CancellationToken);
+        await using BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new DramaturgeOptions() { NavigationTimeout = TimeSpan.FromMilliseconds(200) }, TestContext.Current.CancellationToken);
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         session.RemoteEnd.NeverAnswer("browsingContext.navigate");
         session.RemoteEnd.NeverAnswer("browsingContext.reload");

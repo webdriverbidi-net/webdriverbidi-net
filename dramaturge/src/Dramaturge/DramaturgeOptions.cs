@@ -1,4 +1,4 @@
-// <copyright file="AutomationOptions.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="DramaturgeOptions.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 /// <summary>
 /// Options for a <see cref="BrowserGroup"/> and everything it creates, read when the group is launched or connected.
 /// </summary>
-public sealed class AutomationOptions
+public sealed class DramaturgeOptions
 {
     private readonly TimeSpan actionTimeout = TimeSpan.FromSeconds(30);
     private readonly TimeSpan navigationTimeout = TimeSpan.FromSeconds(30);

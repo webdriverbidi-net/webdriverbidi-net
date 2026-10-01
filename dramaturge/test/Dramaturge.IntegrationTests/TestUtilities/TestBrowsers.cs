@@ -27,7 +27,7 @@ public static class TestBrowsers
     /// <param name="options">The group's options, or <see langword="null"/> for the defaults.</param>
     /// <param name="configure">Further configuration of the launcher, such as session capabilities, or <see langword="null"/> for none.</param>
     /// <returns>The launched group.</returns>
-    public static Task<BrowserGroup> LaunchAsync(BrowserKind browser, AutomationOptions? options = null, Action<BrowserLauncherBuilder>? configure = null)
+    public static Task<BrowserGroup> LaunchAsync(BrowserKind browser, DramaturgeOptions? options = null, Action<BrowserLauncherBuilder>? configure = null)
     {
         string variableName = browser == BrowserKind.Chrome ? "CHROME_EXECUTABLE" : "FIREFOX_EXECUTABLE";
         string? executablePath = Environment.GetEnvironmentVariable(variableName);

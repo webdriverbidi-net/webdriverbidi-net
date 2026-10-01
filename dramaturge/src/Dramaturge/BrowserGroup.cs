@@ -43,7 +43,7 @@ public sealed class BrowserGroup : IAsyncDisposable
     private string? networkSubscriptionId;
     private int isDisposed;
 
-    private BrowserGroup(BiDiDriver driver, AutomationOptions options, BrowserLauncher? launcher, bool ownsSession)
+    private BrowserGroup(BiDiDriver driver, DramaturgeOptions options, BrowserLauncher? launcher, bool ownsSession)
     {
         this.Driver = driver;
         this.Options = options;
@@ -78,7 +78,7 @@ public sealed class BrowserGroup : IAsyncDisposable
     /// <summary>
     /// Gets the options for the group and everything it creates.
     /// </summary>
-    public AutomationOptions Options { get; }
+    public DramaturgeOptions Options { get; }
 
     /// <summary>
     /// Gets an observable event raised when the group logs a message, such as a failure while it is disposed.
@@ -118,7 +118,7 @@ public sealed class BrowserGroup : IAsyncDisposable
     /// <param name="options">The options for the group, or <see langword="null"/> for the defaults.</param>
     /// <param name="cancellationToken">A token that cancels the launch; anything already started is stopped.</param>
     /// <returns>The group.</returns>
-    public static async Task<BrowserGroup> LaunchAsync(BrowserLauncherBuilder launcherBuilder, AutomationOptions? options = null, CancellationToken cancellationToken = default)
+    public static async Task<BrowserGroup> LaunchAsync(BrowserLauncherBuilder launcherBuilder, DramaturgeOptions? options = null, CancellationToken cancellationToken = default)
     {
         BrowserLauncher launcher = launcherBuilder.Build();
         BiDiDriver? driver = null;
@@ -135,7 +135,7 @@ public sealed class BrowserGroup : IAsyncDisposable
                 await driver.Session.NewSessionAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
-            group = new BrowserGroup(driver, options ?? new AutomationOptions(), launcher, ownsSession);
+            group = new BrowserGroup(driver, options ?? new DramaturgeOptions(), launcher, ownsSession);
         }
         catch
         {
@@ -160,10 +160,10 @@ public sealed class BrowserGroup : IAsyncDisposable
     /// <param name="options">The options for the group, or <see langword="null"/> for the defaults.</param>
     /// <param name="cancellationToken">A token that cancels the connection.</param>
     /// <returns>The group.</returns>
-    public static async Task<BrowserGroup> ConnectAsync(BiDiDriver driver, AutomationOptions? options = null, CancellationToken cancellationToken = default)
+    public static async Task<BrowserGroup> ConnectAsync(BiDiDriver driver, DramaturgeOptions? options = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        BrowserGroup group = new(driver, options ?? new AutomationOptions(), null, false);
+        BrowserGroup group = new(driver, options ?? new DramaturgeOptions(), null, false);
         await group.StartAsync(cancellationToken).ConfigureAwait(false);
         return group;
     }

@@ -176,7 +176,7 @@ public sealed class Frame
     }
 
     /// <summary>
-    /// Creates a locator for elements by their test ID, the value of the <see cref="AutomationOptions.TestIdAttribute"/> attribute, in this frame.
+    /// Creates a locator for elements by their test ID, the value of the <see cref="DramaturgeOptions.TestIdAttribute"/> attribute, in this frame.
     /// </summary>
     /// <param name="testId">The test ID, matched exactly.</param>
     /// <returns>The locator.</returns>
@@ -217,7 +217,7 @@ public sealed class Frame
     /// </summary>
     /// <param name="url">The URL.</param>
     /// <param name="wait">How far the new document must load before the navigation completes.</param>
-    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the navigation.</param>
     /// <returns>The URL navigated to, after any redirects.</returns>
     public async Task<string> NavigateAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -231,7 +231,7 @@ public sealed class Frame
     /// Reloads the frame.
     /// </summary>
     /// <param name="wait">How far the reloaded document must load before the reload completes.</param>
-    /// <param name="timeout">The time the reload may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time the reload may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the reload.</param>
     /// <returns>The URL reloaded.</returns>
     public async Task<string> ReloadAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -247,7 +247,7 @@ public sealed class Frame
     /// is asked for its state.
     /// </summary>
     /// <param name="state">The state: <see cref="ReadinessState.Interactive"/> once the document is parsed, <see cref="ReadinessState.Complete"/> once it and its resources have loaded, or <see cref="ReadinessState.None"/> for no wait.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the document has loaded as far as the state.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the frame is detached while waiting.</exception>
@@ -263,7 +263,7 @@ public sealed class Frame
     /// </summary>
     /// <param name="url">The full URL.</param>
     /// <param name="wait">How far the document must load once the URL matches.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The frame's URL.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the frame is detached while waiting.</exception>
@@ -279,7 +279,7 @@ public sealed class Frame
     /// </summary>
     /// <param name="url">The regular expression, matched against the full URL.</param>
     /// <param name="wait">How far the document must load once the URL matches.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The frame's URL.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the frame is detached while waiting.</exception>
@@ -295,7 +295,7 @@ public sealed class Frame
     /// </summary>
     /// <param name="url">The condition, given the full URL.</param>
     /// <param name="wait">How far the document must load once the URL matches.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The frame's URL.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the frame is detached while waiting.</exception>
@@ -311,7 +311,7 @@ public sealed class Frame
     /// </summary>
     /// <param name="action">The action.</param>
     /// <param name="wait">How far a new document must load.</param>
-    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The frame's URL after the navigation.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the frame is detached while waiting.</exception>
@@ -331,7 +331,7 @@ public sealed class Frame
     /// </summary>
     /// <param name="function">The function's declaration, such as <c>(a, b) =&gt; a + b</c>; an expression is written as a function of no arguments, such as <c>() =&gt; document.title</c>.</param>
     /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the call.</param>
     /// <returns>The function's result.</returns>
     /// <exception cref="ScriptException">Thrown when the function throws.</exception>
@@ -347,7 +347,7 @@ public sealed class Frame
     /// <typeparam name="T">The type to convert the result to: a string, a Boolean, a number type, <see cref="System.Numerics.BigInteger"/>, <see cref="DateTime"/>, or a nullable one of those; <see cref="object"/>, for an untyped tree of those with lists and string-keyed dictionaries; a <see cref="RemoteValue"/> type; an array of any of these, at any depth; or a <see cref="List{T}"/> or <see cref="Dictionary{TKey, TValue}"/> with string keys of any of these, but not within another value.</typeparam>
     /// <param name="function">The function's declaration.</param>
     /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the call.</param>
     /// <returns>The function's result, converted.</returns>
     /// <exception cref="ScriptException">Thrown when the function throws.</exception>
@@ -361,11 +361,11 @@ public sealed class Frame
 
     /// <summary>
     /// Calls a JavaScript function in the frame's document until it returns a truthy value, calling it again after
-    /// <see cref="AutomationOptions.PollInterval"/> each time it does not, and through a navigation of the frame.
+    /// <see cref="DramaturgeOptions.PollInterval"/> each time it does not, and through a navigation of the frame.
     /// </summary>
     /// <param name="function">The function's declaration.</param>
     /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The truthy value.</returns>
     /// <exception cref="ScriptException">Thrown when the function throws.</exception>
@@ -417,7 +417,7 @@ public sealed class Frame
     /// <typeparam name="T">The type to convert the value to, as for <see cref="EvaluateAsync{T}"/>.</typeparam>
     /// <param name="function">The function's declaration.</param>
     /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The truthy value, converted.</returns>
     /// <exception cref="ScriptException">Thrown when the function throws.</exception>
@@ -432,7 +432,7 @@ public sealed class Frame
     /// </summary>
     /// <param name="html">The HTML.</param>
     /// <param name="wait">How far the document must load.</param>
-    /// <param name="timeout">The time it may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time it may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the document has loaded as far as the state.</returns>
     public async Task SetContentAsync(string html, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -516,7 +516,7 @@ public sealed class Frame
     /// <param name="expected">What the expectation requires, negation included, such as <c>to have URL "https://example.com/"</c>.</param>
     /// <param name="isNot">A value indicating whether the expectation is negated.</param>
     /// <param name="pattern">The expected URL.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the frame is detached while waiting.</exception>
@@ -538,7 +538,7 @@ public sealed class Frame
     /// <param name="expected">What the expectation requires, negation included, such as <c>to have title "Home"</c>.</param>
     /// <param name="isNot">A value indicating whether the expectation is negated.</param>
     /// <param name="pattern">The expected title.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>

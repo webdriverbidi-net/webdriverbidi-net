@@ -1,18 +1,18 @@
-// <copyright file="AutomationOptionsTests.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="DramaturgeOptionsTests.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
 namespace Dramaturge;
 
-public class AutomationOptionsTests
+public class DramaturgeOptionsTests
 {
     public static TheoryData<TimeSpan> NonPositiveIntervals => [TimeSpan.Zero, TimeSpan.FromMilliseconds(-1)];
 
     [Fact]
     public void DefaultsAreSet()
     {
-        AutomationOptions options = new();
+        DramaturgeOptions options = new();
 
         Assert.Equal(TimeSpan.FromSeconds(30), options.ActionTimeout);
         Assert.Equal(TimeSpan.FromSeconds(30), options.NavigationTimeout);
@@ -27,7 +27,7 @@ public class AutomationOptionsTests
     {
         TimeProvider timeProvider = new ManualTimeProvider();
 
-        AutomationOptions options = new()
+        DramaturgeOptions options = new()
         {
             ActionTimeout = TimeSpan.FromSeconds(1),
             NavigationTimeout = TimeSpan.FromSeconds(2),
@@ -49,16 +49,16 @@ public class AutomationOptionsTests
     [MemberData(nameof(NonPositiveIntervals))]
     public void IntervalThatIsNotPositiveIsRejected(TimeSpan value)
     {
-        Assert.Equal("ActionTimeout", Assert.Throws<ArgumentOutOfRangeException>(() => new AutomationOptions() { ActionTimeout = value }).ParamName);
-        Assert.Equal("NavigationTimeout", Assert.Throws<ArgumentOutOfRangeException>(() => new AutomationOptions() { NavigationTimeout = value }).ParamName);
-        Assert.Equal("ExpectTimeout", Assert.Throws<ArgumentOutOfRangeException>(() => new AutomationOptions() { ExpectTimeout = value }).ParamName);
-        Assert.Equal("PollInterval", Assert.Throws<ArgumentOutOfRangeException>(() => new AutomationOptions() { PollInterval = value }).ParamName);
+        Assert.Equal("ActionTimeout", Assert.Throws<ArgumentOutOfRangeException>(() => new DramaturgeOptions() { ActionTimeout = value }).ParamName);
+        Assert.Equal("NavigationTimeout", Assert.Throws<ArgumentOutOfRangeException>(() => new DramaturgeOptions() { NavigationTimeout = value }).ParamName);
+        Assert.Equal("ExpectTimeout", Assert.Throws<ArgumentOutOfRangeException>(() => new DramaturgeOptions() { ExpectTimeout = value }).ParamName);
+        Assert.Equal("PollInterval", Assert.Throws<ArgumentOutOfRangeException>(() => new DramaturgeOptions() { PollInterval = value }).ParamName);
     }
 
     [Fact]
     public void MissingTimeProviderIsRejected()
     {
-        Assert.Throws<ArgumentNullException>(() => new AutomationOptions() { TimeProvider = null! });
+        Assert.Throws<ArgumentNullException>(() => new DramaturgeOptions() { TimeProvider = null! });
     }
 
     [Theory]
@@ -66,7 +66,7 @@ public class AutomationOptionsTests
     [InlineData("")]
     public void EmptySandboxNameIsRejected(string? name)
     {
-        Assert.Throws<ArgumentException>(() => new AutomationOptions() { SandboxName = name! });
+        Assert.Throws<ArgumentException>(() => new DramaturgeOptions() { SandboxName = name! });
     }
 
     private sealed class ManualTimeProvider : TimeProvider

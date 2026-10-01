@@ -36,7 +36,7 @@ public sealed class LocatorAssertions
     /// <summary>
     /// Expects the element to be visible.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -49,7 +49,7 @@ public sealed class LocatorAssertions
     /// <summary>
     /// Expects the element to be hidden. No matching element is hidden.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -62,7 +62,7 @@ public sealed class LocatorAssertions
     /// <summary>
     /// Expects an element to match.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -75,7 +75,7 @@ public sealed class LocatorAssertions
     /// <summary>
     /// Expects the element to be enabled.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -88,7 +88,7 @@ public sealed class LocatorAssertions
     /// <summary>
     /// Expects the element to be disabled.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -101,7 +101,7 @@ public sealed class LocatorAssertions
     /// <summary>
     /// Expects the element to be editable, being neither disabled nor read-only.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -115,7 +115,7 @@ public sealed class LocatorAssertions
     /// <summary>
     /// Expects a checkbox or radio button to be checked. An element in a mixed state is not checked.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -130,7 +130,7 @@ public sealed class LocatorAssertions
     /// Expects the element to be empty: an input or a text area without a value, or another element with no child
     /// elements and only white space for text.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -147,7 +147,7 @@ public sealed class LocatorAssertions
     /// <summary>
     /// Expects the element to have focus within its document.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -164,7 +164,7 @@ public sealed class LocatorAssertions
     /// <summary>
     /// Expects the element to be at least partly within its frame's viewport.
     /// </summary>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -182,7 +182,7 @@ public sealed class LocatorAssertions
     /// Expects the locator to match a number of elements.
     /// </summary>
     /// <param name="count">The number of elements.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>
@@ -201,7 +201,7 @@ public sealed class LocatorAssertions
     /// <param name="expected">The text; its white space is normalized too.</param>
     /// <param name="ignoreCase">A value indicating whether case is ignored.</param>
     /// <param name="useInnerText">A value indicating whether to read the rendered text rather than the text content.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -217,7 +217,7 @@ public sealed class LocatorAssertions
     /// </summary>
     /// <param name="expected">The regular expression, which may match anywhere in the text.</param>
     /// <param name="useInnerText">A value indicating whether to read the rendered text rather than the text content.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -235,7 +235,7 @@ public sealed class LocatorAssertions
     /// <param name="expected">The texts; their white space is normalized too.</param>
     /// <param name="ignoreCase">A value indicating whether case is ignored.</param>
     /// <param name="useInnerText">A value indicating whether to read the rendered text rather than the text content.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="useInnerText"/> is set and an element is not an HTML element.</exception>
@@ -251,7 +251,7 @@ public sealed class LocatorAssertions
     /// </summary>
     /// <param name="expected">The regular expressions, each of which may match anywhere in its text.</param>
     /// <param name="useInnerText">A value indicating whether to read the rendered text rather than the text content.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="useInnerText"/> is set and an element is not an HTML element.</exception>
@@ -267,7 +267,7 @@ public sealed class LocatorAssertions
     /// <param name="expected">The text to find; its white space is normalized too.</param>
     /// <param name="ignoreCase">A value indicating whether case is ignored.</param>
     /// <param name="useInnerText">A value indicating whether to read the rendered text rather than the text content.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -283,7 +283,7 @@ public sealed class LocatorAssertions
     /// </summary>
     /// <param name="expected">The regular expression, which may match anywhere in the text.</param>
     /// <param name="useInnerText">A value indicating whether to read the rendered text rather than the text content.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -301,7 +301,7 @@ public sealed class LocatorAssertions
     /// <param name="expected">The texts to find; their white space is normalized too.</param>
     /// <param name="ignoreCase">A value indicating whether case is ignored.</param>
     /// <param name="useInnerText">A value indicating whether to read the rendered text rather than the text content.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="useInnerText"/> is set and an element is not an HTML element.</exception>
@@ -317,7 +317,7 @@ public sealed class LocatorAssertions
     /// </summary>
     /// <param name="expected">The regular expressions.</param>
     /// <param name="useInnerText">A value indicating whether to read the rendered text rather than the text content.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="useInnerText"/> is set and an element is not an HTML element.</exception>
@@ -331,7 +331,7 @@ public sealed class LocatorAssertions
     /// Expects the value of an input, a text area, or a select to be a string.
     /// </summary>
     /// <param name="expected">The value.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -346,7 +346,7 @@ public sealed class LocatorAssertions
     /// Expects the value of an input, a text area, or a select to match a regular expression.
     /// </summary>
     /// <param name="expected">The regular expression, which may match anywhere in the value.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -361,7 +361,7 @@ public sealed class LocatorAssertions
     /// Expects the element to have an attribute, with any value.
     /// </summary>
     /// <param name="name">The attribute's name.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -377,7 +377,7 @@ public sealed class LocatorAssertions
     /// <param name="name">The attribute's name.</param>
     /// <param name="value">The value.</param>
     /// <param name="ignoreCase">A value indicating whether case is ignored.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -393,7 +393,7 @@ public sealed class LocatorAssertions
     /// </summary>
     /// <param name="name">The attribute's name.</param>
     /// <param name="value">The regular expression, which may match anywhere in the value.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -408,7 +408,7 @@ public sealed class LocatorAssertions
     /// Expects the element's id attribute to be a string.
     /// </summary>
     /// <param name="expected">The value.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -423,7 +423,7 @@ public sealed class LocatorAssertions
     /// Expects the element's id attribute to match a regular expression.
     /// </summary>
     /// <param name="expected">The regular expression, which may match anywhere in the value.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -438,7 +438,7 @@ public sealed class LocatorAssertions
     /// Expects the element's whole class attribute to be a string.
     /// </summary>
     /// <param name="expected">The value.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -453,7 +453,7 @@ public sealed class LocatorAssertions
     /// Expects the element's class attribute to match a regular expression.
     /// </summary>
     /// <param name="expected">The regular expression, which may match anywhere in the value.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -469,7 +469,7 @@ public sealed class LocatorAssertions
     /// </summary>
     /// <param name="name">The property's name, such as <c>color</c>.</param>
     /// <param name="value">The computed value, such as <c>rgb(0, 0, 0)</c>.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -484,7 +484,7 @@ public sealed class LocatorAssertions
     /// </summary>
     /// <param name="name">The property's name, such as <c>color</c>.</param>
     /// <param name="value">The regular expression, which may match anywhere in the value.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>

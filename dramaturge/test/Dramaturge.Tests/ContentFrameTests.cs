@@ -94,7 +94,7 @@ public class ContentFrameTests
     {
         FakeTimeProvider time = new();
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
-        BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new AutomationOptions() { PollInterval = PollInterval, TimeProvider = time }, TestContext.Current.CancellationToken);
+        BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new DramaturgeOptions() { PollInterval = PollInterval, TimeProvider = time }, TestContext.Current.CancellationToken);
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         await session.CreateFrameAsync(page.Id);
         await driver.Session.StatusAsync(new WebDriverBiDi.Session.StatusCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);

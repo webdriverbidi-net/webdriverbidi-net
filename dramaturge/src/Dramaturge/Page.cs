@@ -194,7 +194,7 @@ public sealed class Page
     }
 
     /// <summary>
-    /// Creates a locator for elements by their test ID, the value of the <see cref="AutomationOptions.TestIdAttribute"/> attribute, in the page's main frame.
+    /// Creates a locator for elements by their test ID, the value of the <see cref="DramaturgeOptions.TestIdAttribute"/> attribute, in the page's main frame.
     /// </summary>
     /// <param name="testId">The test ID, matched exactly.</param>
     /// <returns>The locator.</returns>
@@ -235,7 +235,7 @@ public sealed class Page
     /// </summary>
     /// <param name="url">The URL.</param>
     /// <param name="wait">How far the new document must load before the navigation completes.</param>
-    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the navigation.</param>
     /// <returns>The URL navigated to, after any redirects.</returns>
     public Task<string> NavigateAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -247,7 +247,7 @@ public sealed class Page
     /// Reloads the page.
     /// </summary>
     /// <param name="wait">How far the reloaded document must load before the reload completes.</param>
-    /// <param name="timeout">The time the reload may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time the reload may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the reload.</param>
     /// <returns>The URL reloaded.</returns>
     public Task<string> ReloadAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -260,7 +260,7 @@ public sealed class Page
     /// a state, or a change of URL within the document.
     /// </summary>
     /// <param name="wait">How far a new document must load.</param>
-    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the navigation.</param>
     /// <returns>The page's URL after the navigation.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the page does not navigate, or the document does not load, in time.</exception>
@@ -274,7 +274,7 @@ public sealed class Page
     /// as a state, or a change of URL within the document.
     /// </summary>
     /// <param name="wait">How far a new document must load.</param>
-    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the navigation.</param>
     /// <returns>The page's URL after the navigation.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the page does not navigate, or the document does not load, in time.</exception>
@@ -288,7 +288,7 @@ public sealed class Page
     /// for the main frame.
     /// </summary>
     /// <param name="state">The state.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the document has loaded as far as the state.</returns>
     public Task WaitForLoadStateAsync(ReadinessState state = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -301,7 +301,7 @@ public sealed class Page
     /// </summary>
     /// <param name="url">The full URL.</param>
     /// <param name="wait">How far the document must load once the URL matches.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The page's URL.</returns>
     public Task<string> WaitForUrlAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -314,7 +314,7 @@ public sealed class Page
     /// </summary>
     /// <param name="url">The regular expression, matched against the full URL.</param>
     /// <param name="wait">How far the document must load once the URL matches.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The page's URL.</returns>
     public Task<string> WaitForUrlAsync(Regex url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -327,7 +327,7 @@ public sealed class Page
     /// </summary>
     /// <param name="url">The condition, given the full URL.</param>
     /// <param name="wait">How far the document must load once the URL matches.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The page's URL.</returns>
     public Task<string> WaitForUrlAsync(Func<string, bool> url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -341,7 +341,7 @@ public sealed class Page
     /// </summary>
     /// <param name="action">The action.</param>
     /// <param name="wait">How far a new document must load.</param>
-    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The page's URL after the navigation.</returns>
     public Task<string> RunAndWaitForNavigationAsync(Func<Task> action, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -354,7 +354,7 @@ public sealed class Page
     /// </summary>
     /// <param name="function">The function's declaration.</param>
     /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the call.</param>
     /// <returns>The function's result.</returns>
     public Task<RemoteValue> EvaluateAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -369,7 +369,7 @@ public sealed class Page
     /// <typeparam name="T">The type to convert the result to.</typeparam>
     /// <param name="function">The function's declaration.</param>
     /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time the call may take, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the call.</param>
     /// <returns>The function's result, converted.</returns>
     public Task<T> EvaluateAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -383,7 +383,7 @@ public sealed class Page
     /// </summary>
     /// <param name="function">The function's declaration.</param>
     /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The truthy value.</returns>
     public Task<RemoteValue> WaitForFunctionAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -398,7 +398,7 @@ public sealed class Page
     /// <typeparam name="T">The type to convert the value to.</typeparam>
     /// <param name="function">The function's declaration.</param>
     /// <param name="arguments">The arguments, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The truthy value, converted.</returns>
     public Task<T> WaitForFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -412,7 +412,7 @@ public sealed class Page
     /// </summary>
     /// <param name="html">The HTML.</param>
     /// <param name="wait">How far the document must load.</param>
-    /// <param name="timeout">The time it may take, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time it may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the document has loaded as far as the state.</returns>
     public Task SetContentAsync(string html, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -440,7 +440,7 @@ public sealed class Page
     /// to begin.
     /// </summary>
     /// <param name="action">The action.</param>
-    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The download.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no download begins in time.</exception>
@@ -599,7 +599,7 @@ public sealed class Page
     /// </summary>
     /// <param name="action">The action.</param>
     /// <param name="url">The request's full URL.</param>
-    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The request's event.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such request is sent in time.</exception>
@@ -613,7 +613,7 @@ public sealed class Page
     /// </summary>
     /// <param name="action">The action.</param>
     /// <param name="url">The regular expression, matched against the request's full URL.</param>
-    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The request's event.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such request is sent in time.</exception>
@@ -627,7 +627,7 @@ public sealed class Page
     /// </summary>
     /// <param name="action">The action.</param>
     /// <param name="request">The condition, given the request.</param>
-    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The request's event.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such request is sent in time.</exception>
@@ -641,7 +641,7 @@ public sealed class Page
     /// </summary>
     /// <param name="action">The action.</param>
     /// <param name="url">The request's full URL.</param>
-    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The event of the completed response.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such response completes in time.</exception>
@@ -656,7 +656,7 @@ public sealed class Page
     /// </summary>
     /// <param name="action">The action.</param>
     /// <param name="url">The regular expression, matched against the request's full URL.</param>
-    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The event of the completed response.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such response completes in time.</exception>
@@ -670,7 +670,7 @@ public sealed class Page
     /// </summary>
     /// <param name="action">The action.</param>
     /// <param name="request">The condition, given the request.</param>
-    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The event of the completed response.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such response completes in time.</exception>

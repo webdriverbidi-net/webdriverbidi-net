@@ -334,7 +334,7 @@ public class ElementLocatorTests
     private static async Task<(BiDiDriver Driver, FakeSession Session, BrowserGroup Group)> ConnectAsync(TimeProvider? time = null)
     {
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
-        AutomationOptions options = new() { PollInterval = PollInterval, TimeProvider = time ?? TimeProvider.System };
+        DramaturgeOptions options = new() { PollInterval = PollInterval, TimeProvider = time ?? TimeProvider.System };
         BrowserGroup group = await BrowserGroup.ConnectAsync(driver, options, TestContext.Current.CancellationToken);
         return (driver, session, group);
     }

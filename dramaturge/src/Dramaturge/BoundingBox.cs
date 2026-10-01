@@ -21,13 +21,13 @@ public sealed record BoundingBox(Frame Frame, double X, double Y, double Width, 
     /// frame element that is transformed, such as scaled or rotated, makes the result wrong.
     /// </summary>
     /// <param name="origin">What the result is measured from: the main frame's viewport, as <see cref="Page.Mouse"/> coordinates are, or its document.</param>
-    /// <param name="timeout">The time the conversion may take, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time the conversion may take, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the conversion.</param>
     /// <returns>The box, belonging to the page's main frame. A box of the main frame measured from the viewport is returned as it is.</returns>
     /// <exception cref="InvalidOperationException">Thrown when a frame's element cannot be found in its parent, such as one within a shadow root.</exception>
     public async Task<BoundingBox> ToTopLevelAsync(CoordinateOrigin origin = CoordinateOrigin.Viewport, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        AutomationOptions options = this.Frame.Page.Browser.Group.Options;
+        DramaturgeOptions options = this.Frame.Page.Browser.Group.Options;
         TimeBudget budget = new(timeout ?? options.ActionTimeout, options.TimeProvider, cancellationToken);
         double x = this.X;
         double y = this.Y;

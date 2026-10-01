@@ -37,7 +37,7 @@ public sealed class PageAssertions
     /// </summary>
     /// <param name="expected">The URL.</param>
     /// <param name="ignoreCase">A value indicating whether case is ignored.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the page is closed while waiting.</exception>
@@ -52,7 +52,7 @@ public sealed class PageAssertions
     /// <see cref="ToHaveUrlAsync(string, bool, TimeSpan?, CancellationToken)"/>.
     /// </summary>
     /// <param name="expected">The regular expression, which may match anywhere in the URL.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the page is closed while waiting.</exception>
@@ -67,7 +67,7 @@ public sealed class PageAssertions
     /// </summary>
     /// <param name="expected">The title; its white space is normalized too.</param>
     /// <param name="ignoreCase">A value indicating whether case is ignored.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>
@@ -80,7 +80,7 @@ public sealed class PageAssertions
     /// Expects the page's title, with white space normalized, to match a regular expression.
     /// </summary>
     /// <param name="expected">The regular expression, which may match anywhere in the title.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>

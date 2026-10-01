@@ -124,7 +124,7 @@ public sealed class ElementLocator
     }
 
     /// <summary>
-    /// Creates a locator for elements by their test ID, the value of the <see cref="AutomationOptions.TestIdAttribute"/> attribute, within the elements this locator finds.
+    /// Creates a locator for elements by their test ID, the value of the <see cref="DramaturgeOptions.TestIdAttribute"/> attribute, within the elements this locator finds.
     /// </summary>
     /// <param name="testId">The test ID, matched exactly.</param>
     /// <returns>The locator.</returns>
@@ -282,7 +282,7 @@ public sealed class ElementLocator
     /// Waits for the element to reach a state, looking it up again until it does.
     /// </summary>
     /// <param name="state">The state.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the element is in the state.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches, for any state but <see cref="ElementState.Detached"/>.</exception>
@@ -302,7 +302,7 @@ public sealed class ElementLocator
     /// and its document has been loaded. The frame is found once; if the element's document is later replaced, the
     /// returned frame reports <see cref="Frame.IsDetached"/>, and this method finds the new one.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The frame.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -414,7 +414,7 @@ public sealed class ElementLocator
     /// </summary>
     /// <param name="type">The event type, such as <c>click</c>.</param>
     /// <param name="eventInit">The event's init properties, such as <c>clientX</c>, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait and the command.</param>
     /// <returns><see langword="false"/> if a listener canceled the event; otherwise, <see langword="true"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -431,7 +431,7 @@ public sealed class ElementLocator
     /// <summary>
     /// Scrolls the element into view, once it is visible and stable, unless it is in view already.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the element is in view.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -445,7 +445,7 @@ public sealed class ElementLocator
     /// <summary>
     /// Focuses the element, once one matches.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the element has been focused.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -459,7 +459,7 @@ public sealed class ElementLocator
     /// <summary>
     /// Removes focus from the element, once one matches.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when focus has been removed from the element.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -626,7 +626,7 @@ public sealed class ElementLocator
     /// Sets the files of a file input, once one matches. The paths are on the machine the browser runs on.
     /// </summary>
     /// <param name="files">The paths of the files; none clears the input.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait and the command.</param>
     /// <returns>A task that completes when the files have been set.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -655,7 +655,7 @@ public sealed class ElementLocator
     /// <summary>
     /// Gets a value indicating whether the element is enabled, once one matches.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns><see langword="true"/> if the element is enabled; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -668,7 +668,7 @@ public sealed class ElementLocator
     /// <summary>
     /// Gets a value indicating whether the element is disabled, once one matches.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns><see langword="true"/> if the element is disabled; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -682,7 +682,7 @@ public sealed class ElementLocator
     /// Gets a value indicating whether the element can be edited, being neither disabled nor read-only, once one
     /// matches.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns><see langword="true"/> if the element can be edited; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -697,7 +697,7 @@ public sealed class ElementLocator
     /// Gets a value indicating whether a checkbox or radio button is checked, once one matches. An element in a
     /// mixed state is not checked.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns><see langword="true"/> if the element is checked; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -713,7 +713,7 @@ public sealed class ElementLocator
     /// <summary>
     /// Gets the text content of the element, which includes the text of hidden descendants, once one matches.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The text content.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -728,7 +728,7 @@ public sealed class ElementLocator
     /// <summary>
     /// Gets the text of the element as it is rendered, once one matches.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The rendered text.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -744,7 +744,7 @@ public sealed class ElementLocator
     /// <summary>
     /// Gets the HTML of the element's contents, once one matches.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The HTML.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -757,7 +757,7 @@ public sealed class ElementLocator
     /// <summary>
     /// Gets the value of an input, a text area, or a select, once one matches.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The value; for a select, the value of its first selected option, or empty if none is selected.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -774,7 +774,7 @@ public sealed class ElementLocator
     /// Gets the value of an attribute of the element, once one matches.
     /// </summary>
     /// <param name="name">The attribute's name.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The value, or <see langword="null"/> if the element does not have the attribute.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -789,7 +789,7 @@ public sealed class ElementLocator
     /// Gets the box the element occupies, in its frame's viewport, once one matches. For the box in the page's
     /// coordinates, such as for <see cref="Page.Mouse"/>, see <see cref="BoundingBox.ToTopLevelAsync"/>.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The box, or <see langword="null"/> if the element is not visible.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -808,7 +808,7 @@ public sealed class ElementLocator
     /// Captures an image of the element, once it is visible and stable, whether or not it is scrolled into view.
     /// </summary>
     /// <param name="format">The image format, or <see langword="null"/> for PNG.</param>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait and the capture.</param>
     /// <returns>The image.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -837,7 +837,7 @@ public sealed class ElementLocator
     /// </summary>
     /// <param name="function">The function's declaration, such as <c>(element, name) =&gt; element.dataset[name]</c>.</param>
     /// <param name="arguments">The arguments after the element, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time to wait for the element, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait for the element, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait and the call.</param>
     /// <returns>The function's result.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
@@ -863,7 +863,7 @@ public sealed class ElementLocator
     /// <typeparam name="T">The type to convert the result to.</typeparam>
     /// <param name="function">The function's declaration.</param>
     /// <param name="arguments">The arguments after the element, or <see langword="null"/> for none.</param>
-    /// <param name="timeout">The time to wait for the element, or <see langword="null"/> for <see cref="AutomationOptions.ActionTimeout"/>.</param>
+    /// <param name="timeout">The time to wait for the element, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait and the call.</param>
     /// <returns>The function's result, converted.</returns>
     public async Task<T> EvaluateAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
@@ -910,7 +910,7 @@ public sealed class ElementLocator
     /// </summary>
     /// <param name="expected">What the expectation requires, negation included, such as <c>not to be visible</c>.</param>
     /// <param name="isNot">A value indicating whether the expectation is negated.</param>
-    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <param name="observe">One check, returning <see langword="null"/> when the element was removed while it was checked.</param>
     /// <returns>A task that completes when the expectation is met.</returns>

@@ -18,7 +18,7 @@ public class ActionOptions
 
     /// <summary>
     /// Gets the time the action may wait for the element, or <see langword="null"/> for
-    /// <see cref="AutomationOptions.ActionTimeout"/>.
+    /// <see cref="DramaturgeOptions.ActionTimeout"/>.
     /// </summary>
     public TimeSpan? Timeout { get; init; }
 }

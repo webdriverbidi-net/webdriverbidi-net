@@ -51,13 +51,13 @@ public sealed class Download
     /// <summary>
     /// Waits for the download to end, completed or canceled.
     /// </summary>
-    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.NavigationTimeout"/>.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>How the download ended.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the download does not end in time.</exception>
     public Task<DownloadOutcome> WaitForEndAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        AutomationOptions options = this.Page.Browser.Group.Options;
+        DramaturgeOptions options = this.Page.Browser.Group.Options;
         TimeBudget budget = new(timeout ?? options.NavigationTimeout, options.TimeProvider, cancellationToken);
         return budget.WaitAsync(this.ended.Task, $"the download of {this.Url} to end");
     }

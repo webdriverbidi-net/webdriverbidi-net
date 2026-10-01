@@ -255,7 +255,7 @@ public class NetworkTests
     {
         FakeTimeProvider time = new();
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
-        BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new AutomationOptions() { TimeProvider = time }, TestContext.Current.CancellationToken);
+        BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new DramaturgeOptions() { TimeProvider = time }, TestContext.Current.CancellationToken);
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         return (driver, session, group, page, time);
     }

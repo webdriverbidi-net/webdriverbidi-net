@@ -61,7 +61,7 @@ public class ShadowDomTests
 
         await page.Locate(new CssLocator("button")).CountAsync(TestContext.Current.CancellationToken);
 
-        Assert.False(new AutomationOptions().PierceShadowRoots);
+        Assert.False(new DramaturgeOptions().PierceShadowRoots);
         Assert.Empty(session.RemoteEnd.CommandsFor("script.callFunction"));
         Assert.False(Assert.Single(session.RemoteEnd.CommandsFor("browsingContext.locateNodes"))["params"]!.AsObject().ContainsKey("startNodes"));
     }
@@ -137,7 +137,7 @@ public class ShadowDomTests
     private static async Task<(BiDiDriver Driver, FakeSession Session, Page Page)> OpenPageAsync(bool pierce = false)
     {
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
-        BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new AutomationOptions() { PierceShadowRoots = pierce }, TestContext.Current.CancellationToken);
+        BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new DramaturgeOptions() { PierceShadowRoots = pierce }, TestContext.Current.CancellationToken);
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         return (driver, session, page);
     }

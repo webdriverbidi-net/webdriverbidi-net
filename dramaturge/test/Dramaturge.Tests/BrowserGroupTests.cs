@@ -17,7 +17,7 @@ public class BrowserGroupTests
     public async Task LaunchedGroupStartsSessionAndEndsItWhenDisposed()
     {
         await using ScriptedBiDiServer server = await ScriptedBiDiServer.StartAsync();
-        AutomationOptions options = new();
+        DramaturgeOptions options = new();
 
         BrowserGroup group = await BrowserGroup.LaunchAsync(Launcher(server), options, TestContext.Current.CancellationToken);
         bool wasStarted = group.Driver.IsStarted;
@@ -115,7 +115,7 @@ public class BrowserGroupTests
     {
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
         await using BiDiDriver ownedDriver = driver;
-        AutomationOptions options = new();
+        DramaturgeOptions options = new();
 
         BrowserGroup group = await BrowserGroup.ConnectAsync(driver, options, TestContext.Current.CancellationToken);
         await group.DisposeAsync();

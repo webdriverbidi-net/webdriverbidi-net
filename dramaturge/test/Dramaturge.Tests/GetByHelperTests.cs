@@ -108,7 +108,7 @@ public class GetByHelperTests
     {
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
         await using BiDiDriver ownedDriver = driver;
-        await using BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new AutomationOptions() { TestIdAttribute = "data-qa" }, TestContext.Current.CancellationToken);
+        await using BrowserGroup group = await BrowserGroup.ConnectAsync(driver, new DramaturgeOptions() { TestIdAttribute = "data-qa" }, TestContext.Current.CancellationToken);
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         await page.GetByTestId("submit").CountAsync(TestContext.Current.CancellationToken);
@@ -196,14 +196,14 @@ public class GetByHelperTests
     [InlineData(null)]
     public void TestIdAttributeMustBeAnAttributeName(string? name)
     {
-        Assert.Equal("TestIdAttribute", Assert.Throws<ArgumentException>(() => new AutomationOptions() { TestIdAttribute = name! }).ParamName);
+        Assert.Equal("TestIdAttribute", Assert.Throws<ArgumentException>(() => new DramaturgeOptions() { TestIdAttribute = name! }).ParamName);
     }
 
     [Fact]
     public void TestIdAttributeDefaultsToDataTestId()
     {
-        Assert.Equal("data-testid", new AutomationOptions().TestIdAttribute);
-        Assert.Equal("_qa-id2", new AutomationOptions() { TestIdAttribute = "_qa-id2" }.TestIdAttribute);
+        Assert.Equal("data-testid", new DramaturgeOptions().TestIdAttribute);
+        Assert.Equal("_qa-id2", new DramaturgeOptions() { TestIdAttribute = "_qa-id2" }.TestIdAttribute);
     }
 
     private static async Task<(BiDiDriver Driver, FakeSession Session, Page Page)> OpenPageAsync()
