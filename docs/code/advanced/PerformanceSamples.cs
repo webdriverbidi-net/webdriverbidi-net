@@ -11,10 +11,10 @@ namespace WebDriverBiDi.Docs.Code.Advanced;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
-using Dramaturge.Browsers;
 using WebDriverBiDi;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Docs.Code.Examples;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
 using WebDriverBiDi.Protocol;
@@ -45,12 +45,9 @@ public class PerformanceSamples
     public static async Task PipeConnection()
     {
         #region PipeConnection
-        // Pipe connection (Chromium only)
-        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
-            .WithReleaseChannel(BrowserReleaseChannel.Stable)
-            .AtAutomaticallyDownloadedLocation()
-            .WithConnection(ConnectionKind.Pipes)
-            .Build();
+        // Your own IPipeServerProcessProvider, which launches Chromium with --remote-debugging-pipe and whose
+        // CreateTransport() installs a BiDi-over-CDP mapper (see Browser Setup).
+        MyChromiumPipeLauncher launcher = new MyChromiumPipeLauncher();
 
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();

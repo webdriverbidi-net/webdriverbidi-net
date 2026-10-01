@@ -34,11 +34,9 @@ Most users should use `BiDiDriver` directly without worrying about connections:
 
 This is sufficient for 95% of use cases. The driver creates a WebSocket connection internally.
 
-### Using a Browser Launcher (Best for Local Automation)
+### Launching the Browser
 
-For local automation, use a browser launcher to manage the process and connection. The `WebDriverBiDi` package does not ship a launcher; the samples in this article use `BrowserLauncher` from the `WebDriverBiDi.Browsers` package (see [Browser Setup](../browser-setup.md#using-webdriverbidibrowsers)). The pattern:
-
-[!code-csharp[Using a Browser Launcher](../../code/advanced/ConnectionManagementSamples.cs#UsingaBrowserLauncher)]
+The `WebDriverBiDi` package does not ship a browser launcher. Start the browser, or its driver executable, yourself and connect to the endpoint it reports (see [Browser Setup](../browser-setup.md)), or use the Dramaturge.Browsers package, which downloads and launches browsers and creates the transport for you.
 
 ## When You Might Need Connection Management
 
@@ -324,7 +322,7 @@ Use pipes only when:
 
 ### Using Pipes with a Custom Launcher
 
-The sample below uses the demonstration `BrowserLauncher` (see above); to build your own, implement `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe` and provide the `Transport`:
+The sample below uses `MyChromiumPipeLauncher`, the launcher of your own sketched in [Browser Setup](../browser-setup.md#pipe-connection): it implements `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe`, and provides a `Transport` that installs a BiDi-over-CDP mapper:
 
 [!code-csharp[Using Pipes with Launcher](../../code/advanced/ConnectionManagementSamples.cs#UsingPipeswithLauncher)]
 
@@ -509,9 +507,7 @@ Usage: create the custom connection, wrap in transport, and pass to BiDiDriver:
 
 ### 2. Use a Browser Launcher for Local Automation
 
-Use a launcher to manage the browser process and connection (the sample uses the demonstration `BrowserLauncher`; your own would start a driver executable such as chromedriver, create a session with the `webSocketUrl: true` capability, then connect to the returned URL — see [Browser Setup](../browser-setup.md)):
-
-[!code-csharp[Best Practice Browser Launcher](../../code/advanced/ConnectionManagementSamples.cs#BestPracticeBrowserLauncher)]
+Let a launcher manage the browser process and connection. One of your own starts a driver executable such as chromedriver, creates a session with the `webSocketUrl: true` capability, and connects to the returned URL; see the [WebSocket Launcher Pattern](../browser-setup.md#websocket-launcher-pattern). The Dramaturge.Browsers package does this for you.
 
 ### 3. Always Clean Up
 

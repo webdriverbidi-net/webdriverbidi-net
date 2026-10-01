@@ -15,7 +15,7 @@ dotnet add package Dramaturge.Browsers
 
 ## Quick Start
 
-<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersQuickStart -->
+<!-- readme-csharp: docs/code/BrowsersReadmeSamples.cs#BrowsersQuickStart -->
 ```csharp
 using WebDriverBiDi;
 using Dramaturge.Browsers;
@@ -49,7 +49,7 @@ Disposing the launcher closes the browser and deletes its temporary profile.
 - **Launch:** the browser is launched directly by default; `LaunchUsingDriver()` launches it through its driver executable, which is downloaded too, in the version that matches the browser, including an installed Chrome or Edge. Safari is always launched through safaridriver, from its installed location.
 - **Settings:** `WithHeadlessOption`, `WithArguments`, `WithoutDefaultArguments`, `WithEnvironmentVariable`, `WithUserDataDirectory`, and `WithLaunchTimeout` apply to any browser; `WithBrowserOptions` takes settings for one browser, such as `ChromeLaunchOptions.UseHeadlessShell` or `FirefoxLaunchOptions.Preferences`.
 
-<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersChoosingBrowser -->
+<!-- readme-csharp: docs/code/BrowsersReadmeSamples.cs#BrowsersChoosingBrowser -->
 ```csharp
 using Dramaturge.Browsers;
 
@@ -79,7 +79,7 @@ await using BrowserLauncher installedChrome = BrowserLauncher.Configure(BrowserK
 
 `LaunchUsingRemoteGrid` creates the session on a Selenium Grid or a cloud service. The URL carries the grid's port and path, `RemoteGridOptions` the headers of the requests, and `WithSessionCapability` the capabilities of the session:
 
-<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersRemoteGrid -->
+<!-- readme-csharp: docs/code/BrowsersReadmeSamples.cs#BrowsersRemoteGrid -->
 ```csharp
 using Dramaturge.Browsers;
 
@@ -96,7 +96,7 @@ await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chr
 
 `WithSessionCapability` also adds capabilities when the browser is launched through its driver. A proxy is given as a `ProxyConfiguration`, and a user prompt handler as a `UserPromptHandler`. For a browser launched directly or connected to, the capabilities go in the `session.new` command that starts the session, from `BrowserLauncher.CreateCapabilityRequest()`:
 
-<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersSessionCapabilities -->
+<!-- readme-csharp: docs/code/BrowsersReadmeSamples.cs#BrowsersSessionCapabilities -->
 ```csharp
 using Dramaturge.Browsers;
 using WebDriverBiDi.Session;
@@ -115,7 +115,7 @@ The capabilities the launcher sets itself (`browserName`, `webSocketUrl`, and, t
 
 `ConnectToExisting` attaches to a browser that is already listening, which the launcher neither starts nor stops: closing the `BrowserInstance` only detaches from it. Give it Firefox's WebDriver BiDi URL (`ws://127.0.0.1:9222/session`), or Chrome's DevTools URL:
 
-<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersConnectToExisting -->
+<!-- readme-csharp: docs/code/BrowsersReadmeSamples.cs#BrowsersConnectToExisting -->
 ```csharp
 using Dramaturge.Browsers;
 
@@ -130,7 +130,7 @@ await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chr
 
 `BrowserLocator.FindBrowserAsync` and `DriverLocator.FindDriverAsync` return the path of a browser or driver, downloading it if needed, for use with other tools:
 
-<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersLocateOnly -->
+<!-- readme-csharp: docs/code/BrowsersReadmeSamples.cs#BrowsersLocateOnly -->
 ```csharp
 using Dramaturge.Browsers;
 
@@ -142,7 +142,7 @@ string? geckodriverPath = await DriverLocator.FindDriverAsync(BrowserKind.Firefo
 
 Downloads are cached per browser, channel, and version, and a cached browser is used without a network request. The version a channel resolves to is rechecked once a day, and if the service cannot be reached, the cached version is used. `BrowserDownloadOptions` changes where browsers are cached and downloaded from:
 
-<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersDownloadOptions -->
+<!-- readme-csharp: docs/code/BrowsersReadmeSamples.cs#BrowsersDownloadOptions -->
 ```csharp
 using Dramaturge.Browsers;
 
@@ -172,7 +172,7 @@ These environment variables set the defaults, so a CI system can configure every
 
 The cache keeps every version it has downloaded. `BrowserCache.List` lists them, with their channel, size, and when a request last resolved to them, and `BrowserCache.RemoveAsync` removes one, waiting for any download into the same channel to finish:
 
-<!-- readme-csharp: docs/code/PackageReadmeSamples.cs#BrowsersCacheManagement -->
+<!-- readme-csharp: docs/code/BrowsersReadmeSamples.cs#BrowsersCacheManagement -->
 ```csharp
 using Dramaturge.Browsers;
 
@@ -250,4 +250,4 @@ Every exception the package throws derives from `WebDriverBiDiException`: `Brows
 
 ## Documentation
 
-See the [Browser Setup Guide](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/browser-setup.html) and the [API reference](https://webdriverbidi-net.github.io/webdriverbidi-net/api/Dramaturge.Browsers.html).
+See the Browser Setup article (`docs/articles/browser-setup.md`) in the Dramaturge documentation.

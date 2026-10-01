@@ -22,7 +22,7 @@ This guide demonstrates common browser automation scenarios using WebDriverBiDi.
 
 [!code-csharp[Network Traffic Monitoring](../../code/examples/CommonScenariosSamples.cs#NetworkTrafficMonitoring)]
 
-To capture each request together with its response and bodies, or to save the traffic as a HAR file, use `NetworkTrafficMonitor` from the [WebDriverBiDi.Extensions](../advanced/webdriverbidi-extensions.md#network-capture) package.
+To capture each request together with its response and bodies, or to save the traffic as a HAR file, see `NetworkTrafficMonitor` in [Dramaturge](https://www.nuget.org/packages/Dramaturge).
 
 ## Multi-Tab Management
 

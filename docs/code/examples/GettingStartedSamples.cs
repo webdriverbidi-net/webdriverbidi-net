@@ -9,7 +9,6 @@ namespace WebDriverBiDi.Docs.Code.Examples;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using Dramaturge.Browsers;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
@@ -143,23 +142,15 @@ public static class GettingStartedSamples
     public static async Task FirstApplication()
     {
         #region FirstApplication
-        // Download Chrome on first use, then launch it. Disposing the launcher closes the browser.
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).Build();
-        Console.WriteLine("Launching Chrome...");
-        BrowserInstance browser = await launcher.LaunchAsync();
-
-        // Create a driver with a 10-second command timeout, over the launcher's transport
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10), launcher.CreateTransport());
+        // Create a driver with a 10-second command timeout
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
 
         try
         {
-            // Connect to the browser, creating a session unless the launch created one
+            // Connect to Firefox, started with --remote-debugging-port=9222, and create a session
             Console.WriteLine("Connecting to browser...");
-            await driver.StartAsync(browser.ConnectionString);
-            if (!launcher.IsBiDiSessionInitialized)
-            {
-                await driver.Session.NewSessionAsync(new NewCommandParameters());
-            }
+            await driver.StartAsync("ws://localhost:9222/session");
+            await driver.Session.NewSessionAsync(new NewCommandParameters());
 
             Console.WriteLine("Connected!");
 
@@ -219,27 +210,19 @@ public static class GettingStartedSamples
     /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task CreatingTheDriver()
     {
-        #region LaunchingtheBrowser
-        await using BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome).Build();
-        BrowserInstance browser = await launcher.LaunchAsync();
-        #endregion
-
         #region CreatingtheDriver
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10), launcher.CreateTransport());
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         #endregion
     }
 
     /// <summary>
     /// Connecting to the browser.
     /// </summary>
-    public static async Task ConnectingToBrowser(BiDiDriver driver, BrowserLauncher launcher, BrowserInstance browser)
+    public static async Task ConnectingToBrowser(BiDiDriver driver)
     {
         #region ConnectingtoBrowser
-        await driver.StartAsync(browser.ConnectionString);
-        if (!launcher.IsBiDiSessionInitialized)
-        {
-            await driver.Session.NewSessionAsync(new NewCommandParameters());
-        }
+        await driver.StartAsync("ws://localhost:9222/session");
+        await driver.Session.NewSessionAsync(new NewCommandParameters());
         #endregion
     }
 

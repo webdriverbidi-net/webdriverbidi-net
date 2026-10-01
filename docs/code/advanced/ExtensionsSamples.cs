@@ -80,21 +80,4 @@ public static class ExtensionsSamples
         await driver.Input.PerformActionsAsync(contextId, builder);
         #endregion
     }
-
-    /// <summary>
-    /// Printing captured traffic as HTTP text.
-    /// </summary>
-    /// <param name="traffic">Captured requests.</param>
-    public static void NetworkRequestText(IReadOnlyList<NetworkRequest> traffic)
-    {
-        #region NetworkRequestText
-        foreach (NetworkRequest request in traffic)
-        {
-            Console.WriteLine(request.GetRequestText());
-
-            // Binary bodies are summarized unless asked for; Display shows the base64, Decode the bytes as UTF-8.
-            Console.WriteLine(request.GetResponseText(Base64DisplayBehavior.NoDisplay));
-        }
-        #endregion
-    }
 }

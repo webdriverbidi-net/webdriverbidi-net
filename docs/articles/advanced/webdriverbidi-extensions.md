@@ -1,6 +1,6 @@
 # WebDriverBiDi.Extensions Package
 
-Conveniences for code that works with the WebDriver BiDi protocol directly: one-call extension methods, an input action builder, and network traffic capture with HAR output.
+Conveniences for code that works with the WebDriver BiDi protocol directly: one-call extension methods and an input action builder.
 
 ## Overview
 
@@ -8,11 +8,10 @@ The core `WebDriverBiDi` package mirrors the protocol: each command takes a para
 
 - **Extension methods** on the modules send one command, or a short fixed sequence, and return natural .NET types.
 - **`InputBuilder`** assembles `input.performActions` sequences.
-- **`NetworkTrafficMonitor`** records a page's traffic, and **`HarGenerator`** writes it as an HTTP Archive.
 
 Every type and method lives in the namespace of the module it belongs with, such as `WebDriverBiDi.BrowsingContext` and `WebDriverBiDi.Network`, so no extra `using` directive is needed.
 
-Nothing here waits for page state, retries, or keeps state between calls, except the monitor, which exists to record. For browsers to drive, see the [Browser Setup Guide](../browser-setup.md).
+Nothing here waits for page state, retries, or keeps state between calls; for that, see [Dramaturge](https://www.nuget.org/packages/Dramaturge), which also records network traffic as HAR files. For browsers to drive, see the [Browser Setup Guide](../browser-setup.md).
 
 ## Installation
 
@@ -72,55 +71,7 @@ Pointer coordinates are fractional CSS pixels. `PointerActionProperties` sets th
 
 Typed text is split into user-perceived characters, so an emoji (including a family, a flag, or one with a skin tone) or a letter with combining accents is sent as one key, on .NET Framework too.
 
-## Network Capture
-
-[!code-csharp[Network Capture](../../code/PackageReadmeSamples.cs#ExtensionsNetworkCapture)]
-
-### What Is Captured
-
-`GetCapturedTrafficAsync` returns the requests recorded since the previous call, in the order they started, once each one has completed or failed and its bodies have been retrieved. A request still in flight when the wait ends is kept for the next call. Stopping the monitor records such a request as failed.
-
-Each hop of a redirect is a separate `NetworkRequest`, with its own `RedirectCount`. The request records:
-- the headers, cookies, and sizes;
-- the fetch timings, as reported when the response completed;
-- the browsing context and navigation it belongs to;
-- the outcome.
-
-Request and response bodies are captured with a network data collector. A binary body is kept as base64, with `IsRequestBodyBase64Encoded` or `IsResponseBodyBase64Encoded` set. A body the browser no longer holds, or one larger than `MaxBodySize`, has the reason in `RequestBodyErrorText` or `ResponseBodyErrorText`. Browsers do not keep redirect bodies.
-
-For a quick look, a request can be printed as HTTP text:
-
-[!code-csharp[Request Text](../../code/advanced/ExtensionsSamples.cs#NetworkRequestText)]
-
-### HAR Files
-
-`HarGenerator.Generate` writes HAR 1.2, which browser developer tools and HAR viewers can open:
-- **Pages:** each navigation becomes a page, and requests are attached to the page of the latest navigation in their browsing context.
-- **Timings:** the phases come from the fetch timing marks. A phase that did not happen is -1, and the entry's `time` is the sum of the phases that did.
-- **Bodies:** a text body is written as text and a binary body as base64.
-- **Failed requests:** these have status 0 and the error in a custom `_error` field.
-
-By default the creator is recorded as this package and its version. `Generate` takes another name and version for tools that wrap it.
-
-### Modifying Requests and Answering Challenges
-
-[!code-csharp[Request Modification](../../code/PackageReadmeSamples.cs#ExtensionsNetworkModification)]
-
-A modification's pattern is a WebDriver BiDi URL pattern string, which the browser matches against each request before it is sent. A matching request is changed as described and continued. A request that cannot be continued is failed rather than left blocked.
-
-The first credentials that match an authentication challenge's scheme and realm are offered. Credentials without a scheme or realm match any challenge. When the browser keeps rejecting the credentials, the challenge is canceled after `MaxAuthAttempts` answers. When no credentials match, the browser handles the challenge as it normally would.
-
-### Limits
-
-The monitor holds requests until they are retrieved. Two limits stop a long session, or one that is never read, from growing without bound:
-- `MaxRetainedRequests`: requests beyond it are not recorded and are counted in `DroppedRequestCount`. A request that the monitor would modify is still modified and continued.
-- `MaxBodySize`: the largest body the browser keeps for the monitor.
-
-For a long session, call `GetCapturedTrafficAsync` periodically.
-
-The options are read once, when monitoring starts. To change them, stop monitoring and start it again. Disposing the monitor stops it and removes the intercepts, data collector, and subscription it added to the browser.
-
 ## See Also
 
-- [Input Module](../modules/input.md) and [Network Module](../modules/network.md): the protocol commands these conveniences send
+- [Input Module](../modules/input.md): the protocol commands these conveniences send
 - [WebDriverBiDi.Extensions NuGet package](https://www.nuget.org/packages/WebDriverBiDi.Extensions)

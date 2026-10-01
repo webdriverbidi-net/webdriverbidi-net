@@ -1,172 +1,8 @@
 # Browser Setup Guide
 
-WebDriverBiDi.NET connects to a browser over a WebSocket (or, for Chromium, a pipe) that speaks WebDriver BiDi. There are two ways to get one:
+WebDriverBiDi.NET connects to a browser over a WebSocket (or, for Chromium, a pipe) that speaks WebDriver BiDi. The `WebDriverBiDi` package does not launch browsers: you start the browser, or its driver executable, and connect to the endpoint it reports, as this guide describes for each browser. To download and launch browsers from code instead, see the [Dramaturge.Browsers](https://www.nuget.org/packages/Dramaturge.Browsers) package, part of the Dramaturge automation library built on WebDriverBiDi.NET.
 
-- **The `WebDriverBiDi.Browsers` package** (recommended) downloads, launches, and connects to the browser for you, locally, on a remote grid, or already running.
-- **Setting the browser up yourself**, with its driver executable or its own remote debugging endpoint, and connecting to the URL it reports. This is what the package does for you, described step by step.
-
-## Using WebDriverBiDi.Browsers
-
-```bash
-dotnet add package WebDriverBiDi.Browsers
-```
-
-### Launching and Connecting
-
-A `BrowserLauncher` starts the browser, and creates the `Transport` over which a `BiDiDriver` talks to it. The first launch downloads the browser into a local cache:
-
-[!code-csharp[Launch and Connect](../code/PackageReadmeSamples.cs#BrowsersQuickStart)]
-
-A browser launched through its driver executable already has a WebDriver BiDi session, so `IsBiDiSessionInitialized` tells you whether to create one. Disposing the launcher closes the browser and deletes its temporary profile.
-
-### Choosing the Browser
-
-`BrowserLauncher.Configure` takes the browser (Chrome, Firefox, Edge, or Safari), and the builder chooses how it is found and launched:
-
-| Setting | Methods | Default |
-| --- | --- | --- |
-| Channel | `WithReleaseChannel`: `Stable`, `Beta`, `DeveloperPreview` (Chrome Dev, Firefox Developer Edition, Edge Dev, Safari Technology Preview), `Alpha` (Chrome Canary, Firefox Nightly, Edge Canary), `ExtendedSupport` (Firefox ESR) | `Stable` |
-| Version | `WithVersion`: `BrowserVersion.Latest`, `BrowserVersion.Specific("…")`, or, for Chrome, `BrowserVersion.Milestone(131)`; not for Edge or Safari, which are never downloaded | The latest of the channel |
-| Location | `AtAutomaticallyDownloadedLocation()`, `AtDefaultInstallationLocation()`, `AtLocation(path)` | Downloaded (Edge and Safari: installed) |
-| Launch | Directly, or `LaunchUsingDriver()` through chromedriver, geckodriver, msedgedriver, or safaridriver | Directly (Safari: always through safaridriver) |
-| Connection | `WithConnection(ConnectionKind.Pipes)`, for Chrome or Edge launched directly | WebSocket |
-| Browser settings | `WithHeadlessOption`, `WithArguments`, `WithoutDefaultArguments`, `WithEnvironmentVariable`, `WithUserDataDirectory`, `WithLaunchTimeout` | |
-| Per-browser settings | `WithBrowserOptions(new ChromeLaunchOptions { … })` or `FirefoxLaunchOptions` | |
-
-[!code-csharp[Choosing the Browser](../code/PackageReadmeSamples.cs#BrowsersChoosingBrowser)]
-
-`Build()` checks that the settings can be used together, and throws `BrowserLauncherConfigurationException` if they cannot.
-
-A driver launched for an installed browser matches it: for an installed Chrome, or one at a location you give, the chromedriver of its version is downloaded, or, for a build that Chrome for Testing or a mirror does not list, the newest chromedriver of the same build, and then of the same major version. If the version cannot be read, the latest chromedriver of the channel is used.
-
-Microsoft publishes Edge only as installers, so the package never downloads it: the installed Edge of the channel is used, or the executable given to `AtLocation`. Launched through its driver, Edge needs the msedgedriver of its own version, so the version of the installed Edge is read, and that msedgedriver is downloaded and checked against the MD5 hash its server reports. Microsoft publishes no Edge for Linux on Arm.
-
-On Linux:
-
-- A Firefox installed as a **Snap or Flatpak** (as Ubuntu's `/usr/bin/firefox` is) cannot read a profile in the temporary directory, so launching it without `WithUserDataDirectory` fails with an explanation. Use the downloaded Firefox, or a profile directory the sandbox can read.
-- Running as **root**, Chrome refuses to start with its sandbox enabled, so `--no-sandbox` is added for you.
-
-### Remote Grids and Running Browsers
-
-`LaunchUsingRemoteGrid` creates the session on a Selenium Grid or a cloud service. The URL carries the grid's port and path prefix, credentials in it are sent as Basic authorization, `RemoteGridOptions` holds the headers of the requests, and `WithSessionCapability` adds the capabilities of the session:
-
-[!code-csharp[Remote Grid](../code/PackageReadmeSamples.cs#BrowsersRemoteGrid)]
-
-#### Session Capabilities
-
-`WithSessionCapability` adds a capability to the request for the new session. With `LaunchUsingDriver` and `LaunchUsingRemoteGrid`, the launcher sends it when it creates the session. A browser launched directly, or connected to with `ConnectToExisting`, gets it from the `session.new` command whoever starts the session sends: `BrowserLauncher.CreateCapabilityRequest()` returns the `CapabilityRequest` to send, and `BrowserGroup.LaunchAsync` in WebDriverBiDi.Automation sends it for you. A capability's value is `null`, a string, a Boolean, a number, a dictionary with string keys, or a sequence of such values. The capabilities the core library types take their type: `proxy` a `ProxyConfiguration`, `unhandledPromptBehavior` a `UserPromptHandler`, `acceptInsecureCerts` a Boolean, and `browserName`, `browserVersion` and `platformName` a string; the first two are written as the core library writes them in `session.new`:
-
-[!code-csharp[Session Capabilities](../code/PackageReadmeSamples.cs#BrowsersSessionCapabilities)]
-
-The launcher sets `browserName` and `webSocketUrl` itself, and, through a driver, the browser's options object (`goog:chromeOptions`, `moz:firefoxOptions`, or Safari's), which it builds from `WithArguments`, `WithHeadlessOption`, `WithUserDataDirectory`, and `WithBrowserOptions`. Adding one of these fails when the launcher is built, as does a value that cannot be written.
-
-`ConnectToExisting` attaches to a browser that is already listening, which the launcher neither starts nor stops: closing the `BrowserInstance` only detaches from it. Give it Firefox's WebDriver BiDi URL (`ws://127.0.0.1:9222/session`), or Chrome's DevTools URL, which is reached through the WebDriver BiDi mapper:
-
-[!code-csharp[Connect to a Running Browser](../code/PackageReadmeSamples.cs#BrowsersConnectToExisting)]
-
-### Locating Without Launching
-
-`BrowserLocator.FindBrowserAsync` and `DriverLocator.FindDriverAsync` return the path of a browser or driver, downloading it if needed, for use with other tools:
-
-[!code-csharp[Locating Without Launching](../code/PackageReadmeSamples.cs#BrowsersLocateOnly)]
-
-### Downloads and the Cache
-
-Downloads are cached per browser, channel, and version, and a cached browser is used without a network request. The version a channel resolves to is rechecked once a day, and if the service cannot be reached, the cached version is used. Failed requests are retried twice. Firefox and geckodriver downloads are verified against their published SHA-256 checksums; Chrome for Testing publishes none, so Chrome downloads are checked against the length and MD5 hash its storage service reports, which detects corruption in transit but not tampering.
-
-`BrowserDownloadOptions` changes where browsers are cached and downloaded from:
-
-[!code-csharp[Download Options](../code/PackageReadmeSamples.cs#BrowsersDownloadOptions)]
-
-These environment variables set the defaults, so a CI system can configure every test run without code changes:
-
-| Variable | Effect |
-| --- | --- |
-| `WEBDRIVERBIDI_BROWSERS_PATH` | The cache directory. The default is a `webdriverbidi-net` directory in the local application data directory (Windows), `~/Library/Caches` (macOS), or `$XDG_CACHE_HOME` or `~/.cache` (Linux). |
-| `WEBDRIVERBIDI_SKIP_DOWNLOAD` | Set to `1` or `true` to use only what is already cached, making no network requests. |
-| `WEBDRIVERBIDI_DOWNLOAD_MANIFEST` | The URL or file path of a mirror manifest (below). |
-| `CHROME_EXECUTABLE`, `FIREFOX_EXECUTABLE`, `EDGE_EXECUTABLE`, `SAFARI_EXECUTABLE` | A browser executable to use in place of locating one. |
-| `CHROMEDRIVER_EXECUTABLE`, `GECKODRIVER_EXECUTABLE`, `MSEDGEDRIVER_EXECUTABLE`, `SAFARIDRIVER_EXECUTABLE` | A driver executable to use in place of locating one. |
-
-#### Cleaning Up the Cache
-
-The cache keeps every version it has downloaded. `BrowserCache.List` lists them as `CachedInstallation` objects, with their channel (none for a driver), size, and when a request for the latest version, or for the driver of a browser version, last resolved to them. `BrowserCache.RemoveAsync` removes one, waiting for any download into the same channel to finish:
-
-[!code-csharp[Cache Management](../code/PackageReadmeSamples.cs#BrowsersCacheManagement)]
-
-A cache is marked with the version of its layout, and a version of this package that cannot read a cache's layout throws `BrowserDownloadException` rather than misreading it, so a newer package can change the layout without an older one corrupting it.
-
-#### Installing Ahead of Time
-
-The `webdriverbidi` command-line tool, from the `WebDriverBiDi.Tool` package, installs browsers and drivers into the same cache before anything launches them, as when building a CI machine image or before a test run:
-
-```bash
-dotnet tool install --global WebDriverBiDi.Tool
-webdriverbidi install chrome chromedriver firefox@beta geckodriver
-webdriverbidi list
-webdriverbidi clear chrome@canary
-```
-
-Each target is a name (`chrome`, `chrome-headless-shell`, `firefox`, `chromedriver`, `geckodriver`, or `msedgedriver`), optionally followed by `@` and a channel (`chrome@beta`, `firefox@nightly`), a Chrome milestone (`chromedriver@131`), or a version (`firefox@134.0`). `install --dry-run` shows the version and URL each target resolves to without downloading it. The tool honors the environment variables above, and `--path` chooses another cache. With `WEBDRIVERBIDI_SKIP_DOWNLOAD` set for the test run, a test that needs a browser the tool did not install fails at once rather than downloading it. The [package README](https://www.nuget.org/packages/WebDriverBiDi.Tool) describes every command.
-
-The same abilities are in the library: `BrowserLocator.ResolveDownloadAsync` and `DriverLocator.ResolveDownloadAsync` resolve what `FindBrowserAsync` and `FindDriverAsync` would download, without downloading it.
-
-### Mirroring Downloads
-
-To download from an internal mirror rather than the vendors' services, set `BrowserDownloadOptions.ManifestUrl` (or `WEBDRIVERBIDI_DOWNLOAD_MANIFEST`) to a manifest listing the builds it holds. Every browser and driver is then resolved through the manifest; one it does not list cannot be downloaded. The manifest is JSON:
-
-```json
-{
-  "schemaVersion": 1,
-  "browsers": {
-    "chrome": {
-      "channels": { "stable": "131.0.6778.204" },
-      "versions": {
-        "131.0.6778.204": {
-          "linux-x64": {
-            "url": "chrome/131.0.6778.204/chrome-linux64.zip",
-            "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
-            "size": 171234567
-          }
-        }
-      }
-    }
-  },
-  "drivers": {
-    "chromedriver": {
-      "versions": {
-        "131.0.6778.204": {
-          "linux-x64": { "url": "chrome/131.0.6778.204/chromedriver-linux64.zip", "sha256": "…" }
-        }
-      }
-    },
-    "geckodriver": {
-      "latest": "0.36.0",
-      "versions": {
-        "0.36.0": {
-          "linux-x64": { "url": "geckodriver/geckodriver-v0.36.0-linux64.tar.gz", "sha256": "…" }
-        }
-      }
-    }
-  }
-}
-```
-
-- **Browsers** are `chrome`, `chrome-headless-shell`, and `firefox`; **drivers** are `chromedriver`, `geckodriver`, and `msedgedriver`.
-- **Channels** are `stable`, `beta`, `dev`, `canary`, `nightly`, and `esr`. A milestone resolves to the highest version listed for it; chromedriver's version follows the browser's (for an installed Chrome whose own is not listed, the closest listed: the newest of the same build, then of the same major version), msedgedriver's is exactly the installed Edge's, and geckodriver's is its `latest`.
-- **Platforms** are `linux-x64`, `linux-arm64`, `linux-x86`, `macos-x64`, `macos-arm64`, `windows-x64`, `windows-x86`, and `windows-arm64`.
-- **Builds** are each vendor's archive, unchanged. Each lists its SHA-256 hash, which is verified, and optionally its size. A URL may be relative to the manifest, so a directory holding the manifest and the archives serves as a mirror with no server (`file:///…/manifest.json`).
-- **Nightly builds** share version numbers, so give each mirrored Nightly build a distinct version string.
-
-### Errors
-
-Every exception the package throws derives from `WebDriverBiDiException`: `BrowserDownloadException` when a browser or driver cannot be located or downloaded, `BrowserLaunchException` (with the exit code and the end of the process output) when one cannot be started, and `BrowserLauncherConfigurationException` when `Build()` finds settings that cannot be used together.
-
-## Setting Up a Browser Manually
-
-This section explains how to obtain a WebDriver BiDi endpoint for each browser yourself and connect WebDriverBiDi.NET to it.
-
-### Overview
+## Overview
 
 `BiDiDriver.StartAsync` needs a WebSocket URL that **speaks WebDriver BiDi**. Which URL that is depends on the browser:
 
@@ -182,9 +18,9 @@ The library supports two connection types, both usable with any of the above:
 - **WebSocket Connection** (default): connects to a WebSocket URL
 - **Pipe Connection**: connects over anonymous pipes to a browser you launched with `--remote-debugging-pipe` (Chromium only; see [Connection Types](#connection-types))
 
-### Chrome / Chromium
+## Chrome / Chromium
 
-#### Through chromedriver (recommended)
+### Through chromedriver (recommended)
 
 chromedriver hosts the BiDi implementation for Chrome: a classic WebDriver session created with the `webSocketUrl: true` capability comes back with a `webSocketUrl` that speaks WebDriver BiDi.
 
@@ -228,11 +64,11 @@ chromedriver hosts the BiDi implementation for Chrome: a classic WebDriver sessi
 
 The session already exists, so **do not call `Session.NewSessionAsync`** on this connection. To finish, call `driver.Session.EndAsync()` (which also closes the browser) or `DELETE http://localhost:9515/session/<sessionId>`, then stop chromedriver.
 
-#### Through a BiDi-over-CDP mapper (advanced)
+### Through a BiDi-over-CDP mapper (advanced)
 
-The [chromium-bidi](https://github.com/GoogleChromeLabs/chromium-bidi) project provides a JavaScript "mapper" that implements WebDriver BiDi on top of CDP. Injecting it into a hidden tab lets a client talk BiDi over the browser's own CDP endpoint (WebSocket or pipe) with no driver executable. The `WebDriverBiDi.Browsers` package does exactly this in its `ChromiumTransport` (a `Transport` subclass that bootstraps the mapper during `ConnectAsync`), which its Chrome launcher uses; it is also the reference for building your own. This is the only route that works over a pipe connection, and it requires `Session.NewSessionAsync` after connecting because the mapper does not create a session.
+The [chromium-bidi](https://github.com/GoogleChromeLabs/chromium-bidi) project provides a JavaScript "mapper" that implements WebDriver BiDi on top of CDP. Injecting it into a hidden tab lets a client talk BiDi over the browser's own CDP endpoint (WebSocket or pipe) with no driver executable. The `Dramaturge.Browsers` package does exactly this in its `ChromiumTransport` (a `Transport` subclass that bootstraps the mapper during `ConnectAsync`), which its Chrome launcher uses; it is also a reference for building your own. This is the only route that works over a pipe connection, and it requires `Session.NewSessionAsync` after connecting because the mapper does not create a session.
 
-### Microsoft Edge
+## Microsoft Edge
 
 Edge is Chromium-based and follows the chromedriver path exactly, using **msedgedriver** (from the [Edge WebDriver page](https://developer.microsoft.com/microsoft-edge/tools/webdriver/)) and `ms:edgeOptions` in place of `goog:chromeOptions`:
 
@@ -240,11 +76,11 @@ Edge is Chromium-based and follows the chromedriver path exactly, using **msedge
 msedgedriver --port=9515
 ```
 
-### Connection Types
+## Connection Types
 
 WebDriverBiDi.NET supports two transport mechanisms for communicating with browsers:
 
-#### WebSocket Connection (Default)
+### WebSocket Connection (Default)
 
 **How it Works:**
 - Your application connects to a WebDriver BiDi WebSocket URL: the `webSocketUrl` of a session created through chromedriver/msedgedriver/geckodriver, or Firefox's `ws://localhost:PORT/session`
@@ -261,7 +97,7 @@ WebDriverBiDi.NET supports two transport mechanisms for communicating with brows
 
 [!code-csharp[WebSocket Connection](../code/examples/BrowserSetupSamples.cs#WebSocketConnection)]
 
-#### Pipe Connection
+### Pipe Connection
 
 **How it Works:**
 - A Chromium browser is launched with `--remote-debugging-pipe`
@@ -282,7 +118,7 @@ WebDriverBiDi.NET supports two transport mechanisms for communicating with brows
 
 **Example:**
 
-> **Note:** The `WebDriverBiDi` package does not include a browser launcher; the `WebDriverBiDi.Browsers` package does. Its Chrome launcher, configured with `WithConnection(ConnectionKind.Pipes)`, implements `IPipeServerProcessProvider` and returns a `ChromiumTransport`, and the example below uses it. To do this yourself, implement `IPipeServerProcessProvider`: launch the browser with `--remote-debugging-pipe` so that it inherits the two anonymous pipe handles `PipeConnection` creates — `PipeConnection.ReadPipeHandle` and `PipeConnection.WritePipeHandle` give you those handles as strings to pass to the child process, and both return an empty string once the connection has started, because the first start disposes the connection's local copies of those handles, so read them before calling `StartAsync` — and pass a mapper-installing `Transport` built over that `PipeConnection` to `BiDiDriver`:
+> **Note:** The `WebDriverBiDi` package does not include a browser launcher. The example below uses `MyChromiumPipeLauncher`, a launcher of your own sketched after it; the `Dramaturge.Browsers` package's Chrome launcher, configured with `WithConnection(ConnectionKind.Pipes)`, is a complete one. To write one, implement `IPipeServerProcessProvider`: launch the browser with `--remote-debugging-pipe` so that it inherits the two anonymous pipe handles `PipeConnection` creates — `PipeConnection.ReadPipeHandle` and `PipeConnection.WritePipeHandle` give you those handles as strings to pass to the child process, and both return an empty string once the connection has started, because the first start disposes the connection's local copies of those handles, so read them before calling `StartAsync` — and pass a mapper-installing `Transport` built over that `PipeConnection` to `BiDiDriver`:
 
 [!code-csharp[Pipe Launcher Pattern](../code/examples/BrowserSetupSamples.cs#PipeLauncherPattern)]
 
@@ -290,7 +126,7 @@ The skeleton of your own `IPipeServerProcessProvider` implementation looks like 
 
 [!code-csharp[Implementing IPipeServerProcessProvider](../code/examples/BrowserSetupSamples.cs#ImplementingIPipeServerProcessProvider)]
 
-#### Comparison
+### Comparison
 
 | Feature | WebSocket | Pipes |
 |---------|-----------|-------|
@@ -303,11 +139,11 @@ The skeleton of your own `IPipeServerProcessProvider` implementation looks like 
 
 **Recommendation:** Start with WebSocket connections through a driver executable for simplicity; switch to pipes only if you need lower latency and are prepared to host the mapper.
 
-### Firefox
+## Firefox
 
 Firefox implements WebDriver BiDi natively, so there are two ways in.
 
-#### Direct: `--remote-debugging-port`
+### Direct: `--remote-debugging-port`
 
 ```bash
 firefox --remote-debugging-port=9222
@@ -317,7 +153,7 @@ Firefox then serves WebDriver BiDi at `ws://localhost:9222/session`. No session 
 
 [!code-csharp[Firefox Direct Connection](../code/examples/BrowserSetupSamples.cs#FirefoxDirectConnection)]
 
-#### Through geckodriver
+### Through geckodriver
 
 1. Download geckodriver from https://github.com/mozilla/geckodriver/releases
 2. Launch geckodriver:
@@ -334,11 +170,11 @@ Firefox then serves WebDriver BiDi at `ws://localhost:9222/session`. No session 
 >
 > See the [Session Module guide](modules/session.md) for full details and capability negotiation options.
 
-#### Note on Firefox Support
+### Note on Firefox Support
 
 Firefox's WebDriver BiDi implementation is actively being developed. Some features may not be available or may behave differently than in Chromium-based browsers.
 
-### Using with Selenium
+## Using with Selenium
 
 If you already use Selenium, let it locate the driver and browser (Selenium Manager) and create the session; ask it for a BiDi WebSocket with `UseWebSocketUrl`, then connect a `BiDiDriver` to the `webSocketUrl` capability:
 
@@ -346,7 +182,7 @@ If you already use Selenium, let it locate the driver and browser (Selenium Mana
 
 WebDriverBiDi.NET does not depend on Selenium; the two share only the session. Stop the `BiDiDriver` before calling `Quit()` on the Selenium driver, which ends the session.
 
-### Docker Container
+## Docker Container
 
 Run the browser *and its driver* in the container and publish the driver's port; never publish a CDP port (`--remote-debugging-address=0.0.0.0`), which speaks CDP and exposes full browser control. The official Selenium images do this for you: `selenium/standalone-chrome` serves a WebDriver endpoint on port 4444 that accepts `webSocketUrl: true` and returns a BiDi URL routed through the container.
 
@@ -356,53 +192,53 @@ docker run -d -p 4444:4444 --shm-size=2g selenium/standalone-chrome:latest
 
 Then create the session at `http://localhost:4444` exactly as in the chromedriver steps above and connect to the returned `webSocketUrl`.
 
-### Common Launch Options
+## Common Launch Options
 
 When the browser is launched by a driver, pass these as `goog:chromeOptions.args` / `ms:edgeOptions.args` / `moz:firefoxOptions.args` in the new-session capabilities; when you launch Firefox directly, put them on the command line.
 
-#### Disable GPU
+### Disable GPU
 
 Useful for headless environments:
 ```
 --disable-gpu
 ```
 
-#### Window Size
+### Window Size
 
 Set initial window size:
 ```
 --window-size=1920,1080
 ```
 
-#### Disable Extensions
+### Disable Extensions
 
 Start without extensions:
 ```
 --disable-extensions
 ```
 
-#### Incognito Mode
+### Incognito Mode
 
 Start in incognito/private mode:
 ```
 --incognito
 ```
 
-#### No Sandbox (Docker/CI)
+### No Sandbox (Docker/CI)
 
 Disable sandboxing (needed in some containerized environments):
 ```
 --no-sandbox
 ```
 
-#### Disable Dev Shm (Docker)
+### Disable Dev Shm (Docker)
 
 Prevent shared memory issues in Docker:
 ```
 --disable-dev-shm-usage
 ```
 
-#### Example CI Launch
+### Example CI Launch
 
 ```json
 {
@@ -417,29 +253,29 @@ Prevent shared memory issues in Docker:
 }
 ```
 
-### Programmatic Browser Launch
+## Programmatic Browser Launch
 
 You can start the driver executable yourself, create the session, and only then connect. The snippet below shows just the session and connection steps; the [WebSocket Launcher Pattern](#websocket-launcher-pattern) further down shows launching the driver process as well:
 
 [!code-csharp[Programmatic Browser Launch](../code/examples/BrowserSetupSamples.cs#ProgrammaticBrowserLaunch)]
 
-### Implementing Your Own Launcher
+## Implementing Your Own Launcher
 
-The `WebDriverBiDi` package itself provides only the protocol client; launching belongs to the `WebDriverBiDi.Browsers` package ([above](#using-webdriverbidibrowsers)). If you need a launcher of your own, for a browser or an environment that package does not cover, the patterns below sketch the two approaches.
+The `WebDriverBiDi` package provides only the protocol client. To launch browsers from code, use the Dramaturge.Browsers package, or write a launcher of your own; the patterns below sketch the two approaches.
 
-#### WebSocket Launcher Pattern
+### WebSocket Launcher Pattern
 
 Start the driver executable, wait for its `/status` endpoint, create a session with `webSocketUrl: true`, and connect to the returned URL. Ending the session closes the browser; then stop the driver process:
 
 [!code-csharp[WebSocket Launcher Pattern](../code/examples/BrowserSetupSamples.cs#WebSocketLauncherPattern)]
 
-#### Pipe Launcher Pattern
+### Pipe Launcher Pattern
 
-For pipe connections (Chromium only), implement `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe` and provide a `Transport` to `BiDiDriver`. Because the pipe carries CDP, that `Transport` must install a BiDi-over-CDP mapper — see `ChromiumTransport` in the `WebDriverBiDi.Browsers` library. See the `Transport` and `PipeConnection` types in the API reference for the interface contract.
+For pipe connections (Chromium only), implement `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe` and provide a `Transport` to `BiDiDriver`. Because the pipe carries CDP, that `Transport` must install a BiDi-over-CDP mapper — see `ChromiumTransport` in the `Dramaturge.Browsers` library. See the `Transport` and `PipeConnection` types in the API reference for the interface contract.
 
-### Troubleshooting
+## Troubleshooting
 
-#### Port Already in Use
+### Port Already in Use
 
 ```
 Error: Port 9515 already in use
@@ -450,7 +286,7 @@ Error: Port 9515 already in use
 - Use a different port: `chromedriver --port=9516`
 - Find and kill the process using the port
 
-#### StartAsync Cannot Connect
+### StartAsync Cannot Connect
 
 ```
 WebDriverBiDiTimeoutException: Could not connect to remote WebSocket server within 10 seconds
@@ -466,14 +302,14 @@ timeout rather than as a refusal.
 - Ensure no firewall is blocking the port
 - Try `http://localhost:9515/status` in a browser to verify the driver is listening
 
-#### Browser Closes Immediately
+### Browser Closes Immediately
 
 **Solutions:**
 - Use `--user-data-dir` to specify a profile
 - Check for conflicting flags
 - Run without `--headless` to debug
 
-#### Connected, but the First Command Fails
+### Connected, but the First Command Fails
 
 If `StartAsync` succeeds and the first command (or `Session.StatusAsync`) fails or times out, the URL is almost certainly a CDP endpoint:
 
@@ -481,13 +317,13 @@ If `StartAsync` succeeds and the first command (or `Session.StatusAsync`) fails 
 - A URL containing `/devtools/browser/` or `/devtools/page/` is Chrome's CDP endpoint; WebDriver BiDi is not spoken there
 - Use the `webSocketUrl` from a driver's new-session response (`ws://localhost:9515/session/<id>`), or Firefox's `ws://localhost:PORT/session`
 
-#### "session not created" After Connecting
+### "session not created" After Connecting
 
 **Cause:** `Session.NewSessionAsync` was called on a connection whose session already exists (any `webSocketUrl` returned by chromedriver, msedgedriver, geckodriver or Selenium).
 
 **Solution:** Call `NewSessionAsync` only on the `/session` endpoints of Firefox or geckodriver, or after connecting through a mapper.
 
-### Best Practices
+## Best Practices
 
 1. **Use a dedicated profile**: `--user-data-dir` (or let the driver create a temporary one) prevents conflicts
 2. **Port selection**: Let the launcher pick a free port. Fix one only when something outside the test must know it in advance, and never share a fixed port between concurrent sessions

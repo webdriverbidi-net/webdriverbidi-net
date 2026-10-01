@@ -55,6 +55,8 @@ jobs:
               - 'docs/tools/validate-doc-regions.sh'
               - 'README.md'
               - 'src/*/README.md'
+              - 'dramaturge/docs/**'
+              - 'dramaturge/src/*/README.md'
             benchmarks:
               - 'src/WebDriverBiDi/**'
               - 'test/WebDriverBiDi.Benchmarks/**'
@@ -76,6 +78,9 @@ jobs:
 
       - name: Validate documentation code regions
         run: ./docs/tools/validate-doc-regions.sh
+
+      - name: Validate Dramaturge documentation code regions
+        run: ./dramaturge/docs/tools/validate-doc-regions.sh
 
   benchmarks:
     name: Benchmarks

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The code samples the Dramaturge articles and package READMEs show, compiled so that they cannot drift from the
+       API. docs/tools/validate-doc-regions.sh checks that every sample an article or README shows is here. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <OutputType>Library</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);CS1998</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/WebDriverBiDi/WebDriverBiDi.csproj" />
+    <ProjectReference Include="../../../src/WebDriverBiDi.Extensions/WebDriverBiDi.Extensions.csproj" />
+    <ProjectReference Include="../../src/Dramaturge.Browsers/Dramaturge.Browsers.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -216,7 +216,7 @@ A classic new-session request to the driver with the `webSocketUrl: true` capabi
 
 **Example:**
 
-> **Note:** The `WebDriverBiDi` package does not ship a browser launcher. The sample uses `BrowserLauncher` from the `WebDriverBiDi.Browsers` package, whose Chromium launcher implements `IPipeServerProcessProvider`; to write your own, implement `IPipeServerProcessProvider` to launch the browser and build a `Transport` over a `PipeConnection` (see [Browser Setup](browser-setup.md#implementing-your-own-launcher)):
+> **Note:** The `WebDriverBiDi` package does not ship a browser launcher. The sample uses `MyChromiumPipeLauncher`, a launcher of your own that implements `IPipeServerProcessProvider` to launch the browser and build a `Transport` over a `PipeConnection` (see [Browser Setup](browser-setup.md#implementing-your-own-launcher)):
 
 [!code-csharp[Pipe Example](../code/architecture/ArchitectureSamples.cs#PipeExample)]
 

@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using Dramaturge.Browsers;
 using OpenQA.Selenium.Chrome;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
@@ -147,13 +146,9 @@ public static class BrowserSetupSamples
     public static async Task PipeLauncherPattern(NavigateCommandParameters navParams)
     {
         #region PipeLauncherPattern
-        // Launcher implements IPipeServerProcessProvider. Its CreateTransport() returns a
-        // ChromiumTransport, which installs the BiDi-over-CDP mapper the pipe requires.
-        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
-            .WithReleaseChannel(BrowserReleaseChannel.Stable)
-            .AtAutomaticallyDownloadedLocation()
-            .WithConnection(ConnectionKind.Pipes)
-            .Build();
+        // Your own IPipeServerProcessProvider, which launches Chromium with --remote-debugging-pipe and whose
+        // CreateTransport() installs a BiDi-over-CDP mapper (see Browser Setup).
+        MyChromiumPipeLauncher launcher = new MyChromiumPipeLauncher();
 
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();
@@ -260,12 +255,12 @@ public static class BrowserSetupSamples
 /// Conceptual pipe launcher - implement IPipeServerProcessProvider to launch browser with --remote-debugging-pipe.
 /// </summary>
 #region ImplementingIPipeServerProcessProvider
-public class BrowserSetupPipeLauncher : IPipeServerProcessProvider
+public class MyChromiumPipeLauncher : IPipeServerProcessProvider
 {
     public Process? PipeServerProcess => null; // Implement: launch browser process with pipe flags
 
     // For a Chromium browser the pipe carries CDP, so the Transport returned here must translate
-    // WebDriver BiDi to CDP (see ChromiumTransport in the WebDriverBiDi.Browsers
+    // WebDriver BiDi to CDP (see ChromiumTransport in the Dramaturge.Browsers
     // library, which injects the chromium-bidi mapper). A plain Transport is shown only for shape.
     public Transport CreateTransport() => new Transport(new PipeConnection(this));
 

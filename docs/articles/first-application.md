@@ -5,7 +5,7 @@ This tutorial walks you through creating a complete WebDriverBiDi.NET applicatio
 ## Prerequisites
 
 - .NET SDK 8.0 or higher installed, to build and run the console application this tutorial walks through. The library itself needs only a runtime compatible with .NET Standard 2.0
-- A network connection the first time the application runs, when Chrome is downloaded (see [Using a Browser You Start Yourself](#using-a-browser-you-start-yourself) to use a browser you already have instead)
+- Firefox, which the application connects to (see [Using Chrome or Edge](#using-chrome-or-edge) for those browsers)
 - Basic knowledge of C# and async/await
 
 ## Step 1: Create the Project
@@ -20,11 +20,10 @@ dotnet new console
 
 ## Step 2: Add the NuGet Packages
 
-Add the WebDriverBiDi package, the protocol client, and the WebDriverBiDi.Browsers package, which downloads and launches the browser:
+Add the WebDriverBiDi package, the protocol client:
 
 ```bash
 dotnet add package WebDriverBiDi
-dotnet add package WebDriverBiDi.Browsers
 ```
 
 ## Step 3: Write the Application
@@ -34,7 +33,6 @@ Replace the contents of `Program.cs` with the code below, adding these `using` d
 <!-- inline-csharp: the using directives the sample needs, quoted on their own -->
 ```csharp
 using WebDriverBiDi;
-using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Protocol;
@@ -46,14 +44,21 @@ using WebDriverBiDi.Session;
 
 ## Step 4: Run the Application
 
+Start Firefox with its remote debugging port, on which it serves WebDriver BiDi:
+
+```bash
+firefox --remote-debugging-port=9222
+```
+
+Then run the application:
+
 ```bash
 dotnet run
 ```
 
-The first run downloads Chrome for Testing into a cache in your user profile, which takes a little while; later runs use the cached copy. You should see output similar to:
+You should see output similar to:
 
 ```
-Launching Chrome...
 Connecting to browser...
 Connected!
 
@@ -83,11 +88,11 @@ Press any key to exit...
 
 ## Understanding the Code
 
-### 1. Launching and Connecting
+### 1. Connecting
 
-[!code-csharp[Launching and Connecting](../code/examples/FirstApplicationSamples.cs#DriverInitialization)]
+[!code-csharp[Connecting](../code/examples/FirstApplicationSamples.cs#DriverInitialization)]
 
-`BrowserLauncher` finds Chrome, downloading it the first time, and launches it with a temporary profile. `CreateTransport()` gives the driver a transport that reaches Chrome, which speaks WebDriver BiDi through a mapper over its DevTools endpoint, so the driver then creates the session itself. A browser launched through its driver executable (`LaunchUsingDriver()`) already has a session, which `IsBiDiSessionInitialized` reports. Disposing the launcher closes the browser and deletes the profile. `BrowserLauncher.Configure` also takes Firefox, Edge, or Safari; see [Browser Setup](browser-setup.md#using-webdriverbidibrowsers) for the channels, versions, and launch options.
+The driver connects to the WebDriver BiDi endpoint Firefox serves at `/session` on its remote debugging port. No session exists there yet, so the application creates one.
 
 The driver has a 30-second command timeout, overriding the library's default, `BiDiDriver.DefaultCommandWaitTimeout` (60 seconds); adjust the value to suit your environment.
 
@@ -136,36 +141,26 @@ Executes JavaScript and retrieves the result.
 
 Captures a screenshot and saves it to disk.
 
-## Using a Browser You Start Yourself
+## Using Chrome or Edge
 
-WebDriverBiDi.Browsers is optional. The WebDriverBiDi package connects to any WebSocket URL that speaks WebDriver BiDi, so you can start the browser, or its driver, yourself: for example, run `chromedriver --port=9515` and create a session with the `webSocketUrl` capability. [Setting Up a Browser Manually](browser-setup.md#setting-up-a-browser-manually) walks through this for Chrome, Edge, and Firefox. Then, in place of the launcher, the application connects to the session's `webSocketUrl`:
+Chrome and Edge serve WebDriver BiDi through their driver executables rather than on their own debugging port: run `chromedriver --port=9515` (or msedgedriver) and create a session with the `webSocketUrl` capability. [Browser Setup](browser-setup.md) walks through this. Then the application connects to the session's `webSocketUrl`:
 
 [!code-csharp[Connecting to a Browser You Started](../code/examples/FirstApplicationSamples.cs#ManualConnection)]
 
-The rest of the application is unchanged, and you remove only the launcher's lines and the `WebDriverBiDi.Browsers` package.
+The session already exists, so the application does not create one; the rest of it is unchanged. To download and launch browsers from code, see [Dramaturge.Browsers](https://www.nuget.org/packages/Dramaturge.Browsers).
 
 ## Common Issues and Solutions
 
-### The Browser Cannot Be Downloaded or Launched
-
-**Problem**: `LaunchAsync` throws `BrowserDownloadException` when Chrome cannot be located or downloaded, for example
-because the machine is offline and nothing is cached, or `BrowserLaunchException` when it cannot be started.
-
-**Solution**:
-- Check the network connection, or any proxy between you and `storage.googleapis.com`, for the first run
-- For `BrowserLaunchException`, its `ExitCode` and `ProcessOutput` show what the browser reported
-- See [Downloads and the Cache](browser-setup.md#downloads-and-the-cache) to download from a mirror, or to use a browser installed on the machine with `AtDefaultInstallationLocation()`
-
 ### "Could not connect to remote WebSocket server"
 
-**Problem**: When you start the browser yourself, nothing is listening at the WebSocket URL, or the URL is wrong.
+**Problem**: Nothing is listening at the WebSocket URL, or the URL is wrong.
 `StartAsync` retries the connection every 500 milliseconds until the startup timeout (10 seconds by default) runs
 out, then throws `WebDriverBiDiTimeoutException`.
 
 **Solution**: 
-- Ensure chromedriver is running (`chromedriver --port=9515`) and the session was created
-- Verify the driver is listening by visiting `http://localhost:9515/status`
-- Check that no firewall is blocking port 9515
+- Ensure Firefox is running with `--remote-debugging-port=9222`, or, for Chrome or Edge, that the driver is running and the session was created
+- For a driver, verify it is listening by visiting `http://localhost:9515/status`
+- Check that no firewall is blocking the port
 - Make sure the URL is the `webSocketUrl` from the session response, not Chrome's `/devtools/browser/…` CDP URL
 
 ### "Timed out executing command"
@@ -214,7 +209,7 @@ Try these modifications to deepen your understanding:
 
 You've learned how to:
 - ✓ Set up a WebDriverBiDi.NET project
-- ✓ Launch a browser and connect to it
+- ✓ Connect to a browser
 - ✓ Navigate to websites
 - ✓ Execute JavaScript
 - ✓ Capture screenshots

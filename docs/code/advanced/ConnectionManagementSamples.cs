@@ -9,8 +9,8 @@
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
 using System.Net.WebSockets;
-using Dramaturge.Browsers;
 using WebDriverBiDi;
+using WebDriverBiDi.Docs.Code.Examples;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Session;
 
@@ -32,38 +32,6 @@ public static class ConnectionManagementSamples
         // Use driver...
 
         await driver.StopAsync();
-        #endregion
-    }
-
-    /// <summary>
-    /// Using a browser launcher for local automation. Implement your own launcher.
-    /// </summary>
-    public static async Task UsingBrowserLauncher()
-    {
-        #region UsingaBrowserLauncher
-        // Launcher manages browser process and connection
-        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
-            .WithReleaseChannel(BrowserReleaseChannel.Stable)
-            .AtAutomaticallyDownloadedLocation()
-            .Build();
-
-        await launcher.StartAsync();
-        await launcher.LaunchBrowserAsync();
-
-        // Create driver with launcher's preconfigured transport
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
-        await driver.StartAsync(launcher.ConnectionString);
-
-        try
-        {
-            // Use driver...
-        }
-        finally
-        {
-            await driver.StopAsync();
-            await launcher.QuitBrowserAsync();
-            await launcher.StopAsync();
-        }
         #endregion
     }
 
@@ -262,11 +230,9 @@ public static class ConnectionManagementSamples
     public static async Task UsingPipesWithLauncher()
     {
         #region UsingPipeswithLauncher
-        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
-            .WithReleaseChannel(BrowserReleaseChannel.Stable)
-            .AtAutomaticallyDownloadedLocation()
-            .WithConnection(ConnectionKind.Pipes)
-            .Build();
+        // Your own IPipeServerProcessProvider, which launches Chromium with --remote-debugging-pipe and whose
+        // CreateTransport() installs a BiDi-over-CDP mapper (see Browser Setup).
+        MyChromiumPipeLauncher launcher = new MyChromiumPipeLauncher();
 
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();
@@ -364,25 +330,6 @@ public static class ConnectionManagementSamples
         WebSocketConnection connection = new WebSocketConnection();
         Transport transport = new Transport(connection);
         BiDiDriver driver2 = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-        #endregion
-    }
-
-    /// <summary>
-    /// Best practice: use a browser launcher for local testing.
-    /// </summary>
-    public static async Task BestPracticeBrowserLauncher()
-    {
-        #region BestPracticeBrowserLauncher
-        // ✅ Recommended for local testing
-        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
-            .WithReleaseChannel(BrowserReleaseChannel.Stable)
-            .AtAutomaticallyDownloadedLocation()
-            .Build();
-
-        await launcher.StartAsync();
-        await launcher.LaunchBrowserAsync();
-
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
         #endregion
     }
 

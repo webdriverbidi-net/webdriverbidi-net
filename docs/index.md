@@ -99,8 +99,8 @@ WebDriverBiDi.NET enables sophisticated browser automation scenarios:
 
 ### What This Library Is NOT
 
-- **Not a high-level automation framework**: WebDriverBiDi.NET is a protocol implementation, not a complete automation framework like Selenium, Puppeteer, or Playwright. It can serve as a foundation for such frameworks.
-- **No browser management in the core package**: The `WebDriverBiDi` package does not launch browsers or manage profiles. The companion `WebDriverBiDi.Browsers` package does: it downloads, launches, and connects to Chrome, Firefox, Edge, and Safari (see the [Browser Setup Guide](articles/browser-setup.md)). Without it, you start the browser separately with WebDriver BiDi enabled.
+- **Not a high-level automation framework**: WebDriverBiDi.NET is a protocol implementation, not a complete automation framework like Selenium, Puppeteer, or Playwright. It is the foundation of one: [Dramaturge](https://www.nuget.org/packages/Dramaturge) builds automatic waiting, locators, and assertions on it.
+- **No browser management**: The `WebDriverBiDi` package does not launch browsers or manage profiles; you start the browser with WebDriver BiDi enabled and connect to it (see the [Browser Setup Guide](articles/browser-setup.md)). The [Dramaturge.Browsers](https://www.nuget.org/packages/Dramaturge.Browsers) package downloads, launches, and connects to Chrome, Firefox, Edge, and Safari.
 - **Protocol-level API**: The API closely follows the protocol specification, which may require more code for common tasks compared to higher-level frameworks.
 
 ### Design Principles
