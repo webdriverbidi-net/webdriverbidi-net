@@ -3,10 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi;
+namespace Dramaturge;
 
-using WebDriverBiDi.Network;
-using static WebDriverBiDi.TestUtilities.NetworkEvents;
+using Dramaturge.Network;
+using static Dramaturge.TestUtilities.NetworkEvents;
 
 public class NetworkRequestTests
 {

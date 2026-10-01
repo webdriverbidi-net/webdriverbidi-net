@@ -1,0 +1,453 @@
+// <copyright file="NetworkRequest.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+namespace Dramaturge.Network;
+
+using System.Text;
+using WebDriverBiDi;
+using WebDriverBiDi.Network;
+
+/// <summary>
+/// Represents a network request and its response.
+/// </summary>
+public class NetworkRequest
+{
+    private readonly string requestId;
+    private readonly ulong redirectCount;
+    private readonly string? browsingContextId;
+    private readonly string? navigationId;
+    private readonly string requestUrl;
+    private readonly string requestMethod;
+    private readonly List<ReadOnlyHeader> requestHeaders = [];
+    private readonly List<Cookie> requestCookies = [];
+    private readonly List<ReadOnlyHeader> responseHeaders = [];
+    private readonly Task requestBodyCaptureTask;
+    private readonly TaskCompletionSource<bool> responseReceivedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly DateTime startedDateTime;
+    private readonly ulong requestHeadersSize;
+    private readonly ulong? requestBodySize;
+    private FetchTimingInfo timings;
+    private string requestBody = string.Empty;
+    private bool isRequestBodyBase64Encoded = false;
+    private ulong responseStatusCode = 0;
+    private string responseStatusText = string.Empty;
+    private string responseProtocol = string.Empty;
+    private string responseMimeType = string.Empty;
+    private ulong? responseHeadersSize;
+    private ulong? responseBodySize;
+    private ulong responseContentSize;
+    private Task responseBodyCaptureTask = Task.CompletedTask;
+    private string responseBody = string.Empty;
+    private bool isResponseBodyBase64Encoded = false;
+    private string? fetchErrorText;
+    private string? requestBodyErrorText;
+    private string? responseBodyErrorText;
+    private int outcomeRecordedFlag;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NetworkRequest"/> class.
+    /// </summary>
+    /// <param name="requestData">The data describing the HTTP request.</param>
+    /// <param name="startedDateTime">The date and time the request was initiated.</param>
+    /// <param name="redirectCount">The number of redirects that led to this request.</param>
+    /// <param name="browsingContextId">The ID of the browsing context that made the request, if any.</param>
+    /// <param name="navigationId">The ID of the navigation the request is for, if it is a navigation's request.</param>
+    /// <param name="requestBodyRetrieveTask">A <see cref="Task"/> object that will be fulfilled once the request body has been retrieved.</param>
+    internal NetworkRequest(RequestData requestData, DateTime startedDateTime, ulong redirectCount, string? browsingContextId, string? navigationId, Task<GetDataCommandResult>? requestBodyRetrieveTask)
+    {
+        this.requestId = requestData.RequestId;
+        this.redirectCount = redirectCount;
+        this.browsingContextId = browsingContextId;
+        this.navigationId = navigationId;
+        this.requestUrl = requestData.Url;
+        this.requestMethod = requestData.Method;
+        this.requestHeaders.AddRange(requestData.Headers);
+        this.requestCookies.AddRange(requestData.Cookies);
+        this.requestHeadersSize = requestData.HeadersSize;
+        this.requestBodySize = requestData.BodySize;
+        this.timings = requestData.Timings;
+        this.startedDateTime = startedDateTime;
+        this.requestBodyCaptureTask = requestBodyRetrieveTask is null
+            ? Task.CompletedTask
+            : this.CaptureRequestBodyAsync(requestBodyRetrieveTask);
+    }
+
+    /// <summary>
+    /// Gets the ID of the network request.
+    /// </summary>
+    public string RequestId => this.requestId;
+
+    /// <summary>
+    /// Gets the number of redirects that led to this request. Each hop of a redirect chain is a request of its own,
+    /// sharing the chain's <see cref="RequestId"/>.
+    /// </summary>
+    public ulong RedirectCount => this.redirectCount;
+
+    /// <summary>
+    /// Gets the ID of the browsing context that made the request, or <see langword="null"/> if none did, as for a
+    /// request made by a worker.
+    /// </summary>
+    public string? BrowsingContextId => this.browsingContextId;
+
+    /// <summary>
+    /// Gets the ID of the navigation this request loads the document for, or <see langword="null"/> if it is not a
+    /// navigation's request, as for an image or a script the document requests.
+    /// </summary>
+    public string? NavigationId => this.navigationId;
+
+    /// <summary>
+    /// Gets the URL of the network request.
+    /// </summary>
+    public string Url => this.requestUrl;
+
+    /// <summary>
+    /// Gets the HTTP method of the network request.
+    /// </summary>
+    public string Method => this.requestMethod;
+
+    /// <summary>
+    /// Gets the date and time the request was started.
+    /// </summary>
+    public DateTime StartedDateTime => this.startedDateTime;
+
+    /// <summary>
+    /// Gets the fetch timing marks for the request: those reported when its response completed, or, until then
+    /// and for a request that failed, those reported when it was sent.
+    /// </summary>
+    public FetchTimingInfo Timings => this.timings;
+
+    /// <summary>
+    /// Gets the request headers.
+    /// </summary>
+    public IReadOnlyList<ReadOnlyHeader> RequestHeaders => this.requestHeaders.AsReadOnly();
+
+    /// <summary>
+    /// Gets the request cookies.
+    /// </summary>
+    public IReadOnlyList<Cookie> RequestCookies => this.requestCookies.AsReadOnly();
+
+    /// <summary>
+    /// Gets the size in bytes of the request headers.
+    /// </summary>
+    public ulong RequestHeadersSize => this.requestHeadersSize;
+
+    /// <summary>
+    /// Gets the size in bytes of the request body, or <see langword="null"/> if not available.
+    /// </summary>
+    public ulong? RequestBodySize => this.requestBodySize;
+
+    /// <summary>
+    /// Gets the HTTP status code of the response.
+    /// </summary>
+    public ulong ResponseStatusCode => this.responseStatusCode;
+
+    /// <summary>
+    /// Gets the HTTP status text of the response.
+    /// </summary>
+    public string ResponseStatusText => this.responseStatusText;
+
+    /// <summary>
+    /// Gets the HTTP protocol of the response.
+    /// </summary>
+    public string ResponseProtocol => this.responseProtocol;
+
+    /// <summary>
+    /// Gets the MIME type of the response.
+    /// </summary>
+    public string ResponseMimeType => this.responseMimeType;
+
+    /// <summary>
+    /// Gets the response headers.
+    /// </summary>
+    public IReadOnlyList<ReadOnlyHeader> ResponseHeaders => this.responseHeaders.AsReadOnly();
+
+    /// <summary>
+    /// Gets the size in bytes of the response headers, or <see langword="null"/> if not available.
+    /// </summary>
+    public ulong? ResponseHeadersSize => this.responseHeadersSize;
+
+    /// <summary>
+    /// Gets the size in bytes of the response body, or <see langword="null"/> if not available.
+    /// </summary>
+    public ulong? ResponseBodySize => this.responseBodySize;
+
+    /// <summary>
+    /// Gets the decoded size in bytes of the response content body.
+    /// </summary>
+    public ulong ResponseContentSize => this.responseContentSize;
+
+    /// <summary>
+    /// Gets the body text of the request after it has been retrieved.
+    /// </summary>
+    public string RequestBody => this.requestBody;
+
+    /// <summary>
+    /// Gets a value indicating whether the request body is base64 encoded.
+    /// </summary>
+    public bool IsRequestBodyBase64Encoded => this.isRequestBodyBase64Encoded;
+
+    /// <summary>
+    /// Gets the body text of the response after it has been retrieved.
+    /// </summary>
+    public string ResponseBody => this.responseBody;
+
+    /// <summary>
+    /// Gets a value indicating whether the response body is base64 encoded.
+    /// </summary>
+    public bool IsResponseBodyBase64Encoded => this.isResponseBodyBase64Encoded;
+
+    /// <summary>
+    /// Gets a value indicating whether the request failed without a completed response, as reported by a
+    /// <c>network.fetchError</c> event.
+    /// </summary>
+    public bool IsFailed => this.fetchErrorText is not null;
+
+    /// <summary>
+    /// Gets the error text reported for a failed request, or <see langword="null"/> if the request has not failed.
+    /// </summary>
+    public string? FetchErrorText => this.fetchErrorText;
+
+    /// <summary>
+    /// Gets the error text reported when the request body could not be retrieved, or <see langword="null"/> if it was
+    /// retrieved or was not requested.
+    /// </summary>
+    public string? RequestBodyErrorText => this.requestBodyErrorText;
+
+    /// <summary>
+    /// Gets the error text reported when the response body could not be retrieved, or <see langword="null"/> if it was
+    /// retrieved or was not requested.
+    /// </summary>
+    public string? ResponseBodyErrorText => this.responseBodyErrorText;
+
+    /// <summary>
+    /// Asynchronously waits for the request to have received a response, or to have failed.
+    /// </summary>
+    /// <returns>
+    /// A task whose result is <see langword="true"/> if the request received a response, or <see langword="false"/>
+    /// if it failed.
+    /// </returns>
+    public Task<bool> WaitForResponseReceivedAsync()
+    {
+        return this.responseReceivedTaskCompletionSource.Task;
+    }
+
+    /// <summary>
+    /// Asynchronously waits for the request body to be captured, or for its retrieval to fail.
+    /// </summary>
+    /// <returns>A task that completes when the capture has finished. It does not fault: a failed retrieval sets <see cref="RequestBodyErrorText"/>.</returns>
+    public Task WaitForRequestBodyAsync() => this.requestBodyCaptureTask;
+
+    /// <summary>
+    /// Asynchronously waits for the response body to be captured, or for its retrieval to fail.
+    /// </summary>
+    /// <returns>A task that completes when the capture has finished. It does not fault: a failed retrieval sets <see cref="ResponseBodyErrorText"/>.</returns>
+    /// <remarks>
+    /// The response body is retrieved only once a response has been received, so wait for
+    /// <see cref="WaitForResponseReceivedAsync"/> first; before that, this returns a completed task.
+    /// </remarks>
+    public Task WaitForResponseBodyAsync() => this.responseBodyCaptureTask;
+
+    /// <summary>
+    /// Gets the HTTP request formatted as it would be sent over the wire.
+    /// </summary>
+    /// <param name="base64EncodedBodyDisplayBehavior">A value indicating how to display base64 encoded binary data.</param>
+    /// <returns>The request formatted as HTTP text.</returns>
+    public string GetRequestText(Base64DisplayBehavior base64EncodedBodyDisplayBehavior = Base64DisplayBehavior.NoDisplay)
+    {
+        StringBuilder requestBuilder = new($"{this.requestMethod} {this.requestUrl}");
+        requestBuilder.AppendLine();
+        foreach (ReadOnlyHeader header in this.requestHeaders)
+        {
+            requestBuilder.AppendLine($"{header.Name}: {header.Value.Value}");
+        }
+
+        requestBuilder.AppendLine();
+        if (this.requestBodyErrorText is not null)
+        {
+            requestBuilder.AppendLine($"[Body unavailable: {this.requestBodyErrorText}]");
+            return requestBuilder.ToString();
+        }
+
+        if (!string.IsNullOrEmpty(this.requestBody))
+        {
+            AppendBody(requestBuilder, this.requestBody, this.isRequestBodyBase64Encoded, base64EncodedBodyDisplayBehavior);
+        }
+
+        return requestBuilder.ToString();
+    }
+
+    /// <summary>
+    /// Gets the HTTP response formatted as it would be sent over the wire.
+    /// </summary>
+    /// <param name="base64EncodedBodyDisplayBehavior">A value indicating how to display base64 encoded binary data.</param>
+    /// <returns>The response formatted as HTTP text.</returns>
+    public string GetResponseText(Base64DisplayBehavior base64EncodedBodyDisplayBehavior = Base64DisplayBehavior.NoDisplay)
+    {
+        if (this.fetchErrorText is not null)
+        {
+            return $"[Request failed: {this.fetchErrorText}]{Environment.NewLine}";
+        }
+
+        StringBuilder responseBuilder = new($"{this.responseProtocol} {this.responseStatusCode} {this.responseStatusText}");
+        responseBuilder.AppendLine();
+        foreach (ReadOnlyHeader header in this.responseHeaders)
+        {
+            responseBuilder.AppendLine($"{header.Name}: {header.Value.Value}");
+        }
+
+        responseBuilder.AppendLine();
+        if (this.responseBodyErrorText is not null)
+        {
+            responseBuilder.AppendLine($"[Body unavailable: {this.responseBodyErrorText}]");
+            return responseBuilder.ToString();
+        }
+
+        AppendBody(responseBuilder, this.responseBody, this.isResponseBodyBase64Encoded, base64EncodedBodyDisplayBehavior);
+        return responseBuilder.ToString();
+    }
+
+    /// <summary>
+    /// Sets the response data for the request.
+    /// </summary>
+    /// <param name="responseData">The data describing the HTTP response.</param>
+    /// <param name="completedTimings">The fetch timing marks reported with the completed response.</param>
+    /// <param name="responseBodyRetrieveTask">A <see cref="Task"/> object that will be fulfilled once the response body has been retrieved.</param>
+    /// <remarks>
+    /// A request has one outcome: whichever of this method and <see cref="SetFailed"/> is called first stands, and a
+    /// later call to either is ignored.
+    /// </remarks>
+    internal void SetResponseReceived(ResponseData responseData, FetchTimingInfo completedTimings, Task<GetDataCommandResult>? responseBodyRetrieveTask)
+    {
+        if (!this.TryClaimOutcome())
+        {
+            return;
+        }
+
+        // The marks are complete only once the response is; those sent with the request are mostly unset.
+        this.timings = completedTimings;
+
+        this.responseProtocol = responseData.Protocol;
+        this.responseStatusCode = responseData.Status;
+        this.responseStatusText = responseData.StatusText;
+        this.responseMimeType = responseData.MimeType;
+        this.responseHeaders.AddRange(responseData.Headers);
+        this.responseHeadersSize = responseData.HeadersSize;
+        this.responseBodySize = responseData.BodySize;
+        this.responseContentSize = responseData.Content.Size;
+        this.responseBodyCaptureTask = responseBodyRetrieveTask is null
+            ? Task.CompletedTask
+            : this.CaptureResponseBodyAsync(responseBodyRetrieveTask);
+
+        this.responseReceivedTaskCompletionSource.SetResult(true);
+    }
+
+    /// <summary>
+    /// Marks the request as failed without a completed response.
+    /// </summary>
+    /// <param name="errorText">The error text reported for the failure.</param>
+    /// <remarks>
+    /// A request has one outcome: whichever of this method and <see cref="SetResponseReceived"/> is called first
+    /// stands, and a later call to either is ignored.
+    /// </remarks>
+    internal void SetFailed(string errorText)
+    {
+        if (!this.TryClaimOutcome())
+        {
+            return;
+        }
+
+        this.fetchErrorText = errorText;
+        this.responseReceivedTaskCompletionSource.SetResult(false);
+    }
+
+    /// <summary>
+    /// Asynchronously waits for the request to have an outcome, and for every body it can have to be captured or to
+    /// have failed.
+    /// </summary>
+    /// <returns>A task that completes when the request is complete. It does not fault.</returns>
+    internal async Task WaitForCompletionAsync()
+    {
+        // The response body capture is started when the response is received, so the response is waited for first.
+        if (await this.WaitForResponseReceivedAsync().ConfigureAwait(false))
+        {
+            await this.responseBodyCaptureTask.ConfigureAwait(false);
+        }
+
+        await this.requestBodyCaptureTask.ConfigureAwait(false);
+    }
+
+    private static void AppendBody(StringBuilder builder, string body, bool isBase64, Base64DisplayBehavior behavior)
+    {
+        if (!isBase64 || behavior == Base64DisplayBehavior.Display)
+        {
+            builder.AppendLine(body);
+        }
+        else if (behavior == Base64DisplayBehavior.Decode)
+        {
+            builder.Append(Encoding.UTF8.GetString(Convert.FromBase64String(body)));
+        }
+        else
+        {
+            builder.AppendLine($"[Base64-encoded binary data (length: {body.Length})]");
+        }
+    }
+
+    /// <summary>
+    /// Claims the right to record the request's outcome. Only the first caller succeeds, so that the state a waiter
+    /// reads is set by one outcome alone, before the wait completes.
+    /// </summary>
+    /// <returns><see langword="true"/> if this call claimed the outcome; otherwise, <see langword="false"/>.</returns>
+    private bool TryClaimOutcome()
+    {
+        return Interlocked.Exchange(ref this.outcomeRecordedFlag, 1) == 0;
+    }
+
+    /// <summary>
+    /// Captures the request body from its retrieval, recording a failed retrieval rather than throwing.
+    /// </summary>
+    /// <param name="retrieval">The task retrieving the request body.</param>
+    /// <returns>A task that completes when the capture has finished, and does not fault.</returns>
+    /// <remarks>
+    /// The retrieval is started by the event handler whether or not the traffic is ever read, so its failure is
+    /// observed here, as soon as it happens, rather than left as an unobserved task exception. A body can be
+    /// legitimately unavailable, for example for a request that failed or one whose data was not collected, and that
+    /// must not fail the capture of every other request.
+    /// </remarks>
+    private async Task CaptureRequestBodyAsync(Task<GetDataCommandResult> retrieval)
+    {
+        try
+        {
+            GetDataCommandResult bodyResult = await retrieval.ConfigureAwait(false);
+            this.isRequestBodyBase64Encoded = bodyResult.Bytes.Type == BytesValueType.Base64;
+            this.requestBody = bodyResult.Bytes.Value;
+        }
+        catch (WebDriverBiDiException ex)
+        {
+            this.requestBodyErrorText = ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// Captures the response body from its retrieval, recording a failed retrieval rather than throwing.
+    /// </summary>
+    /// <param name="retrieval">The task retrieving the response body.</param>
+    /// <returns>A task that completes when the capture has finished, and does not fault.</returns>
+    /// <remarks>
+    /// See <see cref="CaptureRequestBodyAsync"/> for why a failed retrieval is recorded rather than thrown.
+    /// </remarks>
+    private async Task CaptureResponseBodyAsync(Task<GetDataCommandResult> retrieval)
+    {
+        try
+        {
+            GetDataCommandResult bodyResult = await retrieval.ConfigureAwait(false);
+            this.isResponseBodyBase64Encoded = bodyResult.Bytes.Type == BytesValueType.Base64;
+            this.responseBody = bodyResult.Bytes.Value;
+        }
+        catch (WebDriverBiDiException ex)
+        {
+            this.responseBodyErrorText = ex.Message;
+        }
+    }
+}

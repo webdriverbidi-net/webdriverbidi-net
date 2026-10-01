@@ -87,7 +87,7 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 | `src/WebDriverBiDi.Analyzers` | Roslyn analyzers that flag antipatterns in code using the main library | `WebDriverBiDi.Analyzers` |
 | `src/WebDriverBiDi.Analyzers.CodeFixProviders` | Code fixes for the analyzers' diagnostics | Included in `WebDriverBiDi.Analyzers` |
 | `src/WebDriverBiDi.Logging` | `Microsoft.Extensions.Logging` (`ILogger`) integration | `WebDriverBiDi.Logging` |
-| `src/WebDriverBiDi.Extensions` | Convenience extension methods, an input action builder, and network traffic capture | `WebDriverBiDi.Extensions` |
+| `src/WebDriverBiDi.Extensions` | Convenience extension methods and an input action builder | `WebDriverBiDi.Extensions` |
 
 The `dramaturge` directory holds Dramaturge, a higher-level automation library built on this one that waits
 automatically for elements to be ready for interaction, with its browser launcher (`Dramaturge.Browsers`) and

@@ -3,7 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Network;
+namespace WebDriverBiDi.Client.Network;
+
+using WebDriverBiDi.Network;
 
 /// <summary>
 /// Credentials to supply for an authentication challenge, optionally restricted to a challenge scheme and realm.

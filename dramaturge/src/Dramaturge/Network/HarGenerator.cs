@@ -3,13 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Network;
+namespace Dramaturge.Network;
 
 using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using WebDriverBiDi.Network;
 
 /// <summary>
 /// Generates an HTTP Archive (HAR 1.2) document from captured <see cref="NetworkRequest"/> objects.
@@ -31,7 +32,7 @@ public static partial class HarGenerator
     /// <param name="creatorName">The name recorded as the HAR's creator.</param>
     /// <param name="creatorVersion">The version recorded as the HAR's creator, or <see langword="null"/> for this library's version.</param>
     /// <returns>The HAR document.</returns>
-    public static string Generate(IEnumerable<NetworkRequest> requests, string creatorName = "WebDriverBiDi.Extensions", string? creatorVersion = null)
+    public static string Generate(IEnumerable<NetworkRequest> requests, string creatorName = "Dramaturge", string? creatorVersion = null)
     {
         List<NetworkRequest> ordered = [.. requests.OrderBy(request => request.StartedDateTime).ThenBy(request => request.RedirectCount)];
         List<HarPage> pages = BuildPages(ordered);

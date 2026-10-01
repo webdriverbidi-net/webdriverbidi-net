@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Network;
+namespace Dramaturge.Network;
 
 /// <summary>
 /// Values describing how to display base64 encoded binary data in requests and responses.

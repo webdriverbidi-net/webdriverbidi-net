@@ -3,13 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi;
+namespace Dramaturge;
 
 using System.Text;
 using System.Text.Json.Nodes;
+using Dramaturge.Network;
+using Dramaturge.TestUtilities;
 using WebDriverBiDi.Network;
-using WebDriverBiDi.TestUtilities;
-using static WebDriverBiDi.TestUtilities.NetworkEvents;
+using static Dramaturge.TestUtilities.NetworkEvents;
 
 // Requests are captured through the monitor from events a fake remote end raises, then written as HAR, which is
 // checked against the HAR 1.2 schema and for the rules the schema does not enforce.
@@ -259,7 +260,7 @@ public class HarGeneratorTests
         JsonNode defaultCreator = GenerateValid(requests)["log"]!["creator"]!;
         JsonNode customCreator = JsonNode.Parse(HarGenerator.Generate(requests, "My Tool", "2.1"))!["log"]!["creator"]!;
 
-        Assert.Equal("WebDriverBiDi.Extensions", (string?)defaultCreator["name"]);
+        Assert.Equal("Dramaturge", (string?)defaultCreator["name"]);
         Assert.False(string.IsNullOrEmpty((string?)defaultCreator["version"]));
         Assert.Equal("My Tool 2.1", $"{customCreator["name"]} {customCreator["version"]}");
     }

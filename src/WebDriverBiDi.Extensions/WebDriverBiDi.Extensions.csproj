@@ -25,8 +25,8 @@
     <Authors>WebDriverBiDi.NET Committers</Authors>
     <Company>WebDriverBiDi.NET Committers</Company>
     <Title>WebDriver BiDirectional Client Library - Protocol Extensions</Title>
-    <Description>Convenience methods, an input action builder, and network traffic capture for the WebDriver BiDi .NET client library.</Description>
-    <PackageTags>webdriver;bidi;browser-automation;extensions;har</PackageTags>
+    <Description>Convenience methods and an input action builder for the WebDriver BiDi .NET client library.</Description>
+    <PackageTags>webdriver;bidi;browser-automation;extensions</PackageTags>
     <PackageProjectUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

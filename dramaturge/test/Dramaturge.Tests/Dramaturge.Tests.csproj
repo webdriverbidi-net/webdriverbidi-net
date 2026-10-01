@@ -17,6 +17,11 @@
     <PackageReference Include="coverlet.MTP" Version="10.0.1" />
     <PackageReference Include="PinchHitter" Version="0.0.20" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0" />
+    <PackageReference Include="JsonSchema.Net" Version="9.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="HarSchema/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -41,7 +41,7 @@ The `WebDriverBiDi` package is the protocol client: it connects to a browser tha
 
 ### Optional: Conveniences
 
-The [WebDriverBiDi.Extensions](advanced/webdriverbidi-extensions.md) package adds one-call extension methods for common commands, an input action builder, and network traffic capture with HAR output:
+The [WebDriverBiDi.Extensions](advanced/webdriverbidi-extensions.md) package adds one-call extension methods for common commands and an input action builder:
 
 ```bash
 dotnet add package WebDriverBiDi.Extensions

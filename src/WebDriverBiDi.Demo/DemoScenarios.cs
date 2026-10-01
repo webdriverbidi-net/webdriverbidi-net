@@ -3,6 +3,7 @@ namespace WebDriverBiDi.Demo;
 using System.Text;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Client.Network;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
@@ -735,7 +736,7 @@ public static class DemoScenarios
         string contextId = tree.ContextTree[0].BrowsingContextId;
         Console.WriteLine($"Active context: {contextId}");
 
-        // We will use a NetworkTrafficMonitor class from the WebDriverBidi client library.
+        // We will use the NetworkTrafficMonitor class in WebDriverBiDi.Client.
         // It encapsulates the logic for collecting the network traffic. All of the concepts
         // used by that class are demonstrated in standalone form by other scenarios in this
         // class, so they are not explicitly performed here.

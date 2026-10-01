@@ -2,7 +2,7 @@
 
 `NetworkTrafficMonitor` records a page's network traffic: each request with its response and bodies, keeping each redirect hop separately. `HarGenerator` writes what it records as an HTTP Archive. The monitor can also modify matching requests and answer authentication challenges. It is built from the WebDriver BiDi network module's events, intercepts, and data collectors, which the WebDriverBiDi.NET [Network Module guide](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/modules/network.html) describes.
 
-The monitor is in the `WebDriverBiDi.Extensions` package, in the `WebDriverBiDi.Network` namespace, until it moves into Dramaturge.
+The monitor is in the `Dramaturge` package, in the `Dramaturge.Network` namespace.
 
 [!code-csharp[Network Capture](../code/NetworkCaptureSamples.cs#NetworkCapture)]
 

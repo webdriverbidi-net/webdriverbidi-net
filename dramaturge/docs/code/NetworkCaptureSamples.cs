@@ -6,6 +6,7 @@
 
 namespace Dramaturge.Docs.Code;
 
+using Dramaturge.Network;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Network;

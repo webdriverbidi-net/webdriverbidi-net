@@ -3,9 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Network;
+namespace WebDriverBiDi.Client.Network;
 
 using System.Text;
+using WebDriverBiDi;
+using WebDriverBiDi.Network;
 
 /// <summary>
 /// Represents a network request and its response.

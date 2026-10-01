@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="../../../src/WebDriverBiDi/WebDriverBiDi.csproj" />
     <ProjectReference Include="../../../src/WebDriverBiDi.Extensions/WebDriverBiDi.Extensions.csproj" />
+    <ProjectReference Include="../../src/Dramaturge/Dramaturge.csproj" />
     <ProjectReference Include="../../src/Dramaturge.Browsers/Dramaturge.Browsers.csproj" />
   </ItemGroup>
 

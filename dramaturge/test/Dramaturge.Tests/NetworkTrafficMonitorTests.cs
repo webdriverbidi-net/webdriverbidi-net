@@ -3,12 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi;
+namespace Dramaturge;
 
 using System.Text.Json.Nodes;
+using Dramaturge.Network;
+using Dramaturge.TestUtilities;
+using WebDriverBiDi;
 using WebDriverBiDi.Network;
-using WebDriverBiDi.TestUtilities;
-using static WebDriverBiDi.TestUtilities.NetworkEvents;
+using static Dramaturge.TestUtilities.NetworkEvents;
 
 public class NetworkTrafficMonitorTests
 {

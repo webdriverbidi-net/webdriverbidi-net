@@ -3,14 +3,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Network;
+namespace WebDriverBiDi.Client.Network;
 
 using System.Collections.Concurrent;
+using WebDriverBiDi;
+using WebDriverBiDi.Network;
 using WebDriverBiDi.Session;
 
 /// <summary>
 /// Records the network traffic of browsing contexts, optionally modifying requests and answering authentication
-/// challenges, for inspection or for a HAR file (see <see cref="HarGenerator"/>).
+/// challenges, for inspection.
 /// </summary>
 public sealed class NetworkTrafficMonitor : IAsyncDisposable
 {
