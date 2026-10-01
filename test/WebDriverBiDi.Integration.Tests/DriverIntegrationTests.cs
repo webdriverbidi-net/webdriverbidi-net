@@ -3,7 +3,7 @@ namespace WebDriverBiDi.Integration.Tests;
 using System.Diagnostics;
 using System.Net;
 using PinchHitter;
-using WebDriverBiDi.Browsers;
+using WebDriverBiDi.Client.Browsers;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;

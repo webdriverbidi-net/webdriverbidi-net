@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Not published: a copy of the browser launcher, taken once, for this repository's demos, integration tests,
+       and test applications. It is expected to drift from Dramaturge.Browsers, which it was copied from. -->
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+    <LangVersion>14</LangVersion>
+    <RootNamespace>WebDriverBiDi.Client</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>../../WebDriverBiDi.snk</AssemblyOriginatorKeyFile>
+    <IsAotCompatible Condition="'$(TargetFramework)' != 'netstandard2.0'">true</IsAotCompatible>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../WebDriverBiDi/WebDriverBiDi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Text.Json" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="../../.stylecop.json" Link=".stylecop.json" />
+    <AdditionalFiles Include="../../WebDriverBiDi.snk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="$(ProjectDir)../../third_party/chromium-bidi-mapper/mapperTab.js">
+      <Visible>False</Visible>
+      <LogicalName>chromium-bidi-mapper</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

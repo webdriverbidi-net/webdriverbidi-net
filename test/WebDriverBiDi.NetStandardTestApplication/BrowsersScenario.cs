@@ -5,10 +5,10 @@
 
 using System.Reflection;
 using System.Runtime.Versioning;
-using WebDriverBiDi.Browsers;
+using WebDriverBiDi.Client.Browsers;
 
 /// <summary>
-/// Exercises the netstandard2.0-only code of WebDriverBiDi.Browsers, which the unit tests, running the
+/// Exercises the netstandard2.0-only code of the WebDriverBiDi.Client browser launcher, which the unit tests, running the
 /// net10.0 build, never reach: the process tree kill, the symbolic link check for confined executables,
 /// the cache layout marker, the timeout on reading a browser's version, and adding a request header.
 /// </summary>
@@ -22,7 +22,7 @@ internal static class BrowsersScenario
         string? frameworkName = typeof(BrowserLauncher).Assembly.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName;
         if (frameworkName is null || !frameworkName.StartsWith(".NETStandard,Version=v2.0", StringComparison.Ordinal))
         {
-            throw new InvalidOperationException($"Expected to load the netstandard2.0 build of WebDriverBiDi.Browsers, but loaded '{frameworkName}'.");
+            throw new InvalidOperationException($"Expected to load the netstandard2.0 build of WebDriverBiDi.Client, but loaded '{frameworkName}'.");
         }
 
         // Launching as Firefox checks whether the executable is confined; killing it kills its process tree.

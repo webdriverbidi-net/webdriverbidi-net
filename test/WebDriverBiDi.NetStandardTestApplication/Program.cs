@@ -22,7 +22,7 @@ string webSocketUrl = args[0];
 string? pipePeerDllPath = args.Length > 1 ? args[1] : null;
 
 // Optional: when supplied, the path of the fake browser is used to exercise the netstandard2.0 build of
-// WebDriverBiDi.Browsers.
+// WebDriverBiDi.Client's browser launcher.
 string? fakeBrowserPath = args.Length > 2 ? args[2] : null;
 
 // Defense-in-depth: confirm this process actually loaded the netstandard2.0 build of

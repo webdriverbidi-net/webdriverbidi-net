@@ -98,6 +98,7 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 | --- | --- |
 | `src/WebDriverBiDi.Demo` | Console "playground" for trying out the library |
 | `src/WebDriverBiDi.DemoWebSite` | In-memory web server hosting content for the demo to run against |
+| `src/WebDriverBiDi.Client` | A copy of the browser launcher, kept here for the demo, integration tests, and test applications |
 
 ### Tests and tooling
 

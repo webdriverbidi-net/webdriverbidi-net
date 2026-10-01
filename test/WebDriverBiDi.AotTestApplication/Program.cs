@@ -11,7 +11,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Text.Json.Serialization;
 using WebDriverBiDi;
-using WebDriverBiDi.Browsers;
+using WebDriverBiDi.Client.Browsers;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;

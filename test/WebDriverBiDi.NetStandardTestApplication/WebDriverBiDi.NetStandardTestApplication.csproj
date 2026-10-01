@@ -19,8 +19,8 @@
          without requiring .NET Framework or Windows. -->
     <ProjectReference Include="../../src/WebDriverBiDi/WebDriverBiDi.csproj" SetTargetFramework="TargetFramework=netstandard2.0" />
 
-    <!-- Pinned the same way, for the netstandard2.0-only code of WebDriverBiDi.Browsers (see BrowsersScenario.cs). -->
-    <ProjectReference Include="../../src/WebDriverBiDi.Browsers/WebDriverBiDi.Browsers.csproj" SetTargetFramework="TargetFramework=netstandard2.0" />
+    <!-- Pinned the same way, for the netstandard2.0-only code of WebDriverBiDi.Client's browser launcher (see BrowsersScenario.cs). -->
+    <ProjectReference Include="../../src/WebDriverBiDi.Client/WebDriverBiDi.Client.csproj" SetTargetFramework="TargetFramework=netstandard2.0" />
   </ItemGroup>
 
   <ItemGroup>
