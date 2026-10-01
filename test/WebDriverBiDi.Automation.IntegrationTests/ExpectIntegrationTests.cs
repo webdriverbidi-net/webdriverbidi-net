@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Automation;
 
+using System.Text.RegularExpressions;
 using WebDriverBiDi.Automation.TestUtilities;
 using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
@@ -47,6 +48,49 @@ public class ExpectIntegrationTests
 
     [Theory]
     [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task TextExpectationsAreMet(BrowserKind browserKind)
+    {
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await OpenAsync(group, server);
+        CancellationToken token = TestContext.Current.CancellationToken;
+
+        await Expect(Css(page, "#spaced")).ToHaveTextAsync("Spaced out text", cancellationToken: token);
+        await Expect(Css(page, "#spaced")).ToContainTextAsync("OUT", ignoreCase: true, cancellationToken: token);
+        await Expect(Css(page, "#partly")).ToHaveTextAsync("Shown hidden text", cancellationToken: token);
+        await Expect(Css(page, "#partly")).ToHaveTextAsync("Shown text", useInnerText: true, cancellationToken: token);
+        await Expect(Css(page, "#partly")).ToHaveTextAsync(new Regex("^Shown"), cancellationToken: token);
+        await Expect(Css(page, "li")).ToHaveTextAsync(["One", "Two", "Three"], cancellationToken: token);
+        await Expect(Css(page, "li")).ToContainTextAsync(["One", "Three"], cancellationToken: token);
+        await Expect(Css(page, "li")).Not.ToContainTextAsync(["Three", "One"], cancellationToken: token);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Expect(Css(page, "#svg-text")).ToHaveTextAsync("SVG", useInnerText: true, cancellationToken: token));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task ValueAttributeAndCssExpectationsAreMet(BrowserKind browserKind)
+    {
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await OpenAsync(group, server);
+        CancellationToken token = TestContext.Current.CancellationToken;
+        LocatorAssertions name = Expect(Css(page, "#name"));
+
+        await name.ToHaveValueAsync("Ada", cancellationToken: token);
+        await name.ToHaveAttributeAsync("data-role", "person", cancellationToken: token);
+        await name.ToHaveAttributeAsync("DATA-ROLE", cancellationToken: token);
+        await name.Not.ToHaveAttributeAsync("title", cancellationToken: token);
+        await name.ToHaveIdAsync("name", cancellationToken: token);
+        await name.ToHaveClassAsync("field wide", cancellationToken: token);
+        await name.ToHaveClassAsync(new Regex(@"\bwide\b"), cancellationToken: token);
+        await Expect(Css(page, "#styled")).ToHaveCssAsync("color", "rgb(255, 0, 0)", cancellationToken: token);
+        await Css(page, "#name").FillAsync("Grace", cancellationToken: token);
+        await name.ToHaveValueAsync("Grace", cancellationToken: token);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Expect(Css(page, "#visible")).ToHaveValueAsync("Visible", cancellationToken: token));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
     public async Task FocusIsExpectedInTheDocumentOrAShadowRoot(BrowserKind browserKind)
     {
         await using TestPageServer server = await TestPageServer.StartAsync();
@@ -76,6 +120,7 @@ public class ExpectIntegrationTests
 
         await Expect(Css(page, "#later")).ToBeVisibleAsync(cancellationToken: token);
         await Expect(Css(page, "li")).ToHaveCountAsync(4, cancellationToken: token);
+        await Expect(Css(page, "li")).ToHaveTextAsync(["One", "Two", "Three", ""], cancellationToken: token);
     }
 
     [Theory]

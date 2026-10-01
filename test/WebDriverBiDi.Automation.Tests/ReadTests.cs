@@ -106,8 +106,8 @@ public class ReadTests
         (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider _) = await OpenPageAsync();
         await using BiDiDriver ownedDriver = driver;
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("p-1"));
-        session.RemoteEnd.AnswerWith("script.callFunction", parameters => ((string)parameters["functionDeclaration"]!).Contains("state.readTexts([element], useInnerText)")
-            ? ProtocolJson.Success(Array(String((bool)parameters["arguments"]![1]!["value"]! ? "rendered" : "content")))
+        session.RemoteEnd.AnswerWith("script.callFunction", parameters => ((string)parameters["functionDeclaration"]!).Contains("state.readTexts(elements, useInnerText)")
+            ? ProtocolJson.Success(Array(String((bool)parameters["arguments"]![0]!["value"]! ? "rendered" : "content")))
             : ProtocolJson.Success(String((string)parameters["functionDeclaration"]!)));
 
         Assert.Equal("content", await page.Locate(new CssLocator("p")).TextContentAsync(cancellationToken: TestContext.Current.CancellationToken));
@@ -117,7 +117,7 @@ public class ReadTests
         Assert.All(session.RemoteEnd.CommandsFor("script.callFunction"), call =>
         {
             Assert.Equal(page.Group().Options.SandboxName, (string?)call["params"]!["target"]!["sandbox"]);
-            Assert.Equal("p-1", (string?)call["params"]!["arguments"]![0]!["sharedId"]);
+            Assert.Contains(call["params"]!["arguments"]!.AsArray(), argument => (string?)argument!["sharedId"] == "p-1");
         });
     }
 

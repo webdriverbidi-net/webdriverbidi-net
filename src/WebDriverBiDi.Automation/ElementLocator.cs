@@ -765,11 +765,7 @@ public sealed class ElementLocator
     public async Task<string> InputValueAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        string? value = await this.PollElementAsync(budget, async node =>
-        {
-            RemoteValue read = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, element) => state.readValue(element)", [node.ToSharedReference()], budget).ConfigureAwait(false);
-            return (true, AsString(read) ?? throw new InvalidOperationException($"{this} is not an input, a text area, or a select."), string.Empty);
-        }).ConfigureAwait(false);
+        string? value = await this.PollElementAsync(budget, async node => (true, await this.ReadValueAsync(node, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
         return value!;
     }
 
@@ -785,11 +781,7 @@ public sealed class ElementLocator
     public async Task<string?> GetAttributeAsync(string name, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        return await this.PollElementAsync(budget, async node =>
-        {
-            RemoteValue value = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, element, name) => state.readAttribute(element, name)", [node.ToSharedReference(), LocalValue.String(name)], budget).ConfigureAwait(false);
-            return (true, AsString(value), string.Empty);
-        }).ConfigureAwait(false);
+        return await this.PollElementAsync(budget, async node => (true, await this.ReadAttributeAsync(node, name, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -958,13 +950,66 @@ public sealed class ElementLocator
     }
 
     /// <summary>
-    /// Counts the elements the locator matches now.
+    /// Finds every element the locator matches now.
     /// </summary>
     /// <param name="budget">The time the commands may take.</param>
-    /// <returns>The number of matching elements.</returns>
-    internal async Task<int> CountMatchesAsync(TimeBudget budget)
+    /// <returns>The matching elements, in document order.</returns>
+    internal Task<IList<NodeRemoteValue>> FindAllAsync(TimeBudget budget)
     {
-        return (await this.ResolveAsync(null, budget).ConfigureAwait(false)).Count;
+        return this.ResolveAsync(null, budget);
+    }
+
+    /// <summary>
+    /// Reads the text of elements in one call.
+    /// </summary>
+    /// <param name="nodes">The elements.</param>
+    /// <param name="useInnerText">A value indicating whether to read the rendered text rather than the text content.</param>
+    /// <param name="budget">The time the command may take.</param>
+    /// <returns>Each element's text; for rendered text, <see langword="null"/> for an element that is not HTML.</returns>
+    internal async Task<IReadOnlyList<string?>> ReadTextsAsync(IList<NodeRemoteValue> nodes, bool useInnerText, TimeBudget budget)
+    {
+        LocalValue[] arguments = [LocalValue.Boolean(useInnerText), .. nodes.Select(node => node.ToSharedReference())];
+        RemoteValue texts = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, useInnerText, ...elements) => state.readTexts(elements, useInnerText)", arguments, budget).ConfigureAwait(false);
+        return [.. texts.As<CollectionRemoteValue>().Value!.Select(AsString)];
+    }
+
+    /// <summary>
+    /// Reads the value of an input, a text area, or a select.
+    /// </summary>
+    /// <param name="node">The element.</param>
+    /// <param name="budget">The time the command may take.</param>
+    /// <returns>The value.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the element is not an input, a text area, or a select.</exception>
+    internal async Task<string> ReadValueAsync(NodeRemoteValue node, TimeBudget budget)
+    {
+        RemoteValue value = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, element) => state.readValue(element)", [node.ToSharedReference()], budget).ConfigureAwait(false);
+        return AsString(value) ?? throw new InvalidOperationException($"{this} is not an input, a text area, or a select.");
+    }
+
+    /// <summary>
+    /// Reads an attribute of an element.
+    /// </summary>
+    /// <param name="node">The element.</param>
+    /// <param name="name">The attribute's name.</param>
+    /// <param name="budget">The time the command may take.</param>
+    /// <returns>The value, or <see langword="null"/> if the element does not have the attribute.</returns>
+    internal async Task<string?> ReadAttributeAsync(NodeRemoteValue node, string name, TimeBudget budget)
+    {
+        RemoteValue value = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, element, name) => state.readAttribute(element, name)", [node.ToSharedReference(), LocalValue.String(name)], budget).ConfigureAwait(false);
+        return AsString(value);
+    }
+
+    /// <summary>
+    /// Reads the computed value of a CSS property of an element.
+    /// </summary>
+    /// <param name="node">The element.</param>
+    /// <param name="property">The property's name.</param>
+    /// <param name="budget">The time the command may take.</param>
+    /// <returns>The computed value.</returns>
+    internal async Task<string> ReadCssAsync(NodeRemoteValue node, string property, TimeBudget budget)
+    {
+        RemoteValue value = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, element, property) => state.readCss(element, property)", [node.ToSharedReference(), LocalValue.String(property)], budget).ConfigureAwait(false);
+        return value.As<StringRemoteValue>().Value;
     }
 
     /// <summary>
@@ -1461,8 +1506,7 @@ public sealed class ElementLocator
     // The element's text, or null when its rendered text is asked for and it is not an HTML element.
     private async Task<string?> ReadTextAsync(NodeRemoteValue node, bool useInnerText, TimeBudget budget)
     {
-        RemoteValue texts = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, element, useInnerText) => state.readTexts([element], useInnerText)", [node.ToSharedReference(), LocalValue.Boolean(useInnerText)], budget).ConfigureAwait(false);
-        return AsString(texts.As<CollectionRemoteValue>().Value![0]);
+        return (await this.ReadTextsAsync([node], useInnerText, budget).ConfigureAwait(false))[0];
     }
 
     // Null when the element was removed while it was checked.

@@ -11,7 +11,7 @@
     <p id="invisible" style="display: none">Invisible</p>
     <button id="enabled">Enabled</button>
     <button id="disabled" disabled>Disabled</button>
-    <input id="name" value="Ada">
+    <input id="name" value="Ada" data-role="person" class="field wide">
     <input id="readonly" value="Fixed" readonly>
     <input id="empty-input">
     <div id="empty-div">
@@ -22,6 +22,11 @@
     <ul><li>One</li><li>Two</li><li>Three</li></ul>
     <p id="later" style="display: none">Later</p>
     <button id="reveal" onclick="setTimeout(() => { document.getElementById('later').style.display = 'block'; document.querySelector('ul').append(document.createElement('li')); }, 200)">Reveal</button>
+    <p id="spaced">  Spaced
+       out   text </p>
+    <p id="partly">Shown <span style="display: none">hidden</span> text</p>
+    <div id="styled" style="color: rgb(255, 0, 0)">Styled</div>
+    <svg><text id="svg-text" x="0" y="15">SVG</text></svg>
     <div id="host"></div>
     <div id="far">Far</div>
     <script>

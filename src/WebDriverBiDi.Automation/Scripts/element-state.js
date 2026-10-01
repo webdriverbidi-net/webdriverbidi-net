@@ -29,6 +29,10 @@
       return element.getAttribute(name);
     },
 
+    readCss(element, property) {
+      return getComputedStyle(element).getPropertyValue(property);
+    },
+
     // An input or a text area without a value, or another element with no child elements and only white space.
     isEmpty(element) {
       if (element.localName === 'input' || element.localName === 'textarea') {
