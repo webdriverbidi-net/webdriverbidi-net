@@ -148,7 +148,7 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
         // covering it, as one did.
         Assert.Contains("Netstandard2.0 SEND and RECV trace logging exercised the message decode branch.", runResult.StandardOutputConsoleContent);
 
-        // Prove the netstandard2.0-only code of WebDriverBiDi.Browsers ran: the process tree kill, the
+        // Prove the netstandard2.0-only code of WebDriverBiDi.Client's browser launcher ran: the process tree kill, the
         // confined executable check, the cache layout marker, the version read's timeout, and the grid header.
         Assert.Contains("Browsers: a browser was launched and killed through the netstandard2.0 build.", runResult.StandardOutputConsoleContent);
         Assert.Contains("Browsers: the installed browser's version was read and the new cache was marked.", runResult.StandardOutputConsoleContent);

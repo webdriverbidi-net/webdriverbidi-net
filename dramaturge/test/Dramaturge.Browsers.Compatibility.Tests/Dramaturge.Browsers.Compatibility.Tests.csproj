@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Dramaturge.Browsers.Compatibility.Tests</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.1" />
+  </ItemGroup>
+
+  <!-- The application under test is built and run out of process, pinned to the netstandard2.0 build; a reference
+       from this project would only obscure which build runs. -->
+  <ItemGroup>
+    <!-- Referenced so that its executable is built and copied to this project's output directory, where the
+         application is handed its path to launch it as a stand-in browser. -->
+    <ProjectReference Include="..\Dramaturge.FakeBrowser\Dramaturge.FakeBrowser.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="NetStandardTestApplicationProjectDirectory"
+                      Value="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../Dramaturge.Browsers.NetStandardTestApplication'))" />
+  </ItemGroup>
+
+</Project>

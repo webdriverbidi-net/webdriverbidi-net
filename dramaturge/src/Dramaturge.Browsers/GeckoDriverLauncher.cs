@@ -1,0 +1,77 @@
+// <copyright file="GeckoDriverLauncher.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+namespace Dramaturge.Browsers;
+
+/// <summary>
+/// Object for launching a Firefox browser to connect to using a WebDriverBiDi session
+/// using a local instance of the geckodriver browser driver executable.
+/// </summary>
+public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GeckoDriverLauncher" /> class using Firefox browser locator settings.
+    /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
+    /// </summary>
+    /// <param name="settings">The Firefox browser locator settings to use for locating the browser and driver executables.</param>
+    internal GeckoDriverLauncher(FirefoxBrowserLocatorSettings settings)
+        : base(settings, 0)
+    {
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the browser can be closed using WebDriver BiDi's browser.close command.
+    /// </summary>
+    public override bool IsBrowserCloseAllowed => false;
+
+    /// <inheritdoc/>
+    internal override IReadOnlyCollection<string> LaunchCapabilityNames { get; } = ["browserName", "webSocketUrl", "moz:firefoxOptions"];
+
+    /// <summary>
+    /// Creates the WebDriver Classic capabilities used to launch the browser.
+    /// </summary>
+    /// <returns>A dictionary containing the capabilities.</returns>
+    protected override Dictionary<string, object?> CreateBrowserLaunchCapabilities()
+    {
+        Dictionary<string, object> firefoxOptions = new() { ["binary"] = this.BrowserExecutableLocation };
+
+        firefoxOptions["log"] = new Dictionary<string, object>()
+        {
+            { "level", "error" },
+        };
+
+        List<string> firefoxCommandLineArgs = this.IsBrowserHeadless ? ["--headless"] : [];
+        if (this.LaunchSettings.UserDataDirectory is not null)
+        {
+            // geckodriver uses a profile named by "-profile" in place, rather than a temporary copy.
+            Directory.CreateDirectory(this.LaunchSettings.UserDataDirectory);
+            firefoxCommandLineArgs.Add("-profile");
+            firefoxCommandLineArgs.Add(this.LaunchSettings.UserDataDirectory);
+        }
+
+        firefoxCommandLineArgs.AddRange(this.LaunchSettings.Arguments);
+        if (firefoxCommandLineArgs.Count > 0)
+        {
+            firefoxOptions["args"] = firefoxCommandLineArgs;
+        }
+
+        if (this.LaunchSettings.FirefoxPreferences.Count > 0)
+        {
+            firefoxOptions["prefs"] = new Dictionary<string, object>(this.LaunchSettings.FirefoxPreferences);
+        }
+
+        // CONSIDER: This is a very naive and simple set of capabilities.
+        // A future implementation could create a more fully-featured
+        // generation of capabilities.
+        Dictionary<string, object?> capabilities = new()
+        {
+            ["browserName"] = "firefox",
+            ["webSocketUrl"] = true,
+            ["moz:firefoxOptions"] = firefoxOptions,
+        };
+
+        return capabilities;
+    }
+}

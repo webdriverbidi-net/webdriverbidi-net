@@ -26,21 +26,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\WebDriverBiDi.Browsers\WebDriverBiDi.Browsers.csproj" />
     <ProjectReference Include="..\..\src\WebDriverBiDi.Extensions\WebDriverBiDi.Extensions.csproj" />
-
-    <!-- Built for its executable, which the tests launch as a stand-in browser from its own output directory. -->
-    <ProjectReference Include="..\WebDriverBiDi.FakeBrowser\WebDriverBiDi.FakeBrowser.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>
 
   <!-- The same cases run on the modern runtime in the Extensions tests. -->
   <ItemGroup>
     <Compile Include="..\WebDriverBiDi.Extensions.Tests\TypedCharacterTests.cs" Link="Linked\TypedCharacterTests.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AssemblyMetadata Include="FakeBrowserDirectory"
-                      Value="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../WebDriverBiDi.FakeBrowser/bin/$(Configuration)/net10.0'))" />
   </ItemGroup>
 
 </Project>

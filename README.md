@@ -50,7 +50,7 @@ be launched, and for the WebDriver BiDi websocket to already be open and availab
 it is the user's responsibility to know what the URL of the websocket connection is to initiate a session. A
 browser driven over a remote debugging pipe rather than a websocket is launched the same way, by the user,
 and the session is started with `PipeConnection` in place of the default websocket connection. The companion
-[WebDriverBiDi.Browsers](https://www.nuget.org/packages/WebDriverBiDi.Browsers) package does these things:
+[Dramaturge.Browsers](https://www.nuget.org/packages/Dramaturge.Browsers) package does these things:
 it downloads, launches, and connects to Chrome, Firefox, Edge, and Safari, and to browsers on remote grids.
 
 ## Getting Started
@@ -87,10 +87,12 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 | `src/WebDriverBiDi.Analyzers` | Roslyn analyzers that flag antipatterns in code using the main library | `WebDriverBiDi.Analyzers` |
 | `src/WebDriverBiDi.Analyzers.CodeFixProviders` | Code fixes for the analyzers' diagnostics | Included in `WebDriverBiDi.Analyzers` |
 | `src/WebDriverBiDi.Logging` | `Microsoft.Extensions.Logging` (`ILogger`) integration | `WebDriverBiDi.Logging` |
-| `src/WebDriverBiDi.Browsers` | Locates, downloads, and launches browsers for automation | `WebDriverBiDi.Browsers` |
 | `src/WebDriverBiDi.Extensions` | Convenience extension methods, an input action builder, and network traffic capture | `WebDriverBiDi.Extensions` |
-| `src/WebDriverBiDi.Tool` | The `webdriverbidi` command-line tool, which installs, lists, and removes cached browsers and drivers | `WebDriverBiDi.Tool` |
 | `src/WebDriverBiDi.Automation` | High-level automation API that waits automatically for elements to be ready for interaction | Pre-release; not yet published |
+
+The `dramaturge` directory holds Dramaturge, a higher-level automation library built on this one, with its browser
+launcher (`Dramaturge.Browsers`) and command-line tool (`Dramaturge.Tool`). It builds from its own
+`dramaturge/Dramaturge.sln` and is to move to a repository of its own.
 
 ### Demo
 
@@ -107,15 +109,13 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 | `test/WebDriverBiDi.Tests` | Unit tests for the main library |
 | `test/WebDriverBiDi.Analyzers.Tests` | Tests for the analyzers and code fix providers |
 | `test/WebDriverBiDi.Logging.Tests` | Tests for the logging library |
-| `test/WebDriverBiDi.Browsers.Tests` | Unit tests for the browser management library |
 | `test/WebDriverBiDi.Extensions.Tests` | Unit tests for the extensions library |
-| `test/WebDriverBiDi.Tool.Tests` | Tests for the command-line tool |
 | `test/WebDriverBiDi.Automation.Tests` | Unit tests for the automation library |
 | `test/WebDriverBiDi.Integration.Tests` | Integration tests that run the main library against real browsers |
 | `test/WebDriverBiDi.Compatibility.Tests` | Checks that the main library works when consumed from each build configuration |
 | `test/WebDriverBiDi.AotTestApplication` | Smoke test for JSON serialization under ahead-of-time (AOT) compilation |
 | `test/WebDriverBiDi.NetStandardTestApplication` | Console app pinned to the netstandard2.0 build; driven by the compatibility tests |
-| `test/WebDriverBiDi.FakeBrowser` | Stand-in browser executable used by the browser management library's launcher tests |
+| `test/WebDriverBiDi.FakeBrowser` | Stand-in browser executable launched by the compatibility tests through the `WebDriverBiDi.Client` launcher |
 | `test/WebDriverBiDi.NamedPipeTestApplication` | Named-pipe test server used by the pipe connection unit tests |
 | `test/WebDriverBiDi.TestUtilities` | Helpers shared between test projects (not itself a test project) |
 | `test/WebDriverBiDi.Benchmarks` | Performance benchmarks; see its [README](test/WebDriverBiDi.Benchmarks/README.md) |
@@ -280,15 +280,14 @@ To update the DocFx tooling, you can use the following command:
 
     dotnet tool update -g docfx
 
-To build the documentation, use the following commands. The first four steps are required because
+To build the documentation, use the following commands. The first three steps are required because
 `docfx metadata` reads the API surface from the Release `netstandard2.0` builds of the main library
-and of the `WebDriverBiDi.Logging`, `WebDriverBiDi.Browsers`, and `WebDriverBiDi.Extensions` packages
+and of the `WebDriverBiDi.Logging` and `WebDriverBiDi.Extensions` packages
 (see `docs/docfx.json`), which
 the snippets project does not produce by itself (it builds only the `net10.0` flavour of each):
 
     dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
     dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release
-    dotnet build src/WebDriverBiDi.Browsers/WebDriverBiDi.Browsers.csproj --configuration Release
     dotnet build src/WebDriverBiDi.Extensions/WebDriverBiDi.Extensions.csproj --configuration Release
     dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj
     docfx metadata docs/docfx.json

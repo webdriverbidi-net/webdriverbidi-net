@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for license information.
 // </copyright>
 // Compiled counterparts for the code blocks in the packed package READMEs, src/WebDriverBiDi/README.md,
-// src/WebDriverBiDi.Logging/README.md, src/WebDriverBiDi.Browsers/README.md and
+// src/WebDriverBiDi.Logging/README.md, dramaturge/src/Dramaturge.Browsers/README.md and
 // src/WebDriverBiDi.Extensions/README.md. The Browsers regions are also shown by
 // docs/articles/browser-setup.md and getting-started.md, and the Extensions regions by
 // docs/articles/advanced/webdriverbidi-extensions.md.
@@ -16,11 +16,11 @@
 namespace WebDriverBiDi.Docs.Code;
 
 using System.Diagnostics.Tracing;
+using Dramaturge.Browsers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WebDriverBiDi;
-using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Network;

@@ -6,9 +6,9 @@
 namespace WebDriverBiDi.Automation;
 
 using System.Text.Json.Nodes;
+using Dramaturge.Browsers;
 using WebDriverBiDi.Automation.TestUtilities;
 using WebDriverBiDi.Browser;
-using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
 
 public class BrowserTrackingTests

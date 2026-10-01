@@ -8,8 +8,8 @@
 
 namespace WebDriverBiDi.Docs.Code.Architecture;
 
+using Dramaturge.Browsers;
 using WebDriverBiDi;
-using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;

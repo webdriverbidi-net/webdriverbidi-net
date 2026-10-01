@@ -6,8 +6,8 @@
 namespace WebDriverBiDi.Automation;
 
 using System.Text.Json.Nodes;
+using Dramaturge.Browsers;
 using WebDriverBiDi.Automation.TestUtilities;
-using WebDriverBiDi.Browsers;
 using WebDriverBiDi.Session;
 
 public class BrowserGroupTests

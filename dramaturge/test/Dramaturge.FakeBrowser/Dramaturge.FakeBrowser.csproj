@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+
+    <!-- Read as the browser's version on Windows, as a Chromium browser's is; matches the version it writes when asked. -->
+    <FileVersion>130.0.2849.80</FileVersion>
+  </PropertyGroup>
+
+</Project>

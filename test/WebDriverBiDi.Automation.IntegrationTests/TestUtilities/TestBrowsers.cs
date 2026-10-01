@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Automation.TestUtilities;
 
-using WebDriverBiDi.Browsers;
+using Dramaturge.Browsers;
 
 /// <summary>
 /// The browsers the tests run against: the executable named by CHROME_EXECUTABLE or FIREFOX_EXECUTABLE, or else,

@@ -82,7 +82,6 @@ jobs:
         run: |
           dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release --no-restore
           dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release --no-restore
-          dotnet build src/WebDriverBiDi.Browsers/WebDriverBiDi.Browsers.csproj --configuration Release --no-restore
           dotnet build src/WebDriverBiDi.Extensions/WebDriverBiDi.Extensions.csproj --configuration Release --no-restore
 
       - name: Build documentation sample code
@@ -184,11 +183,10 @@ jobs:
       - name: Pack releasable packages
         # `dotnet pack` on the solution packs only projects with
         # IsPackable=true, which is WebDriverBiDi, WebDriverBiDi.Analyzers,
-        # WebDriverBiDi.Logging, WebDriverBiDi.Browsers, WebDriverBiDi.Extensions,
-        # and the WebDriverBiDi.Tool dotnet tool, which bundles the Browsers library
-        # of the same build. Symbol-package emission is configured per-project in the
-        # csproj files (the analyzer has no managed assembly to symbolicate, and the
-        # tool produces none).
+        # WebDriverBiDi.Logging, and WebDriverBiDi.Extensions; the Dramaturge projects
+        # are not in the solution and are released separately. Symbol-package emission
+        # is configured per-project in the csproj files (the analyzer has no managed
+        # assembly to symbolicate).
         #
         # The version properties are repeated here even though the build step above already
         # passed them and this pack runs --no-build. MSBuild global properties do not carry

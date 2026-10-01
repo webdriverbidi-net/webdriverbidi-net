@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SetTargetFramework pins these references to the netstandard2.0 builds, so this net10.0 executable loads and
+         runs the netstandard2.0-only code of Dramaturge.Browsers (see BrowsersScenario.cs) without .NET Framework. -->
+    <ProjectReference Include="../../../src/WebDriverBiDi/WebDriverBiDi.csproj" SetTargetFramework="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="../../src/Dramaturge.Browsers/Dramaturge.Browsers.csproj" SetTargetFramework="TargetFramework=netstandard2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Package dependencies are restored for this project's own framework, not the pinned one, so the polyfills the
+         netstandard2.0 builds need at run time, and net10.0 does not provide, are requested here. -->
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Bcl.Memory" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="10.0.12" />
+  </ItemGroup>
+
+</Project>

@@ -6,8 +6,8 @@
 namespace WebDriverBiDi.Automation;
 
 using System.Text.RegularExpressions;
+using Dramaturge.Browsers;
 using WebDriverBiDi.Automation.TestUtilities;
-using WebDriverBiDi.Browsers;
 using WebDriverBiDi.BrowsingContext;
 
 public class NavigationWaitIntegrationTests

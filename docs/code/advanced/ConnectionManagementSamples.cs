@@ -9,8 +9,8 @@
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
 using System.Net.WebSockets;
+using Dramaturge.Browsers;
 using WebDriverBiDi;
-using WebDriverBiDi.Browsers;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Session;
 

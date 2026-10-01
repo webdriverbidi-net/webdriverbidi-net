@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Tests of the netstandard2.0 builds on the real .NET Framework, for behavior that only it has. It builds on every
+       operating system, but only runs on Windows; coverage is not measured here. -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Dramaturge.Browsers</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <!-- Elsewhere, a solution-wide dotnet test would try to run it (through Mono). -->
+  <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+    <IsTestProject>false</IsTestProject>
+    <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dramaturge.Browsers\Dramaturge.Browsers.csproj" />
+
+    <!-- Built for its executable, which the tests launch as a stand-in browser from its own output directory. -->
+    <ProjectReference Include="..\Dramaturge.FakeBrowser\Dramaturge.FakeBrowser.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="FakeBrowserDirectory"
+                      Value="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../Dramaturge.FakeBrowser/bin/$(Configuration)/net10.0'))" />
+  </ItemGroup>
+
+</Project>
