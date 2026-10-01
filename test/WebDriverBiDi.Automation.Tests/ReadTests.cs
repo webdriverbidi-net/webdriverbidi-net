@@ -12,7 +12,6 @@ using WebDriverBiDi.BrowsingContext;
 
 public class ReadTests
 {
-    private const string HtmlNamespace = "http://www.w3.org/1999/xhtml";
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(100);
 
     [Fact]
@@ -102,15 +101,17 @@ public class ReadTests
     }
 
     [Fact]
-    public async Task TextAndHtmlAreReadInTheSandbox()
+    public async Task TextIsReadByTheElementStateScriptAndHtmlInTheSandbox()
     {
         (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider _) = await OpenPageAsync();
         await using BiDiDriver ownedDriver = driver;
-        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", Element("p-1", "p", HtmlNamespace));
-        session.RemoteEnd.AnswerWith("script.callFunction", parameters => ProtocolJson.Success(String((string)parameters["functionDeclaration"]!)));
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("p-1"));
+        session.RemoteEnd.AnswerWith("script.callFunction", parameters => ((string)parameters["functionDeclaration"]!).Contains("state.readTexts([element], useInnerText)")
+            ? ProtocolJson.Success(Array(String((bool)parameters["arguments"]![1]!["value"]! ? "rendered" : "content")))
+            : ProtocolJson.Success(String((string)parameters["functionDeclaration"]!)));
 
-        Assert.Equal("(element) => element.textContent", await page.Locate(new CssLocator("p")).TextContentAsync(cancellationToken: TestContext.Current.CancellationToken));
-        Assert.Equal("(element) => element.innerText", await page.Locate(new CssLocator("p")).InnerTextAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal("content", await page.Locate(new CssLocator("p")).TextContentAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal("rendered", await page.Locate(new CssLocator("p")).InnerTextAsync(cancellationToken: TestContext.Current.CancellationToken));
         Assert.Equal("(element) => element.innerHTML", await page.Locate(new CssLocator("p")).InnerHtmlAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.All(session.RemoteEnd.CommandsFor("script.callFunction"), call =>
@@ -125,27 +126,24 @@ public class ReadTests
     {
         (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider _) = await OpenPageAsync();
         await using BiDiDriver ownedDriver = driver;
-        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", Element("text-1", "text", "http://www.w3.org/2000/svg"));
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("text-1"));
+        session.RemoteEnd.AnswerWith("script.callFunction", ProtocolJson.Success(Array(Null())));
 
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("text")).InnerTextAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Equal("css \"text\" is not an HTML element.", exception.Message);
-        Assert.Empty(session.RemoteEnd.CommandsFor("script.callFunction"));
     }
 
-    [Theory]
-    [InlineData("input")]
-    [InlineData("textarea")]
-    [InlineData("select")]
-    public async Task InputValueReadsTheValueOfAFormControl(string localName)
+    [Fact]
+    public async Task InputValueIsReadByTheElementStateScript()
     {
         (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider _) = await OpenPageAsync();
         await using BiDiDriver ownedDriver = driver;
-        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", Element("control-1", localName, HtmlNamespace));
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("control-1"));
         session.RemoteEnd.AnswerWith("script.callFunction", ProtocolJson.Success(String("Ada")));
 
         Assert.Equal("Ada", await page.Locate(new CssLocator("#control")).InputValueAsync(cancellationToken: TestContext.Current.CancellationToken));
-        Assert.Equal("(element) => element.value", (string?)Assert.Single(session.RemoteEnd.CommandsFor("script.callFunction"))["params"]!["functionDeclaration"]);
+        Assert.Contains("state.readValue(element)", (string?)Assert.Single(session.RemoteEnd.CommandsFor("script.callFunction"))["params"]!["functionDeclaration"]);
     }
 
     [Fact]
@@ -153,7 +151,8 @@ public class ReadTests
     {
         (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider _) = await OpenPageAsync();
         await using BiDiDriver ownedDriver = driver;
-        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", Element("div-1", "div", HtmlNamespace));
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("div-1"));
+        session.RemoteEnd.AnswerWith("script.callFunction", ProtocolJson.Success(Null()));
 
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("div")).InputValueAsync(cancellationToken: TestContext.Current.CancellationToken));
 
@@ -168,11 +167,11 @@ public class ReadTests
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("input-1"));
         session.RemoteEnd.AnswerWith("script.callFunction", parameters => (string?)parameters["arguments"]![1]!["value"] == "data-role"
             ? ProtocolJson.Success(String("person"))
-            : ProtocolJson.Success(new JsonObject() { ["type"] = "null" }));
+            : ProtocolJson.Success(Null()));
 
         Assert.Equal("person", await page.Locate(new CssLocator("input")).GetAttributeAsync("data-role", cancellationToken: TestContext.Current.CancellationToken));
         Assert.Null(await page.Locate(new CssLocator("input")).GetAttributeAsync("title", cancellationToken: TestContext.Current.CancellationToken));
-        Assert.Equal("(element, name) => element.getAttribute(name)", (string?)session.RemoteEnd.CommandsFor("script.callFunction")[0]["params"]!["functionDeclaration"]);
+        Assert.Contains("state.readAttribute(element, name)", (string?)session.RemoteEnd.CommandsFor("script.callFunction")[0]["params"]!["functionDeclaration"]);
     }
 
     [Fact]
@@ -184,7 +183,7 @@ public class ReadTests
         int[] calls = [0];
         session.RemoteEnd.AnswerWith("script.callFunction", _ => Interlocked.Increment(ref calls[0]) == 1
             ? ProtocolJson.Success(Object(("x", Number(20.5)), ("y", Number(30)), ("width", Number(100)), ("height", Number(50))))
-            : ProtocolJson.Success(new JsonObject() { ["type"] = "null" }));
+            : ProtocolJson.Success(Null()));
 
         Assert.Equal(new BoundingBox(page.MainFrame, 20.5, 30, 100, 50), await page.Locate(new CssLocator("div")).BoundingBoxAsync(cancellationToken: TestContext.Current.CancellationToken));
         Assert.Null(await page.Locate(new CssLocator("div")).BoundingBoxAsync(cancellationToken: TestContext.Current.CancellationToken));
@@ -255,10 +254,14 @@ public class ReadTests
         session.RemoteEnd.AnswerWith("script.callFunction", _ => ProtocolJson.Success((JsonObject)results[Math.Min(Interlocked.Increment(ref calls[0]), results.Length) - 1].DeepClone()));
     }
 
-    private static JsonObject Element(string sharedId, string localName, string namespaceUri)
+    private static JsonObject Array(params JsonObject[] items)
     {
-        JsonObject value = new() { ["nodeType"] = 1, ["childNodeCount"] = 0, ["localName"] = localName, ["namespaceURI"] = namespaceUri };
-        return new JsonObject() { ["nodes"] = new JsonArray(new JsonObject() { ["type"] = "node", ["sharedId"] = sharedId, ["value"] = value }) };
+        return new JsonObject() { ["type"] = "array", ["value"] = new JsonArray([.. items]) };
+    }
+
+    private static JsonObject Null()
+    {
+        return new JsonObject() { ["type"] = "null" };
     }
 
     private static JsonObject Object(params (string Name, JsonNode Value)[] properties)

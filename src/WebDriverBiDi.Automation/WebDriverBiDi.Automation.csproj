@@ -67,6 +67,9 @@
     <EmbeddedResource Include="Scripts/page-actions.js">
       <LogicalName>page-actions</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Scripts/element-state.js">
+      <LogicalName>element-state</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

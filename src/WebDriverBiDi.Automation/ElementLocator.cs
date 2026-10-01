@@ -21,7 +21,6 @@ public sealed class ElementLocator
     // Enough to tell one match from several without serializing every match.
     private const ulong StrictMatchLimit = 2;
     private const string FocusFunction = "(element) => element.focus()";
-    private const string HtmlNamespace = "http://www.w3.org/1999/xhtml";
 
     // Input types whose value is chosen, such as a date or a checked box, rather than typed.
     private static readonly HashSet<string> UntypeableInputTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -719,9 +718,11 @@ public sealed class ElementLocator
     /// <returns>The text content.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public Task<string> TextContentAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public async Task<string> TextContentAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.ReadStringAsync("(element) => element.textContent", [], timeout, cancellationToken);
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        string? text = await this.PollElementAsync(budget, async node => (true, await this.ReadTextAsync(node, false, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
+        return text!;
     }
 
     /// <summary>
@@ -736,9 +737,7 @@ public sealed class ElementLocator
     public async Task<string> InnerTextAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        string? text = await this.PollElementAsync(budget, async node => node.GetNodeProperties().NamespaceUri == HtmlNamespace
-            ? (true, await this.ReadStringAsync(node, "(element) => element.innerText", [], budget).ConfigureAwait(false), string.Empty)
-            : throw new InvalidOperationException($"{this} is not an HTML element.")).ConfigureAwait(false);
+        string? text = await this.PollElementAsync(budget, async node => (true, await this.ReadTextAsync(node, true, budget).ConfigureAwait(false) ?? throw new InvalidOperationException($"{this} is not an HTML element."), string.Empty)).ConfigureAwait(false);
         return text!;
     }
 
@@ -767,9 +766,11 @@ public sealed class ElementLocator
     public async Task<string> InputValueAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        string? value = await this.PollElementAsync(budget, async node => node.GetNodeProperties().LocalName is "input" or "textarea" or "select"
-            ? (true, await this.ReadStringAsync(node, "(element) => element.value", [], budget).ConfigureAwait(false), string.Empty)
-            : throw new InvalidOperationException($"{this} is not an input, a text area, or a select.")).ConfigureAwait(false);
+        string? value = await this.PollElementAsync(budget, async node =>
+        {
+            RemoteValue read = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, element) => state.readValue(element)", [node.ToSharedReference()], budget).ConfigureAwait(false);
+            return (true, AsString(read) ?? throw new InvalidOperationException($"{this} is not an input, a text area, or a select."), string.Empty);
+        }).ConfigureAwait(false);
         return value!;
     }
 
@@ -787,8 +788,8 @@ public sealed class ElementLocator
         TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
         return await this.PollElementAsync(budget, async node =>
         {
-            RemoteValue value = await this.CallOnElementAsync(node, "(element, name) => element.getAttribute(name)", [LocalValue.String(name)], budget).ConfigureAwait(false);
-            return (true, value is StringRemoteValue text ? text.Value : null, string.Empty);
+            RemoteValue value = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, element, name) => state.readAttribute(element, name)", [node.ToSharedReference(), LocalValue.String(name)], budget).ConfigureAwait(false);
+            return (true, AsString(value), string.Empty);
         }).ConfigureAwait(false);
     }
 
@@ -925,6 +926,11 @@ public sealed class ElementLocator
     {
         HashSet<string> seen = [];
         return [.. nodes.Where(node => !string.IsNullOrEmpty(node.SharedId) && seen.Add(node.SharedId!))];
+    }
+
+    private static string? AsString(RemoteValue value)
+    {
+        return value is StringRemoteValue text ? text.Value : null;
     }
 
     private static RemoteValue Property(RemoteValue value, string name)
@@ -1347,6 +1353,13 @@ public sealed class ElementLocator
     {
         RemoteValue value = await this.CallOnElementAsync(node, functionDeclaration, arguments, budget).ConfigureAwait(false);
         return value.As<StringRemoteValue>().Value;
+    }
+
+    // The element's text, or null when its rendered text is asked for and it is not an HTML element.
+    private async Task<string?> ReadTextAsync(NodeRemoteValue node, bool useInnerText, TimeBudget budget)
+    {
+        RemoteValue texts = await this.Group.ScriptHost.CallStateAsync(this.Frame.Id, "(state, element, useInnerText) => state.readTexts([element], useInnerText)", [node.ToSharedReference(), LocalValue.Boolean(useInnerText)], budget).ConfigureAwait(false);
+        return AsString(texts.As<CollectionRemoteValue>().Value![0]);
     }
 
     // The state the library reports for the element, such as "enabled" or "error:noteditable"; an element removed
