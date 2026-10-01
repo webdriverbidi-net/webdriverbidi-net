@@ -125,6 +125,26 @@ public class ExpectIntegrationTests
 
     [Theory]
     [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task PageExpectationsFollowTheUrlAndTitle(BrowserKind browserKind)
+    {
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await OpenAsync(group, server);
+        CancellationToken token = TestContext.Current.CancellationToken;
+
+        await Expect(page).ToHaveUrlAsync(server.UrlFor("expect.html"), cancellationToken: token);
+        await Expect(page).ToHaveTitleAsync("Expect", cancellationToken: token);
+        await page.EvaluateAsync("() => { history.pushState(null, '', 'pushed'); location.hash = 'done'; setTimeout(() => { document.title = '  Changed\\n title '; }, 200); }", cancellationToken: token);
+        await Expect(page).ToHaveUrlAsync(new Regex("/pushed#done$"), cancellationToken: token);
+        await Expect(page).ToHaveTitleAsync("Changed title", cancellationToken: token);
+        await page.EvaluateAsync("() => { setTimeout(() => { location.href = 'reads.html'; }, 200); }", cancellationToken: token);
+        await Expect(page).Not.ToHaveUrlAsync(new Regex("pushed"), cancellationToken: token);
+        await Expect(page).ToHaveTitleAsync(new Regex("^Reads$"), cancellationToken: token);
+        await Expect(page).ToHaveUrlAsync(server.UrlFor("reads.html"), cancellationToken: token);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
     public async Task UnmetExpectationSaysWhatItSaw(BrowserKind browserKind)
     {
         await using TestPageServer server = await TestPageServer.StartAsync();

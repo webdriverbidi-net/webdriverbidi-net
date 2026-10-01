@@ -7,7 +7,7 @@ namespace WebDriverBiDi.Automation;
 
 /// <summary>
 /// Expectations that are checked again until they are met or their time runs out, for use with any test framework.
-/// Import it with <c>using static WebDriverBiDi.Automation.Assertions;</c> to write <c>Expect(locator)</c>.
+/// Import it with <c>using static WebDriverBiDi.Automation.Assertions;</c> to write <c>Expect(locator)</c> or <c>Expect(page)</c>.
 /// </summary>
 public static class Assertions
 {
@@ -19,5 +19,15 @@ public static class Assertions
     public static LocatorAssertions Expect(ElementLocator locator)
     {
         return new LocatorAssertions(locator, false);
+    }
+
+    /// <summary>
+    /// Creates the expectations for a page.
+    /// </summary>
+    /// <param name="page">The page.</param>
+    /// <returns>The expectations.</returns>
+    public static PageAssertions Expect(Page page)
+    {
+        return new PageAssertions(page, false);
     }
 }

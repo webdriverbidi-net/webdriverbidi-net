@@ -510,6 +510,80 @@ public sealed class Frame
     }
 
     /// <summary>
+    /// Waits until the frame's URL matches, or, if negated, does not, checking it each time it changes.
+    /// </summary>
+    /// <param name="expected">What the expectation requires, negation included, such as <c>to have URL "https://example.com/"</c>.</param>
+    /// <param name="isNot">A value indicating whether the expectation is negated.</param>
+    /// <param name="pattern">The expected URL.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>A task that completes when the expectation is met.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the frame is detached while waiting.</exception>
+    /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>
+    internal async Task ExpectUrlAsync(string expected, bool isNot, TextPattern pattern, TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        TimeBudget budget = this.CreateExpectBudget(timeout, cancellationToken);
+        if (!await this.TryWaitUntilAsync(() => pattern.Matches(this.url) != isNot, $"the page {expected}", budget).ConfigureAwait(false))
+        {
+            string url = TextPattern.Quote(this.Url);
+            throw new ExpectationFailedException($"Expected the page {expected}; received {url} after {budget.Duration.TotalSeconds} seconds.", expected, url, budget.Duration);
+        }
+    }
+
+    /// <summary>
+    /// Reads the document's title, with white space normalized, until it matches, or, if negated, does not, reading
+    /// it again after a navigation.
+    /// </summary>
+    /// <param name="expected">What the expectation requires, negation included, such as <c>to have title "Home"</c>.</param>
+    /// <param name="isNot">A value indicating whether the expectation is negated.</param>
+    /// <param name="pattern">The expected title.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="AutomationOptions.ExpectTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the expectation.</param>
+    /// <returns>A task that completes when the expectation is met.</returns>
+    /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>
+    internal async Task ExpectTitleAsync(string expected, bool isNot, TextPattern pattern, TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        TimeBudget budget = this.CreateExpectBudget(timeout, cancellationToken);
+        string? actual = null;
+        string? observed = null;
+        while (true)
+        {
+            int navigationsStarted = this.NavigationsStarted;
+            try
+            {
+                RemoteValue title = await this.Group.Driver.Script.CallFunctionAsync(this.Id, "() => document.title", [], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+                string text = TextPattern.Normalize(title.As<StringRemoteValue>().Value);
+                actual = TextPattern.Quote(text);
+                if (pattern.Matches(text) != isNot)
+                {
+                    return;
+                }
+
+                observed = $"received {actual}";
+            }
+            catch (WebDriverBiDiCommandException) when (this.NavigationsStarted != navigationsStarted)
+            {
+                observed = "the frame navigated while the title was read";
+            }
+            catch (WebDriverBiDiTimeoutException)
+            {
+                // The call was given the rest of the budget, so timing out means the budget is spent.
+                observed ??= "a command was still running";
+                break;
+            }
+
+            // The delay ends with the budget, at once if none is left.
+            await budget.DelayAsync(this.Group.Options.PollInterval).ConfigureAwait(false);
+            if (budget.IsExhausted)
+            {
+                break;
+            }
+        }
+
+        throw new ExpectationFailedException($"Expected the page {expected}; {observed} after {budget.Duration.TotalSeconds} seconds.", expected, actual, budget.Duration);
+    }
+
+    /// <summary>
     /// Records that a navigation started in the frame.
     /// </summary>
     internal void RecordNavigationStarted()
@@ -626,6 +700,11 @@ public sealed class Frame
         return new TimeBudget(this.NavigationTimeout(timeout), this.Group.Options.TimeProvider, cancellationToken);
     }
 
+    private TimeBudget CreateExpectBudget(TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        return new TimeBudget(timeout ?? this.Group.Options.ExpectTimeout, this.Group.Options.TimeProvider, cancellationToken);
+    }
+
     private TimeSpan NavigationTimeout(TimeSpan? timeout)
     {
         return timeout ?? this.Group.Options.NavigationTimeout;
@@ -715,6 +794,18 @@ public sealed class Frame
     // and the description run under the state lock.
     private async Task WaitUntilAsync(Func<bool> isDone, string awaited, Func<string> describe, TimeBudget budget)
     {
+        if (!await this.TryWaitUntilAsync(isDone, awaited, budget).ConfigureAwait(false))
+        {
+            lock (this.stateLock)
+            {
+                throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for {awaited}; {describe()}.");
+            }
+        }
+    }
+
+    // False when the budget runs out first.
+    private async Task<bool> TryWaitUntilAsync(Func<bool> isDone, string awaited, TimeBudget budget)
+    {
         Task timedOut = budget.DelayAsync(budget.Remaining);
         while (true)
         {
@@ -723,7 +814,7 @@ public sealed class Frame
             {
                 if (isDone())
                 {
-                    return;
+                    return true;
                 }
 
                 if (this.isDetached)
@@ -737,10 +828,7 @@ public sealed class Frame
             if (await Task.WhenAny(changed, timedOut).ConfigureAwait(false) == timedOut)
             {
                 await timedOut.ConfigureAwait(false);
-                lock (this.stateLock)
-                {
-                    throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for {awaited}; {describe()}.");
-                }
+                return false;
             }
         }
     }
