@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+    <LangVersion>14</LangVersion>
+    <RootNamespace>Dramaturge</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>../../Dramaturge.snk</AssemblyOriginatorKeyFile>
+    <IsAotCompatible Condition="'$(TargetFramework)' != 'netstandard2.0'">true</IsAotCompatible>
+
+    <!-- Not yet production quality; becomes packable when its roadmap phase is complete. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Dramaturge</PackageId>
+    <Authors>WebDriverBiDi.NET Committers</Authors>
+    <Company>WebDriverBiDi.NET Committers</Company>
+    <Title>Dramaturge</Title>
+    <Description>A high-level browser automation API with automatic waiting, built on WebDriver BiDi with the WebDriverBiDi .NET library.</Description>
+    <PackageTags>dramaturge;webdriver;bidi;browser-automation;testing;auto-wait</PackageTags>
+    <PackageProjectUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- SourceLink maps only the sources in source control; the SDK generates others (AssemblyInfo,
+         GlobalUsings). Embedding them puts every source a debugger may ask for in the symbol package. -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/WebDriverBiDi/WebDriverBiDi.csproj" />
+    <ProjectReference Include="../Dramaturge.Browsers/Dramaturge.Browsers.csproj" />
+    <ProjectReference Include="../../../src/WebDriverBiDi.Extensions/WebDriverBiDi.Extensions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Text.Json" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="../../.stylecop.json" Link=".stylecop.json" />
+    <AdditionalFiles Include="../../Dramaturge.snk" />
+    <None Include="README.md" Pack="true" PackagePath="/"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="$(ProjectDir)../../third_party/acquiescence/acquiescence.browser.js">
+      <Visible>False</Visible>
+      <LogicalName>acquiescence-library</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Scripts/page-actions.js">
+      <LogicalName>page-actions</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Scripts/element-state.js">
+      <LogicalName>element-state</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

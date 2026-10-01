@@ -140,12 +140,12 @@ jobs:
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge-tool.*.info
 
       # No thresholds until the package is complete.
-      - name: Test automation library (with coverage)
+      - name: Test Dramaturge automation library (with coverage)
         run: >
-          dotnet test --project test/WebDriverBiDi.Automation.Tests --configuration Release --no-build --verbosity normal
+          dotnet test --project dramaturge/test/Dramaturge.Tests --configuration Release --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
-          --coverlet-include "[WebDriverBiDi.Automation]*"
-          --results-directory test/coverage --coverlet-file-prefix lcov-automation
+          --coverlet-include "[Dramaturge]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-automation
 
       - name: Enforce combined coverage thresholds
         # Perform an aggregate threshold check
@@ -340,12 +340,12 @@ jobs:
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge-tool.*.info
 
       # No thresholds until the package is complete.
-      - name: Test automation library (with coverage)
+      - name: Test Dramaturge automation library (with coverage)
         run: >
-          dotnet test --project test/WebDriverBiDi.Automation.Tests --configuration Debug --no-build --verbosity normal
+          dotnet test --project dramaturge/test/Dramaturge.Tests --configuration Debug --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
-          --coverlet-include "[WebDriverBiDi.Automation]*"
-          --results-directory test/coverage-debug --coverlet-file-prefix lcov-automation
+          --coverlet-include "[Dramaturge]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-automation
 
       - name: Enforce combined coverage thresholds
         run: >
@@ -410,8 +410,8 @@ jobs:
       - name: Test Dramaturge command-line tool
         run: dotnet test --project dramaturge/test/Dramaturge.Tool.Tests --configuration Release --no-build --verbosity normal
 
-      - name: Test automation library
-        run: dotnet test --project test/WebDriverBiDi.Automation.Tests --configuration Release --no-build --verbosity normal
+      - name: Test Dramaturge automation library
+        run: dotnet test --project dramaturge/test/Dramaturge.Tests --configuration Release --no-build --verbosity normal
 
       # Runs the netstandard2.0 builds on the real .NET Framework, which only Windows has.
       - name: Test on .NET Framework
@@ -537,8 +537,8 @@ jobs:
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
 
-      - name: Run automation integration tests
-        run: dotnet test --project test/WebDriverBiDi.Automation.IntegrationTests --configuration Release --no-build --verbosity normal
+      - name: Run Dramaturge integration tests
+        run: dotnet test --project dramaturge/test/Dramaturge.IntegrationTests --configuration Release --no-build --verbosity normal
         env:
           CI: true
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
@@ -630,8 +630,8 @@ jobs:
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}
 
-      - name: Run automation integration tests
-        run: dotnet test --project test/WebDriverBiDi.Automation.IntegrationTests --configuration Release --no-build --verbosity normal
+      - name: Run Dramaturge integration tests
+        run: dotnet test --project dramaturge/test/Dramaturge.IntegrationTests --configuration Release --no-build --verbosity normal
         env:
           CI: true
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}

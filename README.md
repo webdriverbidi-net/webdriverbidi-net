@@ -88,11 +88,11 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 | `src/WebDriverBiDi.Analyzers.CodeFixProviders` | Code fixes for the analyzers' diagnostics | Included in `WebDriverBiDi.Analyzers` |
 | `src/WebDriverBiDi.Logging` | `Microsoft.Extensions.Logging` (`ILogger`) integration | `WebDriverBiDi.Logging` |
 | `src/WebDriverBiDi.Extensions` | Convenience extension methods, an input action builder, and network traffic capture | `WebDriverBiDi.Extensions` |
-| `src/WebDriverBiDi.Automation` | High-level automation API that waits automatically for elements to be ready for interaction | Pre-release; not yet published |
 
-The `dramaturge` directory holds Dramaturge, a higher-level automation library built on this one, with its browser
-launcher (`Dramaturge.Browsers`) and command-line tool (`Dramaturge.Tool`). It builds from its own
-`dramaturge/Dramaturge.sln` and is to move to a repository of its own.
+The `dramaturge` directory holds Dramaturge, a higher-level automation library built on this one that waits
+automatically for elements to be ready for interaction, with its browser launcher (`Dramaturge.Browsers`) and
+command-line tool (`Dramaturge.Tool`). It builds from its own `dramaturge/Dramaturge.sln` and is to move to a
+repository of its own.
 
 ### Demo
 
@@ -110,7 +110,6 @@ launcher (`Dramaturge.Browsers`) and command-line tool (`Dramaturge.Tool`). It b
 | `test/WebDriverBiDi.Analyzers.Tests` | Tests for the analyzers and code fix providers |
 | `test/WebDriverBiDi.Logging.Tests` | Tests for the logging library |
 | `test/WebDriverBiDi.Extensions.Tests` | Unit tests for the extensions library |
-| `test/WebDriverBiDi.Automation.Tests` | Unit tests for the automation library |
 | `test/WebDriverBiDi.Integration.Tests` | Integration tests that run the main library against real browsers |
 | `test/WebDriverBiDi.Compatibility.Tests` | Checks that the main library works when consumed from each build configuration |
 | `test/WebDriverBiDi.AotTestApplication` | Smoke test for JSON serialization under ahead-of-time (AOT) compilation |
