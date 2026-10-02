@@ -82,6 +82,24 @@ jobs:
       - name: Validate Dramaturge documentation code regions
         run: ./dramaturge/docs/tools/validate-doc-regions.sh
 
+      # Dramaturge's site is published only from its own repository; building it here proves it builds.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Build the Dramaturge documentation site
+        working-directory: dramaturge
+        run: |
+          dotnet build src/Dramaturge/Dramaturge.csproj --configuration Release
+          dotnet tool restore
+          cd docs
+          dotnet docfx metadata docfx.json
+          dotnet docfx build docfx.json --warningsAsErrors
+
   benchmarks:
     name: Benchmarks
     needs: changes

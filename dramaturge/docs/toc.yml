@@ -1,0 +1,12 @@
+- name: Home
+  href: index.md
+- name: Articles
+  href: articles/
+  homepage: articles/browser-setup.md
+- name: API Documentation
+  href: api/
+  homepage: api/index.md
+- name: GitHub
+  href: https://github.com/webdriverbidi-net/dramaturge
+- name: NuGet
+  href: https://www.nuget.org/packages/Dramaturge
