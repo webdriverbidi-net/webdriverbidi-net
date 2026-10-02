@@ -20,15 +20,17 @@
 
   <PropertyGroup>
     <PackageId>Dramaturge.Tool</PackageId>
+    <!-- Shared by the three Dramaturge packages; a release sets it from its tag. -->
+    <Version>0.0.1</Version>
     <Authors>WebDriverBiDi.NET Committers</Authors>
     <Company>WebDriverBiDi.NET Committers</Company>
     <Title>Dramaturge - Command-Line Tool</Title>
     <Description>The dramaturge command-line tool: installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches.</Description>
     <PackageTags>dramaturge;webdriver;bidi;browser-automation;browsers;tool</PackageTags>
-    <PackageProjectUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</PackageProjectUrl>
+    <PackageProjectUrl>https://webdriverbidi-net.github.io/dramaturge/</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
+    <RepositoryUrl>https://github.com/webdriverbidi-net/dramaturge</RepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 

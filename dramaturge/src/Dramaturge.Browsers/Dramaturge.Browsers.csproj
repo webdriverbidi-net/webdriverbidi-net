@@ -22,15 +22,17 @@
 
   <PropertyGroup>
     <PackageId>Dramaturge.Browsers</PackageId>
+    <!-- Shared by the three Dramaturge packages; a release sets it from its tag. -->
+    <Version>0.0.1</Version>
     <Authors>WebDriverBiDi.NET Committers</Authors>
     <Company>WebDriverBiDi.NET Committers</Company>
     <Title>Dramaturge - Browser Management</Title>
     <Description>Locates, downloads, and launches browsers for automation over WebDriver BiDi, with the WebDriverBiDi .NET library.</Description>
     <PackageTags>dramaturge;webdriver;bidi;browser-automation;chrome;firefox;browser-launcher</PackageTags>
-    <PackageProjectUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</PackageProjectUrl>
+    <PackageProjectUrl>https://webdriverbidi-net.github.io/dramaturge/</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
+    <RepositoryUrl>https://github.com/webdriverbidi-net/dramaturge</RepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 

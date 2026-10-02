@@ -11,22 +11,21 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../../Dramaturge.snk</AssemblyOriginatorKeyFile>
     <IsAotCompatible Condition="'$(TargetFramework)' != 'netstandard2.0'">true</IsAotCompatible>
-
-    <!-- Not yet production quality; becomes packable when its roadmap phase is complete. -->
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup>
     <PackageId>Dramaturge</PackageId>
+    <!-- Shared by the three Dramaturge packages; a release sets it from its tag. -->
+    <Version>0.0.1</Version>
     <Authors>WebDriverBiDi.NET Committers</Authors>
     <Company>WebDriverBiDi.NET Committers</Company>
     <Title>Dramaturge</Title>
     <Description>A high-level browser automation API with automatic waiting, built on WebDriver BiDi with the WebDriverBiDi .NET library.</Description>
     <PackageTags>dramaturge;webdriver;bidi;browser-automation;testing;auto-wait</PackageTags>
-    <PackageProjectUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</PackageProjectUrl>
+    <PackageProjectUrl>https://webdriverbidi-net.github.io/dramaturge/</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
+    <RepositoryUrl>https://github.com/webdriverbidi-net/dramaturge</RepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
