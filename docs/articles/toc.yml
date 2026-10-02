@@ -18,6 +18,8 @@
   href: events-observables.md
 - name: Working with Remote Values
   href: remote-values.md
+- name: Using with Coding Agents
+  href: coding-agents.md
 - name: Module Guides
   items:
     - name: Browser Module

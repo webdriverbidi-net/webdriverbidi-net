@@ -1,0 +1,13 @@
+{
+  "name": "webdriverbidi-net",
+  "description": "A skill that teaches coding agents to write correct C# with the WebDriverBiDi.NET client for the W3C WebDriver BiDi protocol: connecting, commands, events, scripts, and errors.",
+  "author": {
+    "name": "WebDriverBiDi.NET Committers",
+    "url": "https://github.com/webdriverbidi-net"
+  },
+  "homepage": "https://webdriverbidi-net.github.io/webdriverbidi-net/",
+  "repository": "https://github.com/webdriverbidi-net/webdriverbidi-net",
+  "license": "MIT",
+  "keywords": ["dotnet", "csharp", "webdriver", "webdriver-bidi", "browser-automation"],
+  "skills": "."
+}

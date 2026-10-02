@@ -62,6 +62,16 @@ and the session is started with `PipeConnection` in place of the default websock
 [Dramaturge.Browsers](https://www.nuget.org/packages/Dramaturge.Browsers) package does these things:
 it downloads, launches, and connects to Chrome, Firefox, Edge, and Safari, and to browsers on remote grids.
 
+## Coding Agents
+The repository publishes an agent skill, `webdriverbidi-net`, that teaches coding agents such as Claude Code to use
+the library correctly, and the documentation site publishes `llms.txt` and `llms-full.txt` for language models. To
+install the skill in Claude Code:
+
+    claude plugin marketplace add webdriverbidi-net/webdriverbidi-net
+    claude plugin install webdriverbidi-net@webdriverbidi-net
+
+See [Using with Coding Agents](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/coding-agents.html).
+
 ## Getting Started
 The library is built to support .NET Standard 2.0. This should allow the widest usage of the library across
 the largest number of framework versions, including .NET Framework, .NET Core, and .NET 5 and higher. For
