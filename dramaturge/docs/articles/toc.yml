@@ -6,6 +6,12 @@
   href: locators.md
 - name: Actions
   href: actions.md
+- name: Assertions
+  href: assertions.md
+- name: Pages and Frames
+  href: pages-and-frames.md
+- name: Network
+  href: network.md
 - name: Configuration
   href: configuration.md
 - name: Network Capture

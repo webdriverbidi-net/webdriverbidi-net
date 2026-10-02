@@ -64,7 +64,7 @@ A `Frame` is fixed to one document: if the `iframe`'s document is replaced, the 
 
 ## Waiting for a State
 
-Actions wait for their element. To wait for an element itself, such as for a spinner to go away, use `WaitForAsync`, or an expectation with `Expect`:
+Actions wait for their element. To wait for an element itself, such as for a spinner to go away, use `WaitForAsync`, or an [expectation](assertions.md):
 
 [!code-csharp[Waiting](../code/LocatorsSamples.cs#Waiting)]
 

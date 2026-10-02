@@ -57,6 +57,8 @@ Dramaturge is built on [WebDriverBiDi.NET](https://webdriverbidi-net.github.io/w
 
 ## Next Steps
 
+- [Locators](locators.md), [Actions](actions.md), and [Assertions](assertions.md): finding elements, acting on them, and checking the page
+- [Pages and Frames](pages-and-frames.md) and [Network](network.md): navigation, scripts, dialogs, downloads, routes, and cookies
 - [Browser Setup](browser-setup.md): other browsers, channels, and versions, remote grids, and running browsers
 - [Configuration](configuration.md): timeouts and per-browser settings
 - [Network Capture](network-capture.md): recording a page's traffic as a HAR file
