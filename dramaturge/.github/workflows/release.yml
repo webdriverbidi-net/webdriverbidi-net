@@ -65,6 +65,10 @@ jobs:
           dotnet docfx build docfx.json --warningsAsErrors
           touch _site/.nojekyll
 
+      # llms.txt and llms-full.txt, published at the site's root with the rest of it.
+      - name: Generate llms.txt
+        run: dotnet run docs/tools/generate-llms.cs -- docs https://webdriverbidi-net.github.io/dramaturge/
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

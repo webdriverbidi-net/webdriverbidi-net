@@ -71,3 +71,7 @@ jobs:
           cd docs
           dotnet docfx metadata docfx.json
           dotnet docfx build docfx.json --warningsAsErrors
+
+      # The release writes these into the published site; generating them here proves every reference resolves.
+      - name: Generate llms.txt
+        run: dotnet run docs/tools/generate-llms.cs -- docs https://webdriverbidi-net.github.io/dramaturge/ "$RUNNER_TEMP/llms"

@@ -106,6 +106,8 @@ jobs:
           cd docs
           dotnet docfx metadata docfx.json
           dotnet docfx build docfx.json --warningsAsErrors
+          cd ..
+          dotnet run docs/tools/generate-llms.cs -- docs https://webdriverbidi-net.github.io/dramaturge/ "$RUNNER_TEMP/dramaturge-llms"
 
   benchmarks:
     name: Benchmarks
