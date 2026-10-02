@@ -24,7 +24,7 @@
 # time, and the NuGet badge and package links in the READMEs are version-independent.
 #
 # Verification runs the local subset of the release gates: a Release build with -warnaserror, the
-# three unit test projects, and the documentation region validation. The coverage thresholds, the
+# four unit test projects, and the documentation region validation. The coverage thresholds, the
 # analyzer package layout check, and the compatibility, integration, and Windows matrices remain
 # CI's job and run again on the tag push.
 #
@@ -452,6 +452,7 @@ else {
         Invoke-VerificationStep 'unit tests (library)' @('dotnet', 'test', '--project', 'test/WebDriverBiDi.Tests', '--configuration', 'Release', '--no-build')
         Invoke-VerificationStep 'unit tests (analyzers)' @('dotnet', 'test', '--project', 'test/WebDriverBiDi.Analyzers.Tests', '--configuration', 'Release', '--no-build')
         Invoke-VerificationStep 'unit tests (logging)' @('dotnet', 'test', '--project', 'test/WebDriverBiDi.Logging.Tests', '--configuration', 'Release', '--no-build')
+        Invoke-VerificationStep 'unit tests (extensions)' @('dotnet', 'test', '--project', 'test/WebDriverBiDi.Extensions.Tests', '--configuration', 'Release', '--no-build')
 
         # The region validation exists only as a bash script. Git for Windows puts bash on PATH, so
         # this usually runs; where it does not, say so rather than reporting a pass that never

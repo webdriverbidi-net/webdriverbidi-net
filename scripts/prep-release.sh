@@ -24,7 +24,7 @@
 # time, and the NuGet badge and package links in the READMEs are version-independent.
 #
 # Verification runs the local subset of the release gates: a Release build with -warnaserror, the
-# three unit test projects, and the documentation region validation. The coverage thresholds, the
+# four unit test projects, and the documentation region validation. The coverage thresholds, the
 # analyzer package layout check, and the compatibility, integration, and Windows matrices remain
 # CI's job and run again on the tag push.
 #
@@ -336,6 +336,7 @@ else
   run_step "unit tests (library)" dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build
   run_step "unit tests (analyzers)" dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build
   run_step "unit tests (logging)" dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build
+  run_step "unit tests (extensions)" dotnet test --project test/WebDriverBiDi.Extensions.Tests --configuration Release --no-build
   run_step "documentation region validation" ./docs/tools/validate-doc-regions.sh
 
   echo "  ✔ all verification steps passed"

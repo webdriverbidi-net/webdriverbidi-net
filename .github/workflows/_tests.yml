@@ -1,5 +1,5 @@
 # Reusable workflow: build the solution and run all tests (unit, analyzer,
-# logging, integration). Called by ci.yml (on PR and main push) and by
+# logging, integration), and, unless include-dramaturge is false, Dramaturge's. Called by ci.yml (on PR and main push) and by
 # release.yml (on tag push). Not triggered directly.
 #
 # The leading underscore in the filename is a convention to signal "not a
@@ -11,7 +11,14 @@
 name: Tests (reusable)
 
 on:
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      include-dramaturge:
+        # The Dramaturge steps run on pull requests and main pushes, so a core change that breaks Dramaturge fails
+        # before it merges; release.yml turns them off, so they never block a WebDriverBiDi release.
+        description: Whether to build and test Dramaturge as well.
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -33,9 +40,11 @@ jobs:
             10.0.x
 
       - name: Restore dependencies
-        run: |
-          dotnet restore
-          dotnet restore dramaturge/Dramaturge.sln
+        run: dotnet restore
+
+      - name: Restore Dramaturge dependencies
+        if: inputs.include-dramaturge
+        run: dotnet restore dramaturge/Dramaturge.sln
 
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
@@ -44,6 +53,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore -warnaserror
 
       - name: Build Dramaturge
+        if: inputs.include-dramaturge
         run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
 
   unit-tests:
@@ -63,9 +73,11 @@ jobs:
             10.0.x
 
       - name: Restore dependencies
-        run: |
-          dotnet restore
-          dotnet restore dramaturge/Dramaturge.sln
+        run: dotnet restore
+
+      - name: Restore Dramaturge dependencies
+        if: inputs.include-dramaturge
+        run: dotnet restore dramaturge/Dramaturge.sln
 
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
@@ -74,6 +86,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore -warnaserror
 
       - name: Build Dramaturge
+        if: inputs.include-dramaturge
         run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
 
       # Note that each coverage report is scoped only to the assemblies being tested
@@ -110,6 +123,7 @@ jobs:
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-logging.*.info
 
       - name: Test Dramaturge browser management library (with coverage)
+        if: inputs.include-dramaturge
         run: >
           dotnet test --project dramaturge/test/Dramaturge.Browsers.Tests --configuration Release --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
@@ -117,6 +131,7 @@ jobs:
           --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-browsers
 
       - name: Enforce Dramaturge browser management coverage thresholds
+        if: inputs.include-dramaturge
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge-browsers.*.info
 
       - name: Test extensions library (with coverage)
@@ -130,6 +145,7 @@ jobs:
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-extensions.*.info
 
       - name: Test Dramaturge command-line tool (with coverage)
+        if: inputs.include-dramaturge
         run: >
           dotnet test --project dramaturge/test/Dramaturge.Tool.Tests --configuration Release --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
@@ -137,10 +153,12 @@ jobs:
           --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-tool
 
       - name: Enforce Dramaturge command-line tool coverage thresholds
+        if: inputs.include-dramaturge
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge-tool.*.info
 
       # No thresholds until the package is complete.
       - name: Test Dramaturge automation library (with coverage)
+        if: inputs.include-dramaturge
         run: >
           dotnet test --project dramaturge/test/Dramaturge.Tests --configuration Release --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
@@ -157,6 +175,7 @@ jobs:
           test/coverage/lcov-extensions.*.info
 
       - name: Enforce combined Dramaturge coverage thresholds
+        if: inputs.include-dramaturge
         run: >
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
           test/coverage/lcov-dramaturge-browsers.*.info
@@ -240,6 +259,14 @@ jobs:
 
           exit "$status"
 
+      # release.yml pushes only the packages scripts/check-release-packages.sh allows. Running the same check on a
+      # pack of the solution here means a change that would break it, such as a Dramaturge project added to the
+      # solution, fails a pull request rather than the release.
+      - name: Pack the solution and check its packages
+        run: |
+          dotnet pack WebDriverBiDi.NET.sln --configuration Release --no-build --output test/release-packages
+          ./scripts/check-release-packages.sh test/release-packages
+
       - name: Upload code coverage
         uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2
         with:
@@ -268,14 +295,17 @@ jobs:
             10.0.x
 
       - name: Restore dependencies
-        run: |
-          dotnet restore
-          dotnet restore dramaturge/Dramaturge.sln
+        run: dotnet restore
+
+      - name: Restore Dramaturge dependencies
+        if: inputs.include-dramaturge
+        run: dotnet restore dramaturge/Dramaturge.sln
 
       - name: Build
         run: dotnet build --configuration Debug --no-restore -warnaserror
 
       - name: Build Dramaturge
+        if: inputs.include-dramaturge
         run: dotnet build dramaturge/Dramaturge.sln --configuration Debug --no-restore -warnaserror
 
       - name: Test WebDriverBiDi library (with coverage)
@@ -310,6 +340,7 @@ jobs:
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-logging.*.info
 
       - name: Test Dramaturge browser management library (with coverage)
+        if: inputs.include-dramaturge
         run: >
           dotnet test --project dramaturge/test/Dramaturge.Browsers.Tests --configuration Debug --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
@@ -317,6 +348,7 @@ jobs:
           --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-browsers
 
       - name: Enforce Dramaturge browser management coverage thresholds
+        if: inputs.include-dramaturge
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge-browsers.*.info
 
       - name: Test extensions library (with coverage)
@@ -330,6 +362,7 @@ jobs:
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-extensions.*.info
 
       - name: Test Dramaturge command-line tool (with coverage)
+        if: inputs.include-dramaturge
         run: >
           dotnet test --project dramaturge/test/Dramaturge.Tool.Tests --configuration Debug --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
@@ -337,10 +370,12 @@ jobs:
           --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-tool
 
       - name: Enforce Dramaturge command-line tool coverage thresholds
+        if: inputs.include-dramaturge
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge-tool.*.info
 
       # No thresholds until the package is complete.
       - name: Test Dramaturge automation library (with coverage)
+        if: inputs.include-dramaturge
         run: >
           dotnet test --project dramaturge/test/Dramaturge.Tests --configuration Debug --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
@@ -356,6 +391,7 @@ jobs:
           test/coverage-debug/lcov-extensions.*.info
 
       - name: Enforce combined Dramaturge coverage thresholds
+        if: inputs.include-dramaturge
         run: >
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
           test/coverage-debug/lcov-dramaturge-browsers.*.info
@@ -378,9 +414,11 @@ jobs:
             10.0.x
 
       - name: Restore dependencies
-        run: |
-          dotnet restore
-          dotnet restore dramaturge/Dramaturge.sln
+        run: dotnet restore
+
+      - name: Restore Dramaturge dependencies
+        if: inputs.include-dramaturge
+        run: dotnet restore dramaturge/Dramaturge.sln
 
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
@@ -389,6 +427,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore -warnaserror
 
       - name: Build Dramaturge
+        if: inputs.include-dramaturge
         run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
 
       # Running tests on Windows will deliberately not produce code coverage metrics
@@ -402,15 +441,18 @@ jobs:
         run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
 
       - name: Test Dramaturge browser management library
+        if: inputs.include-dramaturge
         run: dotnet test --project dramaturge/test/Dramaturge.Browsers.Tests --configuration Release --no-build --verbosity normal
 
       - name: Test extensions library
         run: dotnet test --project test/WebDriverBiDi.Extensions.Tests --configuration Release --no-build --verbosity normal
 
       - name: Test Dramaturge command-line tool
+        if: inputs.include-dramaturge
         run: dotnet test --project dramaturge/test/Dramaturge.Tool.Tests --configuration Release --no-build --verbosity normal
 
       - name: Test Dramaturge automation library
+        if: inputs.include-dramaturge
         run: dotnet test --project dramaturge/test/Dramaturge.Tests --configuration Release --no-build --verbosity normal
 
       # Runs the netstandard2.0 builds on the real .NET Framework, which only Windows has.
@@ -418,6 +460,7 @@ jobs:
         run: dotnet test --project test/WebDriverBiDi.NetFramework.Tests --configuration Release --no-build --verbosity normal
 
       - name: Test Dramaturge browser management library on .NET Framework
+        if: inputs.include-dramaturge
         run: dotnet test --project dramaturge/test/Dramaturge.Browsers.NetFramework.Tests --configuration Release --no-build --verbosity normal
 
   # Compatibility tests build and run a separate consumer application against a specific build of
@@ -449,9 +492,11 @@ jobs:
             10.0.x
 
       - name: Restore dependencies
-        run: |
-          dotnet restore
-          dotnet restore dramaturge/Dramaturge.sln
+        run: dotnet restore
+
+      - name: Restore Dramaturge dependencies
+        if: inputs.include-dramaturge
+        run: dotnet restore dramaturge/Dramaturge.sln
 
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
@@ -460,6 +505,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore -warnaserror
 
       - name: Build Dramaturge
+        if: inputs.include-dramaturge
         run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
 
       - name: Run compatibility tests
@@ -468,6 +514,7 @@ jobs:
           CI: true
 
       - name: Run Dramaturge compatibility tests
+        if: inputs.include-dramaturge
         run: dotnet test --project dramaturge/test/Dramaturge.Browsers.Compatibility.Tests --configuration Release --no-build --verbosity normal
         env:
           CI: true
@@ -499,9 +546,11 @@ jobs:
             10.0.x
 
       - name: Restore dependencies
-        run: |
-          dotnet restore
-          dotnet restore dramaturge/Dramaturge.sln
+        run: dotnet restore
+
+      - name: Restore Dramaturge dependencies
+        if: inputs.include-dramaturge
+        run: dotnet restore dramaturge/Dramaturge.sln
 
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
@@ -510,6 +559,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore -warnaserror
 
       - name: Build Dramaturge
+        if: inputs.include-dramaturge
         run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
 
       - name: Create local browser directory
@@ -538,6 +588,7 @@ jobs:
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
 
       - name: Run Dramaturge integration tests
+        if: inputs.include-dramaturge
         run: dotnet test --project dramaturge/test/Dramaturge.IntegrationTests --configuration Release --no-build --verbosity normal
         env:
           CI: true
@@ -577,9 +628,11 @@ jobs:
             10.0.x
 
       - name: Restore dependencies
-        run: |
-          dotnet restore
-          dotnet restore dramaturge/Dramaturge.sln
+        run: dotnet restore
+
+      - name: Restore Dramaturge dependencies
+        if: inputs.include-dramaturge
+        run: dotnet restore dramaturge/Dramaturge.sln
 
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
@@ -588,6 +641,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore -warnaserror
 
       - name: Build Dramaturge
+        if: inputs.include-dramaturge
         run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
 
       - name: Create local browser directory
@@ -631,6 +685,7 @@ jobs:
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}
 
       - name: Run Dramaturge integration tests
+        if: inputs.include-dramaturge
         run: dotnet test --project dramaturge/test/Dramaturge.IntegrationTests --configuration Release --no-build --verbosity normal
         env:
           CI: true
