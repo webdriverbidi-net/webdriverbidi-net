@@ -49,6 +49,10 @@ Nothing waits for a fixed time. The limits are 30 seconds for actions and naviga
 
 None of these depend on a test framework, so Dramaturge works with xUnit, NUnit, MSTest, or none.
 
+## In a Test Project
+
+The [examples project](https://github.com/webdriverbidi-net/dramaturge/tree/main/samples/Dramaturge.Examples) is a complete xUnit project that tests a small shop. It shows one way to arrange tests: a class fixture launches the browser once for a class's tests, each test gets a browser of its own, with its own cookies and storage, and routes serve the shop's pages and answer its API, so that the tests need no server.
+
 ## With a Driver You Connected Yourself
 
 Dramaturge is built on [WebDriverBiDi.NET](https://webdriverbidi-net.github.io/webdriverbidi-net/), and can be added to a `BiDiDriver` that is already connected, to use both:

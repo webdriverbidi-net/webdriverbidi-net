@@ -612,6 +612,14 @@ jobs:
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
 
+      - name: Run Dramaturge examples
+        if: inputs.include-dramaturge
+        run: dotnet test --project dramaturge/samples/Dramaturge.Examples --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
+          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
+          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
+
   integration-tests-windows:
     name: Integration tests (${{ matrix.browser.display }}, Windows)
     needs: build
@@ -704,6 +712,14 @@ jobs:
       - name: Run Dramaturge integration tests
         if: inputs.include-dramaturge
         run: dotnet test --project dramaturge/test/Dramaturge.IntegrationTests --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
+          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}
+          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}
+
+      - name: Run Dramaturge examples
+        if: inputs.include-dramaturge
+        run: dotnet test --project dramaturge/samples/Dramaturge.Examples --configuration Release --no-build --verbosity normal
         env:
           CI: true
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}

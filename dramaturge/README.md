@@ -48,9 +48,12 @@ Building requires the .NET 10 SDK:
     dotnet test --project test/Dramaturge.Tests
 
 The integration tests launch real browsers: Chrome and Firefox from the paths in `CHROME_EXECUTABLE` and
-`FIREFOX_EXECUTABLE`, or, when those are not set, outside CI, the downloaded Canary and Nightly builds.
+`FIREFOX_EXECUTABLE`, or, when those are not set, outside CI, the downloaded Canary and Nightly builds. The examples
+run against one browser: Firefox if `FIREFOX_EXECUTABLE` is set, and otherwise Chrome, at `CHROME_EXECUTABLE` or
+downloaded.
 
     dotnet test --project test/Dramaturge.IntegrationTests
+    dotnet test --project samples/Dramaturge.Examples
 
 To check Dramaturge under native AOT, publish the test application and run it against each browser; it prints a
 `PASS` line and exits with 0. Building it, as the solution build does, already reports any trimming or AOT warning.
@@ -66,6 +69,7 @@ Until Dramaturge moves to a repository of its own, it builds against the `WebDri
 | --- | --- |
 | `src` | The `Dramaturge`, `Dramaturge.Browsers`, and `Dramaturge.Tool` projects |
 | `test` | Unit tests, which need no browser; integration tests; and compatibility and .NET Framework tests of the launcher |
+| `samples` | `Dramaturge.Examples`, an xUnit project of example tests, which CI runs with the integration tests |
 | `docs` | The documentation site; `docs/README.md` describes it |
 | `third_party` | The vendored Acquiescence element-state library and chromium-bidi mapper, with their licenses |
 | `scripts` | Scripts for coverage thresholds and updating the chromium-bidi mapper |

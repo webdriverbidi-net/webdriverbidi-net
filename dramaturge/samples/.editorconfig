@@ -1,0 +1,14 @@
+#### C# Coding Conventions ####
+[*.cs]
+
+# async/await preferences
+dotnet_diagnostic.CA2007.severity = none
+
+# Test method names do not follow the "Async" suffix convention, as they are
+# identified by the [Test] attribute rather than the method name.
+dotnet_naming_rule.async_methods_should_have_async_suffix.severity = none
+
+# The examples leave out TestContext.Current.CancellationToken, to read like the tests a project would write;
+# Dramaturge's own timeouts bound every call.
+[*.cs]
+dotnet_diagnostic.xUnit1051.severity = none
