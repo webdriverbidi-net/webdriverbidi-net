@@ -53,6 +53,7 @@ jobs:
               - 'docs/README.md'
               - 'docs/code/**'
               - 'docs/tools/validate-doc-regions.sh'
+              - 'docs/tools/generate-llms.cs'
               - 'README.md'
               - 'src/*/README.md'
               - 'dramaturge/docs/**'
@@ -82,7 +83,6 @@ jobs:
       - name: Validate Dramaturge documentation code regions
         run: ./dramaturge/docs/tools/validate-doc-regions.sh
 
-      # Dramaturge's site is published only from its own repository; building it here proves it builds.
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -91,6 +91,12 @@ jobs:
             9.0.x
             10.0.x
 
+      # The release writes these into the published site; generating them here proves every article and sample
+      # reference they need resolves.
+      - name: Generate llms.txt
+        run: dotnet run docs/tools/generate-llms.cs -- docs https://webdriverbidi-net.github.io/webdriverbidi-net/ "$RUNNER_TEMP/llms"
+
+      # Dramaturge's site is published only from its own repository; building it here proves it builds.
       - name: Build the Dramaturge documentation site
         working-directory: dramaturge
         run: |

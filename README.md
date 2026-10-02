@@ -317,6 +317,7 @@ the snippets project does not produce by itself (it builds only the `net10.0` fl
     dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj
     docfx metadata docs/docfx.json
     docfx build docs/docfx.json
+    dotnet run docs/tools/generate-llms.cs -- docs https://webdriverbidi-net.github.io/webdriverbidi-net/
 
 To preview a local version of the documentation prior to publishing, you can do so with the
 following command:
