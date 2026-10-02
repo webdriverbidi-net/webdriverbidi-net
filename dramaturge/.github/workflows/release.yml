@@ -1,0 +1,162 @@
+# Release workflow for Dramaturge.
+#
+# Triggered only by pushing a vX.Y.Z tag on a commit that is on main. Runs the full test suite (through
+# _tests.yml), builds and publishes the documentation site, and packs and pushes the Dramaturge,
+# Dramaturge.Browsers, and Dramaturge.Tool packages, which share the tag's version. The publishing jobs need the
+# tests, so a failure on the tagged commit publishes nothing.
+
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+', 'v[0-9]+.[0-9]+.[0-9]+-*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests
+    uses: ./.github/workflows/_tests.yml
+
+  verify-tag:
+    name: Verify tag
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Everything a tag publishes is gated on this, so a tag on a commit that never reached main publishes nothing.
+      - name: Verify tag is on origin/main
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "${GITHUB_SHA}" origin/main
+
+  build-docs:
+    name: Build documentation
+    needs: [tests, verify-tag]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Validate documentation code regions
+        run: ./docs/tools/validate-doc-regions.sh
+
+      # DocFX is pinned in .config/dotnet-tools.json, so a bad DocFX release cannot block publishing.
+      - name: Build documentation site
+        run: |
+          dotnet build src/Dramaturge/Dramaturge.csproj --configuration Release
+          dotnet tool restore
+          cd docs
+          dotnet docfx metadata docfx.json
+          dotnet docfx build docfx.json --warningsAsErrors
+          touch _site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: docs/_site
+
+  deploy-docs:
+    name: Deploy documentation
+    # Also needs the release, so the published documentation always describes a version that is on NuGet.
+    needs: [build-docs, release]
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  release:
+    name: Publish to NuGet
+    needs: [tests, build-docs, verify-tag]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # contents: read is restated because a job-level map replaces the workflow's; id-token: write enables the OIDC
+    # trusted-publishing login to NuGet.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Set version variables from tag
+        run: |
+          GIT_TAG="${GITHUB_REF/refs\/tags\/v/}"
+          VERSION="${GIT_TAG%%-*}"
+          QUALIFIER="${GIT_TAG#${VERSION}}"
+          QUALIFIER="${QUALIFIER#-}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${VERSION}"
+          echo "ASSEMBLY_VERSION=${MAJOR}.0.0" >> "$GITHUB_ENV"
+          echo "FILE_VERSION=${MAJOR}.${MINOR}.${PATCH}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+          if [ -n "${QUALIFIER}" ]; then
+            echo "PACKAGE_VERSION=${VERSION}-${QUALIFIER}" >> "$GITHUB_ENV"
+          else
+            echo "PACKAGE_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # The tag's version overrides the projects' own, and, passed to every project, keeps the three packages'
+      # versions, and their dependencies on each other, the same.
+      - name: Build
+        run: >
+          dotnet build --configuration Release --no-restore
+          -p:Version="${PACKAGE_VERSION}"
+          -p:AssemblyVersion="${ASSEMBLY_VERSION}"
+          -p:FileVersion="${FILE_VERSION}"
+          -p:InformationalVersion="${PACKAGE_VERSION}"
+          -p:ContinuousIntegrationBuild=true
+
+      - name: Pack
+        run: >
+          dotnet pack --configuration Release --no-build --output .
+          -p:Version="${PACKAGE_VERSION}"
+          -p:ContinuousIntegrationBuild=true
+
+      # Only Dramaturge's packages may be pushed; anything else in the pack output fails the release here.
+      - name: Check the packages are this repository's
+        run: ./scripts/check-release-packages.sh .
+
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push packages to NuGet
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "*.nupkg" --skip-duplicate --source https://api.nuget.org/v3/index.json --api-key "${NUGET_API_KEY}"

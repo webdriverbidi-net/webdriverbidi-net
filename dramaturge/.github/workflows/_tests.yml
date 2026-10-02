@@ -1,0 +1,375 @@
+# Reusable workflow: build the solution and run all of Dramaturge's tests (unit, compatibility, .NET Framework,
+# integration, and the examples). Called by ci.yml (on pull requests and main pushes) and by release.yml (on tag
+# pushes). Not triggered directly.
+
+name: Tests (reusable)
+
+on:
+  workflow_call: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -warnaserror
+
+  unit-tests:
+    name: Unit tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -warnaserror
+
+      # Each coverage report is scoped to the assembly its tests cover.
+      - name: Test automation library (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge
+
+      - name: Enforce automation library coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge.*.info
+
+      - name: Test browser management library (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.Browsers.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.Browsers]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-browsers
+
+      - name: Enforce browser management coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-browsers.*.info
+
+      - name: Test command-line tool (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.Tool.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.Tool]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-tool
+
+      - name: Enforce command-line tool coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-tool.*.info
+
+      - name: Enforce combined coverage thresholds
+        run: >
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
+          test/coverage/lcov-dramaturge.*.info
+          test/coverage/lcov-browsers.*.info
+          test/coverage/lcov-tool.*.info
+
+      # release.yml pushes only the packages scripts/check-release-packages.sh allows. Running the same check on a
+      # pack here means a change that would break it fails a pull request rather than the release.
+      - name: Pack the solution and check its packages
+        run: |
+          dotnet pack --configuration Release --no-build --output test/release-packages
+          ./scripts/check-release-packages.sh test/release-packages
+
+      - name: Upload code coverage
+        uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2
+        with:
+          # A coveralls.io outage must not fail the job that gates pull requests and the tag release.
+          fail-on-error: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          files: test/coverage/lcov-dramaturge.*.info test/coverage/lcov-browsers.*.info test/coverage/lcov-tool.*.info
+          format: lcov
+
+  # A job of its own, not a configuration matrix on unit-tests: Debug and Release instrument different branches, and
+  # the pack and upload steps of unit-tests must not run twice.
+  unit-tests-debug:
+    name: Unit tests (Debug coverage)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Debug --no-restore -warnaserror
+
+      - name: Test automation library (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge
+
+      - name: Test browser management library (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.Browsers.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.Browsers]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-browsers
+
+      - name: Test command-line tool (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.Tool.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.Tool]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-tool
+
+      - name: Enforce coverage thresholds
+        run: |
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge.*.info
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-browsers.*.info
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-tool.*.info
+
+  unit-tests-windows:
+    name: Unit tests (Windows)
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -warnaserror
+
+      # Running tests on Windows deliberately produces no coverage.
+      - name: Test automation library
+        run: dotnet test --project test/Dramaturge.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test browser management library
+        run: dotnet test --project test/Dramaturge.Browsers.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test command-line tool
+        run: dotnet test --project test/Dramaturge.Tool.Tests --configuration Release --no-build --verbosity normal
+
+      # Runs the browser management library's netstandard2.0 build on the real .NET Framework, which only Windows has.
+      - name: Test on .NET Framework
+        run: dotnet test --project test/Dramaturge.Browsers.NetFramework.Tests --configuration Release --no-build --verbosity normal
+
+  # Builds an application pinned to the netstandard2.0 build of the browser management library and runs it against a
+  # stand-in browser, once per operating system.
+  compatibility-tests:
+    name: Compatibility tests (${{ matrix.os.display }})
+    needs: build
+    runs-on: ${{ matrix.os.image }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - image: ubuntu-latest
+            display: Linux
+          - image: windows-latest
+            display: Windows
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -warnaserror
+
+      - name: Run compatibility tests
+        run: dotnet test --project test/Dramaturge.Browsers.Compatibility.Tests --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
+
+  integration-tests:
+    name: Integration tests (${{ matrix.browser.display }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser:
+          - name: firefox-nightly
+            display: Firefox Nightly
+            browser-type: firefox
+          - name: chrome-canary
+            display: Chrome Canary
+            browser-type: chrome
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -warnaserror
+
+      - name: Create local browser directory
+        run: mkdir -p "$GITHUB_WORKSPACE/browsers"
+
+      - name: Install Firefox Nightly
+        if: matrix.browser.name == 'firefox-nightly'
+        run: |
+          curl -s -L -o firefox-nightly.tar.xz "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=linux64&lang=en-US"
+          tar xJf firefox-nightly.tar.xz -C "$GITHUB_WORKSPACE/browsers"
+
+      - name: Install Chrome Canary
+        if: matrix.browser.name == 'chrome-canary'
+        run: |
+          curl -s -L "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" \
+            | jq '.channels["Canary"]["downloads"]["chrome"].[] | select(.platform == "linux64") | .url' \
+            | xargs curl -s -L -o chrome-canary.zip
+          unzip chrome-canary.zip -d "$GITHUB_WORKSPACE/browsers"
+          mv "$GITHUB_WORKSPACE/browsers/chrome-linux64" "$GITHUB_WORKSPACE/browsers/chrome-canary"
+
+      - name: Run integration tests
+        run: dotnet test --project test/Dramaturge.IntegrationTests --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
+          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
+          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
+
+      - name: Run examples
+        run: dotnet test --project samples/Dramaturge.Examples --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
+          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
+          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
+
+  integration-tests-windows:
+    name: Integration tests (${{ matrix.browser.display }}, Windows)
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 30
+    # Windows PowerShell 5.1 buffers downloads through a slow pipeline; PowerShell 7 is far faster.
+    defaults:
+      run:
+        shell: pwsh
+    strategy:
+      fail-fast: false
+      matrix:
+        browser:
+          - name: firefox-nightly
+            display: Firefox Nightly
+            browser-type: firefox
+          - name: chrome-canary
+            display: Chrome Canary
+            browser-type: chrome
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -warnaserror
+
+      - name: Create local browser directory
+        run: New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\browsers" | Out-Null
+
+      # The Windows Nightly build is an NSIS installer; /ExtractDir unpacks it without installing, into a "core"
+      # directory, renamed so that the layout matches the Linux job's.
+      - name: Install Firefox Nightly
+        if: matrix.browser.name == 'firefox-nightly'
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          $installer = Join-Path $env:RUNNER_TEMP 'firefox-nightly-installer.exe'
+          $extractDir = Join-Path $env:RUNNER_TEMP 'firefox-nightly-extract'
+          New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+          Invoke-WebRequest -Uri 'https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=win64&lang=en-US' -OutFile $installer
+          Start-Process -FilePath $installer -ArgumentList "/ExtractDir=$extractDir" -Wait
+          Move-Item -Path (Join-Path $extractDir 'core') -Destination "$env:GITHUB_WORKSPACE\browsers\firefox"
+
+      # ZipFile.ExtractToDirectory, because Expand-Archive is very slow on an archive of Chrome's size.
+      - name: Install Chrome Canary
+        if: matrix.browser.name == 'chrome-canary'
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          $versions = Invoke-RestMethod -Uri 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json'
+          $url = ($versions.channels.Canary.downloads.chrome | Where-Object { $_.platform -eq 'win64' }).url
+          $archive = Join-Path $env:RUNNER_TEMP 'chrome-canary.zip'
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($archive, "$env:GITHUB_WORKSPACE\browsers")
+          Move-Item -Path "$env:GITHUB_WORKSPACE\browsers\chrome-win64" -Destination "$env:GITHUB_WORKSPACE\browsers\chrome-canary"
+
+      - name: Run integration tests
+        run: dotnet test --project test/Dramaturge.IntegrationTests --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
+          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}
+          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}
+
+      - name: Run examples
+        run: dotnet test --project samples/Dramaturge.Examples --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
+          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}
+          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}

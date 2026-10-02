@@ -1,0 +1,73 @@
+# Continuous integration for Dramaturge on pull requests and main-branch pushes. Releases, and the documentation
+# they publish, are in release.yml (tag-triggered); the two share their build and test jobs through _tests.yml.
+
+name: CI
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+# Cancel in-flight runs for a pull request when a new commit is pushed to it; never cancel main-branch runs.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Classify changes
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    outputs:
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Classify changed paths
+        id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            docs:
+              # What validate-docs checks: the documentation site, its compiled samples, and the READMEs whose code
+              # blocks are compared with those samples.
+              - 'docs/**'
+              - 'README.md'
+              - 'src/*/README.md'
+              - '.config/dotnet-tools.json'
+
+  tests:
+    name: Tests
+    uses: ./.github/workflows/_tests.yml
+
+  validate-docs:
+    name: Validate documentation
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate documentation code regions
+        run: ./docs/tools/validate-doc-regions.sh
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Build the documentation site
+        run: |
+          dotnet build src/Dramaturge/Dramaturge.csproj --configuration Release
+          dotnet tool restore
+          cd docs
+          dotnet docfx metadata docfx.json
+          dotnet docfx build docfx.json --warningsAsErrors
