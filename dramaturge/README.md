@@ -28,6 +28,17 @@ await Expect(page).ToHaveUrlAsync(new Regex("/dashboard$"));
 await Expect(page.GetByRole("heading", "Welcome, Ada")).ToBeVisibleAsync();
 ```
 
+## Coding Agents
+
+The repository publishes an agent skill, `dramaturge`, that teaches coding agents such as Claude Code to write reliable
+tests with Dramaturge, and the documentation site publishes `llms.txt` and `llms-full.txt`. To install the skill in
+Claude Code:
+
+    claude plugin marketplace add webdriverbidi-net/dramaturge
+    claude plugin install dramaturge@dramaturge
+
+See [Using with Coding Agents](https://webdriverbidi-net.github.io/dramaturge/articles/coding-agents.html).
+
 ## Packages
 
 | Package | Contents |
@@ -74,6 +85,7 @@ Until Dramaturge moves to a repository of its own, it builds against the `WebDri
 | `third_party` | The vendored Acquiescence element-state library and chromium-bidi mapper, with their licenses |
 | `scripts` | Scripts for coverage thresholds, checking the release's packages, and updating the chromium-bidi mapper |
 | `.github` | The CI and release workflows, which take effect once this directory is a repository of its own |
+| `skills` | The `dramaturge` agent skill, and the plugin that `.claude-plugin/marketplace.json` publishes it as |
 
 ## License
 

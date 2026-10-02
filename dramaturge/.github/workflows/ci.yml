@@ -38,6 +38,7 @@ jobs:
               - 'docs/**'
               - 'README.md'
               - 'src/*/README.md'
+              - 'skills/**'
               - '.config/dotnet-tools.json'
 
   tests:

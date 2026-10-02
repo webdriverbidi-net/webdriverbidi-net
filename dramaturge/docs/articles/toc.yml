@@ -18,3 +18,5 @@
   href: network-capture.md
 - name: Command-Line Tool
   href: command-line-tool.md
+- name: Using with Coding Agents
+  href: coding-agents.md

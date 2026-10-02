@@ -59,6 +59,7 @@ jobs:
               - 'skills/**'
               - 'dramaturge/docs/**'
               - 'dramaturge/src/*/README.md'
+              - 'dramaturge/skills/**'
             benchmarks:
               - 'src/WebDriverBiDi/**'
               - 'test/WebDriverBiDi.Benchmarks/**'

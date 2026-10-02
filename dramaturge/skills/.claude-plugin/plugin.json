@@ -1,0 +1,13 @@
+{
+  "name": "dramaturge",
+  "description": "A skill that teaches coding agents to write reliable C# browser automation and tests with Dramaturge: launching browsers, user-facing locators, auto-waiting actions, retrying Expect assertions, and routes.",
+  "author": {
+    "name": "WebDriverBiDi.NET Committers",
+    "url": "https://github.com/webdriverbidi-net"
+  },
+  "homepage": "https://webdriverbidi-net.github.io/dramaturge/",
+  "repository": "https://github.com/webdriverbidi-net/dramaturge",
+  "license": "MIT",
+  "keywords": ["dotnet", "csharp", "browser-automation", "testing", "webdriver-bidi"],
+  "skills": "."
+}
