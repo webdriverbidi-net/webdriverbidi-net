@@ -52,6 +52,13 @@ The integration tests launch real browsers: Chrome and Firefox from the paths in
 
     dotnet test --project test/Dramaturge.IntegrationTests
 
+To check Dramaturge under native AOT, publish the test application and run it against each browser; it prints a
+`PASS` line and exits with 0. Building it, as the solution build does, already reports any trimming or AOT warning.
+
+    dotnet publish test/Dramaturge.AotTestApplication --configuration Release --output artifacts/aot
+    artifacts/aot/Dramaturge.AotTestApplication firefox
+    artifacts/aot/Dramaturge.AotTestApplication chrome
+
 Until Dramaturge moves to a repository of its own, it builds against the `WebDriverBiDi` and
 `WebDriverBiDi.Extensions` projects of the repository around it, rather than their packages.
 
