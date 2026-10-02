@@ -8,8 +8,15 @@ A .NET client library for the WebDriver BiDi protocol
 
 This repository contains a library that is a .NET client for the
 [WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). This spec is in progress,
-and features are added to the library as the specification changes. This package is also 
-[published to NuGet](https://www.nuget.org/packages/WebDriverBiDi).
+and features are added to the library as the specification changes. The repository publishes these packages
+to NuGet:
+* [WebDriverBiDi](https://www.nuget.org/packages/WebDriverBiDi): the protocol client
+* [WebDriverBiDi.Analyzers](https://www.nuget.org/packages/WebDriverBiDi.Analyzers): Roslyn analyzers that flag
+common mistakes in code using the client
+* [WebDriverBiDi.Logging](https://www.nuget.org/packages/WebDriverBiDi.Logging): `Microsoft.Extensions.Logging`
+integration
+* [WebDriverBiDi.Extensions](https://www.nuget.org/packages/WebDriverBiDi.Extensions): one-call extension
+methods for common commands, and a builder for input actions
 
 This library also includes support for other modules implementing support for the WebDriver BiDi protocol,
 but not included in that specification. The other specifications which have WebDriver BiDi support that are
@@ -45,6 +52,8 @@ It is important to note some of the things this library is explicitly _not_ inte
 or [Playwright](https://playwright.dev). It does not provide a user-friendly automation API. This is intentional,
 as the library is a low-level implementation of a client for the protocol. However, any project like those
 aforementioned could conceivably use this library as a mechanism for driving the browser using .NET.
+[Dramaturge](https://www.nuget.org/packages/Dramaturge) is one: a higher-level automation API built on this
+library, with automatic waiting, locators, and assertions.
 * This library does not manage browser launching and/or profile information. It expects a browser to already
 be launched, and for the WebDriver BiDi websocket to already be open and available for communication. Moreover,
 it is the user's responsibility to know what the URL of the websocket connection is to initiate a session. A
@@ -76,6 +85,10 @@ To run the project unit tests, execute the following in a terminal window:
 
     dotnet test
 
+Dramaturge, in the `dramaturge` directory, builds from its own solution (see below):
+
+    dotnet build dramaturge/Dramaturge.sln
+
 ## Development
 The repository's projects are grouped below. Each project's `.csproj` file is named after its directory.
 
@@ -91,8 +104,11 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 
 The `dramaturge` directory holds Dramaturge, a higher-level automation library built on this one that waits
 automatically for elements to be ready for interaction, with its browser launcher (`Dramaturge.Browsers`) and
-command-line tool (`Dramaturge.Tool`). It builds from its own `dramaturge/Dramaturge.sln` and is to move to a
-repository of its own.
+command-line tool (`Dramaturge.Tool`). It is to move to a repository of its own, and until then is kept
+self-contained: it builds from its own `dramaturge/Dramaturge.sln`, with its own configuration, signing key,
+documentation, and scripts, and references only the `WebDriverBiDi` and `WebDriverBiDi.Extensions` projects
+outside its directory. Nothing outside the directory references it, and it is not released from this
+repository.
 
 ### Demo
 
@@ -100,7 +116,7 @@ repository of its own.
 | --- | --- |
 | `src/WebDriverBiDi.Demo` | Console "playground" for trying out the library |
 | `src/WebDriverBiDi.DemoWebSite` | In-memory web server hosting content for the demo to run against |
-| `src/WebDriverBiDi.Client` | A copy of the browser launcher, kept here for the demo, integration tests, and test applications |
+| `src/WebDriverBiDi.Client` | Not published: a copy of Dramaturge's browser launcher and network traffic monitor, for the demo, integration tests, and test applications |
 
 ### Tests and tooling
 
@@ -110,6 +126,7 @@ repository of its own.
 | `test/WebDriverBiDi.Analyzers.Tests` | Tests for the analyzers and code fix providers |
 | `test/WebDriverBiDi.Logging.Tests` | Tests for the logging library |
 | `test/WebDriverBiDi.Extensions.Tests` | Unit tests for the extensions library |
+| `test/WebDriverBiDi.NetFramework.Tests` | Runs the extensions library's netstandard2.0 build on .NET Framework; runs on Windows only |
 | `test/WebDriverBiDi.Integration.Tests` | Integration tests that run the main library against real browsers |
 | `test/WebDriverBiDi.Compatibility.Tests` | Checks that the main library works when consumed from each build configuration |
 | `test/WebDriverBiDi.AotTestApplication` | Smoke test for JSON serialization under ahead-of-time (AOT) compilation |
@@ -124,6 +141,9 @@ repository of its own.
 
 * **Demo.** Changes to the demo project are not canonical, and its code should not be treated as a model
 of good practice.
+* **Client.** A copy taken once, so that this repository's demo and tests do not depend on Dramaturge, which
+is built against a released version of this library. It is expected to drift from Dramaturge's own code, and
+changes made there are not mirrored here.
 * **DemoWebSite.** The demo starts this server itself. It can also be used programmatically or run as a
 standalone console application, but it is designed for demonstration only and must not be used in production.
 * **Compatibility tests.** Each test builds a separate console application whose reference is pinned to the
@@ -184,6 +204,12 @@ job also packs the analyzer package, verifies its shipped layout, and uploads co
 None of those steps may run twice, so each would need an `if:` guard on the matrix value, and if the
 guard is wrong, the CI jobs would fail silently without checking the additional things the `unit-tests`
 job checks.
+
+The jobs also build and test Dramaturge, so that a change to this library that breaks it fails the pull request.
+Those steps are switched by the reusable workflow's `include-dramaturge` input: on for pull requests and pushes
+to `main`, and off for a release, so a Dramaturge failure never blocks a release of this library. The `unit-tests`
+job also packs the solution and checks the packages with `scripts/check-release-packages.sh`, which the release
+runs too (see [Releasing](#releasing)).
 
 ## Benchmarks
 The library tracks performance across five suites covering command object
@@ -308,6 +334,11 @@ git describe --tags --abbrev=0
 ```
 Once the tag is pushed, the `Release` workflow does the rest: it runs the full test
 suite, publishes the documentation site, and packs and pushes the NuGet packages.
+Before pushing, it checks with `scripts/check-release-packages.sh` that the packages are exactly
+this repository's four, `WebDriverBiDi`, `WebDriverBiDi.Analyzers`, `WebDriverBiDi.Logging`, and
+`WebDriverBiDi.Extensions`, and fails without pushing anything otherwise; a new package is added
+to the script's list deliberately. Dramaturge is never released from this repository, and the
+release does not run its tests.
 Every version number the shipped assemblies and packages carry (`AssemblyVersion`,
 `FileVersion`, `InformationalVersion`, and `PackageVersion`) is derived from the
 tag at build time, so no file in the repository records them.
