@@ -149,6 +149,8 @@ PACKAGE_READMES=$(mktemp)
 {
   if [ -f "$REPO_ROOT/README.md" ]; then printf '%s\n' "$REPO_ROOT/README.md"; fi
   find "$REPO_ROOT/src" -maxdepth 2 -name "README.md" -type f
+  # The agent skills are read as plain files too.
+  if [ -d "$REPO_ROOT/skills" ]; then find "$REPO_ROOT/skills" -name "*.md" -type f; fi
 } | sort -u > "$PACKAGE_READMES"
 
 while IFS= read -r mdfile; do
