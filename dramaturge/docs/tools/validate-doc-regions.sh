@@ -93,10 +93,10 @@ normalize_code() {
   tr '\n' ' ' | tr -s '[:space:]' ' ' | sed 's/^ //; s/ $//'
 }
 
-# Drops the using directives from a block of code. A README sample opens with the usings a reader
+# Drops the using directives, static ones included, from a block of code. A README sample opens with the usings a reader
 # needs; the compiled counterpart carries them at the top of its file, outside the region.
 strip_usings() {
-  grep -v '^[[:space:]]*using [A-Za-z_][A-Za-z0-9_.]*;[[:space:]]*$' || true
+  grep -v '^[[:space:]]*using \(static \)\?[A-Za-z_][A-Za-z0-9_.]*;[[:space:]]*$' || true
 }
 
 echo "Articles directory: $ARTICLES_DIR"
@@ -323,7 +323,7 @@ while IFS= read -r readme; do
         echo "❌ README: $(display_path "$readme"):$fence_line shows '$using_line', which $(display_path "$region_file") does not declare"
         missing_using=1
       fi
-    done < <({ grep -h '^using [A-Za-z_][A-Za-z0-9_.]*;$' "$fence_body" 2>/dev/null || true; })
+    done < <({ grep -h '^using \(static \)\?[A-Za-z_][A-Za-z0-9_.]*;$' "$fence_body" 2>/dev/null || true; })
     if [ "$missing_using" -ne 0 ]; then
       README_COUNT=$((README_COUNT + 1))
       rm -f "$fence_body"

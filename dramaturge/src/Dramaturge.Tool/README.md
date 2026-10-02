@@ -56,7 +56,7 @@ dramaturge clear
 
 ## The Cache
 
-Every command takes `--path` to choose the cache directory. Otherwise, the tool uses the same directory as the library: `DRAMATURGE_BROWSERS_PATH` if it is set, or else the per-user cache directory. The library's other environment variables apply too, such as `DRAMATURGE_DOWNLOAD_MANIFEST` to download from a mirror. The [Browser Setup Guide](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/browser-setup.html) describes them.
+Every command takes `--path` to choose the cache directory. Otherwise, the tool uses the same directory as the library: `DRAMATURGE_BROWSERS_PATH` if it is set, or else the per-user cache directory. The library's other environment variables apply too, such as `DRAMATURGE_DOWNLOAD_MANIFEST` to download from a mirror. The [Browser Setup guide](https://webdriverbidi-net.github.io/dramaturge/articles/browser-setup.html) describes them.
 
 A test run can then use what the tool installed:
 

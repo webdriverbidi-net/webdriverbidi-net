@@ -250,4 +250,4 @@ Every exception the package throws derives from `WebDriverBiDiException`: `Brows
 
 ## Documentation
 
-See the Browser Setup article (`docs/articles/browser-setup.md`) in the Dramaturge documentation.
+See the [Browser Setup guide](https://webdriverbidi-net.github.io/dramaturge/articles/browser-setup.html) and the [API reference](https://webdriverbidi-net.github.io/dramaturge/api/index.html).
