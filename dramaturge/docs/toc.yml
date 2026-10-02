@@ -2,7 +2,7 @@
   href: index.md
 - name: Articles
   href: articles/
-  homepage: articles/browser-setup.md
+  homepage: articles/getting-started.md
 - name: API Documentation
   href: api/
   homepage: api/index.md

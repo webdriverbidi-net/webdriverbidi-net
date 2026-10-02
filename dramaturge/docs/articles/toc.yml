@@ -1,4 +1,10 @@
+- name: Getting Started
+  href: getting-started.md
 - name: Browser Setup
   href: browser-setup.md
+- name: Configuration
+  href: configuration.md
 - name: Network Capture
   href: network-capture.md
+- name: Command-Line Tool
+  href: command-line-tool.md

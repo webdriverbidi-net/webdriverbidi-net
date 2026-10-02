@@ -31,6 +31,8 @@ with one API, and waits for the page so that tests do not have to.
 
 ## Where to Start
 
+- [Getting Started](articles/getting-started.md): a first program, and how Dramaturge waits
 - [Browser Setup](articles/browser-setup.md): getting a browser to drive
+- [Configuration](articles/configuration.md): timeouts and per-browser settings
 - [Network Capture](articles/network-capture.md): recording a page's traffic
 - [API Reference](api/index.md)
