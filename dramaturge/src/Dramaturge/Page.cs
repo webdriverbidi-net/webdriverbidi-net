@@ -19,6 +19,7 @@ public sealed class Page
 {
     private readonly object lockObject = new();
     private readonly List<Frame> frames = [];
+    private readonly Dictionary<string, int> snapshotFrameNumbers = [];
     private readonly ObservableEventInvocable<PageEventArgs> onClosed = new("automation.pageClosed");
     private readonly ObservableEventInvocable<ConsoleMessageEventArgs> onConsoleMessage = new("automation.consoleMessage");
     private readonly ObservableEventInvocable<PageErrorEventArgs> onPageError = new("automation.pageError");
@@ -487,6 +488,24 @@ public sealed class Page
     }
 
     /// <summary>
+    /// Takes an accessibility snapshot of the page: each element with a role, with its accessible name and states,
+    /// and the text between them, including the content of its frames.
+    /// </summary>
+    /// <param name="options">Whether the snapshot has refs and includes frames, or <see langword="null"/> for both.</param>
+    /// <param name="cancellationToken">A token that cancels the snapshot.</param>
+    /// <returns>The snapshot.</returns>
+    /// <remarks>
+    /// The snapshot's names are computed by the library's script in the page, and can differ from those the browser
+    /// uses for <see cref="GetByRole"/>; act on an element from a snapshot through its ref, with
+    /// <see cref="AriaSnapshot.Locator"/>.
+    /// </remarks>
+    public Task<AriaSnapshot> AriaSnapshotAsync(AriaSnapshotOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = new(this.Browser.Group.Options.ActionTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
+        return AriaSnapshotBuilder.TakeAsync(this.MainFrame, null, options ?? new AriaSnapshotOptions(), budget);
+    }
+
+    /// <summary>
     /// Prints the page as a PDF.
     /// </summary>
     /// <param name="options">The page setup, or <see langword="null"/> for the browser's defaults.</param>
@@ -735,6 +754,32 @@ public sealed class Page
             }
 
             return removed;
+        }
+    }
+
+    /// <summary>
+    /// Gets the text put before the refs of a frame's accessibility snapshots: none for the main frame, and for
+    /// another frame, f followed by a number it is given the first time it is snapshotted, so its refs stay the same
+    /// from one snapshot to the next.
+    /// </summary>
+    /// <param name="frame">The frame.</param>
+    /// <returns>The prefix.</returns>
+    internal string GetSnapshotRefPrefix(Frame frame)
+    {
+        if (frame == this.MainFrame)
+        {
+            return string.Empty;
+        }
+
+        lock (this.lockObject)
+        {
+            if (!this.snapshotFrameNumbers.TryGetValue(frame.Id, out int number))
+            {
+                number = this.snapshotFrameNumbers.Count + 1;
+                this.snapshotFrameNumbers[frame.Id] = number;
+            }
+
+            return $"f{number}";
         }
     }
 

@@ -316,6 +316,30 @@ public sealed class ElementLocator
     }
 
     /// <summary>
+    /// Takes an accessibility snapshot of the element and its descendants, waiting until exactly one element matches:
+    /// each element with a role, with its accessible name and states, and the text between them, including the
+    /// content of frames within it.
+    /// </summary>
+    /// <param name="options">Whether the snapshot has refs and includes frames, or <see langword="null"/> for both.</param>
+    /// <param name="timeout">The time to wait, or <see langword="null"/> for <see cref="DramaturgeOptions.ActionTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait and the snapshot.</param>
+    /// <returns>The snapshot, which includes the element itself if it has a role.</returns>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
+    /// <remarks>
+    /// The snapshot's names are computed by the library's script in the page, and can differ from those the browser
+    /// uses for <see cref="Frame.GetByRole"/>; act on an element from a snapshot through its ref, with
+    /// <see cref="AriaSnapshot.Locator"/>.
+    /// </remarks>
+    public async Task<AriaSnapshot> AriaSnapshotAsync(AriaSnapshotOptions? options = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
+        AriaSnapshotOptions snapshotOptions = options ?? new AriaSnapshotOptions();
+        AriaSnapshot? snapshot = await this.PollElementAsync(budget, async node => (true, await AriaSnapshotBuilder.TakeAsync(this.Frame, node, snapshotOptions, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
+        return snapshot!;
+    }
+
+    /// <summary>
     /// Clicks the element, once it is visible, stable, enabled, and not covered by another element, scrolling it
     /// into view if needed.
     /// </summary>
@@ -881,6 +905,18 @@ public sealed class ElementLocator
     }
 
     /// <summary>
+    /// Creates a locator for the element a ref in an accessibility snapshot refers to, for <see cref="AriaSnapshot.Locator"/>.
+    /// </summary>
+    /// <param name="frame">The frame the element is in.</param>
+    /// <param name="node">The element.</param>
+    /// <param name="reference">The ref, which describes the locator.</param>
+    /// <returns>The locator.</returns>
+    internal static ElementLocator ForReference(Frame frame, NodeRemoteValue node, string reference)
+    {
+        return new ElementLocator(frame, [new ReferenceStep(node, reference)]);
+    }
+
+    /// <summary>
     /// Creates a locator for elements by role, name, and states, for <see cref="Frame.GetByRole"/>.
     /// </summary>
     /// <param name="frame">The frame in which elements are found.</param>
@@ -1202,6 +1238,21 @@ public sealed class ElementLocator
 
         LocateNodesCommandResult result = await this.Group.Driver.BrowsingContext.LocateNodesAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
         return DistinctNodes(result.Nodes);
+    }
+
+    // A snapshot's element is found while it is in its document. Once its document is gone, the browser no longer
+    // knows it, which no wait can change, so that fails at once rather than being retried as a removed element is.
+    private async Task<List<NodeRemoteValue>> FindReferencedAsync(ReferenceStep reference, TimeBudget budget)
+    {
+        try
+        {
+            RemoteValue connected = await this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, "(element) => element.isConnected ? element : null", [reference.Node.ToSharedReference()], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+            return connected is NodeRemoteValue node ? [node] : [];
+        }
+        catch (WebDriverBiDiCommandException ex) when (ex.ErrorCode == ErrorCode.NoSuchNode)
+        {
+            throw new InvalidOperationException($"The element of ref {reference.Reference} is no longer in its document, which has been replaced or discarded.", ex);
+        }
     }
 
     // The protocol cannot find elements by label, so the library's script does, within the start nodes or the
@@ -1894,6 +1945,19 @@ public sealed class ElementLocator
         public override string ToString()
         {
             return this.Exact ? $"getByLabel \"{this.Text}\" exact" : $"getByLabel \"{this.Text}\"";
+        }
+    }
+
+    private sealed record ReferenceStep(NodeRemoteValue Node, string Reference) : Step
+    {
+        public override Task<List<NodeRemoteValue>> ApplyAsync(ElementLocator owner, List<NodeRemoteValue>? nodes, ulong? maxCount, TimeBudget budget)
+        {
+            return owner.FindReferencedAsync(this, budget);
+        }
+
+        public override string ToString()
+        {
+            return $"ref {this.Reference}";
         }
     }
 

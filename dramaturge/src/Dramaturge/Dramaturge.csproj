@@ -75,6 +75,9 @@
     <EmbeddedResource Include="Scripts/element-state.js">
       <LogicalName>element-state</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Scripts/aria-snapshot.js">
+      <LogicalName>aria-snapshot</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
