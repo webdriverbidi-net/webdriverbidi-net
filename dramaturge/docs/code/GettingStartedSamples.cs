@@ -90,7 +90,7 @@ public static class GettingStartedSamples
         #region ConnectToDriver
         // Disposing the group removes what it added, and leaves the driver, its session, and the browser running.
         await using BrowserGroup group = await BrowserGroup.ConnectAsync(driver);
-        Page page = group.DefaultBrowser.Pages[0];
+        Page page = await group.DefaultBrowser.NewPageAsync();
         #endregion
     }
 }

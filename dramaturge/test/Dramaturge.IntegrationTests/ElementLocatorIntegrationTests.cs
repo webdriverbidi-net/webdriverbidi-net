@@ -98,14 +98,18 @@ public class ElementLocatorIntegrationTests
     public async Task LibraryWorksInDocumentsLoadedBeforeAndAfterTheGroupStarted(BrowserKind browserKind)
     {
         await using TestPageServer server = await TestPageServer.StartAsync();
-        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
-        Page initialPage = group.DefaultBrowser.Pages[0];
+        await using BrowserGroup launched = await TestBrowsers.LaunchAsync(browserKind);
+        Page loadedEarlier = await launched.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await loadedEarlier.NavigateAsync(server.UrlFor("elements.html"), cancellationToken: TestContext.Current.CancellationToken);
 
-        Exception? before = await Record.ExceptionAsync(() => initialPage.Locate(new CssLocator("body")).IsVisibleAsync(TestContext.Current.CancellationToken));
-        await initialPage.NavigateAsync(server.UrlFor("elements.html"), cancellationToken: TestContext.Current.CancellationToken);
-        bool shownVisibleAfter = await initialPage.Locate(new CssLocator("#shown")).IsVisibleAsync(TestContext.Current.CancellationToken);
+        // A group with a sandbox of its own has not installed the library anywhere when it starts.
+        await using BrowserGroup group = await BrowserGroup.ConnectAsync(launched.Driver, new DramaturgeOptions() { SandboxName = "dramaturge-later" }, TestContext.Current.CancellationToken);
+        Page page = group.DefaultBrowser.Pages.Single(candidate => candidate.Id == loadedEarlier.Id);
+        bool shownVisibleBefore = await page.Locate(new CssLocator("#shown")).IsVisibleAsync(TestContext.Current.CancellationToken);
+        await page.ReloadAsync(cancellationToken: TestContext.Current.CancellationToken);
+        bool shownVisibleAfter = await page.Locate(new CssLocator("#shown")).IsVisibleAsync(TestContext.Current.CancellationToken);
 
-        Assert.Null(before);
+        Assert.True(shownVisibleBefore);
         Assert.True(shownVisibleAfter);
     }
 }

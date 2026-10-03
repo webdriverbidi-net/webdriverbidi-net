@@ -17,6 +17,9 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
 {
+    private const string NoStartupWindowArgument = "--no-startup-window";
+    private const string ComponentExtensionsArgument = "--disable-component-extensions-with-background-pages";
+
     private readonly List<string> disabledFeatures = [
         "Translate",
 
@@ -44,7 +47,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         "--disable-backgrounding-occluded-windows",
         "--disable-breakpad",
         "--disable-client-side-phishing-detection",
-        "--disable-component-extensions-with-background-pages",
+        ComponentExtensionsArgument,
         "--disable-default-apps",
         "--disable-dev-shm-usage",
         "--disable-field-trial-config",
@@ -125,6 +128,16 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         get
         {
             List<string> defaultArguments = [.. this.chromeArguments];
+
+            // Headless Chrome starts without a window, so without a tab no one uses. Headed Chrome keeps its window:
+            // without one, the windows it opens for new pages are not given focus. Starting without a window, Chrome
+            // refuses the hidden tab the BiDi mapper runs in unless component extensions may run.
+            if (this.IsBrowserHeadless && !this.LaunchSettings.UseHeadlessShell)
+            {
+                defaultArguments.Remove(ComponentExtensionsArgument);
+                defaultArguments.Add(NoStartupWindowArgument);
+            }
+
             defaultArguments.Add($"--disable-features={string.Join(",", this.disabledFeatures)}");
             defaultArguments.Add($"--enable-features={string.Join(",", this.enabledFeatures)}");
             defaultArguments.AddRange(SandboxArguments);
@@ -148,7 +161,13 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             }
 
             args.AddRange(this.LaunchSettings.Arguments);
-            args.AddRange(this.LaunchSettings.FilterDefaultArguments(["about:blank"]));
+
+            // A window to start in gets a blank tab.
+            if (!args.Contains(NoStartupWindowArgument))
+            {
+                args.AddRange(this.LaunchSettings.FilterDefaultArguments(["about:blank"]));
+            }
+
             return args.AsReadOnly();
         }
     }

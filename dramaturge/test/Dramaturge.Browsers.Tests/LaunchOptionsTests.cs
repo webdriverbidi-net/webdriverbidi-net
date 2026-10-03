@@ -94,6 +94,44 @@ public class LaunchOptionsTests
     }
 
     [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task OnlyHeadlessChromeStartsWithoutAWindow(bool headless)
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome))
+            .AtLocation(FakeBrowserSetup.ExecutablePath)
+            .WithHeadlessOption(headless)
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        string[] arguments = fakeBrowser.Launches.Single().Arguments;
+        Assert.Equal(headless, arguments.Contains("--no-startup-window"));
+        Assert.Equal(!headless, arguments.Contains("--disable-component-extensions-with-background-pages"));
+        Assert.Equal(!headless, arguments[^1] == "about:blank");
+    }
+
+    [Fact]
+    public async Task HeadlessChromeToldToStartWithAWindowOpensABlankTab()
+    {
+        using FakeBrowserSetup fakeBrowser = new();
+        await using BrowserLauncher launcher = fakeBrowser.Apply(BrowserLauncher.Configure(BrowserKind.Chrome))
+            .AtLocation(FakeBrowserSetup.ExecutablePath)
+            .WithHeadlessOption()
+            .WithoutDefaultArguments("--no-startup-window")
+            .Build();
+        await launcher.StartAsync(TestContext.Current.CancellationToken);
+
+        await launcher.LaunchBrowserAsync(TestContext.Current.CancellationToken);
+
+        string[] arguments = fakeBrowser.Launches.Single().Arguments;
+        Assert.DoesNotContain("--no-startup-window", arguments);
+        Assert.Equal("about:blank", arguments[^1]);
+    }
+
+    [Theory]
     [InlineData(BrowserKind.Chrome)]
     [InlineData(BrowserKind.Firefox)]
     public async Task EnvironmentVariableReachesBrowser(BrowserKind browser)

@@ -21,7 +21,21 @@ public class BrowserGroupIntegrationTests
         // Firefox also reports its container tabs (Personal, Work, and so on) as user contexts.
         Assert.Equal(Browser.DefaultBrowserId, group.Browsers[0].Id);
         Assert.Same(group.Browsers[0], group.DefaultBrowser);
-        Assert.NotEmpty(group.DefaultBrowser.Pages);
+        Assert.Single(group.DefaultBrowser.Pages);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task HeadlessChromeStartsWithoutAPage(BrowserKind browserKind)
+    {
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind, configure: launcher => launcher.WithHeadlessOption());
+        Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await page.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Page another = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        // Firefox always keeps one tab open; headless Chrome needs none, and keeps running with none.
+        Assert.Equal(browserKind == BrowserKind.Firefox ? 2 : 1, group.DefaultBrowser.Pages.Count);
+        Assert.Contains(another, group.DefaultBrowser.Pages);
     }
 
     [Theory]

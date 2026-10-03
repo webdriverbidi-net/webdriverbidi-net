@@ -22,6 +22,7 @@ The first launch downloads Chrome for Testing into a cache in your user profile,
 
 - A **`BrowserGroup`** is one browser process and the WebDriver BiDi session that drives it. `BrowserGroup.LaunchAsync` starts both from a configured launcher; disposing the group ends the session and closes the browser.
 - A **`Browser`** is a set of pages that share cookies, storage, and cache: a WebDriver BiDi user context. `DefaultBrowser` is the one every browser process has; `CreateBrowserAsync` adds another, isolated from the rest, with its own [options](configuration.md#browser-options).
+  A launched browser may start with no page: headless Chrome and Edge launched without a driver start without a window; otherwise a browser starts with one blank tab, and Firefox always keeps one. Open the pages you need with `NewPageAsync`.
 - A **`Page`** is a tab or window, and its **`Frame`s** are its main document and the iframes within it. A page's navigation, script, and locator methods act on its main frame.
 - An **`ElementLocator`** describes how to find elements. It finds nothing when it is created; each action or read looks the element up again, so a locator stays correct when the page changes underneath it.
 
