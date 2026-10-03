@@ -68,6 +68,7 @@ jobs:
       - name: Build the documentation site
         run: |
           dotnet build src/Dramaturge/Dramaturge.csproj --configuration Release
+          for package in Xunit NUnit MSTest TUnit; do dotnet build "src/Dramaturge.$package/Dramaturge.$package.csproj" --configuration Release; done
           dotnet tool restore
           cd docs
           dotnet docfx metadata docfx.json

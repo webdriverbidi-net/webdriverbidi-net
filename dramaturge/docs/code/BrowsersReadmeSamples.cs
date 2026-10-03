@@ -74,6 +74,20 @@ public static class BrowsersReadmeSamples
     }
 
     /// <summary>
+    /// The Dramaturge.Browsers package README's example of letting the environment choose the browser.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task BrowsersFromEnvironment()
+    {
+        #region BrowsersFromEnvironment
+        // Chrome, stable, headless, unless DRAMATURGE_BROWSER, DRAMATURGE_CHANNEL, or DRAMATURGE_HEADED say otherwise.
+        await using BrowserLauncher launcher = BrowserLauncher.ConfigureFromEnvironment()
+            .WithLaunchTimeout(TimeSpan.FromMinutes(2))
+            .Build();
+        #endregion
+    }
+
+    /// <summary>
     /// The Dramaturge.Browsers package README's remote grid example.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>

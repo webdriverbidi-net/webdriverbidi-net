@@ -8,7 +8,7 @@ TUnit 1.6 and later.
 - **One browser launch per test session**, shared by every test class, unless a class configures a launch of its own.
 - **An isolated browser and page for each test**, closed when the test ends, so no cookies or storage carry over.
 - **Screenshots of a failed test's pages**, saved under `TestResults/Dramaturge` and attached to the test's result.
-- **The browser chosen by the environment**: `DRAMATURGE_BROWSER` (`chrome`, `firefox`, or `edge`),
+- **The browser chosen by the environment**: `DRAMATURGE_BROWSER` (`chrome`, `firefox`, `edge`, or `safari`),
   `DRAMATURGE_CHANNEL`, and `DRAMATURGE_HEADED=1`, or in code.
 
 ## Getting Started
@@ -17,10 +17,29 @@ TUnit 1.6 and later.
 dotnet add package Dramaturge.TUnit
 ```
 
-Derive test classes from `PageTest`:
+Register the shared browser once in the test project. TUnit runs hooks only from the assembly that declares them:
 
+<!-- readme-csharp: docs/code/TestFrameworksTUnitSamples.cs#TUnitRegistration -->
 ```csharp
 using Dramaturge.TUnit;
+using TUnit.Core;
+
+public static class DramaturgeSetUp
+{
+    [Before(HookType.TestSession)]
+    public static void Register() => DramaturgeAssemblyFixture.Register(new());
+
+    [After(HookType.TestSession)]
+    public static Task CloseAsync() => DramaturgeAssemblyFixture.CloseAsync();
+}
+```
+
+Then derive test classes from `PageTest`:
+
+<!-- readme-csharp: docs/code/TestFrameworksTUnitSamples.cs#TUnitPageTest -->
+```csharp
+using Dramaturge.TUnit;
+using TUnit.Core;
 using static Dramaturge.Assertions;
 
 public class SignInTests : PageTest
@@ -28,20 +47,12 @@ public class SignInTests : PageTest
     [Test]
     public async Task SignsIn()
     {
-        await Page.NavigateAsync("https://example.com/sign-in");
-        await Page.GetByLabel("Email").FillAsync("someone@example.com");
-        await Page.GetByRole("button", "Sign in").ClickAsync();
-        await Expect(Page.GetByRole("heading", "Welcome")).ToBeVisibleAsync();
+        await this.Page.NavigateAsync("https://example.com/sign-in");
+        await this.Page.GetByLabel("Email").FillAsync("someone@example.com");
+        await this.Page.GetByRole("button", "Sign in").ClickAsync();
+        await Expect(this.Page.GetByRole("heading", "Welcome")).ToBeVisibleAsync();
     }
 }
-```
-
-TUnit closes the shared browser when the session ends, so it needs no registration. To configure it, register a
-class derived from `DramaturgeAssemblyFixture` before any test needs it:
-
-```csharp
-[Before(HookType.TestSession)]
-public static void ConfigureDramaturge() => DramaturgeAssemblyFixture.Register(new MyDramaturgeSettings());
 ```
 
 `BrowserTest` gives a test its `Group` and `NewBrowserAsync`, for tests that need several isolated browsers.

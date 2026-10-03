@@ -9,6 +9,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NoWarn>$(NoWarn);CS1998</NoWarn>
+
+    <!-- The samples for each test framework name its namespaces themselves. -->
+    <TUnitImplicitUsings>false</TUnitImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +19,10 @@
     <ProjectReference Include="../../../src/WebDriverBiDi.Extensions/WebDriverBiDi.Extensions.csproj" />
     <ProjectReference Include="../../src/Dramaturge/Dramaturge.csproj" />
     <ProjectReference Include="../../src/Dramaturge.Browsers/Dramaturge.Browsers.csproj" />
+    <ProjectReference Include="../../src/Dramaturge.MSTest/Dramaturge.MSTest.csproj" />
+    <ProjectReference Include="../../src/Dramaturge.NUnit/Dramaturge.NUnit.csproj" />
+    <ProjectReference Include="../../src/Dramaturge.TUnit/Dramaturge.TUnit.csproj" />
+    <ProjectReference Include="../../src/Dramaturge.Xunit/Dramaturge.Xunit.csproj" />
   </ItemGroup>
 
 </Project>

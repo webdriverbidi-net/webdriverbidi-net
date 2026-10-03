@@ -1,5 +1,7 @@
 - name: Getting Started
   href: getting-started.md
+- name: Test Frameworks
+  href: test-frameworks.md
 - name: Browser Setup
   href: browser-setup.md
 - name: Locators

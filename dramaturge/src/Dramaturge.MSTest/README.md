@@ -8,7 +8,7 @@ Base classes for [MSTest](https://learn.microsoft.com/dotnet/core/testing/unit-t
 - **One browser launch per test assembly**, shared by every test class, unless a class configures a launch of its own.
 - **An isolated browser and page for each test**, closed when the test ends, so no cookies or storage carry over.
 - **Screenshots of a failed test's pages**, saved under `TestResults/Dramaturge` and attached to the test's result.
-- **The browser chosen by the environment**: `DRAMATURGE_BROWSER` (`chrome`, `firefox`, or `edge`),
+- **The browser chosen by the environment**: `DRAMATURGE_BROWSER` (`chrome`, `firefox`, `edge`, or `safari`),
   `DRAMATURGE_CHANNEL`, and `DRAMATURGE_HEADED=1`, or in code.
 
 ## Getting Started
@@ -19,22 +19,28 @@ dotnet add package Dramaturge.MSTest
 
 Register the shared browser once in the test project. MSTest runs assembly hooks only from the project's own classes:
 
+<!-- readme-csharp: docs/code/TestFrameworksMSTestSamples.cs#MSTestRegistration -->
 ```csharp
+using Dramaturge.MSTest;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 [TestClass]
 public static class DramaturgeSetUp
 {
     [AssemblyInitialize]
-    public static void Initialize(TestContext context) => Dramaturge.MSTest.DramaturgeAssemblyFixture.Register(new());
+    public static void Initialize(TestContext context) => DramaturgeAssemblyFixture.Register(new());
 
     [AssemblyCleanup]
-    public static Task CleanupAsync() => Dramaturge.MSTest.DramaturgeAssemblyFixture.CloseAsync();
+    public static Task CleanupAsync() => DramaturgeAssemblyFixture.CloseAsync();
 }
 ```
 
 Then derive test classes from `PageTest`:
 
+<!-- readme-csharp: docs/code/TestFrameworksMSTestSamples.cs#MSTestPageTest -->
 ```csharp
 using Dramaturge.MSTest;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Dramaturge.Assertions;
 
 [TestClass]
@@ -43,10 +49,10 @@ public class SignInTests : PageTest
     [TestMethod]
     public async Task SignsIn()
     {
-        await Page.NavigateAsync("https://example.com/sign-in");
-        await Page.GetByLabel("Email").FillAsync("someone@example.com");
-        await Page.GetByRole("button", "Sign in").ClickAsync();
-        await Expect(Page.GetByRole("heading", "Welcome")).ToBeVisibleAsync();
+        await this.Page.NavigateAsync("https://example.com/sign-in");
+        await this.Page.GetByLabel("Email").FillAsync("someone@example.com");
+        await this.Page.GetByRole("button", "Sign in").ClickAsync();
+        await Expect(this.Page.GetByRole("heading", "Welcome")).ToBeVisibleAsync();
     }
 }
 ```

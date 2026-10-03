@@ -2,7 +2,8 @@
 #
 # Triggered only by pushing a vX.Y.Z tag on a commit that is on main. Runs the full test suite (through
 # _tests.yml), builds and publishes the documentation site, and packs and pushes the Dramaturge,
-# Dramaturge.Browsers, and Dramaturge.Tool packages, which share the tag's version. The publishing jobs need the
+# Dramaturge.Browsers, Dramaturge.Tool, Dramaturge.Xunit, Dramaturge.NUnit, Dramaturge.MSTest, and Dramaturge.TUnit
+# packages, which share the tag's version. The publishing jobs need the
 # tests, so a failure on the tagged commit publishes nothing.
 
 name: Release
@@ -59,6 +60,7 @@ jobs:
       - name: Build documentation site
         run: |
           dotnet build src/Dramaturge/Dramaturge.csproj --configuration Release
+          for package in Xunit NUnit MSTest TUnit; do dotnet build "src/Dramaturge.$package/Dramaturge.$package.csproj" --configuration Release; done
           dotnet tool restore
           cd docs
           dotnet docfx metadata docfx.json
@@ -133,7 +135,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      # The tag's version overrides the projects' own, and, passed to every project, keeps the three packages'
+      # The tag's version overrides the projects' own, and, passed to every project, keeps the packages'
       # versions, and their dependencies on each other, the same.
       - name: Build
         run: >

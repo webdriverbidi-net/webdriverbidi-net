@@ -8,8 +8,7 @@ namespace Dramaturge.Examples;
 /// <summary>
 /// Searching and reading the catalog.
 /// </summary>
-/// <param name="fixture">The launched browser.</param>
-public class CatalogTests(BrowserFixture fixture) : PageTest(fixture)
+public class CatalogTests : ShopTest
 {
     [Fact]
     public async Task SearchListsMatchingProducts()

@@ -41,6 +41,20 @@ On Linux:
 - A Firefox installed as a **Snap or Flatpak** (as Ubuntu's `/usr/bin/firefox` is) cannot read a profile in the temporary directory, so launching it without `WithUserDataDirectory` fails with an explanation. Use the downloaded Firefox, or a profile directory the sandbox can read.
 - Running as **root**, Chrome refuses to start with its sandbox enabled, so `--no-sandbox` is added for you.
 
+### From the Environment
+
+`BrowserLauncher.ConfigureFromEnvironment` returns a builder for the browser that environment variables choose, so that a CI matrix can run the same tests in each browser without changing code. Variables that are unset or empty choose the defaults, names are matched in any case, and a name that is not a browser or channel throws `BrowserLauncherConfigurationException`:
+
+| Variable | Values | Default |
+| --- | --- | --- |
+| `DRAMATURGE_BROWSER` | `Chrome`, `Firefox`, `Edge`, `Safari` | `Chrome` |
+| `DRAMATURGE_CHANNEL` | `Stable`, `Beta`, `DeveloperPreview`, `Alpha`, `ExtendedSupport` | `Stable` |
+| `DRAMATURGE_HEADED` | `1` or `true` shows the browser | Headless |
+
+[!code-csharp[From the Environment](../code/BrowsersReadmeSamples.cs#BrowsersFromEnvironment)]
+
+The builder can be configured further, as any other. Headless mode cannot be combined with a remote grid or a running browser, so a builder from the environment changed to connect to one needs `WithHeadlessOption(false)`; or start from `Configure` instead. The [test framework packages](test-frameworks.md) launch their browser this way.
+
 ## Remote Grids and Running Browsers
 
 `LaunchUsingRemoteGrid` creates the session on a Selenium Grid or a cloud service. The URL carries the grid's port and path prefix, credentials in it are sent as Basic authorization, `RemoteGridOptions` holds the headers of the requests, and `WithSessionCapability` adds the capabilities of the session:

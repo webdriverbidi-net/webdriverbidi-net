@@ -12,7 +12,7 @@ set -euo pipefail
 directory="${1:?usage: check-release-packages.sh <directory>}"
 
 # The packages this repository publishes. A new one is added here deliberately.
-allowed=(Dramaturge Dramaturge.Browsers Dramaturge.Tool)
+allowed=(Dramaturge Dramaturge.Browsers Dramaturge.Tool Dramaturge.Xunit Dramaturge.NUnit Dramaturge.MSTest Dramaturge.TUnit)
 
 shopt -s nullglob
 status=0

@@ -46,6 +46,7 @@ See [Using with Coding Agents](https://webdriverbidi-net.github.io/dramaturge/ar
 | [Dramaturge](https://www.nuget.org/packages/Dramaturge) | The automation API |
 | [Dramaturge.Browsers](https://www.nuget.org/packages/Dramaturge.Browsers) | Locates, downloads, and launches browsers, locally, on a remote grid, or already running |
 | [Dramaturge.Tool](https://www.nuget.org/packages/Dramaturge.Tool) | The `dramaturge` command-line tool, which installs and manages the browsers Dramaturge.Browsers downloads |
+| [Dramaturge.Xunit](https://www.nuget.org/packages/Dramaturge.Xunit), [Dramaturge.NUnit](https://www.nuget.org/packages/Dramaturge.NUnit), [Dramaturge.MSTest](https://www.nuget.org/packages/Dramaturge.MSTest), [Dramaturge.TUnit](https://www.nuget.org/packages/Dramaturge.TUnit) | Base classes for tests in each framework: a browser launched once per run, an isolated browser and page for each test, and screenshots of failed tests |
 
 ## Documentation
 
@@ -60,8 +61,8 @@ Building requires the .NET 10 SDK:
 
 The integration tests launch real browsers: Chrome and Firefox from the paths in `CHROME_EXECUTABLE` and
 `FIREFOX_EXECUTABLE`, or, when those are not set, outside CI, the downloaded Canary and Nightly builds. The examples
-run against one browser: Firefox if `FIREFOX_EXECUTABLE` is set, and otherwise Chrome, at `CHROME_EXECUTABLE` or
-downloaded.
+run against the browser `DRAMATURGE_BROWSER` names, Chrome by default, at `CHROME_EXECUTABLE` or `FIREFOX_EXECUTABLE`
+if set, or downloaded.
 
     dotnet test --project test/Dramaturge.IntegrationTests
     dotnet test --project samples/Dramaturge.Examples
@@ -78,9 +79,9 @@ Until Dramaturge moves to a repository of its own, it builds against the `WebDri
 
 | Directory | Contents |
 | --- | --- |
-| `src` | The `Dramaturge`, `Dramaturge.Browsers`, and `Dramaturge.Tool` projects |
-| `test` | Unit tests, which need no browser; integration tests; and compatibility and .NET Framework tests of the launcher |
-| `samples` | `Dramaturge.Examples`, an xUnit project of example tests, which CI runs with the integration tests |
+| `src` | The `Dramaturge`, `Dramaturge.Browsers`, and `Dramaturge.Tool` projects; the test framework packages, `Dramaturge.Xunit`, `Dramaturge.NUnit`, `Dramaturge.MSTest`, and `Dramaturge.TUnit`, with the sources they share in `Dramaturge.Testing.Shared` |
+| `test` | Unit tests, which need no browser, including those of each test framework package; integration tests; and compatibility and .NET Framework tests of the launcher |
+| `samples` | `Dramaturge.Examples`, an xUnit project of example tests built on `Dramaturge.Xunit`, which CI runs with the integration tests |
 | `docs` | The documentation site; `docs/README.md` describes it |
 | `third_party` | The vendored Acquiescence element-state library and chromium-bidi mapper, with their licenses |
 | `scripts` | Scripts for coverage thresholds, checking the release's packages, and updating the chromium-bidi mapper |

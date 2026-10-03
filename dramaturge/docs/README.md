@@ -7,13 +7,16 @@
   `<!-- readme-csharp: docs/code/File.cs#Region -->` marker; the path is relative to the repository root.
 - `tools/validate-doc-regions.sh`: checks that every reference names an existing region, and that every README sample
   matches its region.
-- `tools/generate-llms.cs`: writes `llms.txt` and `llms-full.txt` into the built site (see below).
+- `tools/generate-llms.cs`: writes `llms.txt` and `llms-full.txt` into the built site (see below), with DocFX tabs
+  turned into labels.
 - `docfx.json`, `toc.yml`, `index.md`, `api/index.md`, and `templates/dramaturge`: the DocFX site, published to
-  https://webdriverbidi-net.github.io/dramaturge/. Its API reference is read from the netstandard2.0 builds.
+  https://webdriverbidi-net.github.io/dramaturge/. Its API reference is read from the netstandard2.0 builds, and from
+  the net10.0 builds of the test framework packages, which have no other.
 
 To build the site, with DocFX pinned in `.config/dotnet-tools.json`, run from the `dramaturge` directory:
 
     dotnet build src/Dramaturge/Dramaturge.csproj --configuration Release
+    for package in Xunit NUnit MSTest TUnit; do dotnet build "src/Dramaturge.$package/Dramaturge.$package.csproj" --configuration Release; done
     dotnet tool restore
     cd docs
     dotnet docfx metadata docfx.json

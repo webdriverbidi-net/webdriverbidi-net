@@ -85,12 +85,60 @@ jobs:
       - name: Enforce command-line tool coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-tool.*.info
 
+      - name: Test xUnit package (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.Xunit.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.Xunit]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-xunit
+
+      - name: Enforce xUnit package coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-xunit.*.info
+
+      - name: Test NUnit package (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.NUnit.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.NUnit]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-nunit
+
+      - name: Enforce NUnit package coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-nunit.*.info
+
+      - name: Test MSTest package (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.MSTest.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.MSTest]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-mstest
+
+      - name: Enforce MSTest package coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-mstest.*.info
+
+      - name: Test TUnit package (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.TUnit.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.TUnit]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-tunit
+
+      - name: Enforce TUnit package coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-tunit.*.info
+
+      # No coverage: check-lcov-thresholds.sh sums reports rather than merging them, so its few lines would lower the totals.
+      - name: Test test framework packages without their shared browser registered
+        run: dotnet test --project test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Release --no-build --verbosity normal
+
       - name: Enforce combined coverage thresholds
         run: >
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
           test/coverage/lcov-dramaturge.*.info
           test/coverage/lcov-browsers.*.info
           test/coverage/lcov-tool.*.info
+          test/coverage/lcov-xunit.*.info
+          test/coverage/lcov-nunit.*.info
+          test/coverage/lcov-mstest.*.info
+          test/coverage/lcov-tunit.*.info
 
       # release.yml pushes only the packages scripts/check-release-packages.sh allows. Running the same check on a
       # pack here means a change that would break it fails a pull request rather than the release.
@@ -105,7 +153,7 @@ jobs:
           # A coveralls.io outage must not fail the job that gates pull requests and the tag release.
           fail-on-error: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          files: test/coverage/lcov-dramaturge.*.info test/coverage/lcov-browsers.*.info test/coverage/lcov-tool.*.info
+          files: test/coverage/lcov-dramaturge.*.info test/coverage/lcov-browsers.*.info test/coverage/lcov-tool.*.info test/coverage/lcov-xunit.*.info test/coverage/lcov-nunit.*.info test/coverage/lcov-mstest.*.info test/coverage/lcov-tunit.*.info
           format: lcov
 
   # A job of its own, not a configuration matrix on unit-tests: Debug and Release instrument different branches, and
@@ -153,11 +201,46 @@ jobs:
           --coverlet-include "[Dramaturge.Tool]*"
           --results-directory test/coverage-debug --coverlet-file-prefix lcov-tool
 
+      - name: Test xUnit package (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.Xunit.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.Xunit]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-xunit
+
+      - name: Test NUnit package (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.NUnit.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.NUnit]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-nunit
+
+      - name: Test MSTest package (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.MSTest.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.MSTest]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-mstest
+
+      - name: Test TUnit package (with coverage)
+        run: >
+          dotnet test --project test/Dramaturge.TUnit.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[Dramaturge.TUnit]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-tunit
+
+      - name: Test test framework packages without their shared browser registered
+        run: dotnet test --project test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Debug --no-build --verbosity normal
+
       - name: Enforce coverage thresholds
         run: |
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge.*.info
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-browsers.*.info
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-tool.*.info
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-xunit.*.info
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-nunit.*.info
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-mstest.*.info
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-tunit.*.info
 
   unit-tests-windows:
     name: Unit tests (Windows)
@@ -190,6 +273,21 @@ jobs:
 
       - name: Test command-line tool
         run: dotnet test --project test/Dramaturge.Tool.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test xUnit package
+        run: dotnet test --project test/Dramaturge.Xunit.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test NUnit package
+        run: dotnet test --project test/Dramaturge.NUnit.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test MSTest package
+        run: dotnet test --project test/Dramaturge.MSTest.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test TUnit package
+        run: dotnet test --project test/Dramaturge.TUnit.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test test framework packages without their shared browser registered
+        run: dotnet test --project test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Release --no-build --verbosity normal
 
       # Runs the browser management library's netstandard2.0 build on the real .NET Framework, which only Windows has.
       - name: Test on .NET Framework
@@ -293,6 +391,7 @@ jobs:
         run: dotnet test --project samples/Dramaturge.Examples --configuration Release --no-build --verbosity normal
         env:
           CI: true
+          DRAMATURGE_BROWSER: ${{ matrix.browser.browser-type }}
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
 
@@ -371,5 +470,6 @@ jobs:
         run: dotnet test --project samples/Dramaturge.Examples --configuration Release --no-build --verbosity normal
         env:
           CI: true
+          DRAMATURGE_BROWSER: ${{ matrix.browser.browser-type }}
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}

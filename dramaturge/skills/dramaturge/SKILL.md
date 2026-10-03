@@ -1,6 +1,6 @@
 ---
 name: dramaturge
-description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, accessibility snapshots (AriaSnapshotAsync, ToMatchAriaSnapshotAsync), routes, dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
+description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, test base classes for xUnit, NUnit, MSTest, and TUnit (Dramaturge.Xunit, Dramaturge.NUnit, Dramaturge.MSTest, Dramaturge.TUnit: PageTest, BrowserTest), finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, accessibility snapshots (AriaSnapshotAsync, ToMatchAriaSnapshotAsync), routes, dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
 ---
 
 # Dramaturge
@@ -8,7 +8,7 @@ description: Writing C# browser automation or browser tests with Dramaturge (the
 Dramaturge is browser automation for .NET over the W3C WebDriver BiDi protocol, built on WebDriverBiDi.NET. It launches the browser, finds elements, acts on them as a user would, and checks the page, **waiting at each step** until the page is ready.
 
 - The documentation's index for language models is https://webdriverbidi-net.github.io/dramaturge/llms.txt, with every article and its code in llms-full.txt beside it. Consult them for anything this skill does not cover.
-- Packages: `Dramaturge` (with `Dramaturge.Browsers`, which downloads and launches browsers). It is at 0.0.x; any release may change its API.
+- Packages: `Dramaturge` (with `Dramaturge.Browsers`, which downloads and launches browsers), and for tests `Dramaturge.Xunit`, `Dramaturge.NUnit`, `Dramaturge.MSTest`, or `Dramaturge.TUnit`. It is at 0.0.x; any release may change its API.
 - For raw protocol access, `BrowserGroup.Driver` is the underlying WebDriverBiDi.NET `BiDiDriver`.
 
 ## Launching
@@ -29,7 +29,7 @@ Page page = await browser.NewPageAsync();
 await page.NavigateAsync("https://example.com/login");
 ```
 
-- Launch once per test class or suite, not per test; give **each test a browser of its own** with `CreateBrowserAsync()`, and close it after the test. See [references/test-setup.md](references/test-setup.md).
+- In tests, derive from the test framework package's `PageTest`, which launches the browser once per run and gives each test a page in a browser of its own. Without one, launch once per test class or suite, not per test; give **each test a browser of its own** with `CreateBrowserAsync()`, and close it after the test. See [references/test-setup.md](references/test-setup.md).
 - The first launch downloads Chrome for Testing or Firefox into a cache. In CI, install them ahead with the `dramaturge` tool, or point at installed browsers with `AtLocation` or `CHROME_EXECUTABLE` / `FIREFOX_EXECUTABLE`.
 - `DramaturgeOptions`: `ActionTimeout` and `NavigationTimeout` (30 s), `ExpectTimeout` (5 s), `TestIdAttribute` (`data-testid`), `PierceShadowRoots`.
 

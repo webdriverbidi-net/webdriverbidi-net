@@ -13,6 +13,30 @@
             "Dramaturge.Browsers.dll"
           ],
           "src": "../src/Dramaturge.Browsers/bin/Release/netstandard2.0"
+        },
+        {
+          "files": [
+            "Dramaturge.Xunit.dll"
+          ],
+          "src": "../src/Dramaturge.Xunit/bin/Release/net10.0"
+        },
+        {
+          "files": [
+            "Dramaturge.NUnit.dll"
+          ],
+          "src": "../src/Dramaturge.NUnit/bin/Release/net10.0"
+        },
+        {
+          "files": [
+            "Dramaturge.MSTest.dll"
+          ],
+          "src": "../src/Dramaturge.MSTest/bin/Release/net10.0"
+        },
+        {
+          "files": [
+            "Dramaturge.TUnit.dll"
+          ],
+          "src": "../src/Dramaturge.TUnit/bin/Release/net10.0"
         }
       ],
       "dest": "api",

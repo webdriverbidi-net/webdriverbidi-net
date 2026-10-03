@@ -48,11 +48,11 @@ Nothing waits for a fixed time. The limits are 30 seconds for actions and naviga
 - `AmbiguousElementException`: a locator for one element matched several. Narrow it, or choose one with `First()`, `Last()`, or `Nth(index)`.
 - `InvalidOperationException`: the element cannot do what was asked, such as filling a `<div>`. This fails at once, because waiting would not help.
 
-None of these depend on a test framework, so Dramaturge works with xUnit, NUnit, MSTest, or none.
+None of these depend on a test framework, so Dramaturge works with any, or none.
 
 ## In a Test Project
 
-The [examples project](https://github.com/webdriverbidi-net/dramaturge/tree/main/samples/Dramaturge.Examples) is a complete xUnit project that tests a small shop. It shows one way to arrange tests: a class fixture launches the browser once for a class's tests, each test gets a browser of its own, with its own cookies and storage, and routes serve the shop's pages and answer its API, so that the tests need no server.
+The `Dramaturge.Xunit`, `Dramaturge.NUnit`, `Dramaturge.MSTest`, and `Dramaturge.TUnit` packages give test classes a page each, in a browser of its own, launch the browser once for the whole run, and save screenshots of a failed test's pages; [Test Frameworks](test-frameworks.md) describes them. The [examples project](https://github.com/webdriverbidi-net/dramaturge/tree/main/samples/Dramaturge.Examples) is a complete xUnit project, built on `Dramaturge.Xunit`, that tests a small shop, with routes that serve its pages and answer its API, so that the tests need no server.
 
 ## With a Driver You Connected Yourself
 
@@ -62,6 +62,7 @@ Dramaturge is built on [WebDriverBiDi.NET](https://webdriverbidi-net.github.io/w
 
 ## Next Steps
 
+- [Test Frameworks](test-frameworks.md): base classes for xUnit, NUnit, MSTest, and TUnit tests
 - [Locators](locators.md), [Actions](actions.md), and [Assertions](assertions.md): finding elements, acting on them, and checking the page
 - [Pages and Frames](pages-and-frames.md) and [Network](network.md): navigation, scripts, dialogs, downloads, routes, and cookies
 - [Browser Setup](browser-setup.md): other browsers, channels, and versions, remote grids, and running browsers

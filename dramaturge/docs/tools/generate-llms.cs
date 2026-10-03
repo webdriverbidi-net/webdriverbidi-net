@@ -324,6 +324,9 @@ internal sealed partial class Generator(string docsDirectory, string siteUrl)
     [GeneratedRegex(@"^(?<prefix>[ \t]*>[ \t]*)\[!(?<kind>NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*$", RegexOptions.Multiline)]
     private static partial Regex AlertPattern();
 
+    [GeneratedRegex(@"^#[ \t]+\[(?<label>[^\]]+)\]\(#tab/[^)]*\)[ \t]*$")]
+    private static partial Regex TabPattern();
+
     [GeneratedRegex(@"\]\((?<target>[^)\s]+)\)")]
     private static partial Regex LinkTargetPattern();
 
@@ -360,11 +363,44 @@ internal sealed partial class Generator(string docsDirectory, string siteUrl)
         index.AppendLine();
     }
 
-    // Expands sample references, turns DocFX alerts into plain emphasis, and makes links absolute.
+    // Turns a DocFX tab's heading, "# [Label](#tab/id)", into a label, and drops the "---" that ends a group of tabs.
+    private static string RenderTabs(string markdown)
+    {
+        StringBuilder rendered = new();
+        bool inFence = false;
+        bool inTabs = false;
+        foreach (string line in markdown.Split('\n'))
+        {
+            string trimmed = line.TrimEnd('\r');
+            if (trimmed.TrimStart().StartsWith("```", StringComparison.Ordinal))
+            {
+                inFence = !inFence;
+            }
+
+            Match tab = inFence ? Match.Empty : TabPattern().Match(trimmed);
+            if (tab.Success)
+            {
+                inTabs = true;
+                rendered.Append("**").Append(tab.Groups["label"].Value).Append(":**\n");
+            }
+            else if (inTabs && !inFence && trimmed == "---")
+            {
+                inTabs = false;
+            }
+            else
+            {
+                rendered.Append(line).Append('\n');
+            }
+        }
+
+        return rendered.ToString(0, rendered.Length - 1);
+    }
+
+    // Expands sample references, turns DocFX alerts and tabs into plain emphasis, and makes links absolute.
     private string RenderPage(string path, string markdown, string pageUrl)
     {
         string directory = Path.GetDirectoryName(path)!;
-        string rendered = SamplePattern().Replace(markdown, match => this.ExpandSample(match, directory, path));
+        string rendered = SamplePattern().Replace(RenderTabs(markdown), match => this.ExpandSample(match, directory, path));
         rendered = AlertPattern().Replace(rendered, match =>
         {
             string kind = match.Groups["kind"].Value;

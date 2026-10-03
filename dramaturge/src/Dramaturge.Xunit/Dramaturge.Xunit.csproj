@@ -10,6 +10,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../../Dramaturge.snk</AssemblyOriginatorKeyFile>
+
+    <!-- docfx reads the API from this build, and resolves its references (such as the test framework's) only from
+         files beside it. Packing is unaffected. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <PropertyGroup>

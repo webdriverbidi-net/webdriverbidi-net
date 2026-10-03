@@ -7,7 +7,7 @@ Base classes for [NUnit](https://nunit.org/) tests that use [Dramaturge](https:/
 - **One browser launch per test assembly**, shared by every fixture, unless a fixture configures a launch of its own.
 - **An isolated browser and page for each test**, closed when the test ends, so no cookies or storage carry over.
 - **Screenshots of a failed test's pages**, saved under `TestResults/Dramaturge` and attached to the test's result.
-- **The browser chosen by the environment**: `DRAMATURGE_BROWSER` (`chrome`, `firefox`, or `edge`),
+- **The browser chosen by the environment**: `DRAMATURGE_BROWSER` (`chrome`, `firefox`, `edge`, or `safari`),
   `DRAMATURGE_CHANNEL`, and `DRAMATURGE_HEADED=1`, or in code.
 
 ## Getting Started
@@ -18,15 +18,23 @@ dotnet add package Dramaturge.NUnit
 
 Register the shared browser once in the test project, outside any namespace:
 
+<!-- readme-csharp: docs/code/TestFrameworksNUnitSamples.cs#NUnitRegistration -->
 ```csharp
+using Dramaturge.NUnit;
+using NUnit.Framework;
+
 [SetUpFixture]
-public class DramaturgeSetUp : Dramaturge.NUnit.DramaturgeSetUpFixture { }
+public class DramaturgeSetUp : DramaturgeSetUpFixture
+{
+}
 ```
 
 Then derive test fixtures from `PageTest`:
 
+<!-- readme-csharp: docs/code/TestFrameworksNUnitSamples.cs#NUnitPageTest -->
 ```csharp
 using Dramaturge.NUnit;
+using NUnit.Framework;
 using static Dramaturge.Assertions;
 
 public class SignInTests : PageTest
@@ -34,10 +42,10 @@ public class SignInTests : PageTest
     [Test]
     public async Task SignsIn()
     {
-        await Page.NavigateAsync("https://example.com/sign-in");
-        await Page.GetByLabel("Email").FillAsync("someone@example.com");
-        await Page.GetByRole("button", "Sign in").ClickAsync();
-        await Expect(Page.GetByRole("heading", "Welcome")).ToBeVisibleAsync();
+        await this.Page.NavigateAsync("https://example.com/sign-in");
+        await this.Page.GetByLabel("Email").FillAsync("someone@example.com");
+        await this.Page.GetByRole("button", "Sign in").ClickAsync();
+        await Expect(this.Page.GetByRole("heading", "Welcome")).ToBeVisibleAsync();
     }
 }
 ```

@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dramaturge\Dramaturge.csproj" />
+    <ProjectReference Include="..\..\src\Dramaturge.Xunit\Dramaturge.Xunit.csproj" />
   </ItemGroup>
 
 </Project>

@@ -75,6 +75,18 @@ await using BrowserLauncher installedChrome = BrowserLauncher.Configure(BrowserK
     .Build();
 ```
 
+`BrowserLauncher.ConfigureFromEnvironment` lets environment variables choose instead, for running the same tests in each browser: `DRAMATURGE_BROWSER` (default Chrome), `DRAMATURGE_CHANNEL` (default Stable), and `DRAMATURGE_HEADED` set to `1` or `true` (default headless).
+
+<!-- readme-csharp: docs/code/BrowsersReadmeSamples.cs#BrowsersFromEnvironment -->
+```csharp
+using Dramaturge.Browsers;
+
+// Chrome, stable, headless, unless DRAMATURGE_BROWSER, DRAMATURGE_CHANNEL, or DRAMATURGE_HEADED say otherwise.
+await using BrowserLauncher launcher = BrowserLauncher.ConfigureFromEnvironment()
+    .WithLaunchTimeout(TimeSpan.FromMinutes(2))
+    .Build();
+```
+
 ## Remote Grids and Running Browsers
 
 `LaunchUsingRemoteGrid` creates the session on a Selenium Grid or a cloud service. The URL carries the grid's port and path, `RemoteGridOptions` the headers of the requests, and `WithSessionCapability` the capabilities of the session:

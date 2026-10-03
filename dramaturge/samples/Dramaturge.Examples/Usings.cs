@@ -4,5 +4,6 @@
 // </copyright>
 
 global using Dramaturge;
+global using Dramaturge.Xunit;
 global using Xunit;
 global using static Dramaturge.Assertions;

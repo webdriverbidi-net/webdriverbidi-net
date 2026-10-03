@@ -10,8 +10,7 @@ using System.Text.RegularExpressions;
 /// <summary>
 /// Signing in, with the shop's API answered by the test.
 /// </summary>
-/// <param name="fixture">The launched browser.</param>
-public class LoginTests(BrowserFixture fixture) : PageTest(fixture)
+public class LoginTests : ShopTest
 {
     [Fact]
     public async Task SignedInUserIsWelcomed()
