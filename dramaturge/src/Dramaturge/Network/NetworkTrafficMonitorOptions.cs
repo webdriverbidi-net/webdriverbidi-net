@@ -18,10 +18,18 @@ public sealed class NetworkTrafficMonitorOptions
     private int maxAuthAttempts = 3;
 
     /// <summary>
-    /// Gets the IDs of the top-level browsing contexts whose traffic is monitored. If empty, the traffic of every
-    /// browsing context is monitored.
+    /// Gets the IDs of the top-level browsing contexts whose traffic is monitored. If empty, and
+    /// <see cref="UserContextIds"/> is too, the traffic of every browsing context is monitored.
     /// </summary>
     public IList<string> BrowsingContextIds { get; } = new List<string>();
+
+    /// <summary>
+    /// Gets the IDs of the user contexts whose traffic is monitored: that of their pages, including pages opened later,
+    /// and of their workers. Monitoring is limited to browsing contexts or to user contexts, not to both. The protocol
+    /// cannot limit an intercept to a user context, so with modifications or credentials, the requests of other user
+    /// contexts that match are stopped too, and continued at once.
+    /// </summary>
+    public IList<string> UserContextIds { get; } = new List<string>();
 
     /// <summary>
     /// Gets the modifications made to matching requests before they are sent.

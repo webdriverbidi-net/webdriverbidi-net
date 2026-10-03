@@ -53,7 +53,7 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">A token that cancels starting.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when monitoring has already started.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when monitoring has already started, or the options limit it to both browsing contexts and user contexts.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the monitor has been disposed.</exception>
     public async Task StartMonitoringAsync(CancellationToken cancellationToken = default)
     {
@@ -64,6 +64,11 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
             if (this.session is not null)
             {
                 throw new InvalidOperationException("Monitoring has already started; stop it before starting again.");
+            }
+
+            if (this.options.BrowsingContextIds.Count > 0 && this.options.UserContextIds.Count > 0)
+            {
+                throw new InvalidOperationException("Monitoring can be limited to browsing contexts or to user contexts, but not to both.");
             }
 
             MonitoringSession starting = new(this.options);
@@ -212,6 +217,7 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
         {
             AddDataCollectorCommandParameters collector = new(starting.MaxBodySize, DataType.Request, DataType.Response);
             collector.Contexts.AddRange(starting.BrowsingContextIds);
+            collector.UserContexts.AddRange(starting.UserContextIds);
             starting.CollectorId = (await network.AddDataCollectorAsync(collector, cancellationToken: cancellationToken).ConfigureAwait(false)).CollectorId;
         }
 
@@ -233,6 +239,10 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
             starting.AuthInterceptId = (await network.AddInterceptAsync(intercept, cancellationToken: cancellationToken).ConfigureAwait(false)).InterceptId;
         }
 
+        // A monitor limited to user contexts subscribes to every event and keeps those of its user contexts itself: it
+        // must see the requests of other user contexts that its intercepts stop, to continue them, and Chrome does not
+        // send a worker's events to a subscription limited to user contexts. Once chromium-bidi does, subscribe with
+        // the user contexts when the monitor has no intercepts.
         SubscribeCommandParameters subscribe = new(subscribedEvents, starting.BrowsingContextIds.Length > 0 ? [.. starting.BrowsingContextIds] : null);
         starting.SubscriptionId = (await this.driver.Session.SubscribeAsync(subscribe, cancellationToken: cancellationToken).ConfigureAwait(false)).SubscriptionId;
     }
@@ -280,10 +290,23 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
         // is not dispatched before then. The request is therefore recorded here, before anything awaits, and so ahead
         // of its response: once a blocked request is continued below, its response handler can run at any time.
         string requestId = e.Request.RequestId;
+        if (!current.IsMonitored(e.UserContextId))
+        {
+            if (e.IsBlocked && e.Intercepts is not null && current.RequestIntercepts.Any(intercept => e.Intercepts.Contains(intercept.InterceptId)))
+            {
+                await ReleaseBlockedRequestAsync(() => this.driver.Network.ContinueRequestAsync(new ContinueRequestCommandParameters(requestId))).ConfigureAwait(false);
+            }
+
+            return;
+        }
+
         if (this.pendingRequests.Count < current.MaxRetainedRequests)
         {
+            // The body is not disowned: Chrome then forgets a request that a route has stopped, so that the route can no
+            // longer answer it. The collector's request bodies are released when monitoring stops. Once chromium-bidi
+            // keeps a request whose data was disowned, set DisownCollectedData here again.
             Task<GetDataCommandResult>? requestBody = current.CollectorId is not null && e.Request.BodySize > 0
-                ? Task.Run(() => this.driver.Network.GetDataAsync(new GetDataCommandParameters(requestId, DataType.Request) { CollectorId = current.CollectorId, DisownCollectedData = true }))
+                ? Task.Run(() => this.driver.Network.GetDataAsync(new GetDataCommandParameters(requestId, DataType.Request) { CollectorId = current.CollectorId }))
                 : null;
             this.pendingRequests[GetRequestKey(requestId, e.RedirectCount)] = new NetworkRequest(e.Request, e.Timestamp, e.RedirectCount, e.BrowsingContextId, e.NavigationId, requestBody);
         }
@@ -339,6 +362,12 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
         // Only a request blocked by this monitor's own auth intercept is the monitor's to continue.
         if (!e.IsBlocked || e.Intercepts is null || !e.Intercepts.Contains(current.AuthInterceptId!))
         {
+            return;
+        }
+
+        if (!current.IsMonitored(e.UserContextId))
+        {
+            await ReleaseBlockedRequestAsync(() => this.driver.Network.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters(e.Request.RequestId) { Action = ContinueWithAuthActionType.Default })).ConfigureAwait(false);
             return;
         }
 
@@ -423,6 +452,7 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
         public MonitoringSession(NetworkTrafficMonitorOptions options)
         {
             this.BrowsingContextIds = [.. options.BrowsingContextIds];
+            this.UserContextIds = [.. options.UserContextIds];
             this.Modifications = [.. options.RequestModifications.Select(modification => modification.Clone())];
             this.Credentials = [.. options.AuthCredentials.Select(credentials => credentials.Clone())];
             this.CaptureBodies = options.CaptureBodies;
@@ -432,6 +462,8 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
         }
 
         public string[] BrowsingContextIds { get; }
+
+        public string[] UserContextIds { get; }
 
         public NetworkRequestModification[] Modifications { get; }
 
@@ -454,5 +486,8 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
         public string? AuthInterceptId { get; set; }
 
         public string? SubscriptionId { get; set; }
+
+        // An event without a user context cannot be attributed to one, so a monitor limited to user contexts ignores it.
+        public bool IsMonitored(string? userContextId) => this.UserContextIds.Length == 0 || (userContextId is not null && this.UserContextIds.Contains(userContextId));
     }
 }

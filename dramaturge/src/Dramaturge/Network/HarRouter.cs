@@ -104,7 +104,8 @@ internal sealed class HarRouter
 
     // A body the browser did not keep, such as one larger than any recorded body, matches no recorded body. The body
     // is not disowned, which in Chrome makes the stopped request unknown, so that it can no longer be answered; the
-    // collector's bodies are released when it is removed.
+    // collector's bodies are released when it is removed. Once chromium-bidi keeps a request whose data was disowned,
+    // set DisownCollectedData here again.
     private async Task<byte[]?> ReadBodyAsync(RequestData request)
     {
         try

@@ -49,6 +49,77 @@ public class NetworkTrafficMonitorTests
     }
 
     [Fact]
+    public async Task MonitoringUserContextsScopesTheCollectorAndFiltersEventsItself()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        NetworkTrafficMonitorOptions options = new();
+        options.UserContextIds.Add("user-context-1");
+        await using NetworkTrafficMonitor monitor = new(driver, options);
+
+        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
+
+        JsonNode collector = Assert.Single(remoteEnd.CommandsFor("network.addDataCollector"))["params"]!;
+        Assert.Equal("""["user-context-1"]""", collector["userContexts"]!.ToJsonString());
+        Assert.Null(collector["contexts"]);
+        JsonNode subscribe = Assert.Single(remoteEnd.CommandsFor("session.subscribe"))["params"]!;
+        Assert.Null(subscribe["userContexts"]);
+        Assert.Null(subscribe["contexts"]);
+    }
+
+    [Fact]
+    public async Task MonitoringUserContextsRecordsOnlyTheirRequestsAndContinuesOthersItStopped()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        NetworkTrafficMonitorOptions options = new();
+        options.UserContextIds.Add("user-context-1");
+        options.RequestModifications.Add(new NetworkRequestModification("https://example.com/*") { ReplacementMethod = "POST" });
+        options.AuthCredentials.Add(new AuthChallengeCredentials("user", "password"));
+        await using NetworkTrafficMonitor monitor = new(driver, options);
+        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
+        string requestIntercept = InterceptIdFor(remoteEnd, 1);
+        string authIntercept = InterceptIdFor(remoteEnd, 2);
+
+        await BeforeRequestSentAsync(remoteEnd, "request-own", intercepts: [requestIntercept], userContext: "user-context-1");
+        await BeforeRequestSentAsync(remoteEnd, "request-other", intercepts: [requestIntercept], userContext: "user-context-2");
+        await BeforeRequestSentAsync(remoteEnd, "request-unknown", intercepts: [requestIntercept]);
+        await BeforeRequestSentAsync(remoteEnd, "request-other-not-stopped", userContext: "user-context-2");
+        await BeforeRequestSentAsync(remoteEnd, "request-other-stopped-elsewhere", intercepts: ["someone-elses-intercept"], userContext: "user-context-2");
+        await AuthRequiredAsync(remoteEnd, authIntercept, "request-other-auth", userContext: "user-context-2");
+        await ResponseCompletedAsync(remoteEnd, "request-own");
+        await ResponseCompletedAsync(remoteEnd, "request-other");
+        await remoteEnd.WaitForCommandAsync("network.continueRequest", 3);
+        await remoteEnd.WaitForCommandAsync("network.continueWithAuth");
+        await FlushAsync(driver);
+
+        Assert.Equal(["request-own"], (await monitor.GetCapturedTrafficAsync(cancellationToken: TestContext.Current.CancellationToken)).Select(request => request.RequestId));
+        Dictionary<string, JsonNode> continued = remoteEnd.CommandsFor("network.continueRequest").ToDictionary(command => (string)command["params"]!["request"]!, command => command["params"]!);
+        Assert.Equal(["request-other", "request-own", "request-unknown"], continued.Keys.Order());
+        Assert.Equal("POST", (string?)continued["request-own"]["method"]);
+        Assert.Null(continued["request-other"]["method"]);
+        Assert.Equal("default", (string?)Assert.Single(remoteEnd.CommandsFor("network.continueWithAuth"))["params"]!["action"]);
+        JsonNode subscribe = Assert.Single(remoteEnd.CommandsFor("session.subscribe"))["params"]!;
+        Assert.Null(subscribe["userContexts"]);
+    }
+
+    [Fact]
+    public async Task MonitoringBothBrowsingAndUserContextsIsRejected()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        NetworkTrafficMonitorOptions options = new();
+        options.BrowsingContextIds.Add(ContextId);
+        options.UserContextIds.Add("user-context-1");
+        await using NetworkTrafficMonitor monitor = new(driver, options);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => monitor.StartMonitoringAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal("Monitoring can be limited to browsing contexts or to user contexts, but not to both.", exception.Message);
+        Assert.Empty(remoteEnd.CommandsFor("session.subscribe"));
+    }
+
+    [Fact]
     public async Task StartingTwiceIsRejectedButRestartingAfterStopIsNot()
     {
         (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
@@ -157,6 +228,11 @@ public class NetworkTrafficMonitorTests
         Assert.Equal("response body", request.ResponseBody);
         Assert.Equal(200ul, request.ResponseStatusCode);
         Assert.Empty(await monitor.GetCapturedTrafficAsync(TimeSpan.Zero, TestContext.Current.CancellationToken));
+
+        // A request body is not disowned: Chrome then forgets a request that a route has stopped.
+        Dictionary<string, JsonNode> reads = remoteEnd.CommandsFor("network.getData").ToDictionary(command => (string)command["params"]!["dataType"]!, command => command["params"]!);
+        Assert.False(reads["request"].AsObject().ContainsKey("disown"));
+        Assert.True((bool?)reads["response"]["disown"]);
     }
 
     [Fact]
@@ -172,7 +248,9 @@ public class NetworkTrafficMonitorTests
         await FlushAsync(driver);
         await monitor.GetCapturedTrafficAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal("response", (string?)Assert.Single(remoteEnd.CommandsFor("network.getData"))["params"]!["dataType"]);
+        JsonNode read = Assert.Single(remoteEnd.CommandsFor("network.getData"))["params"]!;
+        Assert.Equal("response", (string?)read["dataType"]);
+        Assert.True((bool?)read["disown"]);
     }
 
     // The response arrives right behind the request, as it does when the browser is quick.

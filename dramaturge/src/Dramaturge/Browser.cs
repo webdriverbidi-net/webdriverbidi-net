@@ -204,6 +204,20 @@ public sealed class Browser
     }
 
     /// <summary>
+    /// Starts recording the requests the browser's pages, their frames, and its workers make to an HTTP Archive file, with their responses and bodies. Disposing the
+    /// recording writes the file; <see cref="HarRecording.SaveAsync"/> writes it sooner. The file can be replayed with
+    /// <see cref="RouteFromHarAsync(string, HarRouteOptions?, CancellationToken)"/>.
+    /// </summary>
+    /// <param name="harPath">The path of the .har file to write.</param>
+    /// <param name="options">The recording's settings, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels starting.</param>
+    /// <returns>The recording.</returns>
+    public Task<HarRecording> RecordHarAsync(string harPath, HarRecordingOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return HarRecording.StartAsync(this.Group, harPath, options, monitorOptions => monitorOptions.UserContextIds.Add(this.Id), cancellationToken);
+    }
+
+    /// <summary>
     /// Removes every route of the browser, but not those of its pages. A request already stopped is still handled.
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the commands.</param>

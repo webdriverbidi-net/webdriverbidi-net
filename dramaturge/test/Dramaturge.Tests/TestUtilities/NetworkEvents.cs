@@ -69,10 +69,16 @@ public static class NetworkEvents
     /// <param name="timings">The fetch timing marks, or <see langword="null"/> for the default.</param>
     /// <param name="startMilliseconds">The event's timestamp, in milliseconds after the default start.</param>
     /// <param name="sizesKnown">A value indicating whether the body size is reported.</param>
+    /// <param name="userContext">The user context the event reports, or <see langword="null"/> for none.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static Task BeforeRequestSentAsync(FakeRemoteEnd remoteEnd, string requestId, string method = "GET", ulong bodySize = 0, ulong redirectCount = 0, string[]? intercepts = null, string url = "https://example.com/", string? navigation = null, Dictionary<string, string>? headers = null, JsonObject? timings = null, long startMilliseconds = 0, bool sizesKnown = true)
+    public static Task BeforeRequestSentAsync(FakeRemoteEnd remoteEnd, string requestId, string method = "GET", ulong bodySize = 0, ulong redirectCount = 0, string[]? intercepts = null, string url = "https://example.com/", string? navigation = null, Dictionary<string, string>? headers = null, JsonObject? timings = null, long startMilliseconds = 0, bool sizesKnown = true, string? userContext = null)
     {
         JsonObject parameters = Base(requestId, redirectCount, intercepts, url, method, bodySize);
+        if (userContext is not null)
+        {
+            parameters["userContext"] = userContext;
+        }
+
         if (!sizesKnown)
         {
             parameters["request"]!["bodySize"] = null;
@@ -151,10 +157,16 @@ public static class NetworkEvents
     /// <param name="scheme">The challenge's scheme.</param>
     /// <param name="realm">The challenge's realm.</param>
     /// <param name="challenges">The challenges, overriding the one described by <paramref name="scheme"/> and <paramref name="realm"/>; an empty string omits them.</param>
+    /// <param name="userContext">The user context the event reports, or <see langword="null"/> for none.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static Task AuthRequiredAsync(FakeRemoteEnd remoteEnd, string? interceptId, string requestId = "request-1", string scheme = "Basic", string realm = "site", string? challenges = null)
+    public static Task AuthRequiredAsync(FakeRemoteEnd remoteEnd, string? interceptId, string requestId = "request-1", string scheme = "Basic", string realm = "site", string? challenges = null, string? userContext = null)
     {
         JsonObject parameters = Base(requestId, 0, interceptId is null ? null : [interceptId], "https://example.com/", "GET", 0);
+        if (userContext is not null)
+        {
+            parameters["userContext"] = userContext;
+        }
+
         JsonArray? authChallenges = challenges switch
         {
             null => new JsonArray(new JsonObject() { ["scheme"] = scheme, ["realm"] = realm }),
