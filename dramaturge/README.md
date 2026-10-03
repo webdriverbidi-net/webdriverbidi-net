@@ -84,7 +84,7 @@ Until Dramaturge moves to a repository of its own, it builds against the `WebDri
 | `samples` | `Dramaturge.Examples`, an xUnit project of example tests built on `Dramaturge.Xunit`, which CI runs with the integration tests |
 | `docs` | The documentation site; `docs/README.md` describes it |
 | `third_party` | The vendored Acquiescence element-state library and chromium-bidi mapper, with their licenses |
-| `scripts` | Scripts for coverage thresholds, checking the release's packages, and updating the chromium-bidi mapper |
+| `scripts` | Scripts for coverage thresholds and merging coverage reports, checking the release's packages, and updating the chromium-bidi mapper |
 | `.github` | The CI and release workflows, which take effect once this directory is a repository of its own |
 | `skills` | The `dramaturge` agent skill, and the plugin that `.claude-plugin/marketplace.json` publishes it as |
 

@@ -78,6 +78,26 @@ public class RegistrationTests
             exception.Message);
     }
 
+    [Fact]
+    public async Task MSTestClosingAnUnusedSharedGroupRemovesItsRegistration()
+    {
+        MSTest.DramaturgeAssemblyFixture.Register(new MSTest.DramaturgeAssemblyFixture());
+
+        await MSTest.DramaturgeAssemblyFixture.CloseAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(new MSTestTest().SetUpBrowsersAsync);
+    }
+
+    [Fact]
+    public async Task TUnitClosingAnUnusedSharedGroupRemovesItsRegistration()
+    {
+        TUnit.DramaturgeAssemblyFixture.Register(new TUnit.DramaturgeAssemblyFixture());
+
+        await TUnit.DramaturgeAssemblyFixture.CloseAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(new TUnitTest().SetUpBrowsersAsync);
+    }
+
     private sealed class TUnitTest : TUnit.BrowserTest
     {
     }

@@ -176,10 +176,6 @@ jobs:
           --coverlet-include "[Dramaturge.Xunit]*"
           --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-xunit
 
-      - name: Enforce Dramaturge xUnit package coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge-xunit.*.info
-
       - name: Test Dramaturge NUnit package (with coverage)
         if: inputs.include-dramaturge
         run: >
@@ -187,10 +183,6 @@ jobs:
           --coverlet --coverlet-output-format lcov
           --coverlet-include "[Dramaturge.NUnit]*"
           --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-nunit
-
-      - name: Enforce Dramaturge NUnit package coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge-nunit.*.info
 
       - name: Test Dramaturge MSTest package (with coverage)
         if: inputs.include-dramaturge
@@ -200,10 +192,6 @@ jobs:
           --coverlet-include "[Dramaturge.MSTest]*"
           --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-mstest
 
-      - name: Enforce Dramaturge MSTest package coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge-mstest.*.info
-
       - name: Test Dramaturge TUnit package (with coverage)
         if: inputs.include-dramaturge
         run: >
@@ -212,14 +200,25 @@ jobs:
           --coverlet-include "[Dramaturge.TUnit]*"
           --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-tunit
 
-      - name: Enforce Dramaturge TUnit package coverage thresholds
+      # These tests reach what each package's own cannot: no shared browser registered. A report names its sources, not
+      # its assembly, and the packages share sources, so each package's coverage is collected, and merged, on its own.
+      - name: Test Dramaturge test framework packages without their shared browser registered (with coverage)
         if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge-tunit.*.info
+        run: |
+          for package in Xunit NUnit MSTest TUnit; do
+            prefix="lcov-dramaturge-$(echo "$package" | tr '[:upper:]' '[:lower:]')"
+            dotnet test --project dramaturge/test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Release --no-build --verbosity normal \
+              --coverlet --coverlet-output-format lcov --coverlet-include "[Dramaturge.$package]*" \
+              --results-directory test/coverage --coverlet-file-prefix "$prefix-unregistered"
+            ./dramaturge/scripts/merge-lcov.sh "test/coverage/$prefix-merged.info" test/coverage/"$prefix".*.info test/coverage/"$prefix"-unregistered.*.info
+          done
 
-      # No coverage: check-lcov-thresholds.sh sums reports rather than merging them, so its few lines would lower the totals.
-      - name: Test Dramaturge test framework packages without their shared browser registered
+      - name: Enforce Dramaturge test framework package coverage thresholds
         if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Release --no-build --verbosity normal
+        run: |
+          for package in xunit nunit mstest tunit; do
+            ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 "test/coverage/lcov-dramaturge-$package-merged.info"
+          done
 
       - name: Enforce combined coverage thresholds
         # Perform an aggregate threshold check
@@ -237,10 +236,10 @@ jobs:
           test/coverage/lcov-dramaturge-browsers.*.info
           test/coverage/lcov-dramaturge-tool.*.info
           test/coverage/lcov-dramaturge.*.info
-          test/coverage/lcov-dramaturge-xunit.*.info
-          test/coverage/lcov-dramaturge-nunit.*.info
-          test/coverage/lcov-dramaturge-mstest.*.info
-          test/coverage/lcov-dramaturge-tunit.*.info
+          test/coverage/lcov-dramaturge-xunit-merged.info
+          test/coverage/lcov-dramaturge-nunit-merged.info
+          test/coverage/lcov-dramaturge-mstest-merged.info
+          test/coverage/lcov-dramaturge-tunit-merged.info
 
       # The analyzer package's shipped layout is produced entirely by a pack target that nothing else
       # runs: the Roslyn 5.9 variant is compiled only inside it, every other CI build and test uses the
@@ -343,7 +342,7 @@ jobs:
           # A coveralls.io outage must not fail the job that gates pull requests and the tag release.
           fail-on-error: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info test/coverage/lcov-dramaturge-browsers.*.info test/coverage/lcov-extensions.*.info test/coverage/lcov-dramaturge-tool.*.info test/coverage/lcov-dramaturge.*.info test/coverage/lcov-dramaturge-xunit.*.info test/coverage/lcov-dramaturge-nunit.*.info test/coverage/lcov-dramaturge-mstest.*.info test/coverage/lcov-dramaturge-tunit.*.info
+          files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info test/coverage/lcov-dramaturge-browsers.*.info test/coverage/lcov-extensions.*.info test/coverage/lcov-dramaturge-tool.*.info test/coverage/lcov-dramaturge.*.info test/coverage/lcov-dramaturge-xunit-merged.info test/coverage/lcov-dramaturge-nunit-merged.info test/coverage/lcov-dramaturge-mstest-merged.info test/coverage/lcov-dramaturge-tunit-merged.info
           format: lcov
 
   # Deliberately a job of its own rather than a `configuration` matrix on unit-tests; see the
@@ -463,10 +462,6 @@ jobs:
           --coverlet-include "[Dramaturge.Xunit]*"
           --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-xunit
 
-      - name: Enforce Dramaturge xUnit package coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge-xunit.*.info
-
       - name: Test Dramaturge NUnit package (with coverage)
         if: inputs.include-dramaturge
         run: >
@@ -474,10 +469,6 @@ jobs:
           --coverlet --coverlet-output-format lcov
           --coverlet-include "[Dramaturge.NUnit]*"
           --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-nunit
-
-      - name: Enforce Dramaturge NUnit package coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge-nunit.*.info
 
       - name: Test Dramaturge MSTest package (with coverage)
         if: inputs.include-dramaturge
@@ -487,10 +478,6 @@ jobs:
           --coverlet-include "[Dramaturge.MSTest]*"
           --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-mstest
 
-      - name: Enforce Dramaturge MSTest package coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge-mstest.*.info
-
       - name: Test Dramaturge TUnit package (with coverage)
         if: inputs.include-dramaturge
         run: >
@@ -499,14 +486,25 @@ jobs:
           --coverlet-include "[Dramaturge.TUnit]*"
           --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-tunit
 
-      - name: Enforce Dramaturge TUnit package coverage thresholds
+      # These tests reach what each package's own cannot: no shared browser registered. A report names its sources, not
+      # its assembly, and the packages share sources, so each package's coverage is collected, and merged, on its own.
+      - name: Test Dramaturge test framework packages without their shared browser registered (with coverage)
         if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge-tunit.*.info
+        run: |
+          for package in Xunit NUnit MSTest TUnit; do
+            prefix="lcov-dramaturge-$(echo "$package" | tr '[:upper:]' '[:lower:]')"
+            dotnet test --project dramaturge/test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Debug --no-build --verbosity normal \
+              --coverlet --coverlet-output-format lcov --coverlet-include "[Dramaturge.$package]*" \
+              --results-directory test/coverage-debug --coverlet-file-prefix "$prefix-unregistered"
+            ./dramaturge/scripts/merge-lcov.sh "test/coverage-debug/$prefix-merged.info" test/coverage-debug/"$prefix".*.info test/coverage-debug/"$prefix"-unregistered.*.info
+          done
 
-      # No coverage: check-lcov-thresholds.sh sums reports rather than merging them, so its few lines would lower the totals.
-      - name: Test Dramaturge test framework packages without their shared browser registered
+      - name: Enforce Dramaturge test framework package coverage thresholds
         if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Debug --no-build --verbosity normal
+        run: |
+          for package in xunit nunit mstest tunit; do
+            ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 "test/coverage-debug/lcov-dramaturge-$package-merged.info"
+          done
 
       - name: Enforce combined coverage thresholds
         run: >
@@ -523,10 +521,10 @@ jobs:
           test/coverage-debug/lcov-dramaturge-browsers.*.info
           test/coverage-debug/lcov-dramaturge-tool.*.info
           test/coverage-debug/lcov-dramaturge.*.info
-          test/coverage-debug/lcov-dramaturge-xunit.*.info
-          test/coverage-debug/lcov-dramaturge-nunit.*.info
-          test/coverage-debug/lcov-dramaturge-mstest.*.info
-          test/coverage-debug/lcov-dramaturge-tunit.*.info
+          test/coverage-debug/lcov-dramaturge-xunit-merged.info
+          test/coverage-debug/lcov-dramaturge-nunit-merged.info
+          test/coverage-debug/lcov-dramaturge-mstest-merged.info
+          test/coverage-debug/lcov-dramaturge-tunit-merged.info
 
   unit-tests-windows:
     name: Unit tests (Windows)
