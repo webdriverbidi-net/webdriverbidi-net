@@ -13,6 +13,8 @@ waits for the page so that your code does not have to.
   scrolled into view if needed. An element replaced while an action waits is found again.
 - **Assertions** (`Expect`) are checked again until they hold or their time runs out, and report what they last saw.
   They throw `ExpectationFailedException`, so they work with any test framework.
+- **Accessibility snapshots** describe a page as assistive technology sees it, in Playwright's aria snapshot format,
+  with refs that turn into locators, and `ToMatchAriaSnapshotAsync` to assert a page's structure.
 - **Pages** wait for navigation and load states, and handle dialogs, popups, downloads, screenshots, PDFs, routes that
   answer or change requests, cookies, and network capture to HAR files.
 - Works on .NET Standard 2.0 and .NET 10, and with native AOT.

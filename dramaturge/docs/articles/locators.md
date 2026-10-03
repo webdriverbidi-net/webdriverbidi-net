@@ -22,6 +22,8 @@ Prefer locators that describe what a user sees, which change less often than a p
 
 Each method that takes text also takes `exact: true`, for a whole match with case.
 
+`GetByRole` matches the role and name the browser computes. Browsers call the image role `image`, its name since ARIA 1.3; `GetByRole` asks for `img` as `image`, so either finds images. The names in an [accessibility snapshot](accessibility-snapshots.md) are computed in the page and can differ from the browser's; act on an element from a snapshot through its ref.
+
 `GetByRole` also takes the ARIA states an element must have:
 
 [!code-csharp[Role States](../code/LocatorsSamples.cs#RoleStates)]

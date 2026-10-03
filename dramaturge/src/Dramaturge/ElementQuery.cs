@@ -62,14 +62,16 @@ internal sealed record ElementQuery(Locator Locator, string Description)
     }
 
     /// <summary>
-    /// Finds elements by their computed accessibility role and, optionally, their exact accessible name.
+    /// Finds elements by their computed accessibility role and, optionally, their exact accessible name. The role
+    /// img is asked for as image, the name ARIA 1.3 gives it and browsers report.
     /// </summary>
     /// <param name="role">The role, such as "button".</param>
     /// <param name="name">The exact accessible name, or <see langword="null"/> for any.</param>
     /// <returns>The query.</returns>
     public static ElementQuery ByRole(string role, string? name)
     {
-        AccessibilityLocator locator = new() { Role = role };
+        // https://w3c.github.io/aria/#image
+        AccessibilityLocator locator = new() { Role = role == "img" ? "image" : role };
         if (name is not null)
         {
             locator.Name = name;

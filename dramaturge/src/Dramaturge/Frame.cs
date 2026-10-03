@@ -189,10 +189,16 @@ public sealed class Frame
     /// Creates a locator for elements by the accessibility role the browser computes for them, such as "button", and optionally the
     /// accessible name, which must match exactly, in this frame.
     /// </summary>
-    /// <param name="role">The role.</param>
+    /// <param name="role">The role. img is asked for as image, the name ARIA 1.3 gives it and browsers report.</param>
     /// <param name="name">The exact accessible name, or <see langword="null"/> for any.</param>
     /// <param name="states">ARIA states the elements must have, such as checked, or <see langword="null"/> for any.</param>
     /// <returns>The locator.</returns>
+    /// <remarks>
+    /// The browser computes the roles and names this matches. An accessibility snapshot, such as one from
+    /// <see cref="Page.AriaSnapshotAsync"/>, computes names with the library's script in the page, so a name read from
+    /// a snapshot can differ from the browser's, and find nothing here; to act on an element from a snapshot, use
+    /// <see cref="AriaSnapshot.Locator"/> with its ref.
+    /// </remarks>
     public ElementLocator GetByRole(string role, string? name = null, RoleStates? states = null)
     {
         return ElementLocator.ByRole(this, role, name, states);

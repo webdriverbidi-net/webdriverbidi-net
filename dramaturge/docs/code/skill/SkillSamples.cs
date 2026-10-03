@@ -91,6 +91,26 @@ public static class SkillSamples
     }
 
     /// <summary>
+    /// Taking an accessibility snapshot, acting on a ref, and matching a snapshot.
+    /// </summary>
+    /// <param name="page">A page.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task Snapshots(Page page)
+    {
+        #region Snapshots
+        AriaSnapshot snapshot = await page.AriaSnapshotAsync();
+
+        // Each line is an element with a role, such as '- button "Sign in" [ref=e6]'; act on one through its ref.
+        await snapshot.Locator("e6").ClickAsync();
+
+        await Expect(page.GetByRole("navigation", "Main")).ToMatchAriaSnapshotAsync("""
+            - link "Home"
+            - link /Orders \(\d+\)/
+            """);
+        #endregion
+    }
+
+    /// <summary>
     /// Waiting for what a click starts.
     /// </summary>
     /// <param name="page">A page.</param>

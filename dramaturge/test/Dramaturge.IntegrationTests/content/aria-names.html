@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Accessible names</title>
+    <style>
+      .decorated::before { content: "Before "; }
+      .icon::after { content: " (opens)"; }
+    </style>
+  </head>
+  <body>
+    <header><h1>Accessible names</h1></header>
+    <nav aria-label="Primary"><a href="#home">Home</a> <a href="#about" title="About us">About</a></nav>
+    <main>
+      <section aria-label="Buttons">
+        <h2>Buttons</h2>
+        <button>Content</button>
+        <button aria-label="Aria label">Ignored content</button>
+        <span id="labelled-by">Labelled by</span><button aria-labelledby="labelled-by">Ignored</button>
+        <button title="Title only"></button>
+        <button>Visible <span hidden>hidden</span></button>
+        <button class="decorated">Pseudo</button>
+        <button><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Image alt"></button>
+        <input type="button" value="Input button">
+        <input type="submit">
+        <input type="reset" value="Clear">
+        <input type="image" alt="Image input" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+        <div role="button" tabindex="0">Div button</div>
+      </section>
+      <section aria-label="Links">
+        <h2>Links</h2>
+        <a href="#plain">Plain link</a>
+        <a href="#icon" class="icon">Icon link</a>
+        <a href="#image"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Linked image"></a>
+      </section>
+      <section aria-label="Form">
+        <h3>Form</h3>
+        <form aria-label="Sign up">
+          <label for="name">Name</label><input id="name">
+          <label>Email <input type="email"></label>
+          <input aria-label="Phone" type="tel">
+          <input placeholder="Search terms">
+          <input title="Postcode">
+          <textarea aria-label="Comments"></textarea>
+          <label><input type="checkbox"> Subscribe</label>
+          <label><input type="radio" name="plan"> Monthly</label>
+          <label for="country">Country</label><select id="country"><option>Narnia</option></select>
+          <fieldset><legend>Delivery</legend><label><input type="radio" name="delivery"> Courier</label></fieldset>
+          <label for="flash">Flash the screen <input id="count" type="number" value="3"> times</label><input id="flash" type="checkbox">
+          <label for="volume">Volume</label><input id="volume" type="range">
+          <label for="progress">Progress</label><progress id="progress" value="0.5"></progress>
+          <output aria-label="Total">42</output>
+        </form>
+      </section>
+      <section aria-label="Content">
+        <h4>Content</h4>
+        <figure><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Chart"><figcaption>Sales figures</figcaption></figure>
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Standalone image">
+        <svg role="img" aria-label="Labelled svg" width="10" height="10"></svg>
+        <svg width="10" height="10"><title>Titled svg</title><rect width="10" height="10"></rect></svg>
+        <table>
+          <caption>Prices</caption>
+          <tr><th>Item</th><th>Cost</th></tr>
+          <tr><th scope="row">Tea</th><td>2</td></tr>
+        </table>
+        <ul aria-label="Fruit"><li>Apple</li><li>Pear</li></ul>
+        <details><summary>More details</summary><p>Hidden until opened</p></details>
+        <div role="tablist" aria-label="Tabs"><div role="tab" aria-selected="true">First tab</div><div role="tab">Second tab</div></div>
+        <div role="tree" aria-label="Files"><div role="treeitem">Documents</div></div>
+        <div role="dialog" aria-label="Notice" open>Dialog content</div>
+        <div role="region" aria-labelledby="region-heading"><h5 id="region-heading">Region heading</h5></div>
+      </section>
+    </main>
+    <footer><p>Footer text</p></footer>
+  </body>
+</html>

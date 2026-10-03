@@ -24,6 +24,7 @@
 | `ToHaveIdAsync`, `ToHaveClassAsync` | Has an `id`, or a whole `class` attribute |
 | `ToHaveCssAsync` | Has a computed CSS property value |
 | `ToHaveCountAsync` | Is one of exactly the given number of elements the locator finds |
+| `ToMatchAriaSnapshotAsync` | Has an accessibility snapshot that matches a template; see [Accessibility Snapshots](accessibility-snapshots.md#asserting-a-snapshot) |
 
 Each matcher that compares a value takes a string, for an exact match, or a `Regex`, which may match anywhere in the value. A matcher about one element throws `AmbiguousElementException` at once if the locator finds several; `ToHaveCountAsync` and the list forms of the text matchers work with every match. A matcher that cannot apply to the element, such as `ToHaveValueAsync` on a paragraph, throws `InvalidOperationException` at once.
 

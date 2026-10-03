@@ -1,6 +1,6 @@
 ---
 name: dramaturge
-description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, routes, dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
+description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, accessibility snapshots (AriaSnapshotAsync, ToMatchAriaSnapshotAsync), routes, dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
 ---
 
 # Dramaturge
@@ -107,6 +107,28 @@ DownloadOutcome outcome = await download.WaitForEndAsync();
 - Dialogs: the browser dismisses them unless the user prompt handler is `Ignore` (`BrowserOptions.UnhandledPromptBehavior`, or on Firefox the session capability); then answer them in `page.OnDialog`, without awaiting the action that opened them.
 - `OnPopup`, `OnConsoleMessage`, `OnPageError`, `OnDownload`; `EvaluateAsync<T>` runs JavaScript in the page; frames come from `locator.ContentFrameAsync()`.
 
+## Accessibility Snapshots
+
+<!-- readme-csharp: docs/code/skill/SkillSamples.cs#Snapshots -->
+```csharp
+using Dramaturge;
+using static Dramaturge.Assertions;
+
+AriaSnapshot snapshot = await page.AriaSnapshotAsync();
+
+// Each line is an element with a role, such as '- button "Sign in" [ref=e6]'; act on one through its ref.
+await snapshot.Locator("e6").ClickAsync();
+
+await Expect(page.GetByRole("navigation", "Main")).ToMatchAriaSnapshotAsync("""
+    - link "Home"
+    - link /Orders \(\d+\)/
+    """);
+```
+
+- `page.AriaSnapshotAsync()` or `locator.AriaSnapshotAsync()` describes the page as assistive technology sees it, in Playwright's aria snapshot format: each element with a role, its accessible name and states, and the text between them, with frames' content beneath their `iframe` nodes. `ToString()` is the text; `Root` is the tree of `AriaNode`s.
+- **Act on an element from a snapshot through its ref, `snapshot.Locator(ref)`**, never by searching again with the role and name the snapshot shows: snapshot names are computed in the page and can differ from the browser's, which `GetByRole` uses. A removed element's ref finds nothing; a ref into a document that has gone throws `InvalidOperationException`.
+- `ToMatchAriaSnapshotAsync(template)` retries until the element's snapshot matches a template in the same format: listed children must appear in order among others (`/children: equal` for exactly), names and text match exactly or as `/regex/`, refs are ignored, frames are not matched. An invalid template throws `ArgumentException` at once.
+
 ## Network
 
 <!-- readme-csharp: docs/code/skill/SkillSamples.cs#Routes -->
@@ -127,6 +149,7 @@ Routes answer (`FulfillAsync`), change (`ContinueAsync`), or fail (`AbortAsync`)
 
 - Firefox: `GetByText` is unsupported (its innerText locator, bug 1869538); native HTML5 drag-and-drop fires only `dragstart` (bug 1515879); the dialog handler given to a new browser is ignored (bug 1975279).
 - Chrome: a route's `FulfillAsync` with only a status code is sent to the network instead; give a body or header. Screenshots of elements inside iframes fail.
+- Snapshot names versus `GetByRole`: both browsers leave table rows unnamed; Chrome does not name a `figure` from its `figcaption`; Firefox names a value-less submit button "Submit Query" and gives an `svg` without a role another role than `image`. Firefox still finds a ref's element after its frame navigates away, instead of throwing.
 
 ## Rules
 
@@ -140,3 +163,4 @@ Before finishing code that uses Dramaturge, check that it:
 6. Uses `Force` only with a stated reason.
 7. Launches the browser once per class or suite, gives each test its own `Browser`, and disposes the group.
 8. Gives fulfilled responses a body or header.
+9. Acts on an element from an accessibility snapshot through its ref, not through `GetByRole` with the name the snapshot shows.

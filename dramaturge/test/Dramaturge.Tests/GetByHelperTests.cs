@@ -104,6 +104,19 @@ public class GetByHelperTests
     }
 
     [Fact]
+    public async Task RoleHelperAsksForImgAsImage()
+    {
+        (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        ElementLocator chart = page.GetByRole("img", "Chart");
+
+        await chart.CountAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("image", (string?)LastLocator(session)["value"]!["role"]);
+        Assert.Equal("getByRole \"img\" name \"Chart\"", chart.ToString());
+    }
+
+    [Fact]
     public async Task TestIdHelperUsesTheConfiguredAttribute()
     {
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
