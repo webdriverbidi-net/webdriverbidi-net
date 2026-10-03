@@ -7,6 +7,7 @@ namespace Dramaturge;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
+using Dramaturge.Network;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Network;
@@ -601,6 +602,69 @@ public sealed class Page
     }
 
     /// <summary>
+    /// Adds a route that answers requests the page and its frames make from an HTTP Archive: a .har file, or a .zip holding one
+    /// and its body files, as Playwright writes them. Each request is answered with the response of the entry of its
+    /// method and URL, ignoring a fragment, whose recorded body is the request's, if both have one, comparing a
+    /// multipart form's body without its boundary; of several, the one recorded with the most of the request's
+    /// headers, then the first. A redirect is answered as recorded, and the browser follows it to the next entry. A
+    /// request with no entry is aborted, unless <see cref="HarRouteOptions.NotFound"/> passes it on.
+    /// </summary>
+    /// <param name="harPath">The path of the archive, which is read now.</param>
+    /// <param name="options">The route's settings, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels reading the archive and the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    /// <exception cref="InvalidDataException">Thrown when the file is not an archive that can be read.</exception>
+    public Task<RouteRegistration> RouteFromHarAsync(string harPath, HarRouteOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddHarRouteAsync(harPath, _ => true, "requests", options, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a route that answers requests the page and its frames make to a URL from an HTTP Archive, as
+    /// <see cref="RouteFromHarAsync(string, HarRouteOptions?, CancellationToken)"/> does.
+    /// </summary>
+    /// <param name="harPath">The path of the archive, which is read now.</param>
+    /// <param name="url">The request's full URL.</param>
+    /// <param name="options">The route's settings, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels reading the archive and the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    /// <exception cref="InvalidDataException">Thrown when the file is not an archive that can be read.</exception>
+    public Task<RouteRegistration> RouteFromHarAsync(string harPath, string url, HarRouteOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddHarRouteAsync(harPath, request => request.Url == url, url, options, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a route that answers requests the page and its frames make to URLs matching a regular expression from an HTTP
+    /// Archive, as <see cref="RouteFromHarAsync(string, HarRouteOptions?, CancellationToken)"/> does.
+    /// </summary>
+    /// <param name="harPath">The path of the archive, which is read now.</param>
+    /// <param name="url">The regular expression, matched against the request's full URL.</param>
+    /// <param name="options">The route's settings, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels reading the archive and the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    /// <exception cref="InvalidDataException">Thrown when the file is not an archive that can be read.</exception>
+    public Task<RouteRegistration> RouteFromHarAsync(string harPath, Regex url, HarRouteOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddHarRouteAsync(harPath, request => url.IsMatch(request.Url), $"URLs matching {url}", options, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a route that answers requests the page and its frames make that satisfy a condition from an HTTP Archive, as
+    /// <see cref="RouteFromHarAsync(string, HarRouteOptions?, CancellationToken)"/> does.
+    /// </summary>
+    /// <param name="harPath">The path of the archive, which is read now.</param>
+    /// <param name="request">The condition, given the request.</param>
+    /// <param name="options">The route's settings, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels reading the archive and the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    /// <exception cref="InvalidDataException">Thrown when the file is not an archive that can be read.</exception>
+    public Task<RouteRegistration> RouteFromHarAsync(string harPath, Func<RequestData, bool> request, HarRouteOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddHarRouteAsync(harPath, request, "requests satisfying the condition", options, cancellationToken);
+    }
+
+    /// <summary>
     /// Removes every route of the page. A request already stopped is still handled.
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the commands.</param>
@@ -929,9 +993,23 @@ public sealed class Page
         return this.Browser.Group.Driver.BrowsingContext.SetViewportAsync(new SetViewportCommandParameters() { BrowsingContextId = this.Id, Viewport = viewport }, cancellationToken: cancellationToken);
     }
 
+    private async Task<RouteRegistration> AddHarRouteAsync(string harPath, Func<RequestData, bool> matches, string description, HarRouteOptions? options, CancellationToken cancellationToken)
+    {
+        HarRouter router = await HarRouter.CreateAsync(this.Browser.Group, harPath, options, parameters => parameters.Contexts.Add(this.Id), cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await this.AddRouteAsync(matches, $"{description} from the HAR {Path.GetFileName(harPath)}", router.HandleAsync, options?.Filter, cancellationToken, router.RemoveAsync).ConfigureAwait(false);
+        }
+        catch
+        {
+            await router.RemoveAsync(CancellationToken.None).ConfigureAwait(false);
+            throw;
+        }
+    }
+
     // Each route has its own intercept, with its filter, limited to the page; the browser marks a request with every
     // intercept that stopped it.
-    private async Task<RouteRegistration> AddRouteAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken)
+    private async Task<RouteRegistration> AddRouteAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken, Func<CancellationToken, Task>? removing = null)
     {
         BrowserGroup group = this.Browser.Group;
         await group.EnsureNetworkEventsAsync(cancellationToken).ConfigureAwait(false);
@@ -944,7 +1022,7 @@ public sealed class Page
 
         string interceptId = (await group.Driver.Network.AddInterceptAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false)).InterceptId;
         group.TrackIntercept(interceptId);
-        RouteRegistration route = new(group, this.RemoveRoute, matches, description, handler, interceptId);
+        RouteRegistration route = new(group, this.RemoveRoute, matches, description, handler, interceptId, removing);
         lock (this.lockObject)
         {
             this.routes.Insert(0, route);

@@ -15,6 +15,7 @@ public sealed class RouteRegistration
     private readonly BrowserGroup group;
     private readonly Action<RouteRegistration> forget;
     private readonly Func<RequestData, bool> matches;
+    private readonly Func<CancellationToken, Task>? removing;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RouteRegistration"/> class.
@@ -25,8 +26,10 @@ public sealed class RouteRegistration
     /// <param name="description">What the route matches, for messages.</param>
     /// <param name="handler">The route's handler.</param>
     /// <param name="interceptId">The ID of the route's network intercept.</param>
-    internal RouteRegistration(BrowserGroup group, Action<RouteRegistration> forget, Func<RequestData, bool> matches, string description, Func<Route, Task> handler, string interceptId)
+    /// <param name="removing">Removes what else the route added to the browser, or <see langword="null"/> if it added nothing else.</param>
+    internal RouteRegistration(BrowserGroup group, Action<RouteRegistration> forget, Func<RequestData, bool> matches, string description, Func<Route, Task> handler, string interceptId, Func<CancellationToken, Task>? removing = null)
     {
+        this.removing = removing;
         this.group = group;
         this.forget = forget;
         this.matches = matches;
@@ -55,11 +58,15 @@ public sealed class RouteRegistration
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the command.</param>
     /// <returns>A task that completes when the route is removed.</returns>
-    public Task RemoveAsync(CancellationToken cancellationToken = default)
+    public async Task RemoveAsync(CancellationToken cancellationToken = default)
     {
         this.forget(this);
         this.group.UntrackIntercept(this.InterceptId);
-        return this.group.Driver.Network.RemoveInterceptAsync(new RemoveInterceptCommandParameters(this.InterceptId), cancellationToken: cancellationToken);
+        await this.group.Driver.Network.RemoveInterceptAsync(new RemoveInterceptCommandParameters(this.InterceptId), cancellationToken: cancellationToken).ConfigureAwait(false);
+        if (this.removing is not null)
+        {
+            await this.removing(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <summary>

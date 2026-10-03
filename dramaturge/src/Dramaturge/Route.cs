@@ -117,6 +117,22 @@ public sealed class Route
         return this.Browser.Group.Driver.Network.FailRequestAsync(new FailRequestCommandParameters(this.Request.RequestId), cancellationToken: cancellationToken);
     }
 
+    /// <summary>
+    /// Answers the request with a response whose headers may repeat, without sending it.
+    /// </summary>
+    /// <param name="statusCode">The response's status code.</param>
+    /// <param name="reasonPhrase">The response's reason phrase, or an empty string for the browser's own.</param>
+    /// <param name="body">The response's body.</param>
+    /// <param name="headers">The response's headers.</param>
+    /// <returns>A task that completes when the response has been given.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the request has been handled already.</exception>
+    internal Task FulfillAsync(ulong statusCode, string reasonPhrase, BytesValue body, List<Header> headers)
+    {
+        this.MarkHandled();
+        ProvideResponseCommandParameters parameters = new(this.Request.RequestId) { StatusCode = statusCode, ReasonPhrase = reasonPhrase.Length == 0 ? null : reasonPhrase, Body = body, Headers = headers };
+        return this.Browser.Group.Driver.Network.ProvideResponseAsync(parameters);
+    }
+
     private static List<Header>? ToHeaders(IReadOnlyDictionary<string, string>? headers)
     {
         return headers is null ? null : [.. headers.Select(header => new Header(header.Key, header.Value))];

@@ -36,6 +36,7 @@ public sealed class BrowserGroup : IAsyncDisposable
     private readonly Dictionary<string, Frame> frames = [];
     private readonly ConcurrentDictionary<string, Download> downloads = new();
     private readonly ConcurrentDictionary<string, bool> interceptIds = new();
+    private readonly ConcurrentDictionary<string, bool> dataCollectorIds = new();
     private readonly SemaphoreSlim networkSubscriptionLock = new(1, 1);
     private readonly List<IDisposable> observers = [];
     private HashSet<string>? contextsDestroyedWhileStarting = [];
@@ -249,6 +250,14 @@ public sealed class BrowserGroup : IAsyncDisposable
             }
         }
 
+        foreach (string collectorId in this.dataCollectorIds.Keys)
+        {
+            if (!this.ownsSession)
+            {
+                await this.RunDisposalStepAsync($"Removing network data collector {collectorId}", () => this.Driver.Network.RemoveDataCollectorAsync(new RemoveDataCollectorCommandParameters(collectorId))).ConfigureAwait(false);
+            }
+        }
+
         if (this.networkSubscriptionId is not null && !this.ownsSession)
         {
             await this.RunDisposalStepAsync("Removing the network event subscription", () => this.Driver.Session.UnsubscribeAsync(new UnsubscribeByIdsCommandParameters(this.networkSubscriptionId))).ConfigureAwait(false);
@@ -378,6 +387,24 @@ public sealed class BrowserGroup : IAsyncDisposable
     internal void UntrackIntercept(string interceptId)
     {
         this.interceptIds.TryRemove(interceptId, out _);
+    }
+
+    /// <summary>
+    /// Records a network data collector a route added, so that disposing the group removes it.
+    /// </summary>
+    /// <param name="collectorId">The collector's ID.</param>
+    internal void TrackDataCollector(string collectorId)
+    {
+        this.dataCollectorIds[collectorId] = true;
+    }
+
+    /// <summary>
+    /// Forgets a network data collector that was removed.
+    /// </summary>
+    /// <param name="collectorId">The collector's ID.</param>
+    internal void UntrackDataCollector(string collectorId)
+    {
+        this.dataCollectorIds.TryRemove(collectorId, out _);
     }
 
     /// <summary>
