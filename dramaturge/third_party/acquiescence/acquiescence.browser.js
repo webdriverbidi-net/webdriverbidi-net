@@ -21,6 +21,8 @@ var Acquiescence = (() => {
   // src/index.ts
   var index_exports = {};
   __export(index_exports, {
+    AriaSnapshotGenerator: () => ariaSnapshotGenerator_default,
+    AriaSnapshotMatcher: () => ariaSnapshotMatcher_default,
     ElementStateInspector: () => elementStateInspector_default,
     RequestAnimationFrameWaiter: () => RequestAnimationFrameWaiter,
     TimeoutWaiter: () => TimeoutWaiter
@@ -197,6 +199,38 @@ var Acquiescence = (() => {
         children = element.assignedNodes();
       }
       return Array.from(children, (child) => this.getNodeText(child)).join("");
+    }
+    /**
+     * Gets the computed style of an element or one of its pseudo-elements.
+     * @param element {Element} The element to get the computed style of.
+     * @param pseudo {string | undefined} The pseudo-element to get the computed style of. If omitted, the style of the element itself is returned.
+     * @returns {CSSStyleDeclaration | undefined} The computed style, or undefined if the element is not in a document with a window.
+     */
+    getElementComputedStyle(element, pseudo) {
+      return element.ownerDocument?.defaultView ? element.ownerDocument.defaultView.getComputedStyle(element, pseudo) : void 0;
+    }
+    /**
+     * Gets a value indicating whether a text node takes up space when rendered.
+     * @param node {Text} The text node to check.
+     * @returns {boolean} True if the text node is visible; otherwise, false.
+     */
+    isVisibleTextNode(node) {
+      const range = node.ownerDocument.createRange();
+      range.selectNode(node);
+      const rect = range.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    }
+    /**
+     * Gets a value indicating whether an element is visible as defined in its style: rendered, and with a visibility of visible.
+     * @param element {Element} The element to check.
+     * @param style {CSSStyleDeclaration | undefined} The computed style of the element.
+     * @returns {boolean} True if the element's style makes it visible, or if it has no computed style; otherwise, false.
+     */
+    isStyleVisibilityVisible(element, style) {
+      if (!style) {
+        return true;
+      }
+      return element.checkVisibility() && style.visibility === "visible";
     }
     /**
      * Gets a value indicating whether an element is natively focusable.
@@ -461,15 +495,7 @@ var Acquiescence = (() => {
       },
       "TEXTAREA": () => "textbox",
       "TFOOT": () => "rowgroup",
-      "TH": (e) => {
-        if (e.getAttribute("scope") === "col")
-          return "columnheader";
-        if (e.getAttribute("scope") === "row")
-          return "rowheader";
-        const table = this.domUtilities.getClosestCrossShadowElement(e, "table");
-        const role = table ? this.getExplicitAriaRole(table) : "";
-        return role === "grid" || role === "treegrid" ? "gridcell" : "cell";
-      },
+      "TH": (e) => this.getTableHeaderRole(e),
       "THEAD": () => "rowgroup",
       "TIME": () => "time",
       "TR": () => "row",
@@ -503,6 +529,7 @@ var Acquiescence = (() => {
       ["aria-relevant", void 0],
       ["aria-roledescription", ["generic"]]
     ];
+    ignoredTagNames = ["STYLE", "SCRIPT", "NOSCRIPT", "TEMPLATE"];
     ariaCheckedRoles = ["checkbox", "menuitemcheckbox", "option", "radio", "switch", "menuitemradio", "treeitem"];
     ariaPressedRoles = ["button"];
     ariaExpandedRoles = [
@@ -661,14 +688,6 @@ var Acquiescence = (() => {
       return ref === null ? null : this.getIdRefs(element, ref);
     }
     /**
-     * Reads a true/false/mixed ARIA attribute value; anything but "true" or "mixed" is false.
-     * @param value {string | null} The attribute value.
-     * @returns {boolean | 'mixed'} The state.
-     */
-    readTriState(value) {
-      return value === "mixed" ? "mixed" : value === "true";
-    }
-    /**
      * Gets the ARIA role of an element, taking into account the element's explicit and implicit roles.
      * @param element {Element} The element to get the ARIA role of.
      * @returns {AriaRole | null} The ARIA role of the element, or null if the element has no ARIA role.
@@ -685,6 +704,81 @@ var Acquiescence = (() => {
         }
       }
       return explicitRole;
+    }
+    /**
+     * Gets the disabled state of an element whose role supports it: natively disabled, or aria-disabled on it or an ancestor.
+     * @param element {Element} The element to check.
+     * @returns {boolean | undefined} The disabled state, or undefined if the element's role cannot be disabled.
+     */
+    getAriaDisabled(element) {
+      if (!this.ariaDisabledRoles.includes(this.getAriaRole(element) ?? "")) {
+        return void 0;
+      }
+      return this.domUtilities.isNativelyDisabled(element) || this.hasExplicitAriaDisabled(element);
+    }
+    /**
+     * Gets a value indicating whether a name is that of an ARIA role.
+     * @param name {string} The name to check.
+     * @returns {boolean} True if the name is that of an ARIA role; otherwise, false.
+     */
+    isAriaRole(name) {
+      return this.validRoles.includes(name);
+    }
+    /**
+     * Gets the elements that an ID reference attribute of an element, such as aria-owns or aria-describedby, refers to.
+     * @param element {Element} The element whose attribute to read.
+     * @param attributeName {string} The name of the attribute, holding a space-separated list of IDs.
+     * @returns {Element[]} The elements found, each once, in the order of the IDs; empty if the attribute is missing.
+     */
+    getReferencedElements(element, attributeName) {
+      return this.getIdRefs(element, element.getAttribute(attributeName));
+    }
+    /**
+     * Gets a value indicating whether an element is hidden from the accessibility tree: it is not rendered, it or an
+     * ancestor is aria-hidden or display: none, or it is a child of a shadow host that is not assigned to a slot.
+     * @param element {Element} The element to check.
+     * @returns {boolean} True if the element is hidden from the accessibility tree; otherwise, false.
+     */
+    isHiddenForAria(element) {
+      if (this.isIgnoredForAria(element)) {
+        return true;
+      }
+      const tagName = this.domUtilities.getNormalizedElementTagName(element);
+      const style = this.domUtilities.getElementComputedStyle(element);
+      if (style?.display === "contents" && tagName !== "SLOT") {
+        return !Array.from(element.childNodes).some((child) => {
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            return !this.isHiddenForAria(child);
+          }
+          return child.nodeType === Node.TEXT_NODE && this.domUtilities.isVisibleTextNode(child);
+        });
+      }
+      const isOptionInSelect = tagName === "OPTION" && !!element.closest("select");
+      if (!isOptionInSelect && tagName !== "SLOT" && !this.domUtilities.isStyleVisibilityVisible(element, style)) {
+        return true;
+      }
+      for (let current = element; current; current = this.domUtilities.getParentElementOrShadowHost(current)) {
+        if (this.isExcludedFromAriaTree(current)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    /**
+     * Gets a value indicating whether an element is never part of the accessibility tree, whatever its style.
+     * @param element {Element} The element to check.
+     * @returns {boolean} True if the element is a style, script, noscript, or template element; otherwise, false.
+     */
+    isIgnoredForAria(element) {
+      return this.ignoredTagNames.includes(this.domUtilities.getNormalizedElementTagName(element));
+    }
+    /**
+     * Reads a true/false/mixed ARIA attribute value; anything but "true" or "mixed" is false.
+     * @param value {string | null} The attribute value.
+     * @returns {boolean | 'mixed'} The state.
+     */
+    readTriState(value) {
+      return value === "mixed" ? "mixed" : value === "true";
     }
     /**
      * Gets the explicit ARIA role of an element.
@@ -719,6 +813,61 @@ var Acquiescence = (() => {
         ancestor = parent;
       }
       return implicitRole;
+    }
+    /**
+     * Gets a value indicating whether an element, by itself and not through its ancestors, removes itself and its
+     * subtree from the accessibility tree.
+     * @param element {Element} The element to check.
+     * @returns {boolean} True if the element is display: none or aria-hidden, has no computed style, or is a child of a
+     * shadow host that is not assigned to a slot; otherwise, false.
+     */
+    isExcludedFromAriaTree(element) {
+      if (element.parentElement?.shadowRoot && !element.assignedSlot) {
+        return true;
+      }
+      const style = this.domUtilities.getElementComputedStyle(element);
+      return !style || style.display === "none" || (element.getAttribute("aria-hidden") ?? "").toLowerCase() === "true";
+    }
+    /**
+     * Gets the role of a th element: from its scope attribute, or else from its neighbors as Chromium does.
+     * @param element {Element} The th element.
+     * @returns {AriaRole | null} The role: columnheader or rowheader, or null for the only cell of a single-row table.
+     */
+    getTableHeaderRole(element) {
+      const scope = element.getAttribute("scope");
+      if (scope === "col" || scope === "colgroup") {
+        return "columnheader";
+      }
+      if (scope === "row" || scope === "rowgroup") {
+        return "rowheader";
+      }
+      const previous = element.previousElementSibling;
+      const next = element.nextElementSibling;
+      if (!previous && !next) {
+        const table = element.parentElement?.closest("table");
+        return table && table.rows.length <= 1 ? null : "columnheader";
+      }
+      if (this.isTagName(previous, "TH") && this.isTagName(next, "TH")) {
+        return "columnheader";
+      }
+      return this.isNonEmptyDataCell(previous) || this.isNonEmptyDataCell(next) ? "rowheader" : "columnheader";
+    }
+    /**
+     * Gets a value indicating whether an element is a td element with content.
+     * @param element {Element | null} The element to check.
+     * @returns {boolean} True if the element is a td element with text or child elements; otherwise, false.
+     */
+    isNonEmptyDataCell(element) {
+      return this.isTagName(element, "TD") && (!!element?.textContent?.trim() || !!element?.children.length);
+    }
+    /**
+     * Gets a value indicating whether an element has a given tag name.
+     * @param element {Element | null} The element to check.
+     * @param tagName {string} The normalized tag name.
+     * @returns {boolean} True if the element exists and has the tag name; otherwise, false.
+     */
+    isTagName(element, tagName) {
+      return !!element && this.domUtilities.getNormalizedElementTagName(element) === tagName;
     }
     /**
      * Gets a value indicating whether an element has a global ARIA attribute.
@@ -1008,9 +1157,10 @@ var Acquiescence = (() => {
     ariaUtilities = new ariaUtilities_default();
     domUtilities = new domUtilities_default();
     nodePreviewer = new nodePreviewer_default();
-    cacheStyle;
-    cacheStyleBefore;
-    cacheStyleAfter;
+    // Computed styles are live, so a cached one stays current; holding them weakly lets removed elements be collected.
+    cacheStyle = /* @__PURE__ */ new WeakMap();
+    cacheStyleBefore = /* @__PURE__ */ new WeakMap();
+    cacheStyleAfter = /* @__PURE__ */ new WeakMap();
     /**
      * Queries a Node for a list of states.
      * @param node {Node} The node to query, which will be transformed into the nearest element to query the state.
@@ -1759,28 +1909,17 @@ var Acquiescence = (() => {
           if (child.nodeType === 1 && this.isElementVisible(child)) {
             return { visible: true, inline: false, cursor };
           }
-          if (child.nodeType === 3 && this.isVisibleTextNode(child)) {
+          if (child.nodeType === 3 && this.domUtilities.isVisibleTextNode(child)) {
             return { visible: true, inline: true, cursor };
           }
         }
         return { visible: false, inline: false, cursor };
       }
-      if (!this.isElementStyleVisibilityVisible(element, style)) {
+      if (!this.domUtilities.isStyleVisibilityVisible(element, style)) {
         return { cursor, visible: false, inline: false };
       }
       const rect = element.getBoundingClientRect();
       return { rect, cursor, visible: rect.width > 0 && rect.height > 0, inline: style.display === "inline" };
-    }
-    /**
-     * Checks if a text node is visible.
-     * @param node {Text} The text node to check.
-     * @returns {boolean} True if the text node is visible; otherwise, false.
-     */
-    isVisibleTextNode(node) {
-      const range = node.ownerDocument.createRange();
-      range.selectNode(node);
-      const rect = range.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0;
     }
     /**
      * Gets the computed style of an element.
@@ -1794,43 +1933,23 @@ var Acquiescence = (() => {
       if (cache.has(element)) {
         return cache.get(element);
       }
-      const style = element.ownerDocument?.defaultView ? element.ownerDocument.defaultView.getComputedStyle(element, pseudo) : void 0;
+      const style = this.domUtilities.getElementComputedStyle(element, pseudo);
       cache.set(element, style);
       return style;
     }
     /**
      * Gets the cache for a pseudo-element type.
      * @param pseudo {string | undefined} The pseudo-element type to get the cache for. If omitted, the cache for main elements is returned.
-     * @returns {Map<Element, CSSStyleDeclaration | undefined>} The cache for the pseudo-element.
-     * If no cache has yet been created for the pseudo-element, a new cache is created and returned.
+     * @returns {WeakMap<Element, CSSStyleDeclaration | undefined>} The cache for the pseudo-element.
      */
     getCache(pseudo) {
       if (pseudo === "::before") {
-        return this.cacheStyleBefore ??= /* @__PURE__ */ new Map();
+        return this.cacheStyleBefore;
       } else if (pseudo === "::after") {
-        return this.cacheStyleAfter ??= /* @__PURE__ */ new Map();
+        return this.cacheStyleAfter;
       } else {
-        return this.cacheStyle ??= /* @__PURE__ */ new Map();
+        return this.cacheStyle;
       }
-    }
-    /**
-     * Gets a value indicating whether an element is visible as defined in the element's style attributes.
-     * @param element {Element} The element to check.
-     * @param style {CSSStyleDeclaration | undefined} The computed style of the element. If omitted, the computed style is retrieved from the element.
-     * @returns {boolean} True if the element's style visibility is visible; otherwise, false.
-     */
-    isElementStyleVisibilityVisible(element, style) {
-      style = style ?? this.getElementComputedStyle(element);
-      if (!style) {
-        return true;
-      }
-      if (!element.checkVisibility()) {
-        return false;
-      }
-      if (style.visibility !== "visible") {
-        return false;
-      }
-      return true;
     }
     /**
      * Creates an error with an empty stack.
@@ -1845,6 +1964,1428 @@ var Acquiescence = (() => {
     }
   };
   var elementStateInspector_default = ElementStateInspector;
+
+  // src/accessibleNameCalculator.ts
+  var AccessibleNameCalculator = class {
+    ariaUtilities = new ariaUtilities_default();
+    domUtilities = new domUtilities_default();
+    // https://w3c.github.io/aria/#namefromprohibited
+    namingProhibitedRoles = [
+      "caption",
+      "code",
+      "definition",
+      "deletion",
+      "emphasis",
+      "generic",
+      "insertion",
+      "mark",
+      "paragraph",
+      "presentation",
+      "strong",
+      "subscript",
+      "suggestion",
+      "superscript",
+      "term",
+      "time"
+    ];
+    // https://w3c.github.io/aria/#namefromcontent, as Chromium and Firefox apply it
+    // (see the proposal at https://github.com/w3c/aria/issues/1821).
+    nameFromContentRoles = [
+      "button",
+      "cell",
+      "checkbox",
+      "columnheader",
+      "gridcell",
+      "heading",
+      "link",
+      "menuitem",
+      "menuitemcheckbox",
+      "menuitemradio",
+      "option",
+      "radio",
+      "row",
+      "rowheader",
+      "switch",
+      "tab",
+      "tooltip",
+      "treeitem"
+    ];
+    // Roles that contribute their content to the name of an element they are inside, as well as those above.
+    nameFromDescendantContentRoles = [
+      "",
+      "caption",
+      "code",
+      "contentinfo",
+      "definition",
+      "deletion",
+      "emphasis",
+      "insertion",
+      "list",
+      "listitem",
+      "mark",
+      "none",
+      "paragraph",
+      "presentation",
+      "region",
+      "row",
+      "rowgroup",
+      "section",
+      "strong",
+      "subscript",
+      "superscript",
+      "table",
+      "term",
+      "time"
+    ];
+    rangeRoles = ["meter", "progressbar", "scrollbar", "slider", "spinbutton"];
+    // https://w3c.github.io/html-aam/#input-type-button-input-type-submit-and-input-type-reset-accessible-name-computation
+    defaultButtonNames = { "reset": "Reset", "submit": "Submit" };
+    placeholderInputTypes = ["email", "number", "password", "search", "tel", "text", "url"];
+    // Names that HTML elements get from their attributes, labels, and particular children, each returning undefined
+    // when the element should be named from its content instead.
+    // https://w3c.github.io/html-aam/#accessible-name-computations-by-html-element
+    hostLanguageNames = {
+      "AREA": (element) => this.getFirstNonBlankAttribute(element, ["alt", "title"]),
+      "BUTTON": (element, context, hasLabelledBy) => {
+        const labels = element.labels;
+        return !hasLabelledBy && labels.length ? this.getNameFromLabels(labels, context) : void 0;
+      },
+      "FIELDSET": (element, context, hasLabelledBy) => hasLabelledBy ? void 0 : this.getNameFromChild(element, "LEGEND", context) ?? this.getFirstNonBlankAttribute(element, ["title"]),
+      "FIGURE": (element, context, hasLabelledBy) => hasLabelledBy ? void 0 : this.getNameFromChild(element, "FIGCAPTION", context) ?? this.getFirstNonBlankAttribute(element, ["title"]),
+      "IMG": (element) => this.getFirstNonBlankAttribute(element, ["alt", "title"]),
+      "INPUT": (element, context, hasLabelledBy) => this.getInputName(element, context, hasLabelledBy),
+      "METER": (element, context, hasLabelledBy) => this.getFormControlName(element, context, hasLabelledBy),
+      "OUTPUT": (element, context, hasLabelledBy) => {
+        if (hasLabelledBy) {
+          return void 0;
+        }
+        const labels = element.labels;
+        return labels.length ? this.getNameFromLabels(labels, context) : this.getFirstNonBlankAttribute(element, ["title"]);
+      },
+      "PROGRESS": (element, context, hasLabelledBy) => this.getFormControlName(element, context, hasLabelledBy),
+      "SELECT": (element, context, hasLabelledBy) => this.getFormControlName(element, context, hasLabelledBy),
+      // Browsers use the summary attribute, which the specification does not mention, and do not use the title.
+      "TABLE": (element, context) => this.getNameFromChild(element, "CAPTION", context) ?? (this.getFirstNonBlankAttribute(element, ["summary"]) || void 0),
+      "TEXTAREA": (element, context, hasLabelledBy) => this.getFormControlName(element, context, hasLabelledBy)
+    };
+    /**
+     * Gets the accessible name of an element.
+     * @param element {Element} The element to get the accessible name of.
+     * @param includeHidden {boolean} Whether to use content hidden from the accessibility tree. If omitted, defaults to false.
+     * @returns {string} The accessible name, with white space collapsed; empty if the element has none, or its role does
+     * not allow one.
+     */
+    getAccessibleName(element, includeHidden = false) {
+      if (this.namingProhibitedRoles.includes(this.ariaUtilities.getAriaRole(element) ?? "")) {
+        return "";
+      }
+      return this.normalizeFlatString(this.getTextAlternative(element, { includeHidden, visited: /* @__PURE__ */ new Set(), target: "self" }));
+    }
+    /**
+     * Gets the accessible description of an element: from aria-describedby, then aria-description, then the title attribute.
+     * @param element {Element} The element to get the accessible description of.
+     * @param includeHidden {boolean} Whether to use content hidden from the accessibility tree. If omitted, defaults to false.
+     * @returns {string} The accessible description, with white space collapsed; empty if the element has none.
+     */
+    getAccessibleDescription(element, includeHidden = false) {
+      if (element.hasAttribute("aria-describedby")) {
+        const parts = this.ariaUtilities.getReferencedElements(element, "aria-describedby").map((reference) => this.getTextAlternative(reference, {
+          includeHidden,
+          visited: /* @__PURE__ */ new Set(),
+          describedBy: { hidden: this.ariaUtilities.isHiddenForAria(reference) }
+        }));
+        return this.normalizeFlatString(parts.join(" "));
+      }
+      return this.normalizeFlatString(element.getAttribute("aria-description") ?? element.getAttribute("title") ?? "");
+    }
+    /**
+     * Gets the text that the CSS content property gives an element or one of its pseudo-elements.
+     * @param element {Element} The element.
+     * @param pseudo {'::before' | '::after' | undefined} The pseudo-element. If omitted, the element itself.
+     * @returns {string | undefined} The text, or undefined if there is no content, it is hidden, or it cannot be read.
+     */
+    getCssContent(element, pseudo) {
+      const style = this.domUtilities.getElementComputedStyle(element, pseudo);
+      if (!style || ["", "none", "normal"].includes(style.content) || style.display === "none" || style.visibility === "hidden") {
+        return void 0;
+      }
+      const content = this.parseCssContent(element, style.content, !!pseudo);
+      return pseudo && content !== void 0 && style.display !== "inline" ? ` ${content} ` : content;
+    }
+    /**
+     * Computes the text alternative of an element, the recursive step 2 of the computation.
+     * @param element {Element} The element to compute the text alternative of.
+     * @param context {TextAlternativeContext} The state of the computation.
+     * @returns {string} The text alternative, before white space is collapsed.
+     */
+    getTextAlternative(element, context) {
+      if (context.visited.has(element)) {
+        return "";
+      }
+      if (!context.includeHidden) {
+        const isInHiddenReference = [context.labelledBy, context.describedBy, context.label, context.nativeTextAlternative].some((traversal) => traversal?.hidden);
+        if (this.ariaUtilities.isIgnoredForAria(element) || !isInHiddenReference && this.ariaUtilities.isHiddenForAria(element)) {
+          context.visited.add(element);
+          return "";
+        }
+      }
+      const labelledBy = this.ariaUtilities.getReferencedElements(element, "aria-labelledby");
+      if (!context.labelledBy) {
+        const parts = labelledBy.map((reference) => this.getTextAlternative(reference, {
+          includeHidden: context.includeHidden,
+          visited: context.visited,
+          labelledBy: { hidden: this.ariaUtilities.isHiddenForAria(reference) }
+        }));
+        const name = parts.filter((part) => !!part).join(" ");
+        if (name) {
+          return name;
+        }
+      }
+      context.visited.add(element);
+      const role = this.ariaUtilities.getAriaRole(element) ?? "";
+      const tagName = this.domUtilities.getNormalizedElementTagName(element);
+      const isPresentational = role === "none" || role === "presentation";
+      if ((context.label || context.labelledBy || context.target === "descendant") && !labelledBy.includes(element)) {
+        const controlName = this.getEmbeddedControlName(element, role, tagName, context);
+        if (controlName !== void 0) {
+          return controlName;
+        }
+      }
+      const ariaLabel = element.getAttribute("aria-label") ?? "";
+      if (ariaLabel.trim()) {
+        return ariaLabel;
+      }
+      if (!isPresentational) {
+        const hostLanguageName = this.hostLanguageNames[tagName]?.(element, context, labelledBy.length > 0) ?? this.getSvgName(element, tagName, context);
+        if (hostLanguageName !== void 0) {
+          return hostLanguageName;
+        }
+      }
+      const isNamedByContent = this.allowsNameFromContent(role, context.target === "descendant") || tagName === "SUMMARY" && !isPresentational || !!(context.labelledBy ?? context.describedBy ?? context.label ?? context.nativeTextAlternative);
+      if (isNamedByContent) {
+        const content = this.getNameFromContent(element, this.getChildContext(context));
+        if (context.target === "self" ? content.trim() : content) {
+          return content;
+        }
+      }
+      if (!isPresentational || tagName === "IFRAME" || tagName === "FRAME") {
+        return this.getFirstNonBlankAttribute(element, ["title"]);
+      }
+      return "";
+    }
+    /**
+     * Gets the text a control contributes when it is embedded in the label or content of another element: the value of
+     * a text box, the selected options of a list box or combo box, or the value of a range.
+     * @param element {Element} The control.
+     * @param role {string} The role of the control.
+     * @param tagName {string} The normalized tag name of the control.
+     * @param context {TextAlternativeContext} The state of the computation.
+     * @returns {string | undefined} The text, or undefined if the element is not such a control.
+     */
+    getEmbeddedControlName(element, role, tagName, context) {
+      if (role === "textbox" || role === "searchbox") {
+        return tagName === "INPUT" || tagName === "TEXTAREA" ? element.value : element.textContent;
+      }
+      if (role === "combobox" || role === "listbox") {
+        const selectedOptions = this.getSelectedOptions(element, role, tagName);
+        if (!selectedOptions.length && tagName === "INPUT") {
+          return element.value;
+        }
+        return selectedOptions.map((option) => this.getTextAlternative(option, this.getChildContext(context))).join(" ");
+      }
+      if (this.rangeRoles.includes(role)) {
+        return element.getAttribute("aria-valuetext") ?? element.getAttribute("aria-valuenow") ?? element.getAttribute("value") ?? "";
+      }
+      if (role === "menu") {
+        return "";
+      }
+      return void 0;
+    }
+    /**
+     * Gets the selected options of a list box or combo box: those of a select element, or else its first option; or
+     * the options marked aria-selected in the list box, which for a combo box is the list box it contains or owns.
+     * @param element {Element} The list box or combo box.
+     * @param role {string} The role of the element.
+     * @param tagName {string} The normalized tag name of the element.
+     * @returns {Element[]} The selected options.
+     */
+    getSelectedOptions(element, role, tagName) {
+      if (tagName === "SELECT") {
+        const select = element;
+        const selected = Array.from(select.selectedOptions);
+        return selected.length || !select.options.length ? selected : [select.options[0]];
+      }
+      const listBox = role === "combobox" ? this.getOwnedElements(element, "*").find((candidate) => this.ariaUtilities.getAriaRole(candidate) === "listbox") : element;
+      if (!listBox) {
+        return [];
+      }
+      return this.getOwnedElements(listBox, '[aria-selected="true"]').filter((candidate) => this.ariaUtilities.getAriaRole(candidate) === "option");
+    }
+    /**
+     * Gets the elements matching a selector within an element or within the elements it owns through aria-owns.
+     * @param element {Element} The element to search.
+     * @param selector {string} The CSS selector to match.
+     * @returns {Element[]} The matching descendants, then the matching owned elements and their matching descendants.
+     */
+    getOwnedElements(element, selector) {
+      const result = Array.from(element.querySelectorAll(selector));
+      for (const owned of this.ariaUtilities.getReferencedElements(element, "aria-owns")) {
+        if (owned.matches(selector)) {
+          result.push(owned);
+        }
+        result.push(...Array.from(owned.querySelectorAll(selector)));
+      }
+      return result;
+    }
+    /**
+     * Gets the name an input element has from its type, labels, and attributes.
+     * @param element {HTMLInputElement} The input element.
+     * @param context {TextAlternativeContext} The state of the computation.
+     * @param hasLabelledBy {boolean} Whether the element has a valid aria-labelledby attribute.
+     * @returns {string | undefined} The name, or undefined if the element should be named from its content.
+     */
+    getInputName(element, context, hasLabelledBy) {
+      if (["button", "submit", "reset"].includes(element.type)) {
+        if (element.value.trim()) {
+          return element.value;
+        }
+        return this.defaultButtonNames[element.type] ?? this.getFirstNonBlankAttribute(element, ["title"]);
+      }
+      if (element.type === "file") {
+        return element.labels?.length && !context.labelledBy ? this.getNameFromLabels(element.labels, context) : "Choose File";
+      }
+      if (element.type === "image") {
+        if (element.labels?.length && !context.labelledBy) {
+          return this.getNameFromLabels(element.labels, context);
+        }
+        return this.getFirstNonBlankAttribute(element, ["alt", "title"]) || "Submit";
+      }
+      return this.getFormControlName(element, context, hasLabelledBy);
+    }
+    /**
+     * Gets the name a form control has from its labels, title, or placeholder.
+     * @param element {HTMLInputElement | HTMLMeterElement | HTMLProgressElement | HTMLSelectElement | HTMLTextAreaElement} The form control.
+     * @param context {TextAlternativeContext} The state of the computation.
+     * @param hasLabelledBy {boolean} Whether the element has a valid aria-labelledby attribute.
+     * @returns {string | undefined} The name, or undefined if the element has aria-labelledby and should be named from its content.
+     */
+    getFormControlName(element, context, hasLabelledBy) {
+      if (hasLabelledBy) {
+        return void 0;
+      }
+      if (element.labels?.length) {
+        return this.getNameFromLabels(element.labels, context);
+      }
+      const title = element.getAttribute("title") ?? "";
+      const usesPlaceholder = element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement && this.placeholderInputTypes.includes(element.type);
+      return usesPlaceholder && !title ? element.getAttribute("placeholder") ?? "" : title;
+    }
+    /**
+     * Gets the name an element has from its associated label elements.
+     * @param labels {NodeListOf<HTMLLabelElement>} The label elements.
+     * @param context {TextAlternativeContext} The state of the computation.
+     * @returns {string} The text alternatives of the labels that have one, separated by spaces.
+     */
+    getNameFromLabels(labels, context) {
+      return Array.from(labels, (label) => this.getTextAlternative(label, {
+        includeHidden: context.includeHidden,
+        visited: context.visited,
+        label: { hidden: this.ariaUtilities.isHiddenForAria(label) }
+      })).filter((name) => !!name).join(" ");
+    }
+    /**
+     * Gets the text alternative of the first child of an element with a given tag name, such as the legend of a fieldset.
+     * @param element {Element} The parent element.
+     * @param childTagName {string} The normalized tag name of the child.
+     * @param context {TextAlternativeContext} The state of the computation.
+     * @returns {string | undefined} The text alternative of the child, or undefined if there is no such child.
+     */
+    getNameFromChild(element, childTagName, context) {
+      const child = Array.from(element.children).find((candidate) => this.domUtilities.getNormalizedElementTagName(candidate) === childTagName);
+      if (!child) {
+        return void 0;
+      }
+      return this.getTextAlternative(child, {
+        ...this.getChildContext(context),
+        nativeTextAlternative: { hidden: this.ariaUtilities.isHiddenForAria(child) }
+      });
+    }
+    /**
+     * Gets the name of an SVG element from its title child, or of an SVG link from its xlink:title attribute.
+     * @param element {Element} The element.
+     * @param tagName {string} The normalized tag name of the element.
+     * @param context {TextAlternativeContext} The state of the computation.
+     * @returns {string | undefined} The name, or undefined if the element is not SVG or has neither.
+     */
+    getSvgName(element, tagName, context) {
+      if (!(element instanceof SVGElement)) {
+        return void 0;
+      }
+      const title = Array.from(element.children).find((child) => child instanceof SVGTitleElement);
+      if (title) {
+        return this.getTextAlternative(title, {
+          ...this.getChildContext(context),
+          labelledBy: { hidden: this.ariaUtilities.isHiddenForAria(title) }
+        });
+      }
+      return tagName === "A" ? this.getFirstNonBlankAttribute(element, ["xlink:title"]) || void 0 : void 0;
+    }
+    /**
+     * Gets the text of an element's content: its pseudo-elements, and the text alternatives of its child nodes, the
+     * nodes assigned to it as a slot, its shadow root's child nodes, and the elements it owns through aria-owns.
+     * @param element {Element} The element.
+     * @param context {TextAlternativeContext} The state of the computation, for the element's children.
+     * @returns {string} The text, before white space is collapsed.
+     */
+    getNameFromContent(element, context) {
+      const parts = [this.getCssContent(element, "::before") ?? ""];
+      const content = this.getCssContent(element);
+      if (content !== void 0) {
+        parts.push(content);
+      } else {
+        const assignedNodes = element instanceof HTMLSlotElement ? element.assignedNodes() : [];
+        const nodes = assignedNodes.length ? assignedNodes : [
+          ...Array.from(element.childNodes),
+          ...Array.from(element.shadowRoot?.childNodes ?? []),
+          ...this.ariaUtilities.getReferencedElements(element, "aria-owns")
+        ].filter((node) => !node.assignedSlot);
+        for (const node of nodes) {
+          parts.push(this.getNodeContentText(node, context));
+        }
+      }
+      parts.push(this.getCssContent(element, "::after") ?? "");
+      return parts.join("");
+    }
+    /**
+     * Gets the text a node contributes to the content of its parent.
+     * @param node {Node} The node.
+     * @param context {TextAlternativeContext} The state of the computation.
+     * @returns {string} The text of a text node, or the text alternative of an element, with spaces around it unless it
+     * is displayed inline; empty for any other node.
+     */
+    getNodeContentText(node, context) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.data;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return "";
+      }
+      const element = node;
+      const text = this.getTextAlternative(element, context);
+      const display = this.domUtilities.getElementComputedStyle(element)?.display ?? "inline";
+      return display !== "inline" || this.domUtilities.getNormalizedElementTagName(element) === "BR" ? ` ${text} ` : text;
+    }
+    /**
+     * Reads the text of a CSS content property value: its alternative text after a slash if it has one, or else, for a
+     * pseudo-element, its strings and attr() values. The content of an element itself can only be an image, so only its
+     * alternative text is read.
+     * @param element {Element} The element, whose attributes attr() reads.
+     * @param value {string} The computed value of the content property.
+     * @param isPseudo {boolean} Whether the value is that of a pseudo-element.
+     * @returns {string | undefined} The text, or undefined if there is none or the value has parts that are not text.
+     */
+    parseCssContent(element, value, isPseudo) {
+      let tokens = this.tokenizeCssContent(value);
+      const slashIndex = tokens.findIndex((token) => token.type === "slash");
+      if (slashIndex !== -1) {
+        tokens = tokens.slice(slashIndex + 1);
+      } else if (!isPseudo) {
+        return void 0;
+      }
+      let text = "";
+      for (const token of tokens) {
+        if (token.type === "string") {
+          text += token.value;
+          continue;
+        }
+        if (token.type === "attr") {
+          text += element.getAttribute(token.name) ?? "";
+          continue;
+        }
+        return void 0;
+      }
+      return text;
+    }
+    /**
+     * Splits a computed CSS content property value into strings, attr() references, slashes, and anything else.
+     * @param value {string} The computed value.
+     * @returns {CssContentToken[]} The tokens, in order.
+     */
+    tokenizeCssContent(value) {
+      const tokens = [];
+      let index = 0;
+      while (index < value.length) {
+        const character = value[index];
+        if (/\s/.test(character)) {
+          index++;
+        } else if (character === '"') {
+          const [text, end] = this.readCssString(value, index);
+          tokens.push({ type: "string", value: text });
+          index = end;
+        } else if (character === "/") {
+          tokens.push({ type: "slash" });
+          index++;
+        } else {
+          const end = this.findCssComponentEnd(value, index);
+          const attr = /^attr\(\s*([-\w]+)\s*\)$/i.exec(value.slice(index, end));
+          tokens.push(attr ? { type: "attr", name: attr[1] } : { type: "other" });
+          index = end;
+        }
+      }
+      return tokens;
+    }
+    /**
+     * Reads a CSS string, as a computed value serializes it in double quotes, resolving its escapes.
+     * @param value {string} The text containing the string.
+     * @param start {number} The index of the opening quote.
+     * @returns {[string, number]} The string's value, and the index just past its closing quote.
+     */
+    readCssString(value, start) {
+      const quote = value[start];
+      let text = "";
+      let index = start + 1;
+      while (index < value.length && value[index] !== quote) {
+        if (value[index] === "\\") {
+          const hex = /^[0-9a-f]{1,6}\s?/i.exec(value.slice(index + 1));
+          if (hex) {
+            text += String.fromCodePoint(parseInt(hex[0], 16));
+            index += hex[0].length + 1;
+          } else {
+            text += value[index + 1];
+            index += 2;
+          }
+        } else {
+          text += value[index];
+          index++;
+        }
+      }
+      return [text, index + 1];
+    }
+    /**
+     * Finds the end of a CSS component that is not a string or slash, such as a keyword or a function like url(), whose
+     * parentheses may hold strings and nested functions.
+     * @param value {string} The text containing the component.
+     * @param start {number} The index of the component's first character.
+     * @returns {number} The index just past the component.
+     */
+    findCssComponentEnd(value, start) {
+      let depth = 0;
+      let index = start;
+      while (index < value.length) {
+        const character = value[index];
+        if (character === '"') {
+          index = this.readCssString(value, index)[1];
+          continue;
+        }
+        if (character === "(") {
+          depth++;
+        } else if (character === ")") {
+          depth--;
+          if (depth === 0) {
+            return index + 1;
+          }
+        } else if (depth === 0 && /\s/.test(character)) {
+          return index;
+        }
+        index++;
+      }
+      return index;
+    }
+    /**
+     * Gets a value indicating whether an element's role lets it be named from its content.
+     * @param role {string} The role of the element; empty if it has none.
+     * @param isDescendant {boolean} Whether the element is a descendant of the element being named.
+     * @returns {boolean} True if the element's content can name it; otherwise, false.
+     */
+    allowsNameFromContent(role, isDescendant) {
+      return this.nameFromContentRoles.includes(role) || isDescendant && this.nameFromDescendantContentRoles.includes(role);
+    }
+    /**
+     * Gets the value of the first of an element's attributes that is not empty or white space.
+     * @param element {Element} The element.
+     * @param attributeNames {string[]} The names of the attributes, in order of preference.
+     * @returns {string} The attribute's value, or empty if none of them has one.
+     */
+    getFirstNonBlankAttribute(element, attributeNames) {
+      for (const attributeName of attributeNames) {
+        const value = element.getAttribute(attributeName) ?? "";
+        if (value.trim()) {
+          return value;
+        }
+      }
+      return "";
+    }
+    /**
+     * Gets the state of the computation for the children of an element.
+     * @param context {TextAlternativeContext} The state of the computation for the element.
+     * @returns {TextAlternativeContext} The same state, marking the element being named, if it was this element, as an ancestor.
+     */
+    getChildContext(context) {
+      return { ...context, target: context.target === "self" ? "descendant" : context.target };
+    }
+    /**
+     * Converts text to a flat string: zero-width spaces and soft hyphens removed, and runs of white space other than
+     * non-breaking spaces collapsed to one space and trimmed.
+     * @param value {string} The text.
+     * @returns {string} The flat string.
+     */
+    normalizeFlatString(value) {
+      return value.split("\xA0").map((chunk) => chunk.replace(/[\u200b\u00ad]/g, "").replace(/\s+/g, " ")).join("\xA0").trim();
+    }
+  };
+  var accessibleNameCalculator_default = AccessibleNameCalculator;
+
+  // src/ariaSnapshotRenderer.ts
+  var AriaSnapshotRenderer = class {
+    // YAML keys are limited to 1024 characters, which leaves room for the role and states.
+    maximumNameLength = 900;
+    // Patterns of text that YAML would read as something other than a plain string, or misread.
+    quotedTextPatterns = [
+      // Empty text, and text with white space at either end.
+      /^$|^\s|\s$/,
+      // Control characters, and line breaks.
+      // eslint-disable-next-line no-control-regex
+      /[\x00-\x1f\x7f-\x9f]/,
+      // A sequence entry, a mapping value, or a comment.
+      /^-|:(\s|$)|\s#/,
+      // An indicator character or quote at the start.
+      /^[&*\],?!>|@"'#%[]/,
+      // Flow collections and reserved characters.
+      /[{}`]/
+    ];
+    // Text that YAML would read as a Boolean or null value.
+    reservedWords = ["y", "n", "yes", "no", "true", "false", "on", "off", "null"];
+    /**
+     * Renders a snapshot as text.
+     * @param root {AriaNode} The root of the snapshot. A fragment is rendered as its children.
+     * @returns {string} The text, with a line for each node and each run of text that is not on its node's line.
+     */
+    render(root) {
+      const lines = [];
+      for (const node of root.role === "fragment" ? root.children : [root]) {
+        this.renderChild(node, 0, lines);
+      }
+      return lines.join("\n");
+    }
+    /**
+     * Renders a child node, or a run of text, as lines.
+     * @param child {AriaNode | string} The node or text.
+     * @param depth {number} The depth of the child, which sets its indentation.
+     * @param lines {string[]} The lines rendered so far, which this adds to.
+     */
+    renderChild(child, depth, lines) {
+      const indent = "  ".repeat(depth);
+      if (typeof child === "string") {
+        lines.push(`${indent}- text: ${this.quoteValue(child)}`);
+        return;
+      }
+      const key = `${indent}- ${this.quoteKey(this.getKey(child))}`;
+      const properties = [];
+      if (child.url !== void 0) {
+        properties.push(["url", child.url]);
+      }
+      if (child.placeholder !== void 0) {
+        properties.push(["placeholder", child.placeholder]);
+      }
+      if (!properties.length && !child.children.length) {
+        lines.push(key);
+      } else if (!properties.length && child.children.length === 1 && typeof child.children[0] === "string") {
+        lines.push(`${key}: ${this.quoteValue(child.children[0])}`);
+      } else {
+        lines.push(`${key}:`);
+        for (const [name, value] of properties) {
+          lines.push(`${indent}  - /${name}: ${this.quoteValue(value)}`);
+        }
+        for (const grandchild of child.children) {
+          this.renderChild(grandchild, depth + 1, lines);
+        }
+      }
+    }
+    /**
+     * Gets the key of a node's line: its role, its quoted name if it has one that is not too long, and its states.
+     * @param node {AriaNode} The node.
+     * @returns {string} The key.
+     */
+    getKey(node) {
+      let key = node.role;
+      if (node.name && node.name.length <= this.maximumNameLength) {
+        key += ` ${JSON.stringify(node.name)}`;
+      }
+      if (node.checked !== void 0 && node.checked !== false) {
+        key += node.checked === "mixed" ? " [checked=mixed]" : " [checked]";
+      }
+      if (node.disabled) {
+        key += " [disabled]";
+      }
+      if (node.expanded) {
+        key += " [expanded]";
+      }
+      if (node.level) {
+        key += ` [level=${node.level}]`;
+      }
+      if (node.pressed !== void 0 && node.pressed !== false) {
+        key += node.pressed === "mixed" ? " [pressed=mixed]" : " [pressed]";
+      }
+      if (node.selected) {
+        key += " [selected]";
+      }
+      if (node.ref) {
+        key += ` [ref=${node.ref}]`;
+      }
+      return key;
+    }
+    /**
+     * Quotes a key, if YAML would otherwise misread it, in single quotes.
+     * @param key {string} The key.
+     * @returns {string} The key, quoted if needed.
+     */
+    quoteKey(key) {
+      return this.needsQuotes(key) ? `'${key.replace(/'/g, "''")}'` : key;
+    }
+    /**
+     * Quotes a value, if YAML would otherwise misread it, in double quotes with escapes.
+     * @param value {string} The value.
+     * @returns {string} The value, quoted if needed.
+     */
+    quoteValue(value) {
+      if (!this.needsQuotes(value)) {
+        return value;
+      }
+      return `"${value.replace(/[\\"\x00-\x1f\x7f-\x9f]/g, (character) => {
+        const escapes = { "\\": "\\\\", '"': '\\"', "\b": "\\b", "\f": "\\f", "\n": "\\n", "\r": "\\r", "	": "\\t" };
+        return escapes[character] ?? `\\x${character.charCodeAt(0).toString(16).padStart(2, "0")}`;
+      })}"`;
+    }
+    /**
+     * Gets a value indicating whether YAML would read text as something other than the same plain string.
+     * @param text {string} The text.
+     * @returns {boolean} True if the text must be quoted; otherwise, false.
+     */
+    needsQuotes(text) {
+      return this.quotedTextPatterns.some((pattern) => pattern.test(text)) || !isNaN(Number(text)) || this.reservedWords.includes(text.toLowerCase());
+    }
+  };
+  var ariaSnapshotRenderer_default = AriaSnapshotRenderer;
+
+  // src/ariaSnapshotGenerator.ts
+  var AriaSnapshotGenerator = class {
+    ariaUtilities = new ariaUtilities_default();
+    domUtilities = new domUtilities_default();
+    nameCalculator = new accessibleNameCalculator_default();
+    renderer = new ariaSnapshotRenderer_default();
+    omittedRoles = ["generic", "none", "presentation"];
+    // Inputs whose value is not text that the snapshot shows.
+    nonTextInputTypes = ["checkbox", "file", "radio"];
+    // An element keeps its ref for as long as its document lasts, so successive snapshots can be compared.
+    refIds = /* @__PURE__ */ new WeakMap();
+    lastRefId = 0;
+    /**
+     * Takes an accessibility snapshot of an element and its descendants.
+     * @param rootElement {Element} The element to take the snapshot of, which is included if it has a role.
+     * @param options {AriaSnapshotOptions} Options for the snapshot. If omitted, nodes get refs without a prefix.
+     * @returns {AriaSnapshot} The snapshot.
+     */
+    generate(rootElement, options = {}) {
+      const context = {
+        visited: /* @__PURE__ */ new Set(),
+        references: [],
+        refs: options.refs ?? true,
+        refPrefix: options.refPrefix ?? ""
+      };
+      const root = { role: "fragment", name: "", children: [] };
+      this.visit(root, rootElement, context);
+      this.finishNode(root);
+      return { root, text: this.renderer.render(root), references: context.references };
+    }
+    /**
+     * Adds a node, and what it contains, to the snapshot.
+     * @param parent {AriaNode} The node of the nearest ancestor in the snapshot.
+     * @param node {Node} The node to add.
+     * @param context {SnapshotContext} The state of the snapshot.
+     */
+    visit(parent, node, context) {
+      if (context.visited.has(node)) {
+        return;
+      }
+      context.visited.add(node);
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (parent.role !== "textbox") {
+          parent.children.push(node.data);
+        }
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE || this.ariaUtilities.isHiddenForAria(node)) {
+        return;
+      }
+      const element = node;
+      const ariaNode = this.createNode(element, context);
+      if (ariaNode) {
+        parent.children.push(ariaNode);
+      }
+      this.visitContent(ariaNode ?? parent, element, context);
+      if (ariaNode) {
+        this.finishNode(ariaNode, element);
+      }
+    }
+    /**
+     * Adds what an element contains to the snapshot: its pseudo-elements, its child nodes or the nodes assigned to it
+     * as a slot, its shadow root's child nodes, and the elements it owns through aria-owns.
+     * @param target {AriaNode} The node to add the content to: the element's own, or that of its nearest ancestor in the snapshot.
+     * @param element {Element} The element.
+     * @param context {SnapshotContext} The state of the snapshot.
+     */
+    visitContent(target, element, context) {
+      const display = this.domUtilities.getElementComputedStyle(element)?.display;
+      const separator = display !== "inline" || this.domUtilities.getNormalizedElementTagName(element) === "BR" ? " " : "";
+      target.children.push(separator, this.nameCalculator.getCssContent(element, "::before") ?? "");
+      const assignedNodes = element instanceof HTMLSlotElement ? element.assignedNodes() : [];
+      const nodes = assignedNodes.length ? assignedNodes : [
+        ...Array.from(element.childNodes).filter((child) => !child.assignedSlot),
+        ...Array.from(element.shadowRoot?.childNodes ?? [])
+      ];
+      for (const child of [...nodes, ...this.ariaUtilities.getReferencedElements(element, "aria-owns")]) {
+        this.visit(target, child, context);
+      }
+      target.children.push(this.nameCalculator.getCssContent(element, "::after") ?? "", separator);
+    }
+    /**
+     * Creates the node for an element, if it has one.
+     * @param element {Element} The element.
+     * @param context {SnapshotContext} The state of the snapshot.
+     * @returns {AriaNode | null} The node, or null if the element has no role, or one that the snapshot leaves out.
+     */
+    createNode(element, context) {
+      const tagName = this.domUtilities.getNormalizedElementTagName(element);
+      if (tagName === "IFRAME" || tagName === "FRAME") {
+        return this.assignRef({ role: "iframe", name: "", children: [] }, element, context);
+      }
+      const role = this.ariaUtilities.getAriaRole(element);
+      if (!role || this.omittedRoles.includes(role)) {
+        return null;
+      }
+      const node = this.assignRef({ role, name: this.normalizeWhiteSpace(this.nameCalculator.getAccessibleName(element)), children: [] }, element, context);
+      const states = {
+        checked: this.ariaUtilities.getAriaChecked(element),
+        disabled: this.ariaUtilities.getAriaDisabled(element),
+        expanded: this.ariaUtilities.getAriaExpanded(element),
+        level: this.ariaUtilities.getAriaLevel(element),
+        pressed: this.ariaUtilities.getAriaPressed(element),
+        selected: this.ariaUtilities.getAriaSelected(element)
+      };
+      for (const [state, value] of Object.entries(states)) {
+        if (value !== void 0) {
+          Object.assign(node, { [state]: value });
+        }
+      }
+      if (element instanceof HTMLInputElement && !this.nonTextInputTypes.includes(element.type) || element instanceof HTMLTextAreaElement) {
+        node.children.push(element.value);
+      }
+      return node;
+    }
+    /**
+     * Gives a node the ref of its element, and records the element, unless the snapshot has no refs.
+     * @param node {AriaNode} The node.
+     * @param element {Element} The element.
+     * @param context {SnapshotContext} The state of the snapshot.
+     * @returns {AriaNode} The node.
+     */
+    assignRef(node, element, context) {
+      if (context.refs) {
+        let id = this.refIds.get(element);
+        if (id === void 0) {
+          id = ++this.lastRefId;
+          this.refIds.set(element, id);
+        }
+        node.ref = `${context.refPrefix}e${id}`;
+        context.references.push({ ref: node.ref, element });
+      }
+      return node;
+    }
+    /**
+     * Completes a node once its content is added: merges and normalizes its runs of text, drops text that only repeats
+     * its name, and adds the URL of a link and the placeholder of a text box.
+     * @param node {AriaNode} The node.
+     * @param element {Element | undefined} The node's element; omitted for the root.
+     */
+    finishNode(node, element) {
+      const children = [];
+      let text = "";
+      const flushText = () => {
+        const normalized = this.normalizeWhiteSpace(text);
+        if (normalized) {
+          children.push(normalized);
+        }
+        text = "";
+      };
+      for (const child of node.children) {
+        if (typeof child === "string") {
+          text += child;
+        } else {
+          flushText();
+          children.push(child);
+        }
+      }
+      flushText();
+      node.children = children.length === 1 && children[0] === node.name ? [] : children;
+      const href = element?.getAttribute("href") ?? null;
+      if (node.role === "link" && href !== null) {
+        node.url = this.truncateDataUrl(href);
+      }
+      const placeholder = element?.getAttribute("placeholder");
+      if (node.role === "textbox" && placeholder && placeholder !== node.name) {
+        node.placeholder = placeholder;
+      }
+    }
+    /**
+     * Shortens a data URL to its media type, since its data is never useful to read.
+     * @param url {string} The URL.
+     * @returns {string} The URL, with the data of a data URL replaced by an ellipsis.
+     */
+    truncateDataUrl(url) {
+      const comma = url.indexOf(",");
+      return url.startsWith("data:") && comma !== -1 ? `${url.slice(0, comma + 1)}\u2026` : url;
+    }
+    /**
+     * Normalizes white space in text: zero-width spaces and soft hyphens removed, and runs of white space collapsed to
+     * one space and trimmed.
+     * @param text {string} The text.
+     * @returns {string} The normalized text.
+     */
+    normalizeWhiteSpace(text) {
+      return text.replace(/[\u200b\u00ad]/g, "").trim().replace(/\s+/g, " ");
+    }
+  };
+  var ariaSnapshotGenerator_default = AriaSnapshotGenerator;
+
+  // src/ariaTemplateParser.ts
+  var AriaTemplateParser = class {
+    ariaUtilities = new ariaUtilities_default();
+    childrenModes = ["contain", "equal", "deep-equal"];
+    toggleValues = { "true": true, "false": false, "mixed": "mixed" };
+    booleanValues = { "true": true, "false": false };
+    // https://yaml.org/spec/1.2.2/#57-escaped-characters, as far as JSON and the snapshot renderer use them.
+    escapedCharacters = {
+      "0": "\0",
+      "b": "\b",
+      "f": "\f",
+      "n": "\n",
+      "r": "\r",
+      "t": "	",
+      "v": "\v",
+      '"': '"',
+      "/": "/",
+      "\\": "\\",
+      " ": " "
+    };
+    /**
+     * Parses a template.
+     * @param template {string} The template.
+     * @returns {AriaTemplateNode} The template for the node to find: the only node the template lists, unless it says
+     * how children must match; otherwise, a fragment holding the nodes it lists.
+     * @throws {Error} If the template is not valid, with the line and column where it is not.
+     */
+    parse(template) {
+      const lines = template.split("\n").map((text, index) => ({ number: index + 1, text: text.replace(/\r$/, "") }));
+      const fragment = { kind: "role", role: "fragment", children: [] };
+      this.parseSequence(lines, 0, -1, fragment);
+      if (!fragment.children.length) {
+        this.fail(lines[0], 'A template must list at least one node, as a line starting with "- "', 0);
+      }
+      return fragment.children.length === 1 && (fragment.childrenMode ?? "contain") === "contain" ? fragment.children[0] : fragment;
+    }
+    /**
+     * Parses the list items at one indentation, which are the children of a node.
+     * @param lines {TemplateLine[]} The lines of the template.
+     * @param start {number} The index of the first line to parse.
+     * @param parentIndent {number} The indentation of the parent's list item; items must be indented more than it.
+     * @param parent {AriaRoleTemplate} The template for the parent node.
+     * @returns {number} The index of the first line that is not part of the list.
+     */
+    parseSequence(lines, start, parentIndent, parent) {
+      let index = start;
+      let itemIndent;
+      while (index < lines.length) {
+        const line = lines[index];
+        const trimmed = line.text.trim();
+        if (!trimmed || trimmed.startsWith("#")) {
+          index++;
+          continue;
+        }
+        const indent = this.getIndent(line.text);
+        if (line.text.slice(0, indent).includes("	")) {
+          this.fail(line, "Tabs cannot indent a template", line.text.indexOf("	"));
+        }
+        if (indent <= parentIndent) {
+          break;
+        }
+        itemIndent ??= indent;
+        if (indent !== itemIndent) {
+          this.fail(line, "Unexpected indentation", indent);
+        }
+        if (!/^-(\s|$)/.test(trimmed)) {
+          this.fail(line, 'Expected a list item starting with "- "', indent);
+        }
+        index = this.parseItem(lines, index, indent, parent);
+      }
+      return index;
+    }
+    /**
+     * Parses a list item: a node, a run of text, or a property of the parent node.
+     * @param lines {TemplateLine[]} The lines of the template.
+     * @param index {number} The index of the item's line.
+     * @param indent {number} The indentation of the item.
+     * @param parent {AriaRoleTemplate} The template for the parent node.
+     * @returns {number} The index of the first line after the item.
+     */
+    parseItem(lines, index, indent, parent) {
+      const line = lines[index];
+      const contentStart = indent + 1 + this.getIndent(line.text.slice(indent + 1));
+      const content = line.text.slice(contentStart);
+      const property = /^\/([a-z]+):(?:\s+|$)/i.exec(content);
+      if (property) {
+        const [value2, next2] = this.parseValue(lines, index, indent, contentStart + property[0].length);
+        this.applyProperty(parent, property[1], value2, line, contentStart);
+        return next2;
+      }
+      const text = /^text:(?:\s+|$)/.exec(content);
+      if (text) {
+        const [value2, next2] = this.parseValue(lines, index, indent, contentStart + text[0].length);
+        parent.children.push({ kind: "text", text: this.createTextTemplate(value2) });
+        return next2;
+      }
+      const node = { kind: "role", role: "", children: [] };
+      parent.children.push(node);
+      let position;
+      if (content.startsWith("'")) {
+        const [key, end] = this.readSingleQuoted(line, contentStart);
+        const keyEnd = this.parseKeyInto(node, key, 0, line, contentStart + 1);
+        if (keyEnd < key.length) {
+          this.fail(line, "Expected an attribute or the end of the key", contentStart + 1 + keyEnd);
+        }
+        position = end;
+      } else {
+        position = this.parseKeyInto(node, line.text, contentStart, line, 0);
+      }
+      const rest = line.text.slice(position);
+      if (!rest.trim()) {
+        return index + 1;
+      }
+      if (!rest.startsWith(":")) {
+        this.fail(line, 'Expected ":" or the end of the line', position);
+      }
+      if (!rest.slice(1).trim()) {
+        return this.parseSequence(lines, index + 1, indent, node);
+      }
+      const [value, next] = this.parseValue(lines, index, indent, position + 1 + this.getIndent(rest.slice(1)));
+      node.children.push({ kind: "text", text: this.createTextTemplate(value) });
+      return next;
+    }
+    /**
+     * Parses the key of a node, its role, name, and attributes, and records them in its template.
+     * @param node {AriaRoleTemplate} The template for the node.
+     * @param text {string} The text holding the key.
+     * @param start {number} The index in the text where the key starts.
+     * @param line {TemplateLine} The line, for errors.
+     * @param offset {number} The column of the line where the text starts, for errors.
+     * @returns {number} The index in the text just past the key and any white space after it.
+     */
+    parseKeyInto(node, text, start, line, offset) {
+      const role = /^[a-z]+/i.exec(text.slice(start));
+      if (!role) {
+        this.fail(line, "Expected a role", offset + start);
+      }
+      if (role[0] !== "iframe" && !this.ariaUtilities.isAriaRole(role[0])) {
+        this.fail(line, `Unknown role "${role[0]}"`, offset + start);
+      }
+      node.role = role[0];
+      let position = this.skipSpaces(text, start + role[0].length);
+      if (text[position] === '"') {
+        const [name, end] = this.readDoubleQuoted(text, position, line, offset);
+        if (name) {
+          node.name = this.normalizeWhiteSpace(name);
+        }
+        position = this.skipSpaces(text, end);
+      } else if (text[position] === "/") {
+        const [pattern, end] = this.readRegex(text, position, line, offset);
+        node.name = { pattern };
+        position = this.skipSpaces(text, end);
+      }
+      while (text[position] === "[") {
+        const attribute = /^\[\s*([a-z]+)\s*(?:=\s*([^\]\s]*)\s*)?\]/i.exec(text.slice(position));
+        if (!attribute) {
+          this.fail(line, "Expected an attribute, such as [checked] or [level=2]", offset + position);
+        }
+        this.applyAttribute(node, attribute[1], attribute[2] ?? "true", line, offset + position);
+        position = this.skipSpaces(text, position + attribute[0].length);
+      }
+      return position;
+    }
+    /**
+     * Records an attribute of a node in its template.
+     * @param node {AriaRoleTemplate} The template for the node.
+     * @param name {string} The attribute's name.
+     * @param value {string} The attribute's value; true when it has none.
+     * @param line {TemplateLine} The line, for errors.
+     * @param column {number} The column where the attribute starts, for errors.
+     */
+    applyAttribute(node, name, value, line, column) {
+      if (name === "checked" || name === "pressed") {
+        const state = this.toggleValues[value];
+        if (state === void 0) {
+          this.fail(line, `The value of [${name}] must be true, false, or mixed`, column);
+        }
+        node[name] = state;
+      } else if (name === "disabled" || name === "expanded" || name === "selected") {
+        const state = this.booleanValues[value];
+        if (state === void 0) {
+          this.fail(line, `The value of [${name}] must be true or false`, column);
+        }
+        node[name] = state;
+      } else if (name === "level") {
+        if (!/^[1-9]\d*$/.test(value)) {
+          this.fail(line, "The value of [level] must be a positive whole number", column);
+        }
+        node.level = Number(value);
+      } else if (name !== "ref") {
+        this.fail(line, `Unsupported attribute [${name}]`, column);
+      }
+    }
+    /**
+     * Records a property of a node in its template: its URL, its placeholder, or how its children must match.
+     * @param node {AriaRoleTemplate} The template for the node.
+     * @param name {string} The property's name.
+     * @param value {string} The property's value.
+     * @param line {TemplateLine} The line, for errors.
+     * @param column {number} The column where the property starts, for errors.
+     */
+    applyProperty(node, name, value, line, column) {
+      if (name === "url" || name === "placeholder") {
+        node[name] = this.createTextTemplate(value);
+      } else if (name === "children") {
+        if (!this.childrenModes.includes(value)) {
+          this.fail(line, "The value of /children must be contain, equal, or deep-equal", column);
+        }
+        node.childrenMode = value;
+      } else {
+        this.fail(line, `Unsupported property /${name}`, column);
+      }
+    }
+    /**
+     * Parses a scalar value: double-quoted, single-quoted, a literal (|) or folded (>) block on the lines beneath, or plain.
+     * @param lines {TemplateLine[]} The lines of the template.
+     * @param index {number} The index of the line the value starts on.
+     * @param indent {number} The indentation of the list item the value belongs to.
+     * @param start {number} The index in the line where the value starts.
+     * @returns {[string, number]} The value, and the index of the first line after it.
+     */
+    parseValue(lines, index, indent, start) {
+      const line = lines[index];
+      const text = line.text;
+      if (start >= text.length) {
+        this.fail(line, "Expected a value", start);
+      }
+      if (/^[|>][-+]?\s*$/.test(text.slice(start))) {
+        return this.readBlock(lines, index, indent);
+      }
+      let value;
+      let end;
+      if (text[start] === '"') {
+        [value, end] = this.readDoubleQuoted(text, start, line);
+      } else if (text[start] === "'") {
+        [value, end] = this.readSingleQuoted(line, start);
+      } else {
+        const comment = /\s#/.exec(text.slice(start));
+        return [text.slice(start, comment ? start + comment.index : void 0).trimEnd(), index + 1];
+      }
+      const rest = text.slice(end);
+      if (rest.trim() && !/^\s+#/.test(rest)) {
+        this.fail(line, "Unexpected text after the quoted value", end);
+      }
+      return [value, index + 1];
+    }
+    /**
+     * Reads a block value: the lines beneath a list item that are indented more than it, without their shared indentation.
+     * @param lines {TemplateLine[]} The lines of the template.
+     * @param index {number} The index of the line holding the block indicator.
+     * @param indent {number} The indentation of the list item the value belongs to.
+     * @returns {[string, number]} The value, with its lines joined by line breaks, and the index of the first line after it.
+     */
+    readBlock(lines, index, indent) {
+      const blockLines = [];
+      let next = index + 1;
+      while (next < lines.length && (!lines[next].text.trim() || this.getIndent(lines[next].text) > indent)) {
+        blockLines.push(lines[next].text);
+        next++;
+      }
+      const contentIndent = Math.min(...blockLines.filter((text) => text.trim()).map((text) => this.getIndent(text)));
+      if (!Number.isFinite(contentIndent)) {
+        this.fail(lines[index], "Expected the lines of the value beneath it", lines[index].text.length);
+      }
+      return [blockLines.map((text) => text.slice(contentIndent)).join("\n").trimEnd(), next];
+    }
+    /**
+     * Reads a double-quoted string, resolving its escapes.
+     * @param text {string} The text holding the string.
+     * @param start {number} The index of the opening quote.
+     * @param line {TemplateLine} The line, for errors.
+     * @param offset {number} The column of the line where the text starts, for errors; zero if omitted.
+     * @returns {[string, number]} The string's value, and the index just past its closing quote.
+     */
+    readDoubleQuoted(text, start, line, offset = 0) {
+      let value = "";
+      let index = start + 1;
+      while (index < text.length && text[index] !== '"') {
+        if (text[index] !== "\\") {
+          value += text[index];
+          index++;
+          continue;
+        }
+        const escape = text[index + 1] ?? "";
+        const hex = { "x": 2, "u": 4, "U": 8 }[escape];
+        const digits = hex ? text.slice(index + 2, index + 2 + hex) : "";
+        if (hex && /^[0-9a-f]+$/i.test(digits) && digits.length === hex) {
+          value += String.fromCodePoint(parseInt(digits, 16));
+          index += 2 + hex;
+        } else if (this.escapedCharacters[escape] !== void 0) {
+          value += this.escapedCharacters[escape];
+          index += 2;
+        } else {
+          this.fail(line, `Unsupported escape "\\${escape}"`, offset + index);
+        }
+      }
+      if (index >= text.length) {
+        this.fail(line, "Unterminated string", offset + start);
+      }
+      return [value, index + 1];
+    }
+    /**
+     * Reads a single-quoted string, in which two single quotes stand for one.
+     * @param line {TemplateLine} The line holding the string.
+     * @param start {number} The index of the opening quote.
+     * @returns {[string, number]} The string's value, and the index just past its closing quote.
+     */
+    readSingleQuoted(line, start) {
+      const match = /^'((?:[^']|'')*)'/.exec(line.text.slice(start));
+      if (!match) {
+        this.fail(line, "Unterminated string", start);
+      }
+      return [match[1].replace(/''/g, "'"), start + match[0].length];
+    }
+    /**
+     * Reads a regular expression between slashes, where a slash inside a character class or after a backslash does not end it.
+     * @param text {string} The text holding the expression.
+     * @param start {number} The index of the opening slash.
+     * @param line {TemplateLine} The line, for errors.
+     * @param offset {number} The column of the line where the text starts, for errors.
+     * @returns {[string, number]} The expression's pattern, and the index just past its closing slash.
+     */
+    readRegex(text, start, line, offset) {
+      let inClass = false;
+      let index = start + 1;
+      while (index < text.length && (text[index] !== "/" || inClass)) {
+        if (text[index] === "\\") {
+          index++;
+        } else if (text[index] === "[") {
+          inClass = true;
+        } else if (text[index] === "]") {
+          inClass = false;
+        }
+        index++;
+      }
+      if (index >= text.length) {
+        this.fail(line, "Unterminated regular expression", offset + start);
+      }
+      const pattern = text.slice(start + 1, index);
+      try {
+        new RegExp(pattern);
+      } catch (error) {
+        this.fail(line, `Invalid regular expression: ${error.message}`, offset + start);
+      }
+      return [pattern, index + 1];
+    }
+    /**
+     * Creates the template for some text.
+     * @param value {string} The text as written.
+     * @returns {AriaTextTemplate} The template.
+     */
+    createTextTemplate(value) {
+      return { raw: value, normalized: this.normalizeWhiteSpace(value) };
+    }
+    /**
+     * Normalizes white space in text: zero-width spaces and soft hyphens removed, and runs of white space collapsed to
+     * one space and trimmed.
+     * @param text {string} The text.
+     * @returns {string} The normalized text.
+     */
+    normalizeWhiteSpace(text) {
+      return text.replace(/[\u200b\u00ad]/g, "").trim().replace(/\s+/g, " ");
+    }
+    /**
+     * Gets the number of white space characters at the start of some text.
+     * @param text {string} The text.
+     * @returns {number} The number of characters.
+     */
+    getIndent(text) {
+      return text.length - text.trimStart().length;
+    }
+    /**
+     * Gets the index of the first character at or after a position that is not a space.
+     * @param text {string} The text.
+     * @param position {number} The position.
+     * @returns {number} The index.
+     */
+    skipSpaces(text, position) {
+      return position + this.getIndent(text.slice(position));
+    }
+    /**
+     * Throws an error for a template that is not valid, showing where on its line.
+     * @param line {TemplateLine} The line.
+     * @param message {string} What is wrong.
+     * @param column {number} The zero-based column where it is wrong.
+     * @throws {Error} Always.
+     */
+    fail(line, message, column) {
+      throw new Error(`Invalid aria snapshot template, line ${line.number}: ${message}
+${line.text}
+${" ".repeat(column)}^`);
+    }
+  };
+  var ariaTemplateParser_default = AriaTemplateParser;
+
+  // src/ariaSnapshotMatcher.ts
+  var AriaSnapshotMatcher = class {
+    generator = new ariaSnapshotGenerator_default();
+    parser = new ariaTemplateParser_default();
+    states = ["checked", "disabled", "expanded", "level", "pressed", "selected"];
+    /**
+     * Matches the snapshot of an element against a template.
+     * @param rootElement {Element} The element whose snapshot to match.
+     * @param template {string} The template.
+     * @returns {AriaSnapshotMatchResult} Whether the snapshot matches, and the snapshot as text.
+     * @throws {Error} If the template is not valid.
+     */
+    match(rootElement, template) {
+      const parsed = this.parser.parse(template);
+      const snapshot = this.generator.generate(rootElement, { refs: false });
+      return { matches: this.containsMatch(snapshot.root, parsed), actual: snapshot.text };
+    }
+    /**
+     * Gets a value indicating whether a node, or any of its descendants, matches a template.
+     * @param node {AriaNode | string} The node, or a run of text.
+     * @param template {AriaTemplateNode} The template.
+     * @returns {boolean} True if the node or a descendant matches; otherwise, false.
+     */
+    containsMatch(node, template) {
+      if (this.matchesNode(node, template, false)) {
+        return true;
+      }
+      return typeof node !== "string" && node.children.some((child) => this.containsMatch(child, template));
+    }
+    /**
+     * Gets a value indicating whether a node matches a template.
+     * @param node {AriaNode | string} The node, or a run of text.
+     * @param template {AriaTemplateNode} The template.
+     * @param isDeepEqual {boolean} Whether an ancestor's template asked for all descendants to match exactly.
+     * @returns {boolean} True if the node matches; otherwise, false.
+     */
+    matchesNode(node, template, isDeepEqual) {
+      if (typeof node === "string" || template.kind === "text") {
+        return typeof node === "string" && template.kind === "text" && this.matchesText(node, template.text);
+      }
+      if (template.role !== "fragment" && template.role !== node.role) {
+        return false;
+      }
+      if (this.states.some((state) => template[state] !== void 0 && template[state] !== node[state])) {
+        return false;
+      }
+      if (!this.matchesName(node.name, template) || !this.matchesOptionalText(node.url, template.url) || !this.matchesOptionalText(node.placeholder, template.placeholder)) {
+        return false;
+      }
+      const mode = template.childrenMode ?? (isDeepEqual ? "deep-equal" : "contain");
+      return mode === "contain" ? this.containsInOrder(node.children, template.children) : this.equalsList(node.children, template.children, mode === "deep-equal");
+    }
+    /**
+     * Gets a value indicating whether a node's name matches the name a template gives, if it gives one.
+     * @param name {string} The node's name.
+     * @param template {AriaRoleTemplate} The template.
+     * @returns {boolean} True if the template gives no name, or the name matches it; otherwise, false.
+     */
+    matchesName(name, template) {
+      if (template.name === void 0) {
+        return true;
+      }
+      if (typeof template.name === "string") {
+        return name === template.name;
+      }
+      return !!name && new RegExp(template.name.pattern).test(name);
+    }
+    /**
+     * Gets a value indicating whether a property of a node matches the text a template gives for it, if it gives any.
+     * @param text {string | undefined} The property's value, or undefined if the node does not have it.
+     * @param template {AriaTextTemplate | undefined} The template, or undefined if it gives none.
+     * @returns {boolean} True if the template gives no text, or the property matches it; otherwise, false.
+     */
+    matchesOptionalText(text, template) {
+      return !template || this.matchesText(text ?? "", template);
+    }
+    /**
+     * Gets a value indicating whether text matches a template: it is equal to the template's text, normalized or as
+     * written, or matches it as a regular expression when it is written between slashes.
+     * @param text {string} The text.
+     * @param template {AriaTextTemplate} The template.
+     * @returns {boolean} True if the text matches; otherwise, false.
+     */
+    matchesText(text, template) {
+      if (!template.normalized) {
+        return true;
+      }
+      if (!text) {
+        return false;
+      }
+      if (text === template.normalized || text === template.raw) {
+        return true;
+      }
+      const { raw } = template;
+      if (raw.length < 2 || !raw.startsWith("/") || !raw.endsWith("/")) {
+        return false;
+      }
+      try {
+        return new RegExp(raw.slice(1, -1)).test(text);
+      } catch {
+        return false;
+      }
+    }
+    /**
+     * Gets a value indicating whether children contain the children a template lists, in order, among others.
+     * @param children {Array<AriaNode | string>} The children.
+     * @param templates {AriaTemplateNode[]} The templates for the children.
+     * @returns {boolean} True if each template matches a child after the child the one before it matched; otherwise, false.
+     */
+    containsInOrder(children, templates) {
+      let index = 0;
+      for (const template of templates) {
+        while (index < children.length && !this.matchesNode(children[index], template, false)) {
+          index++;
+        }
+        if (index === children.length) {
+          return false;
+        }
+        index++;
+      }
+      return true;
+    }
+    /**
+     * Gets a value indicating whether children are exactly the children a template lists.
+     * @param children {Array<AriaNode | string>} The children.
+     * @param templates {AriaTemplateNode[]} The templates for the children.
+     * @param isDeepEqual {boolean} Whether the children's descendants must also match exactly.
+     * @returns {boolean} True if there are as many children as templates, and each matches its template; otherwise, false.
+     */
+    equalsList(children, templates, isDeepEqual) {
+      return children.length === templates.length && templates.every((template, index) => this.matchesNode(children[index], template, isDeepEqual));
+    }
+  };
+  var ariaSnapshotMatcher_default = AriaSnapshotMatcher;
   return __toCommonJS(index_exports);
 })();
 /* istanbul ignore next -- @preserve */
