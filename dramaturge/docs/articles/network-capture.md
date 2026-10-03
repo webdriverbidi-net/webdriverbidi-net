@@ -2,9 +2,13 @@
 
 `NetworkTrafficMonitor` records a page's network traffic: each request with its response and bodies, keeping each redirect hop separately. `HarGenerator` writes what it records as an HTTP Archive. The monitor can also modify matching requests and answer authentication challenges. It is built from the WebDriver BiDi network module's events, intercepts, and data collectors, which the WebDriverBiDi.NET [Network Module guide](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/modules/network.html) describes.
 
-The monitor is in the `Dramaturge` package, in the `Dramaturge.Network` namespace.
+The monitor is in the `Dramaturge` package, in the `Dramaturge.Network` namespace. To record a page's or a browser's traffic to a HAR file, and replay it, `RecordHarAsync` and `RouteFromHarAsync` are simpler; see [Recording and Replaying HAR Files](network.md#recording-and-replaying-har-files).
 
 [!code-csharp[Network Capture](../code/NetworkCaptureSamples.cs#NetworkCapture)]
+
+## What Is Monitored
+
+`BrowsingContextIds` limits the monitor to pages, and `UserContextIds` to browsers: their pages, including those opened later, and their workers. One of them may be set, not both; with neither, every page is monitored. WebDriver BiDi cannot limit an intercept to a browser, so a monitor limited to browsers that modifies requests or answers challenges stops the matching requests of other browsers too, and continues them at once.
 
 ## What Is Captured
 
@@ -44,7 +48,7 @@ The first credentials that match an authentication challenge's scheme and realm 
 
 The monitor holds requests until they are retrieved. Two limits stop a long session, or one that is never read, from growing without bound:
 - `MaxRetainedRequests`: requests beyond it are not recorded and are counted in `DroppedRequestCount`. A request that the monitor would modify is still modified and continued.
-- `MaxBodySize`: the largest body the browser keeps for the monitor.
+- `MaxBodySize`: the largest body the browser keeps for the monitor. A response's body is released in the browser once the monitor has it; a request's stays until monitoring stops, because releasing it makes Chrome forget a request that a route has stopped.
 
 For a long session, call `GetCapturedTrafficAsync` periodically.
 

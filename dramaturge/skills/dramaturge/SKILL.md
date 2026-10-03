@@ -1,6 +1,6 @@
 ---
 name: dramaturge
-description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, test base classes for xUnit, NUnit, MSTest, and TUnit (Dramaturge.Xunit, Dramaturge.NUnit, Dramaturge.MSTest, Dramaturge.TUnit: PageTest, BrowserTest), finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, accessibility snapshots (AriaSnapshotAsync, ToMatchAriaSnapshotAsync), routes, dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
+description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, test base classes for xUnit, NUnit, MSTest, and TUnit (Dramaturge.Xunit, Dramaturge.NUnit, Dramaturge.MSTest, Dramaturge.TUnit: PageTest, BrowserTest), finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, accessibility snapshots (AriaSnapshotAsync, ToMatchAriaSnapshotAsync), routes for a page or a whole browser, recording and replaying HAR files (RecordHarAsync, RouteFromHarAsync), dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
 ---
 
 # Dramaturge
@@ -143,12 +143,12 @@ await page.NavigateAsync("https://example.com/profile");
 await route.RemoveAsync();
 ```
 
-Routes answer (`FulfillAsync`), change (`ContinueAsync`), or fail (`AbortAsync`) a page's requests, newest route first. `RunAndWaitForRequestAsync`/`RunAndWaitForResponseAsync` wait for traffic an action causes; `NetworkTrafficMonitor` records it as HAR. See [references/network.md](references/network.md).
+Routes answer (`FulfillAsync`), change (`ContinueAsync`), or fail (`AbortAsync`) a page's requests, or with `browser.RouteAsync` all of a browser's, newest route first. `RecordHarAsync` records traffic to a HAR file and `RouteFromHarAsync` replays one, so tests can run without the server. `RunAndWaitForRequestAsync`/`RunAndWaitForResponseAsync` wait for traffic an action causes. See [references/network.md](references/network.md).
 
 ## Known Browser Gaps
 
 - Firefox: `GetByText` is unsupported (its innerText locator, bug 1869538); native HTML5 drag-and-drop fires only `dragstart` (bug 1515879); the dialog handler given to a new browser is ignored (bug 1975279).
-- Chrome: a route's `FulfillAsync` with only a status code is sent to the network instead; give a body or header. Screenshots of elements inside iframes fail.
+- Chrome: a route's `FulfillAsync` with only a status code is sent to the network instead; give a body or header. A popup's first request is never stopped, so no browser route sees it. Screenshots of elements inside iframes fail.
 - Snapshot names versus `GetByRole`: both browsers leave table rows unnamed; Chrome does not name a `figure` from its `figcaption`; Firefox names a value-less submit button "Submit Query" and gives an `svg` without a role another role than `image`. Firefox still finds a ref's element after its frame navigates away, instead of throwing.
 
 ## Rules

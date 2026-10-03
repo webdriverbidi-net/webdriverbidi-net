@@ -74,6 +74,57 @@ public static class NetworkSamples
     }
 
     /// <summary>
+    /// A route for every page of a browser.
+    /// </summary>
+    /// <param name="browser">A browser.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task BrowserRoutes(Browser browser)
+    {
+        #region BrowserRoutes
+        // Answers the browser's requests to the API, from any of its pages, popups included, and its workers.
+        await browser.RouteAsync(
+            new Regex("^https://api\\.example\\.com/v1/flags"),
+            r => r.FulfillAsync(200, """{"newCheckout":true}""", new Dictionary<string, string>() { ["Content-Type"] = "application/json" }),
+            new UrlPatternPattern() { HostName = "api.example.com" });
+        #endregion
+    }
+
+    /// <summary>
+    /// Recording a page's traffic to a HAR file.
+    /// </summary>
+    /// <param name="page">A page.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task RecordHar(Page page)
+    {
+        #region RecordHar
+        // Disposing the recording writes the file.
+        await using (HarRecording recording = await page.RecordHarAsync(
+            "checkout.har",
+            new HarRecordingOptions() { Include = request => request.Url.StartsWith("https://api.example.com/", StringComparison.Ordinal) }))
+        {
+            await page.NavigateAsync("https://example.com/checkout");
+            await page.GetByRole("button", "Place order").ClickAsync();
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// Replaying a HAR file.
+    /// </summary>
+    /// <param name="page">A page.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task ReplayHar(Page page)
+    {
+        #region ReplayHar
+        // The API's requests are answered from the file; one it has no entry for fails.
+        await page.RouteFromHarAsync("checkout.har", new Regex("^https://api\\.example\\.com/"));
+
+        // A request the file has no entry for goes to the next route, or to the network.
+        await page.RouteFromHarAsync("assets.har", new HarRouteOptions() { NotFound = HarNotFound.Fallback });
+        #endregion
+    }
+
+    /// <summary>
     /// Waiting for a request or a response.
     /// </summary>
     /// <param name="page">A page.</param>
