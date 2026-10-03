@@ -157,6 +157,21 @@ public abstract class BrowserLauncher : IAsyncDisposable
     }
 
     /// <summary>
+    /// Returns a builder for the browser the environment chooses, so that a test run can choose its browser without
+    /// changing code. DRAMATURGE_BROWSER names the browser (default Chrome), DRAMATURGE_CHANNEL its release channel
+    /// (default stable), each as a member name in any case, and DRAMATURGE_HEADED set to "1" or "true" shows it
+    /// (default headless). The browser is found or downloaded as by <see cref="Configure(BrowserKind)"/>.
+    /// </summary>
+    /// <returns>A <see cref="BrowserLauncherBuilder"/> for configuring the launcher further.</returns>
+    /// <exception cref="BrowserLauncherConfigurationException">Thrown when a variable names no browser or channel.</exception>
+    public static BrowserLauncherBuilder ConfigureFromEnvironment()
+    {
+        BrowserKind browser = LauncherEnvironment.GetEnumVariable(LauncherEnvironment.BrowserVariableName, BrowserKind.Chrome);
+        BrowserReleaseChannel channel = LauncherEnvironment.GetEnumVariable(LauncherEnvironment.ChannelVariableName, BrowserReleaseChannel.Stable);
+        return Configure(browser).WithReleaseChannel(channel).WithHeadlessOption(!LauncherEnvironment.IsEnabled(LauncherEnvironment.HeadedVariableName));
+    }
+
+    /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>

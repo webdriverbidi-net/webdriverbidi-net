@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Tests of each test framework package without its shared group registered, which its own tests register. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Dramaturge</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.1" />
+    <PackageReference Include="coverlet.MTP" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dramaturge.MSTest\Dramaturge.MSTest.csproj" />
+    <ProjectReference Include="..\..\src\Dramaturge.NUnit\Dramaturge.NUnit.csproj" />
+    <ProjectReference Include="..\..\src\Dramaturge.TUnit\Dramaturge.TUnit.csproj" />
+    <ProjectReference Include="..\..\src\Dramaturge.Xunit\Dramaturge.Xunit.csproj" />
+  </ItemGroup>
+
+</Project>

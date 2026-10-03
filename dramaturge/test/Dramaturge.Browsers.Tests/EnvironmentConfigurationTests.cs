@@ -15,6 +15,9 @@ public class EnvironmentConfigurationTests
     private const string BrowsersPathVariableName = "DRAMATURGE_BROWSERS_PATH";
     private const string SkipDownloadVariableName = "DRAMATURGE_SKIP_DOWNLOAD";
     private const string DownloadManifestVariableName = "DRAMATURGE_DOWNLOAD_MANIFEST";
+    private const string BrowserVariableName = "DRAMATURGE_BROWSER";
+    private const string ChannelVariableName = "DRAMATURGE_CHANNEL";
+    private const string HeadedVariableName = "DRAMATURGE_HEADED";
 
     [Fact]
     public void BrowsersPathVariableSetsCacheDirectory()
@@ -176,6 +179,74 @@ public class EnvironmentConfigurationTests
         }
 
         Assert.Equal(Path.Combine(cache.Path, "drivers", "chromedriver", "131.0.6778.204", "chromedriver"), await find);
+    }
+
+    [Fact]
+    public async Task ConfigureFromEnvironmentDefaultsToHeadlessStableChrome()
+    {
+        using VariableOverride browser = new(BrowserVariableName, null);
+        using VariableOverride channel = new(ChannelVariableName, " ");
+        using VariableOverride headed = new(HeadedVariableName, null);
+
+        await using BrowserLauncher launcher = BrowserLauncher.ConfigureFromEnvironment().Build();
+
+        Assert.IsType<ChromeLauncher>(launcher);
+        Assert.True(launcher.IsBrowserHeadless);
+    }
+
+    [Theory]
+    [InlineData("firefox", typeof(FirefoxLauncher))]
+    [InlineData(" Edge ", typeof(EdgeLauncher))]
+    [InlineData("CHROME", typeof(ChromeLauncher))]
+    public async Task ConfigureFromEnvironmentLaunchesTheNamedBrowser(string value, Type expectedLauncher)
+    {
+        using VariableOverride browser = new(BrowserVariableName, value);
+        using VariableOverride channel = new(ChannelVariableName, null);
+
+        await using BrowserLauncher launcher = BrowserLauncher.ConfigureFromEnvironment().Build();
+
+        Assert.IsType(expectedLauncher, launcher);
+    }
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("true")]
+    public async Task ConfigureFromEnvironmentShowsTheBrowserWhenHeaded(string value)
+    {
+        using VariableOverride browser = new(BrowserVariableName, null);
+        using VariableOverride channel = new(ChannelVariableName, null);
+        using VariableOverride headed = new(HeadedVariableName, value);
+
+        await using BrowserLauncher launcher = BrowserLauncher.ConfigureFromEnvironment().Build();
+
+        Assert.False(launcher.IsBrowserHeadless);
+    }
+
+    // Chrome has no extended support releases, so the builder rejects the channel only if it was applied.
+    [Fact]
+    public void ConfigureFromEnvironmentUsesTheNamedChannel()
+    {
+        using VariableOverride browser = new(BrowserVariableName, "chrome");
+        using VariableOverride channel = new(ChannelVariableName, "extendedsupport");
+
+        BrowserLauncherConfigurationException exception = Assert.Throws<BrowserLauncherConfigurationException>(() => BrowserLauncher.ConfigureFromEnvironment().Build());
+
+        Assert.Contains("ExtendedSupport", exception.Message);
+    }
+
+    [Theory]
+    [InlineData(BrowserVariableName, "opera", "Chrome, Firefox, Edge, Safari")]
+    [InlineData(BrowserVariableName, "0", "Chrome, Firefox, Edge, Safari")]
+    [InlineData(ChannelVariableName, "nightly", "Stable, DeveloperPreview, Beta, Alpha, ExtendedSupport")]
+    public void ConfigureFromEnvironmentRejectsUnknownNames(string name, string value, string expectedNames)
+    {
+        using VariableOverride browser = new(BrowserVariableName, null);
+        using VariableOverride channel = new(ChannelVariableName, null);
+        using VariableOverride variable = new(name, value);
+
+        BrowserLauncherConfigurationException exception = Assert.Throws<BrowserLauncherConfigurationException>(BrowserLauncher.ConfigureFromEnvironment);
+
+        Assert.Equal($"Environment variable {name} is '{value}'; it must be one of {expectedNames}.", exception.Message);
     }
 
     private sealed class VariableOverride : IDisposable

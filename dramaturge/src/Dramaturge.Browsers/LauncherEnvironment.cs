@@ -27,6 +27,21 @@ internal static class LauncherEnvironment
     internal const string DownloadManifestVariableName = "DRAMATURGE_DOWNLOAD_MANIFEST";
 
     /// <summary>
+    /// The variable naming the browser <see cref="BrowserLauncher.ConfigureFromEnvironment"/> launches.
+    /// </summary>
+    internal const string BrowserVariableName = "DRAMATURGE_BROWSER";
+
+    /// <summary>
+    /// The variable naming the release channel <see cref="BrowserLauncher.ConfigureFromEnvironment"/> launches.
+    /// </summary>
+    internal const string ChannelVariableName = "DRAMATURGE_CHANNEL";
+
+    /// <summary>
+    /// The variable that, set to "1" or "true", makes <see cref="BrowserLauncher.ConfigureFromEnvironment"/> show the browser.
+    /// </summary>
+    internal const string HeadedVariableName = "DRAMATURGE_HEADED";
+
+    /// <summary>
     /// Gets the value of an environment variable.
     /// </summary>
     /// <param name="name">The variable name.</param>
@@ -35,6 +50,33 @@ internal static class LauncherEnvironment
     {
         string? value = Environment.GetEnvironmentVariable(name);
         return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    /// <summary>
+    /// Gets the value of an environment variable naming a member of an enumeration, in any case.
+    /// </summary>
+    /// <typeparam name="T">The enumeration.</typeparam>
+    /// <param name="name">The variable name.</param>
+    /// <param name="defaultValue">The value if the variable is unset.</param>
+    /// <returns>The member the variable names, or <paramref name="defaultValue"/> if it is unset.</returns>
+    /// <exception cref="BrowserLauncherConfigurationException">Thrown when the variable names no member.</exception>
+    public static T GetEnumVariable<T>(string name, T defaultValue)
+        where T : struct, Enum
+    {
+        string? value = GetVariable(name)?.Trim();
+        if (value is null)
+        {
+            return defaultValue;
+        }
+
+        // Names only: Enum.TryParse also accepts numbers.
+        string? member = Array.Find(Enum.GetNames(typeof(T)), candidate => string.Equals(candidate, value, StringComparison.OrdinalIgnoreCase));
+        if (member is null)
+        {
+            throw new BrowserLauncherConfigurationException($"Environment variable {name} is '{value}'; it must be one of {string.Join(", ", Enum.GetNames(typeof(T)))}.");
+        }
+
+        return (T)Enum.Parse(typeof(T), member);
     }
 
     /// <summary>

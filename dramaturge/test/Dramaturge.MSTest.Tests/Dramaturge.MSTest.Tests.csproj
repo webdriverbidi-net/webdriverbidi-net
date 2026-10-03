@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Dramaturge.MSTest</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest" Version="4.4.1" />
+    <PackageReference Include="coverlet.MTP" Version="10.0.1" />
+    <PackageReference Include="PinchHitter" Version="0.0.20" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../Dramaturge.Tests/TestUtilities/FakeBrowserServer.cs;../Dramaturge.Tests/TestUtilities/FakeContext.cs;../Dramaturge.Tests/TestUtilities/FakeRemoteEnd.cs;../Dramaturge.Tests/TestUtilities/FakeResponse.cs;../Dramaturge.Tests/TestUtilities/FakeSession.cs" Link="TestUtilities/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dramaturge.MSTest\Dramaturge.MSTest.csproj" />
+  </ItemGroup>
+
+</Project>
