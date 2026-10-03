@@ -22,7 +22,9 @@ public sealed class TestPageServer : IAsyncDisposable
     {
         foreach (string file in Directory.EnumerateFiles(Path.Combine(AppContext.BaseDirectory, "content")))
         {
-            this.server.RegisterHandler($"/{Path.GetFileName(file)}", new WebResourceRequestHandler(File.ReadAllBytes(file)) { MimeType = "text/html;charset=utf-8" });
+            // A worker's script must be served as JavaScript.
+            string mimeType = Path.GetExtension(file) == ".js" ? "text/javascript;charset=utf-8" : "text/html;charset=utf-8";
+            this.server.RegisterHandler($"/{Path.GetFileName(file)}", new WebResourceRequestHandler(File.ReadAllBytes(file)) { MimeType = mimeType });
         }
 
         this.server.RegisterHandler("/gated.gif", new GatedHandler(this.gate.Task));

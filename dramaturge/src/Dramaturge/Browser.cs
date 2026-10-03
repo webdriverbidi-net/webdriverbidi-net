@@ -5,6 +5,7 @@
 
 namespace Dramaturge;
 
+using System.Text.RegularExpressions;
 using WebDriverBiDi;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
@@ -24,6 +25,7 @@ public sealed class Browser
 
     private readonly object lockObject = new();
     private readonly List<Page> pages = [];
+    private readonly List<RouteRegistration> routes = [];
     private readonly ObservableEventInvocable<PageEventArgs> onPageCreated = new("automation.pageCreated");
     private readonly ObservableEventInvocable<PageEventArgs> onPageClosed = new("automation.pageClosed");
 
@@ -88,6 +90,72 @@ public sealed class Browser
         CreateCommandParameters parameters = new(type) { UserContextId = this.Id };
         CreateCommandResult result = await this.Group.Driver.BrowsingContext.CreateAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
         return await this.AddPageAsync(result.BrowsingContextId, "about:blank").ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Adds a route for requests the browser's pages, their frames, and its workers make to a URL.
+    /// </summary>
+    /// <param name="url">The request's full URL.</param>
+    /// <param name="handler">The handler, which answers, continues, or aborts each request.</param>
+    /// <param name="filter">A pattern the browser matches first, so that only requests it matches are stopped, or <see langword="null"/> to stop every request while the route exists.</param>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    public Task<RouteRegistration> RouteAsync(string url, Func<Route, Task> handler, UrlPattern? filter = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddRouteAsync(request => request.Url == url, url, handler, filter, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a route for requests the browser's pages, their frames, and its workers make to URLs matching a regular
+    /// expression.
+    /// </summary>
+    /// <param name="url">The regular expression, matched against the request's full URL.</param>
+    /// <param name="handler">The handler, which answers, continues, or aborts each request.</param>
+    /// <param name="filter">A pattern the browser matches first, so that only requests it matches are stopped, or <see langword="null"/> to stop every request while the route exists.</param>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    public Task<RouteRegistration> RouteAsync(Regex url, Func<Route, Task> handler, UrlPattern? filter = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddRouteAsync(request => url.IsMatch(request.Url), $"URLs matching {url}", handler, filter, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a route for requests the browser's pages, their frames, and its workers make that satisfy a condition,
+    /// including a page's first request, such as a popup's. Requests are stopped before they are sent and handed to
+    /// the routes of the page that made them, newest first, then to the browser's, newest first; a handler that
+    /// does not answer, continue, or abort a request passes it to the next route that matches it, and a request no
+    /// route decides, or whose handler throws, continues as it was, the exception reported on
+    /// <see cref="BrowserGroup.OnLogMessage"/>. The protocol cannot limit stopping requests to one browser, so while
+    /// the route exists, the requests of the group's other browsers that its filter matches are stopped too, and
+    /// continued at once.
+    /// </summary>
+    /// <param name="request">The condition, given the request.</param>
+    /// <param name="handler">The handler, which answers, continues, or aborts each request.</param>
+    /// <param name="filter">A pattern the browser matches first, so that only requests it matches are stopped, or <see langword="null"/> to stop every request while the route exists. A pattern's parts are matched exactly; a part left out matches anything.</param>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns>The route, which can be removed.</returns>
+    public Task<RouteRegistration> RouteAsync(Func<RequestData, bool> request, Func<Route, Task> handler, UrlPattern? filter = null, CancellationToken cancellationToken = default)
+    {
+        return this.AddRouteAsync(request, "requests satisfying the condition", handler, filter, cancellationToken);
+    }
+
+    /// <summary>
+    /// Removes every route of the browser, but not those of its pages. A request already stopped is still handled.
+    /// </summary>
+    /// <param name="cancellationToken">A token that cancels the commands.</param>
+    /// <returns>A task that completes when the routes are removed.</returns>
+    public async Task UnrouteAllAsync(CancellationToken cancellationToken = default)
+    {
+        List<RouteRegistration> removed;
+        lock (this.lockObject)
+        {
+            removed = [.. this.routes];
+        }
+
+        foreach (RouteRegistration route in removed)
+        {
+            await route.RemoveAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -197,6 +265,9 @@ public sealed class Browser
 
         await this.Group.Driver.Browser.RemoveUserContextAsync(new RemoveUserContextCommandParameters(this.Id), cancellationToken: cancellationToken).ConfigureAwait(false);
         this.Group.RemoveBrowser(this);
+
+        // A browser's routes stop the requests of every browser, so they must not outlive it.
+        await this.UnrouteAllAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -249,6 +320,52 @@ public sealed class Browser
         await page.NotifyClosedAsync().ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Hands a stopped request to the routes that stopped it: the page's, newest first, then the browser's, newest
+    /// first, continuing it if none decides.
+    /// </summary>
+    /// <param name="page">The page that made the request, or <see langword="null"/> if no tracked page did.</param>
+    /// <param name="frame">The frame that made the request, or <see langword="null"/> if no tracked frame did.</param>
+    /// <param name="e">The request's event.</param>
+    /// <returns>A task that completes when the request has been handled.</returns>
+    internal async Task HandleBlockedRequestAsync(Page? page, Frame? frame, BeforeRequestSentEventArgs e)
+    {
+        List<RouteRegistration> stopping = page?.FindStoppingRoutes(e.Intercepts!) ?? [];
+        lock (this.lockObject)
+        {
+            stopping.AddRange(this.routes.FindAll(route => e.Intercepts!.Contains(route.InterceptId)));
+        }
+
+        Route routed = new(this, page, frame, e.Request);
+        foreach (RouteRegistration route in stopping)
+        {
+            try
+            {
+                if (!route.Matches(e.Request))
+                {
+                    continue;
+                }
+
+                await route.Handler(routed).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                await this.Group.LogAsync($"The route for {route.Description} failed handling a request to {e.Request.Url}: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+                break;
+            }
+
+            if (routed.IsHandled)
+            {
+                return;
+            }
+        }
+
+        if (!routed.IsHandled)
+        {
+            await this.Group.ContinueRequestAsync(e.Request).ConfigureAwait(false);
+        }
+    }
+
     private static CookieFilter? CreateFilter(string? domain, string? name)
     {
         return domain is null && name is null ? null : new CookieFilter() { Domain = domain, Name = name };
@@ -270,5 +387,35 @@ public sealed class Browser
         SetDownloadBehaviorCommandParameters parameters = new() { DownloadBehavior = behavior };
         parameters.UserContexts.Add(this.Id);
         return this.Group.Driver.Browser.SetDownloadBehaviorAsync(parameters, cancellationToken: cancellationToken);
+    }
+
+    private void RemoveRoute(RouteRegistration route)
+    {
+        lock (this.lockObject)
+        {
+            this.routes.Remove(route);
+        }
+    }
+
+    // Each route has its own intercept, with its filter, for every page of every browser: an intercept can be limited
+    // to pages, but not to a user context.
+    private async Task<RouteRegistration> AddRouteAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken)
+    {
+        await this.Group.EnsureNetworkEventsAsync(cancellationToken).ConfigureAwait(false);
+        AddInterceptCommandParameters parameters = new(InterceptPhase.BeforeRequestSent);
+        if (filter is not null)
+        {
+            parameters.UrlPatterns.Add(filter);
+        }
+
+        string interceptId = (await this.Group.Driver.Network.AddInterceptAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false)).InterceptId;
+        this.Group.TrackIntercept(interceptId);
+        RouteRegistration route = new(this.Group, this.RemoveRoute, matches, description, handler, interceptId);
+        lock (this.lockObject)
+        {
+            this.routes.Insert(0, route);
+        }
+
+        return route;
     }
 }

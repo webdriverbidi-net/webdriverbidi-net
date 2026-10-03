@@ -493,6 +493,14 @@ public sealed class BrowserGroup : IAsyncDisposable
         }
     }
 
+    private Browser? FindBrowser(string userContextId)
+    {
+        lock (this.lockObject)
+        {
+            return this.browsers.Find(browser => browser.Id == userContextId);
+        }
+    }
+
     private Browser GetOrAddBrowser(string userContextId)
     {
         lock (this.lockObject)
@@ -595,7 +603,9 @@ public sealed class BrowserGroup : IAsyncDisposable
             return Task.CompletedTask;
         }
 
-        return frame is null ? this.ContinueRequestAsync(e.Request) : frame.Page.HandleBlockedRequestAsync(frame, e);
+        // A request no tracked page made, such as a worker's, belongs to the browser of its user context.
+        Browser? browser = frame?.Page.Browser ?? (e.UserContextId is string userContextId ? this.FindBrowser(userContextId) : null);
+        return browser is null ? this.ContinueRequestAsync(e.Request) : browser.HandleBlockedRequestAsync(frame?.Page, frame, e);
     }
 
     private Task OnContextDestroyedAsync(ContextDestroyedEventArgs e)

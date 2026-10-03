@@ -251,6 +251,133 @@ public class NetworkTests
         await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => DriveAsync(time, wait));
     }
 
+    [Fact]
+    public async Task BrowserRoutesAddAnInterceptForEveryPage()
+    {
+        (BiDiDriver driver, FakeSession session, BrowserGroup group, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+
+        RouteRegistration exact = await page.Browser.RouteAsync(RequestUrl, _ => Task.CompletedTask, cancellationToken: TestContext.Current.CancellationToken);
+        RouteRegistration matching = await page.Browser.RouteAsync(new Regex("/api/"), _ => Task.CompletedTask, new UrlPatternPattern() { HostName = "example.com" }, TestContext.Current.CancellationToken);
+        RouteRegistration satisfying = await page.Browser.RouteAsync(_ => true, _ => Task.CompletedTask, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal([RequestUrl, "URLs matching /api/", "requests satisfying the condition"], new[] { exact, matching, satisfying }.Select(route => route.Description));
+        IReadOnlyList<JsonObject> intercepts = session.RemoteEnd.CommandsFor("network.addIntercept");
+        Assert.All(intercepts, intercept => Assert.False(intercept["params"]!.AsObject().ContainsKey("contexts")));
+        Assert.Equal("example.com", (string?)intercepts[1]["params"]!["urlPatterns"]![0]!["hostname"]);
+    }
+
+    [Fact]
+    public async Task PageRoutesAreTriedBeforeBrowserRoutesEachNewestFirst()
+    {
+        (BiDiDriver driver, FakeSession session, BrowserGroup group, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        List<string> tried = [];
+        TaskCompletionSource<Route> fulfilled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await page.Browser.RouteAsync(RequestUrl, async route =>
+        {
+            tried.Add("older browser route");
+            await route.FulfillAsync(200, "{}");
+            fulfilled.TrySetResult(route);
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        await page.Browser.RouteAsync(RequestUrl, _ => { tried.Add("newer browser route"); return Task.CompletedTask; }, cancellationToken: TestContext.Current.CancellationToken);
+        await page.RouteAsync(RequestUrl, _ => { tried.Add("page route"); return Task.CompletedTask; }, cancellationToken: TestContext.Current.CancellationToken);
+
+        await session.RemoteEnd.RaiseEventAsync("network.beforeRequestSent", BlockedRequest(page.Id, InterceptIds(session)));
+        Route route = await fulfilled.Task.WaitAsync(EventWait, TestContext.Current.CancellationToken);
+
+        Assert.Equal(["page route", "newer browser route", "older browser route"], tried);
+        Assert.Same(page.Browser, route.Browser);
+        Assert.Same(page, route.Page);
+        Assert.Same(page.MainFrame, route.Frame);
+    }
+
+    [Fact]
+    public async Task RequestsOfAnotherBrowserStoppedByABrowserRouteContinueAtOnce()
+    {
+        (BiDiDriver driver, FakeSession session, BrowserGroup group, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        Browser other = await group.CreateBrowserAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Page otherPage = await other.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        List<string> tried = [];
+        await page.Browser.RouteAsync(RequestUrl, _ => { tried.Add("route"); return Task.CompletedTask; }, cancellationToken: TestContext.Current.CancellationToken);
+
+        await session.RemoteEnd.RaiseEventAsync("network.beforeRequestSent", BlockedRequest(otherPage.Id, InterceptIds(session)));
+        JsonObject continued = await session.RemoteEnd.WaitForCommandAsync("network.continueRequest");
+
+        Assert.Equal("request-1", (string?)continued["params"]!["request"]);
+        Assert.Empty(tried);
+    }
+
+    [Fact]
+    public async Task RequestsOfNoPageGoToTheBrowserOfTheirUserContext()
+    {
+        (BiDiDriver driver, FakeSession session, BrowserGroup group, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        TaskCompletionSource<Route> routed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await page.Browser.RouteAsync(RequestUrl, async route =>
+        {
+            await route.AbortAsync();
+            routed.TrySetResult(route);
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        JsonObject worker = BlockedRequest(null, InterceptIds(session), "request-worker");
+        worker["userContext"] = page.Browser.Id;
+        JsonObject unknown = BlockedRequest(null, InterceptIds(session), "request-unknown-browser");
+        unknown["userContext"] = "no-such-user-context";
+
+        await session.RemoteEnd.RaiseEventAsync("network.beforeRequestSent", unknown);
+        await session.RemoteEnd.RaiseEventAsync("network.beforeRequestSent", worker);
+        Route route = await routed.Task.WaitAsync(EventWait, TestContext.Current.CancellationToken);
+
+        Assert.Same(page.Browser, route.Browser);
+        Assert.Null(route.Page);
+        Assert.Null(route.Frame);
+        Assert.Equal("request-worker", (string?)Assert.Single(session.RemoteEnd.CommandsFor("network.failRequest"))["params"]!["request"]);
+        Assert.Equal("request-unknown-browser", (string?)Assert.Single(session.RemoteEnd.CommandsFor("network.continueRequest"))["params"]!["request"]);
+    }
+
+    [Fact]
+    public async Task HandlerThatDecidesThenThrowsIsReportedWithoutContinuing()
+    {
+        (BiDiDriver driver, FakeSession session, BrowserGroup group, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        TaskCompletionSource<string> reported = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        group.OnLogMessage.AddObserver(e => reported.TrySetResult(e.Message));
+        await page.Browser.RouteAsync(RequestUrl, async route =>
+        {
+            await route.AbortAsync();
+            throw new InvalidOperationException("handler broke");
+        }, cancellationToken: TestContext.Current.CancellationToken);
+
+        await session.RemoteEnd.RaiseEventAsync("network.beforeRequestSent", BlockedRequest(page.Id, InterceptIds(session)));
+        string message = await reported.Task.WaitAsync(EventWait, TestContext.Current.CancellationToken);
+        await driver.Session.StatusAsync(new WebDriverBiDi.Session.StatusCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal($"The route for {RequestUrl} failed handling a request to {RequestUrl}: handler broke", message);
+        Assert.Single(session.RemoteEnd.CommandsFor("network.failRequest"));
+        Assert.Empty(session.RemoteEnd.CommandsFor("network.continueRequest"));
+    }
+
+    [Fact]
+    public async Task BrowserRoutesAreRemovedByRemovalUnroutingOrClosingTheBrowser()
+    {
+        (BiDiDriver driver, FakeSession session, BrowserGroup group, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        Browser created = await group.CreateBrowserAsync(cancellationToken: TestContext.Current.CancellationToken);
+        RouteRegistration removed = await page.Browser.RouteAsync(RequestUrl, _ => Task.CompletedTask, cancellationToken: TestContext.Current.CancellationToken);
+        await page.Browser.RouteAsync(RequestUrl, _ => Task.CompletedTask, cancellationToken: TestContext.Current.CancellationToken);
+        await page.RouteAsync(RequestUrl, _ => Task.CompletedTask, cancellationToken: TestContext.Current.CancellationToken);
+        await created.RouteAsync(RequestUrl, _ => Task.CompletedTask, cancellationToken: TestContext.Current.CancellationToken);
+        string[] interceptIds = InterceptIds(session);
+
+        await removed.RemoveAsync(TestContext.Current.CancellationToken);
+        await page.Browser.UnrouteAllAsync(TestContext.Current.CancellationToken);
+        await created.CloseAsync(TestContext.Current.CancellationToken);
+
+        // The page's own route is not the browser's to remove.
+        Assert.Equal([interceptIds[0], interceptIds[1], interceptIds[3]], session.RemoteEnd.CommandsFor("network.removeIntercept").Select(command => (string)command["params"]!["intercept"]!));
+    }
+
     private static async Task<(BiDiDriver Driver, FakeSession Session, BrowserGroup Group, Page Page, FakeTimeProvider Time)> OpenPageAsync()
     {
         FakeTimeProvider time = new();

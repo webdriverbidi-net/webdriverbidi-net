@@ -8,24 +8,27 @@ namespace Dramaturge;
 using WebDriverBiDi.Network;
 
 /// <summary>
-/// A route a page added, which can be removed.
+/// A route a page or a browser added, which can be removed.
 /// </summary>
 public sealed class RouteRegistration
 {
-    private readonly Page page;
+    private readonly BrowserGroup group;
+    private readonly Action<RouteRegistration> forget;
     private readonly Func<RequestData, bool> matches;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RouteRegistration"/> class.
     /// </summary>
-    /// <param name="page">The page the route belongs to.</param>
+    /// <param name="group">The group whose driver added the route's intercept.</param>
+    /// <param name="forget">Removes the route from the page or browser it belongs to.</param>
     /// <param name="matches">Whether a request is the route's.</param>
     /// <param name="description">What the route matches, for messages.</param>
     /// <param name="handler">The route's handler.</param>
     /// <param name="interceptId">The ID of the route's network intercept.</param>
-    internal RouteRegistration(Page page, Func<RequestData, bool> matches, string description, Func<Route, Task> handler, string interceptId)
+    internal RouteRegistration(BrowserGroup group, Action<RouteRegistration> forget, Func<RequestData, bool> matches, string description, Func<Route, Task> handler, string interceptId)
     {
-        this.page = page;
+        this.group = group;
+        this.forget = forget;
         this.matches = matches;
         this.Description = description;
         this.Handler = handler;
@@ -54,9 +57,9 @@ public sealed class RouteRegistration
     /// <returns>A task that completes when the route is removed.</returns>
     public Task RemoveAsync(CancellationToken cancellationToken = default)
     {
-        this.page.RemoveRoute(this);
-        this.page.Browser.Group.UntrackIntercept(this.InterceptId);
-        return this.page.Browser.Group.Driver.Network.RemoveInterceptAsync(new RemoveInterceptCommandParameters(this.InterceptId), cancellationToken: cancellationToken);
+        this.forget(this);
+        this.group.UntrackIntercept(this.InterceptId);
+        return this.group.Driver.Network.RemoveInterceptAsync(new RemoveInterceptCommandParameters(this.InterceptId), cancellationToken: cancellationToken);
     }
 
     /// <summary>

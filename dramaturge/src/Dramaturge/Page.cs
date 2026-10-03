@@ -870,46 +870,15 @@ public sealed class Page
     }
 
     /// <summary>
-    /// Hands a request the page's routes stopped to their handlers, newest first, continuing it if none decides.
+    /// Gets the page's routes that stopped a request, newest first.
     /// </summary>
-    /// <param name="frame">The frame that made the request.</param>
-    /// <param name="e">The request's event.</param>
-    /// <returns>A task that completes when the request has been handled.</returns>
-    internal async Task HandleBlockedRequestAsync(Frame frame, BeforeRequestSentEventArgs e)
+    /// <param name="intercepts">The IDs of the intercepts that stopped the request.</param>
+    /// <returns>The routes.</returns>
+    internal List<RouteRegistration> FindStoppingRoutes(IList<string> intercepts)
     {
-        List<RouteRegistration> stopping;
         lock (this.lockObject)
         {
-            stopping = this.routes.FindAll(route => e.Intercepts!.Contains(route.InterceptId));
-        }
-
-        Route routed = new(this, frame, e.Request);
-        foreach (RouteRegistration route in stopping)
-        {
-            try
-            {
-                if (!route.Matches(e.Request))
-                {
-                    continue;
-                }
-
-                await route.Handler(routed).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                await this.Browser.Group.LogAsync($"The route for {route.Description} failed handling a request to {e.Request.Url}: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
-                break;
-            }
-
-            if (routed.IsHandled)
-            {
-                return;
-            }
-        }
-
-        if (!routed.IsHandled)
-        {
-            await this.Browser.Group.ContinueRequestAsync(e.Request).ConfigureAwait(false);
+            return this.routes.FindAll(route => intercepts.Contains(route.InterceptId));
         }
     }
 
@@ -975,7 +944,7 @@ public sealed class Page
 
         string interceptId = (await group.Driver.Network.AddInterceptAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false)).InterceptId;
         group.TrackIntercept(interceptId);
-        RouteRegistration route = new(this, matches, description, handler, interceptId);
+        RouteRegistration route = new(group, this.RemoveRoute, matches, description, handler, interceptId);
         lock (this.lockObject)
         {
             this.routes.Insert(0, route);

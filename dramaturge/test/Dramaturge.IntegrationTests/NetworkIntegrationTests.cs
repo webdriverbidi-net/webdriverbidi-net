@@ -109,6 +109,54 @@ public class NetworkIntegrationTests
         Assert.Equal(200UL, response.Response.Status);
     }
 
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task BrowserRouteAnswersAPopupsFirstRequest(BrowserKind browserKind)
+    {
+        Assert.SkipWhen(browserKind == BrowserKind.Chrome, "Chrome neither stops nor reports a popup's first request, so no route can answer it.");
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await OpenAsync(group, server);
+        TaskCompletionSource<Page> opened = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        page.OnPopup.AddObserver(e => opened.TrySetResult(e.Page));
+        ConcurrentQueue<Route> answered = new();
+        await page.Browser.RouteAsync(server.UrlFor("routed.html"), route =>
+        {
+            answered.Enqueue(route);
+            return route.FulfillAsync(200, "<!DOCTYPE html><title>Routed popup</title>", new Dictionary<string, string>() { ["Content-Type"] = "text/html" });
+        }, cancellationToken: TestContext.Current.CancellationToken);
+
+        await page.Locate(new CssLocator("#popup-routed")).ClickAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Page popup = await opened.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await popup.WaitForUrlAsync(server.UrlFor("routed.html"), cancellationToken: TestContext.Current.CancellationToken);
+
+        // The server has no routed.html, so the popup loaded only because the route answered its first request.
+        Route route = Assert.Single(answered);
+        Assert.Same(popup, route.Page);
+        Assert.Same(page.Browser, route.Browser);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task BrowserRouteAnswersItsOwnPagesAndWorkersAndLeavesOtherBrowsersAlone(BrowserKind browserKind)
+    {
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await OpenAsync(group, server);
+        Browser other = await group.CreateBrowserAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Page otherPage = await other.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await otherPage.NavigateAsync(server.UrlFor("network.html"), cancellationToken: TestContext.Current.CancellationToken);
+        await page.Browser.RouteAsync(server.UrlFor("data.txt"), route => route.FulfillAsync(200, "routed data", new Dictionary<string, string>() { ["Content-Type"] = "text/plain" }), cancellationToken: TestContext.Current.CancellationToken);
+
+        string fromPage = await ClickAndReadAsync(page, "#fetch-file", "file");
+        string fromWorker = await ClickAndReadAsync(page, "#fetch-worker", "worker");
+        string fromOtherBrowser = await ClickAndReadAsync(otherPage, "#fetch-file", "file");
+
+        Assert.Equal("routed data", fromPage);
+        Assert.Equal("routed data", fromWorker);
+        Assert.Equal("server data", fromOtherBrowser);
+    }
+
     private static async Task<Page> OpenAsync(BrowserGroup group, TestPageServer server)
     {
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);

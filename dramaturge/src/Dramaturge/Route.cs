@@ -8,7 +8,7 @@ namespace Dramaturge;
 using WebDriverBiDi.Network;
 
 /// <summary>
-/// A request a page's route stopped before it was sent, to be answered with a response, continued, or aborted.
+/// A request a route stopped before it was sent, to be answered with a response, continued, or aborted.
 /// A route handler that does none of these passes the request to the next route that matches it; a request no
 /// route decides continues as it was.
 /// </summary>
@@ -19,20 +19,28 @@ public sealed class Route
     /// <summary>
     /// Initializes a new instance of the <see cref="Route"/> class.
     /// </summary>
-    /// <param name="page">The page whose route stopped the request.</param>
+    /// <param name="browser">The browser that made the request.</param>
+    /// <param name="page">The page that made the request, if a page the group tracks made it.</param>
     /// <param name="frame">The frame that made the request, if the group tracks it.</param>
     /// <param name="request">The request.</param>
-    internal Route(Page page, Frame? frame, RequestData request)
+    internal Route(Browser browser, Page? page, Frame? frame, RequestData request)
     {
+        this.Browser = browser;
         this.Page = page;
         this.Frame = frame;
         this.Request = request;
     }
 
     /// <summary>
-    /// Gets the page whose route stopped the request.
+    /// Gets the browser that made the request.
     /// </summary>
-    public Page Page { get; }
+    public Browser Browser { get; }
+
+    /// <summary>
+    /// Gets the page that made the request, or <see langword="null"/> if no page the group tracks made it, as for a
+    /// worker's request.
+    /// </summary>
+    public Page? Page { get; }
 
     /// <summary>
     /// Gets the frame that made the request, or <see langword="null"/> if it is not a frame the group tracks.
@@ -94,7 +102,7 @@ public sealed class Route
             Headers = ToHeaders(overrides?.Headers),
             Body = overrides?.Body is string body ? BytesValue.FromString(body) : null,
         };
-        return this.Page.Browser.Group.Driver.Network.ContinueRequestAsync(parameters, cancellationToken: cancellationToken);
+        return this.Browser.Group.Driver.Network.ContinueRequestAsync(parameters, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -106,7 +114,7 @@ public sealed class Route
     public Task AbortAsync(CancellationToken cancellationToken = default)
     {
         this.MarkHandled();
-        return this.Page.Browser.Group.Driver.Network.FailRequestAsync(new FailRequestCommandParameters(this.Request.RequestId), cancellationToken: cancellationToken);
+        return this.Browser.Group.Driver.Network.FailRequestAsync(new FailRequestCommandParameters(this.Request.RequestId), cancellationToken: cancellationToken);
     }
 
     private static List<Header>? ToHeaders(IReadOnlyDictionary<string, string>? headers)
@@ -118,7 +126,7 @@ public sealed class Route
     {
         this.MarkHandled();
         ProvideResponseCommandParameters parameters = new(this.Request.RequestId) { StatusCode = statusCode, Body = body, Headers = ToHeaders(headers) };
-        return this.Page.Browser.Group.Driver.Network.ProvideResponseAsync(parameters, cancellationToken: cancellationToken);
+        return this.Browser.Group.Driver.Network.ProvideResponseAsync(parameters, cancellationToken: cancellationToken);
     }
 
     private void MarkHandled()
