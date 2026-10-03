@@ -3,9 +3,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-// Accessibility snapshots from Acquiescence, in a shape the protocol returns in one call.
+// Accessibility snapshots and their templates from Acquiescence, in a shape the protocol returns in one call.
 (() => {
   const generator = new Acquiescence.AriaSnapshotGenerator();
+  const matcher = new Acquiescence.AriaSnapshotMatcher();
   const frameTags = ['IFRAME', 'FRAME'];
 
   return {
@@ -24,6 +25,22 @@
           .filter((reference) => frameTags.includes(reference.element.tagName))
           .map((reference) => reference.element.contentWindow),
       };
+    },
+
+    // The error in a template, or null if it is valid. Matching parses the template before it takes a snapshot, so
+    // matching an empty element checks the template alone.
+    validate(template) {
+      try {
+        matcher.match(document.createElement('div'), template);
+        return null;
+      } catch (error) {
+        return error.message;
+      }
+    },
+
+    // Whether the snapshot of the root matches the template, and the snapshot without refs.
+    match(root, template) {
+      return matcher.match(root, template);
     },
   };
 })()

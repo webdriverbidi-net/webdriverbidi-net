@@ -150,6 +150,74 @@ public class AriaSnapshotIntegrationTests
             snapshot.ToString());
     }
 
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task SnapshotExpectationWaitsUntilTheSnapshotMatches(BrowserKind browserKind)
+    {
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await OpenAsync(group, server, "aria-snapshot.html");
+        ElementLocator main = page.Locate(new CssLocator("main"));
+
+        Task expectation = Expect(main).ToMatchAriaSnapshotAsync(
+            """
+            - main:
+              - heading "Sign in" [level=1]
+              - button "Signed in"
+            """,
+            cancellationToken: TestContext.Current.CancellationToken);
+        await page.Locate(new CssLocator("#go")).ClickAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        await expectation;
+        await Expect(main).Not.ToMatchAriaSnapshotAsync("- button \"Sign in\"", cancellationToken: TestContext.Current.CancellationToken);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task UnmetSnapshotExpectationShowsTheDifference(BrowserKind browserKind)
+    {
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await OpenAsync(group, server, "aria-snapshot.html");
+
+        ExpectationFailedException exception = await Assert.ThrowsAsync<ExpectationFailedException>(() => Expect(page.Locate(new CssLocator("nav"))).ToMatchAriaSnapshotAsync(
+            """
+                - navigation "Main":
+                  - link "About"
+            """,
+            TimeSpan.FromSeconds(1),
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            """
+            Expected css "nav" to match aria snapshot; the snapshot did not match after 1 seconds.
+            - expected
+            + received
+
+              - navigation "Main":
+            -   - link "About"
+            +   - link "Home":
+            +     - /url: index.html
+            """,
+            exception.Message);
+        Assert.Equal("to match aria snapshot", exception.Expected);
+        Assert.Equal("- navigation \"Main\":\n  - link \"Home\":\n    - /url: index.html", exception.Actual);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task InvalidSnapshotTemplateFailsAtOnce(BrowserKind browserKind)
+    {
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await OpenAsync(group, server, "aria-snapshot.html");
+
+        ArgumentException exception = await Assert.ThrowsAsync<ArgumentException>(() => Expect(page.Locate(new CssLocator("#missing"))).ToMatchAriaSnapshotAsync("- buton", cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Equal("template", exception.ParamName);
+        Assert.StartsWith("Invalid aria snapshot template, line 1: Unknown role \"buton\"", exception.Message);
+    }
+
     private static async Task<Page> OpenAsync(BrowserGroup group, TestPageServer server, string path)
     {
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);

@@ -10,6 +10,7 @@ using Dramaturge.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
+using static Dramaturge.Assertions;
 
 public class AriaSnapshotTests
 {
@@ -220,6 +221,133 @@ public class AriaSnapshotTests
         Assert.StartsWith("The snapshot has no ref \"e7\".", exception.Message);
     }
 
+    [Fact]
+    public async Task SnapshotExpectationIsCheckedAgainUntilItMatches()
+    {
+        (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider time) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("nav-1"));
+        int[] matches = [0];
+        AnswerMatches(session, null, () => Interlocked.Increment(ref matches[0]) >= 2, "- navigation");
+
+        await DriveAsync(time, Expect(page.Locate(new CssLocator("nav"))).ToMatchAriaSnapshotAsync("\r\n    - navigation\r\n\r\n", cancellationToken: TestContext.Current.CancellationToken));
+
+        IReadOnlyList<JsonObject> calls = session.RemoteEnd.CommandsFor("script.callFunction");
+        Assert.Equal(3, calls.Count);
+        Assert.Contains("(snapshots, template) => snapshots.validate(template)", (string?)calls[0]["params"]!["functionDeclaration"]);
+        Assert.Equal("- navigation", (string?)calls[0]["params"]!["arguments"]![0]!["value"]);
+        Assert.Equal("nav-1", (string?)calls[2]["params"]!["arguments"]![0]!["sharedId"]);
+        Assert.Equal("- navigation", (string?)calls[2]["params"]!["arguments"]![1]!["value"]);
+    }
+
+    [Fact]
+    public async Task UnmetSnapshotExpectationShowsTheDifference()
+    {
+        (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider time) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("list-1"));
+        AnswerMatches(session, null, () => false, "- list:\n  - listitem: a\n  - listitem: x\n  - listitem: c");
+
+        ExpectationFailedException exception = await Assert.ThrowsAsync<ExpectationFailedException>(() => DriveAsync(time, Expect(page.Locate(new CssLocator("ul"))).ToMatchAriaSnapshotAsync(
+            """
+                - list:
+                  - listitem: a
+
+                  - listitem: b
+                  - listitem: c
+                  - listitem: e
+            """,
+            TimeSpan.FromSeconds(1),
+            TestContext.Current.CancellationToken)));
+
+        Assert.Equal(
+            """
+            Expected css "ul" to match aria snapshot; the snapshot did not match after 1 seconds.
+            - expected
+            + received
+
+              - list:
+                - listitem: a
+            -   - listitem: b
+            +   - listitem: x
+                - listitem: c
+            -   - listitem: e
+            """,
+            exception.Message);
+        Assert.Equal("to match aria snapshot", exception.Expected);
+    }
+
+    [Fact]
+    public async Task EmptySnapshotIsShownAsAnEmptyReceivedLine()
+    {
+        (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider time) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("div-1"));
+        AnswerMatches(session, null, () => false, string.Empty);
+
+        ExpectationFailedException exception = await Assert.ThrowsAsync<ExpectationFailedException>(() => DriveAsync(time, Expect(page.Locate(new CssLocator("div"))).ToMatchAriaSnapshotAsync("- button", TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken)));
+
+        Assert.EndsWith("\n- expected\n+ received\n\n- - button\n+", exception.Message);
+        Assert.Equal(string.Empty, exception.Actual);
+    }
+
+    [Fact]
+    public async Task NegatedSnapshotExpectationShowsWhatMatched()
+    {
+        (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider time) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("nav-1"));
+        AnswerMatches(session, null, () => true, "- navigation");
+
+        ExpectationFailedException exception = await Assert.ThrowsAsync<ExpectationFailedException>(() => DriveAsync(time, Expect(page.Locate(new CssLocator("nav"))).Not.ToMatchAriaSnapshotAsync("- navigation", TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken)));
+
+        Assert.Equal("Expected css \"nav\" not to match aria snapshot; the snapshot matched after 1 seconds.\nReceived:\n- navigation", exception.Message);
+    }
+
+    [Fact]
+    public async Task SnapshotExpectationWithoutAnElementSaysSo()
+    {
+        (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider time) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes(0));
+        AnswerMatches(session, null, () => true, string.Empty);
+        LocatorAssertions expectations = Expect(page.Locate(new CssLocator("nav")));
+
+        await expectations.Not.ToMatchAriaSnapshotAsync("- navigation", cancellationToken: TestContext.Current.CancellationToken);
+        ExpectationFailedException exception = await Assert.ThrowsAsync<ExpectationFailedException>(() => DriveAsync(time, expectations.ToMatchAriaSnapshotAsync("- navigation", TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken)));
+
+        Assert.Equal("Expected css \"nav\" to match aria snapshot; no element matched after 1 seconds.", exception.Message);
+        Assert.Null(exception.Actual);
+    }
+
+    [Fact]
+    public async Task InvalidSnapshotTemplateIsRejectedAtOnce()
+    {
+        (BiDiDriver driver, FakeSession session, Page page, FakeTimeProvider _) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        AnswerMatches(session, "Invalid aria snapshot template, line 1: Unknown role \"buton\"", () => true, string.Empty);
+
+        ArgumentException exception = await Assert.ThrowsAsync<ArgumentException>(() => Expect(page.Locate(new CssLocator("nav"))).ToMatchAriaSnapshotAsync("- buton", cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Equal("template", exception.ParamName);
+        Assert.StartsWith("Invalid aria snapshot template, line 1: Unknown role \"buton\"", exception.Message);
+        Assert.Empty(session.RemoteEnd.CommandsFor("browsingContext.locateNodes"));
+    }
+
+    // Answers the template check with an error, or null for none, and each match with whether it matches and the snapshot.
+    private static void AnswerMatches(FakeSession session, string? templateError, Func<bool> matches, string actual)
+    {
+        session.RemoteEnd.AnswerWith("script.callFunction", parameters => ((string?)parameters["functionDeclaration"])!.Contains("snapshots.validate")
+            ? ProtocolJson.Success(templateError is null ? Null() : new JsonObject() { ["type"] = "string", ["value"] = templateError })
+            : ProtocolJson.Success(new JsonObject()
+            {
+                ["type"] = "object",
+                ["value"] = new JsonArray(
+                    Property("matches", new JsonObject() { ["type"] = "boolean", ["value"] = matches() }),
+                    Property("actual", new JsonObject() { ["type"] = "string", ["value"] = actual })),
+            }));
+    }
+
     private static async Task<(BiDiDriver Driver, FakeSession Session, Page Page, FakeTimeProvider Time)> OpenPageAsync(TimeSpan? actionTimeout = null)
     {
         FakeTimeProvider time = new();
@@ -312,6 +440,17 @@ public class AriaSnapshotTests
     }
 
     // Moves fake time on by one poll interval at a time until the operation completes.
+    private static async Task DriveAsync(FakeTimeProvider time, Task operation)
+    {
+        while (!operation.IsCompleted)
+        {
+            time.Advance(PollInterval);
+            await Task.WhenAny(operation, Task.Delay(5, TestContext.Current.CancellationToken));
+        }
+
+        await operation;
+    }
+
     private static async Task<T> DriveAsync<T>(FakeTimeProvider time, Task<T> operation)
     {
         while (!operation.IsCompleted)

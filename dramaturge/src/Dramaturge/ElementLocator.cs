@@ -949,9 +949,10 @@ public sealed class ElementLocator
     /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <param name="observe">One check, returning <see langword="null"/> when the element was removed while it was checked.</param>
+    /// <param name="describeDetails">Describes what the last check saw, in lines after the failure message's first, or <see langword="null"/> for none.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>
-    internal async Task ExpectAsync(string expected, bool isNot, TimeSpan? timeout, CancellationToken cancellationToken, Func<TimeBudget, Task<Observation?>> observe)
+    internal async Task ExpectAsync(string expected, bool isNot, TimeSpan? timeout, CancellationToken cancellationToken, Func<TimeBudget, Task<Observation?>> observe, Func<string, string>? describeDetails = null)
     {
         TimeBudget budget = new(timeout ?? this.Group.Options.ExpectTimeout, this.Group.Options.TimeProvider, cancellationToken);
         string? actual = null;
@@ -965,12 +966,38 @@ public sealed class ElementLocator
 
             actual = observation.Actual;
             bool holds = observation.Holds != isNot;
-            return (holds, holds, actual is null ? "no element matched" : $"received {actual}");
+            return (holds, holds, actual is null ? "no element matched" : observation.Summary ?? $"received {actual}");
         }).ConfigureAwait(false);
         if (!met)
         {
-            throw new ExpectationFailedException($"Expected {this} {expected}; {observed} after {budget.Duration.TotalSeconds} seconds.", expected, actual, budget.Duration);
+            string details = actual is not null && describeDetails is not null ? describeDetails(actual) : string.Empty;
+            throw new ExpectationFailedException($"Expected {this} {expected}; {observed} after {budget.Duration.TotalSeconds} seconds.{details}", expected, actual, budget.Duration);
         }
+    }
+
+    /// <summary>
+    /// Checks an accessibility snapshot template with the library's script in the locator's frame.
+    /// </summary>
+    /// <param name="template">The template.</param>
+    /// <param name="budget">The time the call may take.</param>
+    /// <returns>What is wrong with the template, with its line and column, or <see langword="null"/> if it is valid.</returns>
+    internal async Task<string?> ValidateAriaTemplateAsync(string template, TimeBudget budget)
+    {
+        RemoteValue error = await this.Group.ScriptHost.CallSnapshotAsync(this.Frame.Id, "(snapshots, template) => snapshots.validate(template)", [LocalValue.String(template)], budget).ConfigureAwait(false);
+        return error is StringRemoteValue message ? message.Value : null;
+    }
+
+    /// <summary>
+    /// Matches the accessibility snapshot of an element against a template with the library's script.
+    /// </summary>
+    /// <param name="node">The element.</param>
+    /// <param name="template">The template, which must be valid.</param>
+    /// <param name="budget">The time the call may take.</param>
+    /// <returns>Whether the snapshot matches, and the snapshot as text without refs.</returns>
+    internal async Task<(bool Matches, string Actual)> MatchAriaSnapshotAsync(NodeRemoteValue node, string template, TimeBudget budget)
+    {
+        RemoteValue result = await this.Group.ScriptHost.CallSnapshotAsync(this.Frame.Id, "(snapshots, root, template) => snapshots.match(root, template)", [node.ToSharedReference(), LocalValue.String(template)], budget).ConfigureAwait(false);
+        return (Property(result, "matches").As<BooleanRemoteValue>().Value, Property(result, "actual").As<StringRemoteValue>().Value);
     }
 
     /// <summary>

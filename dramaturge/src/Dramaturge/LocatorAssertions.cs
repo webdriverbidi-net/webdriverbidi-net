@@ -494,6 +494,50 @@ public sealed class LocatorAssertions
         return this.ExpectCssAsync(name, TextPattern.For(value), timeout, cancellationToken);
     }
 
+    /// <summary>
+    /// Expects the element's accessibility snapshot to match a template written in the snapshot format, such as
+    /// <c>- button "Sign in"</c>. A template matches if some node of the snapshot matches its first node, or, when it
+    /// lists several, if they appear in order beneath one node; children it lists must appear in order among others,
+    /// unless its <c>/children</c> property asks for them exactly. Names and text match exactly, or as regular
+    /// expressions written between slashes; refs are ignored. The snapshot covers the element's document, not the
+    /// content of frames within it.
+    /// </summary>
+    /// <param name="template">The template. Its blank lines, and the indentation its lines share, are ignored.</param>
+    /// <param name="timeout">The time to retry, or <see langword="null"/> for <see cref="DramaturgeOptions.ExpectTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the expectation.</param>
+    /// <returns>A task that completes when the expectation is met.</returns>
+    /// <exception cref="ArgumentException">Thrown when the template is not valid.</exception>
+    /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
+    /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time. Its message shows how the snapshot differs from the template.</exception>
+    public Task ToMatchAriaSnapshotAsync(string template, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        string expected = Unindent(template);
+        bool validated = false;
+        return this.locator.ExpectAsync(
+            this.Describe("to match aria snapshot"),
+            this.isNot,
+            timeout,
+            cancellationToken,
+            async budget =>
+            {
+                if (!validated)
+                {
+                    string? error = await this.locator.ValidateAriaTemplateAsync(expected, budget).ConfigureAwait(false);
+                    validated = error is null ? true : throw new ArgumentException(error, nameof(template));
+                }
+
+                NodeRemoteValue? node = await this.locator.FindOneAsync(budget).ConfigureAwait(false);
+                if (node is null)
+                {
+                    return new Observation(false, null);
+                }
+
+                (bool matches, string actual) = await this.locator.MatchAriaSnapshotAsync(node, expected, budget).ConfigureAwait(false);
+                return new Observation(matches, actual, matches ? "the snapshot matched" : "the snapshot did not match");
+            },
+            actual => this.isNot ? $"\nReceived:\n{actual}" : $"\n- expected\n+ received\n\n{LineDiff.Describe(expected, actual)}");
+    }
+
     // Each pattern must match a later text than the one before it.
     private static bool ContainsInOrder(IReadOnlyList<string> texts, List<TextPattern> patterns)
     {
@@ -507,6 +551,14 @@ public sealed class LocatorAssertions
         }
 
         return matched == patterns.Count;
+    }
+
+    // Removes blank lines, which a template ignores, and the indentation the other lines share.
+    private static string Unindent(string text)
+    {
+        List<string> lines = [.. text.Replace("\r\n", "\n").Split('\n').Where(line => !string.IsNullOrWhiteSpace(line))];
+        int indent = lines.Select(line => line.Length - line.TrimStart().Length).DefaultIfEmpty(0).Min();
+        return string.Join("\n", lines.Select(line => line.Substring(indent)));
     }
 
     private string Describe(string expected)
