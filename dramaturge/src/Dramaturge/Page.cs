@@ -559,6 +559,36 @@ public sealed class Page
     }
 
     /// <summary>
+    /// Starts recording a video of the page, written to a file when the recording is disposed or stopped. The browser
+    /// chooses the format, such as WebM.
+    /// </summary>
+    /// <param name="path">The path of the video file; its folder is created if needed.</param>
+    /// <param name="options">The recording's settings, or <see langword="null"/> for the browser's own.</param>
+    /// <param name="cancellationToken">A token that cancels the command.</param>
+    /// <returns>The recording.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the browser cannot record video.</exception>
+    public async Task<VideoRecording> RecordVideoAsync(string path, VideoRecordingOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        string fullPath = Path.GetFullPath(path);
+        string folder = Path.GetDirectoryName(fullPath)!;
+        Directory.CreateDirectory(folder);
+        StartScreencastCommandParameters parameters = new(this.Id)
+        {
+            DestinationFolder = folder,
+            Video = options is null ? null : new MediaTrackConstraints() { Width = options.Width, Height = options.Height, FrameRate = options.FrameRate },
+        };
+        try
+        {
+            StartScreencastCommandResult result = await this.Browser.Group.Driver.BrowsingContext.StartScreencastAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return new VideoRecording(this, result.ScreencastId, fullPath);
+        }
+        catch (WebDriverBiDiCommandException exception) when (exception.ErrorCode == ErrorCode.UnsupportedOperation)
+        {
+            throw new NotSupportedException($"The browser cannot record video: {exception.Message}", exception);
+        }
+    }
+
+    /// <summary>
     /// Adds a route for requests the page and its frames make to a URL.
     /// </summary>
     /// <param name="url">The request's full URL.</param>

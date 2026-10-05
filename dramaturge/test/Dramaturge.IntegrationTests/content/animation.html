@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Animation</title>
+    <style>
+      #box { width: 100px; height: 100px; background: red; animation: move 1s linear infinite alternate; }
+      @keyframes move { from { transform: translateX(0); background: red; } to { transform: translateX(300px); background: blue; } }
+    </style>
+  </head>
+  <body>
+    <div id="box"></div>
+  </body>
+</html>
