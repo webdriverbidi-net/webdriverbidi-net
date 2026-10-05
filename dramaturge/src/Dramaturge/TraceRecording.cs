@@ -28,6 +28,9 @@ public sealed class TraceRecording : IAsyncDisposable
     // The test framework packages build on this one, and its frames in them are the library's too.
     private static readonly HashSet<string> LibraryAssemblies = ["Dramaturge", "Dramaturge.Browsers", "Dramaturge.MSTest", "Dramaturge.NUnit", "Dramaturge.TUnit", "Dramaturge.Xunit", "WebDriverBiDi", "WebDriverBiDi.Extensions"];
 
+    // Call IDs are unique in the process, as traces merged into one, such as a test's browsers', must not share any.
+    private static int lastCallId;
+
     private readonly Browser browser;
     private readonly TraceRecordingOptions options;
     private readonly NetworkTrafficMonitor monitor;
@@ -39,7 +42,6 @@ public sealed class TraceRecording : IAsyncDisposable
     private readonly List<Task> loadCaptures = [];
     private readonly HashSet<string> sourceFiles = [];
     private readonly SemaphoreSlim stopLock = new(1, 1);
-    private int lastCallId;
     private bool isStopped;
 
     private TraceRecording(Browser browser, string path, TraceRecordingOptions options, NetworkTrafficMonitor monitor)
@@ -353,7 +355,7 @@ public sealed class TraceRecording : IAsyncDisposable
 
     private async Task<T> RecordAsync<T>(Page? page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
     {
-        ActionTrace trace = new(this, $"call@{Interlocked.Increment(ref this.lastCallId)}");
+        ActionTrace trace = new(this, $"call@{Interlocked.Increment(ref lastCallId)}");
         List<TraceStackFrame> stack = CaptureStack();
         if (this.options.Sources)
         {

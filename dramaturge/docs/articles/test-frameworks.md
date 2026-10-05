@@ -4,7 +4,7 @@ Four packages give tests base classes that manage browsers for them, one for eac
 
 - **One browser launch per test run**, shared by every test class, unless a class configures a launch of its own.
 - **An isolated browser and page for each test**, closed when the test ends, so that no cookie or storage carries over from another test.
-- **Screenshots of a failed test's pages**, and videos of them if asked for, saved to files and attached to the test's result.
+- **Screenshots of a failed test's pages**, and videos and a trace if asked for, saved to files and attached to the test's result.
 - **The browser chosen by environment variables**, so that a CI matrix runs the same tests in each browser, or in code.
 
 | Package | Framework |
@@ -141,7 +141,7 @@ Each screenshot is also attached to the test's result, where the framework's rep
 
 | Framework | Attached with |
 | --- | --- |
-| xUnit | `TestContext.AddAttachment`, as an `image/png` attachment, or `video/webm` for a video |
+| xUnit | `TestContext.AddAttachment`, as an `image/png` attachment, `video/webm` for a video, or `application/zip` for a trace |
 | NUnit | `TestContext.AddTestAttachment` |
 | MSTest | `TestContext.AddResultFile` |
 | TUnit | `TestContext.Output.AttachArtifact` |
@@ -161,6 +161,14 @@ With `VideoOnFailure` on, every page a test opens is recorded from when it opens
 Pages are numbered in the order they opened, across all of a test's browsers, so a page's screenshot and video share a number. A page closed before the test failed has a video but no screenshot, so the screenshots' numbers can skip it: `page-1.png` and `page-3.png`, beside `page-1.webm`, `page-2.webm`, and `page-3.webm`.
 
 A browser that cannot record video, such as Chrome, is reported once, and the test runs as usual. A video that cannot be recorded or saved is reported for a failed test, as is one a browser on another machine, such as a remote grid's, wrote there; it is not copied from that machine.
+
+### Traces
+
+With `TraceOnFailure` on, every browser a test opens records a [trace](tracing.md) from when it opens. When the test fails, the browsers' traces are merged into one, `trace.zip`, beside the screenshots, and attached to the test's result; each browser is a context of its own in the viewer, on one timeline. When the test passes, the traces are deleted. Turn it on before the test opens a browser, which for a `PageTest` means in the constructor:
+
+[!code-csharp[Traces](../code/TestFrameworksXunitSamples.cs#Traces)]
+
+`TraceOptions` sets what the traces record; by default they have snapshots, screenshots, and sources. A trace that cannot start is reported for a failed test, and the test runs as usual. Open `trace.zip` at [trace.playwright.dev](https://trace.playwright.dev) or with `npx playwright show-trace`.
 
 ## Lifecycle and Parallel Tests
 

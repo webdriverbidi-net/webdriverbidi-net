@@ -1,6 +1,6 @@
 ---
 name: dramaturge
-description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, test base classes for xUnit, NUnit, MSTest, and TUnit (Dramaturge.Xunit, Dramaturge.NUnit, Dramaturge.MSTest, Dramaturge.TUnit: PageTest, BrowserTest), finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, accessibility snapshots (AriaSnapshotAsync, ToMatchAriaSnapshotAsync), routes for a page or a whole browser, recording and replaying HAR files (RecordHarAsync, RouteFromHarAsync), video (RecordVideoAsync, VideoOnFailure), dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
+description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, test base classes for xUnit, NUnit, MSTest, and TUnit (Dramaturge.Xunit, Dramaturge.NUnit, Dramaturge.MSTest, Dramaturge.TUnit: PageTest, BrowserTest), finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, accessibility snapshots (AriaSnapshotAsync, ToMatchAriaSnapshotAsync), routes for a page or a whole browser, recording and replaying HAR files (RecordHarAsync, RouteFromHarAsync), video (RecordVideoAsync, VideoOnFailure), traces (RecordTraceAsync, TraceOnFailure), dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
 ---
 
 # Dramaturge
@@ -107,6 +107,7 @@ DownloadOutcome outcome = await download.WaitForEndAsync();
 - Dialogs: the browser dismisses them unless the user prompt handler is `Ignore` (`BrowserOptions.UnhandledPromptBehavior`, or on Firefox the session capability); then answer them in `page.OnDialog`, without awaiting the action that opened them.
 - `OnPopup`, `OnConsoleMessage`, `OnPageError`, `OnDownload`; `EvaluateAsync<T>` runs JavaScript in the page; frames come from `locator.ContentFrameAsync()`.
 - Video: `await using VideoRecording video = await page.RecordVideoAsync("run.webm", new VideoRecordingOptions { Width = 1280, Height = 720 })`; disposing or `StopAsync()` ends it and delivers the file. A remote browser keeps the file on its own machine, and `StopAsync()` returns that path.
+- Traces: `await using TraceRecording trace = await browser.RecordTraceAsync("trace.zip", new TraceRecordingOptions { Snapshots = true, Screenshots = true, Sources = true })` records every page of the browser (actions with logs and callers, DOM snapshots, filmstrip, console, network); open the zip at https://trace.playwright.dev or with `npx playwright show-trace` (Playwright 1.63 or later). One trace per browser at a time.
 
 ## Accessibility Snapshots
 

@@ -16,6 +16,8 @@
   href: pages-and-frames.md
 - name: Network
   href: network.md
+- name: Tracing
+  href: tracing.md
 - name: Configuration
   href: configuration.md
 - name: Network Capture

@@ -126,3 +126,21 @@ public class CheckoutTests : PageTest
     }
 }
 #endregion
+
+#region Traces
+public class CartTests : PageTest
+{
+    public CartTests()
+    {
+        this.TraceOnFailure = true;
+    }
+
+    [Fact]
+    public async Task AddsAnItem()
+    {
+        await this.Page.NavigateAsync("https://example.com/catalog");
+        await this.Page.GetByRole("button", "Add to cart").ClickAsync();
+        await Expect(this.Page.GetByTestId("cart-count")).ToHaveTextAsync("1");
+    }
+}
+#endregion

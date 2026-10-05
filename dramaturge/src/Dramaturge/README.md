@@ -18,6 +18,8 @@ waits for the page so that your code does not have to.
 - **Pages** wait for navigation and load states, and handle dialogs, popups, downloads, screenshots, PDFs, video,
   routes that answer or change requests, for a page or a whole browser, cookies, and network capture, with HAR files
   recorded and replayed.
+- **Traces** record a browser's actions, DOM snapshots, screenshots, console, and network traffic, which Playwright's
+  trace viewer opens.
 - Works on .NET Standard 2.0 and .NET 10, and with native AOT.
 
 ## Installation

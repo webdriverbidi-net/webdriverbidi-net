@@ -18,8 +18,10 @@ with one API, and waits for the page so that tests do not have to.
   WebDriver BiDi's input actions.
 - **Asserts with retries**: `Expect` checks a condition again until it holds or its time runs out, and reports what
   it last saw.
-- **Handles the rest of a page**: navigation, dialogs, popups, downloads, screenshots, PDFs, routes that answer or
-  change requests, cookies, and network capture to HAR.
+- **Handles the rest of a page**: navigation, dialogs, popups, downloads, screenshots, PDFs, video, routes that
+  answer or change requests, cookies, and network capture to HAR.
+- **Records traces**: a browser's actions, DOM snapshots, screenshots, console, and network traffic, which
+  Playwright's trace viewer opens.
 
 ## Packages
 
@@ -35,4 +37,5 @@ with one API, and waits for the page so that tests do not have to.
 - [Browser Setup](articles/browser-setup.md): getting a browser to drive
 - [Configuration](articles/configuration.md): timeouts and per-browser settings
 - [Network Capture](articles/network-capture.md): recording a page's traffic
+- [Tracing](articles/tracing.md): recording what a browser did, for Playwright's trace viewer
 - [API Reference](api/index.md)

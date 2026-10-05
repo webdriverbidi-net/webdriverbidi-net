@@ -296,7 +296,7 @@ public sealed class TraceRecordingTests : IDisposable
     }
 
     [Fact]
-    public async Task RecordedActionsAreTheBrowsersOnly()
+    public async Task EachBrowserRecordsItsOwnActionsUnderCallIdsNoOtherTraceUses()
     {
         (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
         await using BiDiDriver ownedDriver = driver;
@@ -305,15 +305,25 @@ public sealed class TraceRecordingTests : IDisposable
         Page otherPage = await other.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         string path = Path.Combine(this.directory, "trace.zip");
 
+        string defaultPath = Path.Combine(this.directory, "default.zip");
+
         await using (await other.RecordTraceAsync(path, cancellationToken: TestContext.Current.CancellationToken))
         {
-            await page.Locate(new CssLocator("button")).CountAsync(TestContext.Current.CancellationToken);
-            await otherPage.Locate(new CssLocator("a")).CountAsync(TestContext.Current.CancellationToken);
+            await using (await page.Browser.RecordTraceAsync(defaultPath, cancellationToken: TestContext.Current.CancellationToken))
+            {
+                await page.Locate(new CssLocator("button")).CountAsync(TestContext.Current.CancellationToken);
+                await otherPage.Locate(new CssLocator("a")).CountAsync(TestContext.Current.CancellationToken);
+            }
         }
 
         List<JsonObject> events = ReadLines(path, "trace.trace");
         Assert.Equal(["css \"a\""], events.Where(e => (string?)e["type"] == "before").Select(e => (string?)e["params"]!["locator"]));
         Assert.Equal([otherPage.Id], events.Where(e => (string?)e["method"] == "page").Select(e => (string?)e["params"]!["pageId"]));
+        List<JsonObject> defaultEvents = ReadLines(defaultPath, "trace.trace");
+        Assert.Equal(["css \"button\""], defaultEvents.Where(e => (string?)e["type"] == "before").Select(e => (string?)e["params"]!["locator"]));
+
+        // Traces of different browsers can be merged into one, so they never share a call ID.
+        Assert.Empty(events.Where(e => (string?)e["type"] == "before").Select(e => (string?)e["callId"]).Intersect(defaultEvents.Where(e => (string?)e["type"] == "before").Select(e => (string?)e["callId"])));
     }
 
     [Fact]

@@ -5,7 +5,7 @@ Use the package for the test framework. Each gives two base classes, with the sa
 - `PageTest`: each test gets `Browser`, a browser of its own (its own cookies and storage), and `Page`, a page in it. Most tests use this.
 - `BrowserTest`: each test gets `Group` and `NewBrowserAsync()`, for tests that need several isolated browsers, such as two users of a chat.
 
-The browser is launched once for the whole run, shared by every class; the browsers a test opens are closed when it ends; a failed test's pages are saved as screenshots (and videos, with `VideoOnFailure`) under `TestResults/Dramaturge` and attached to its result. The examples project, https://github.com/webdriverbidi-net/dramaturge/tree/main/samples/Dramaturge.Examples, is a complete xUnit project built this way.
+The browser is launched once for the whole run, shared by every class; the browsers a test opens are closed when it ends; a failed test's pages are saved as screenshots (and videos with `VideoOnFailure`, a trace with `TraceOnFailure`) under `TestResults/Dramaturge` and attached to its result. The examples project, https://github.com/webdriverbidi-net/dramaturge/tree/main/samples/Dramaturge.Examples, is a complete xUnit project built this way.
 
 ## Registering
 
@@ -98,6 +98,7 @@ The same class with NUnit's `[Test]`, MSTest's `[TestClass]` and `[TestMethod]`,
 - **For every class:** register a class derived from the registration's fixture (`DramaturgeAssemblyFixture`; NUnit: `DramaturgeSetUpFixture`) that overrides `ConfigureLauncher` and `GroupOptions`; MSTest and TUnit pass it to `Register` in place of `new()`. Set `DramaturgeOptions` (timeouts, `TestIdAttribute`) here, not per test.
 - `ScreenshotOnFailure = false` or another `ArtifactsDirectory`, set in a constructor or a test, changes the screenshots.
 - `VideoOnFailure = true` (and `VideoOptions` for size and frame rate) records every page a test opens, keeping `page-N.webm` beside the screenshots when it fails and deleting the videos when it passes. Set it in the constructor: a `PageTest`'s page opens before the test body runs. Pages are numbered in opening order, so a page closed before the failure leaves a gap in the screenshots' numbers.
+- `TraceOnFailure = true` (and `TraceOptions`; by default snapshots, screenshots, and sources) traces every browser a test opens and keeps one merged `trace.zip` beside the screenshots when it fails; set it in the constructor.
 - A remote grid or running browser cannot be headless: from `ConfigureLauncher`, return `BrowserLauncher.Configure(...).LaunchUsingRemoteGrid(url)` rather than changing the environment's builder.
 
 <!-- readme-csharp: docs/code/TestFrameworksXunitSamples.cs#SharedSettings -->
