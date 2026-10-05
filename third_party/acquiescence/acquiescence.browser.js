@@ -21,9 +21,12 @@ var Acquiescence = (() => {
   // src/index.ts
   var index_exports = {};
   __export(index_exports, {
+    ActionRecorder: () => actionRecorder_default,
     AriaSnapshotGenerator: () => ariaSnapshotGenerator_default,
     AriaSnapshotMatcher: () => ariaSnapshotMatcher_default,
     DomSnapshotGenerator: () => domSnapshotGenerator_default,
+    ElementDescriber: () => elementDescriber_default,
+    ElementPicker: () => elementPicker_default,
     ElementStateInspector: () => elementStateInspector_default,
     RequestAnimationFrameWaiter: () => RequestAnimationFrameWaiter,
     TimeoutWaiter: () => TimeoutWaiter
@@ -1264,14 +1267,17 @@ var Acquiescence = (() => {
      * @param element {Element} The element to check.
      * @param interactionType {ElementInteractionType} The type of interaction to check.
      * @param hitPointOffset {?{x: number, y: number}} The offset of the hit point from the center of the element.
-     * @returns {Promise<{ status: ElementInteractionReadyResult, interactionPoint?: { x: number, y: number } }>}
+     * @returns {Promise<ElementInteractionReadiness>}
      * A Promise that resolves to an object with the status of the check.
-     * - 'status' is the status of the check.
+     * - 'status' is the status of the check: 'ready', 'needsscroll' or 'notready'.
      * - 'interactionPoint' is the hit point of the interaction, if the element is ready for the interaction.
-     * - 'needsscroll' if the element is not in the view port, and cannot be scrolled into view due to overflow.
+     * - 'interactionOffset' is the offset of the hit point from the element's in-view center point, if the element is
+     * ready for the interaction.
+     * - 'needsscroll' if the element is not in the view port, but can be scrolled into view.
      * - 'notready' if the element is not ready for the interaction, with a 'reason': the state seen (such as 'hidden',
-     * 'disabled', 'readOnly', 'stable' or 'unviewable'), 'notconnected', 'noteditable' for typing into an element that
-     * cannot be edited, or 'obscured by' and a preview of the element hit instead.
+     * 'disabled', 'readOnly', 'stable', or 'unviewable' for an element hidden by overflow), 'notconnected',
+     * 'noteditable' for typing into an element that cannot be edited, 'element is not in view port', 'element is not
+     * visible' with its size, or 'obscured by' and a preview of the element hit instead.
      */
     async isInteractionReady(element, interactionType, hitPointOffset) {
       const states = ["stable", "visible", "inview"];
@@ -1575,13 +1581,8 @@ var Acquiescence = (() => {
       return hitElement;
     }
     /**
-     * Gets a value indicating whether an element is hidden by overflow of its containing elements.
-     * @param element {Element} The element to check.
-     * @param style {CSSStyleDeclaration} The computed style of the element.
-     * @returns {boolean} True if the element is hidden by overflow; otherwise, false.
-     */
-    /**
-     * Gets the texts of an element's labels.
+     * Gets the texts of an element's labels, as findElementsByLabel matches them: the elements it is labelled by,
+     * its aria-label, or its label elements.
      * @param element The element.
      * @returns {string[]} The texts, or an empty list if the element is not labelled.
      */
@@ -1605,6 +1606,12 @@ var Acquiescence = (() => {
     normalizeWhiteSpace(value) {
       return value.replace(/\s+/g, " ").trim();
     }
+    /**
+     * Gets a value indicating whether an element is hidden by overflow of its containing elements.
+     * @param element {Element} The element to check.
+     * @param style {CSSStyleDeclaration} The computed style of the element.
+     * @returns {boolean} True if the element is hidden by overflow; otherwise, false.
+     */
     isHiddenByOverflow(element, style) {
       if (!this.checkIsHiddenByOverflow(element, style)) {
         return false;
@@ -1865,11 +1872,14 @@ var Acquiescence = (() => {
     }
     /**
      * Finds the nearest element from a node, based on the behavior.
-     * @param node {Node} The node to find the element from.
+     * @param node {Node | null | undefined} The node to find the element from; a caller without types can pass none.
      * @param behavior { 'none' | 'follow-label' | 'no-follow-label' | 'button-link' } The behavior to use.
-     * @returns {Element | null} The nearest element from the node, or null if no element is found.
+     * @returns {Element | null} The nearest element from the node, or null if no element is found or no node given.
      */
     findElementFromNode(node, behavior) {
+      if (!node) {
+        return null;
+      }
       let element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
       if (!element) {
         return null;
@@ -3599,6 +3609,336 @@ ${" ".repeat(column)}^`);
     }
   };
   var domSnapshotGenerator_default = DomSnapshotGenerator;
+
+  // src/elementDescriber.ts
+  var ElementDescriber = class {
+    ariaUtilities = new ariaUtilities_default();
+    nameCalculator = new accessibleNameCalculator_default();
+    inspector = new elementStateInspector_default();
+    // Elements a user acts on as a whole, such as a button around an icon.
+    interactiveSelector = "button, select, input, a, [role=button], [role=checkbox], [role=radio], [role=link]";
+    unnamedRoles = ["generic", "none", "presentation"];
+    /**
+     * Describes the element a user acting on an element acts on: the element itself if it takes text, or else its
+     * closest interactive ancestor, if any; and the ancestors within its root, below the document element, that have
+     * a test ID, an ID, or a role.
+     * @param element {Element} The element acted on.
+     * @param options {ElementDescriptionOptions} Options for the description.
+     * @returns {ElementDescription} The description.
+     */
+    describe(element, options = {}) {
+      const testIdAttribute = options.testIdAttribute ?? "data-testid";
+      const target = this.getActionTarget(element);
+      const ancestors = [];
+      const documentElement = target.ownerDocument.documentElement;
+      for (let ancestor = target.parentElement; ancestor && ancestor !== documentElement && ancestors.length < (options.maxAncestors ?? 3); ancestor = ancestor.parentElement) {
+        if (ancestor.hasAttribute(testIdAttribute) || ancestor.id || this.hasNameableRole(ancestor)) {
+          ancestors.push(this.getFacts(ancestor, testIdAttribute));
+        }
+      }
+      return { target: this.getFacts(target, testIdAttribute), ancestors };
+    }
+    /**
+     * Gets the element a user acting on an element acts on.
+     * @param element {Element} The element acted on.
+     * @returns {Element} The element itself if it takes text, or else its closest interactive ancestor, or itself.
+     */
+    getActionTarget(element) {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName.toUpperCase()) || element.isContentEditable) {
+        return element;
+      }
+      return element.closest(this.interactiveSelector) ?? element;
+    }
+    getFacts(element, testIdAttribute) {
+      return {
+        element,
+        tagName: element.localName,
+        role: this.ariaUtilities.getAriaRole(element),
+        name: this.normalize(this.nameCalculator.getAccessibleName(element)),
+        labels: this.inspector.getElementLabels(element).map((label) => this.normalize(label)),
+        placeholder: element.getAttribute("placeholder"),
+        alt: element.getAttribute("alt"),
+        nameAttribute: element.getAttribute("name"),
+        type: element.getAttribute("type"),
+        title: element.getAttribute("title"),
+        testId: element.getAttribute(testIdAttribute),
+        text: element instanceof HTMLElement ? this.normalize(this.getRenderedText(element)) : "",
+        id: element.id || null,
+        cssPath: this.getCssPath(element),
+        inShadowRoot: element.getRootNode() instanceof ShadowRoot
+      };
+    }
+    // jsdom does not render, so has no innerText; its text content stands in.
+    getRenderedText(element) {
+      return element.innerText ?? element.textContent ?? "";
+    }
+    hasNameableRole(element) {
+      const role = this.ariaUtilities.getAriaRole(element);
+      return role !== null && !this.unnamedRoles.includes(role);
+    }
+    // From the element, or its nearest ancestor with an ID unique in the root, each step down names a child by its tag
+    // and, when siblings share the tag, its position among them.
+    getCssPath(element) {
+      const root = element.getRootNode();
+      const steps = [];
+      for (let current = element; current; current = current.parentElement) {
+        if (current.id && root.querySelectorAll(`#${this.escapeIdentifier(current.id)}`).length === 1) {
+          steps.unshift(`#${this.escapeIdentifier(current.id)}`);
+          break;
+        }
+        const step = current;
+        const sameTag = step.parentElement ? Array.from(step.parentElement.children).filter((sibling) => sibling.localName === step.localName) : [step];
+        const name = this.escapeIdentifier(step.localName);
+        steps.unshift(sameTag.length > 1 ? `${name}:nth-of-type(${sameTag.indexOf(step) + 1})` : name);
+      }
+      return steps.join(" > ");
+    }
+    // https://drafts.csswg.org/cssom/#serialize-an-identifier
+    escapeIdentifier(identifier) {
+      return Array.from(identifier, (character, index) => {
+        const code = character.charCodeAt(0);
+        if (code === 0) {
+          return "\uFFFD";
+        }
+        if (code >= 1 && code <= 31 || code === 127 || /[0-9]/.test(character) && (index === 0 || index === 1 && identifier.startsWith("-"))) {
+          return `\\${code.toString(16)} `;
+        }
+        if (index === 0 && character === "-" && identifier.length === 1) {
+          return "\\-";
+        }
+        return code >= 128 || /[-_a-zA-Z0-9]/.test(character) ? character : `\\${character}`;
+      }).join("");
+    }
+    normalize(text) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+  };
+  var elementDescriber_default = ElementDescriber;
+
+  // src/actionRecorder.ts
+  var ActionRecorder = class {
+    /**
+     * Initializes a new instance of the ActionRecorder class.
+     * @param report {(action: RecordedAction) => void} Called with each action, as it happens.
+     * @param options {ActionRecorderOptions} Options for recording.
+     */
+    constructor(report, options = {}) {
+      this.report = report;
+      this.options = options;
+    }
+    report;
+    options;
+    // Keys that only modify another, or that edit text as typing does.
+    unreportedKeys = ["Alt", "AltGraph", "CapsLock", "Control", "Meta", "Shift", "Dead", "Process", "Unidentified"];
+    textEditingKeys = ["Backspace", "Delete"];
+    selectJumpKeys = ["Home", "End", "PageUp", "PageDown"];
+    buttons = ["left", "middle", "right"];
+    listeners = [
+      ["click", (event) => this.onClick(event)],
+      ["auxclick", (event) => this.onClick(event)],
+      ["input", (event) => this.onInput(event)],
+      ["change", (event) => this.onChange(event)],
+      ["keydown", (event) => this.onKeyDown(event)]
+    ];
+    document = null;
+    /**
+     * Starts recording a document's actions, stopping any recording already started.
+     * @param document {Document} The document.
+     */
+    start(document2) {
+      this.stop();
+      this.document = document2;
+      for (const [type, listener] of this.listeners) {
+        document2.addEventListener(type, listener, true);
+      }
+    }
+    /**
+     * Stops recording.
+     */
+    stop() {
+      for (const [type, listener] of this.listeners) {
+        this.document?.removeEventListener(type, listener, true);
+      }
+      this.document = null;
+    }
+    onClick(event) {
+      const element = this.getRecordedElement(event);
+      if (!element || event.detail === 0 || this.isRecordedByChange(element)) {
+        return;
+      }
+      const button = this.buttons[event.button];
+      if (button === void 0) {
+        return;
+      }
+      this.report({ kind: "click", element, button, clickCount: event.detail, modifiers: this.getModifiers(event) });
+    }
+    onInput(event) {
+      const element = this.getRecordedElement(event);
+      if (!element || !this.takesText(element)) {
+        return;
+      }
+      const value = element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement ? element.value : element.innerText;
+      this.report({ kind: "fill", element, value });
+    }
+    onChange(event) {
+      const element = this.getRecordedElement(event);
+      if (element instanceof HTMLSelectElement) {
+        this.report({ kind: "select", element, values: Array.from(element.selectedOptions, (option) => option.value) });
+      } else if (element instanceof HTMLInputElement && element.type === "file") {
+        this.report({ kind: "setInputFiles", element, files: Array.from(element.files ?? /* istanbul ignore next -- @preserve */
+        [], (file) => file.name) });
+      } else if (element instanceof HTMLInputElement && this.isCheckable(element)) {
+        this.report({ kind: element.checked ? "check" : "uncheck", element });
+      }
+    }
+    onKeyDown(event) {
+      const element = this.getRecordedElement(event);
+      if (!element || this.unreportedKeys.includes(event.key) || this.isRecordedAsText(element, event) || this.isRecordedAsChoice(element, event)) {
+        return;
+      }
+      this.report({ kind: "press", element, key: event.key, modifiers: this.getModifiers(event) });
+    }
+    // Typing into an element that takes text is recorded as its value: characters, the keys that delete them, and
+    // Enter where it makes a new line.
+    isRecordedAsText(element, event) {
+      return this.takesText(element) && !event.ctrlKey && !event.altKey && !event.metaKey && (event.key.length === 1 || this.textEditingKeys.includes(event.key) || event.key === "Enter" && !(element instanceof HTMLInputElement));
+    }
+    // A key that changes a checkbox, a radio button, or a select's choice is recorded as the change: Space, arrows,
+    // and the keys a select jumps by.
+    isRecordedAsChoice(element, event) {
+      const choosing = element instanceof HTMLInputElement && this.isCheckable(element) || element instanceof HTMLSelectElement;
+      return choosing && (event.key.length === 1 || event.key.startsWith("Arrow") || this.selectJumpKeys.includes(event.key));
+    }
+    // The element the event was aimed at, unless the event is a script's or the element is ignored.
+    getRecordedElement(event) {
+      const element = event.composedPath()[0];
+      if (!event.isTrusted || !(element instanceof Element) || this.options.ignore?.(element)) {
+        return null;
+      }
+      return element;
+    }
+    isCheckable(element) {
+      return element.type === "checkbox" || element.type === "radio";
+    }
+    // A click that changes a checkbox, a radio button, a select, or a file input is recorded by the change.
+    isRecordedByChange(element) {
+      const control = element instanceof HTMLLabelElement ? element.control : element;
+      return control instanceof HTMLInputElement && (this.isCheckable(control) || control.type === "file") || element.closest("select") !== null;
+    }
+    takesText(element) {
+      if (element instanceof HTMLInputElement) {
+        return !this.isCheckable(element) && !["button", "submit", "reset", "image", "file", "hidden"].includes(element.type);
+      }
+      return element instanceof HTMLTextAreaElement || element.isContentEditable;
+    }
+    getModifiers(event) {
+      const modifiers = [];
+      if (event.altKey) {
+        modifiers.push("Alt");
+      }
+      if (event.ctrlKey) {
+        modifiers.push("Control");
+      }
+      if (event.metaKey) {
+        modifiers.push("Meta");
+      }
+      if (event.shiftKey) {
+        modifiers.push("Shift");
+      }
+      return modifiers;
+    }
+  };
+  var actionRecorder_default = ActionRecorder;
+
+  // src/elementPicker.ts
+  var ElementPicker = class {
+    /**
+     * Initializes a new instance of the ElementPicker class.
+     * @param pick {(element: Element) => void} Called with each element picked.
+     * @param options {ElementPickerOptions} Options for picking.
+     */
+    constructor(pick, options = {}) {
+      this.pick = pick;
+      this.options = options;
+    }
+    pick;
+    options;
+    suppressedEvents = ["pointerdown", "pointerup", "mousedown", "mouseup", "dblclick", "auxclick", "contextmenu"];
+    picking = null;
+    highlighted = null;
+    /**
+     * Starts picking in a document, stopping any picking already started. The highlight is drawn in a shadow root of
+     * an acquiescence-highlight element added to the document element.
+     * @param document {Document} The document.
+     */
+    start(document2) {
+      this.stop();
+      const host = document2.createElement("acquiescence-highlight");
+      host.setAttribute("style", "position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; z-index: 2147483647;");
+      const box = document2.createElement("div");
+      box.setAttribute("style", "position: fixed; box-sizing: border-box; display: none; pointer-events: none; border: 2px solid #1a73e8; background: rgba(26, 115, 232, 0.2);");
+      host.attachShadow({ mode: "open" }).appendChild(box);
+      document2.documentElement.appendChild(host);
+      const listeners = [
+        ["pointermove", (event) => {
+          this.highlighted = this.getPickedElement(event);
+          this.draw(box);
+        }],
+        ["click", (event) => this.onClick(event)],
+        ["scroll", () => this.draw(box)],
+        ...this.suppressedEvents.map((type) => [type, (event) => this.suppress(event)])
+      ];
+      for (const [type, listener] of listeners) {
+        document2.addEventListener(type, listener, true);
+      }
+      this.picking = { document: document2, host, listeners };
+    }
+    /**
+     * Stops picking, and removes the highlight.
+     */
+    stop() {
+      if (this.picking) {
+        for (const [type, listener] of this.picking.listeners) {
+          this.picking.document.removeEventListener(type, listener, true);
+        }
+        this.picking.host.remove();
+      }
+      this.picking = null;
+      this.highlighted = null;
+    }
+    onClick(event) {
+      const element = this.getPickedElement(event);
+      if (element) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.pick(element);
+      }
+    }
+    suppress(event) {
+      if (this.getPickedElement(event)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    }
+    // Draws the box over the highlighted element, or hides it when there is none.
+    draw(box) {
+      if (!this.highlighted?.isConnected) {
+        box.style.display = "none";
+        return;
+      }
+      const rect = this.highlighted.getBoundingClientRect();
+      Object.assign(box.style, { display: "block", left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
+    }
+    // The element picked for the element the event was aimed at, unless the event is a script's or the element is ignored.
+    getPickedElement(event) {
+      const element = event.composedPath()[0];
+      if (!event.isTrusted || !(element instanceof Element) || this.options.ignore?.(element)) {
+        return null;
+      }
+      return this.options.resolve?.(element) ?? element;
+    }
+  };
+  var elementPicker_default = ElementPicker;
   return __toCommonJS(index_exports);
 })();
 /* istanbul ignore next -- @preserve */
