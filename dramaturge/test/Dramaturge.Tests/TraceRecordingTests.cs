@@ -102,6 +102,26 @@ public sealed class TraceRecordingTests : IDisposable
     }
 
     [Fact]
+    public async Task CallersEndWhereTheLibraryCalledThem()
+    {
+        (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("button-1"));
+        string path = Path.Combine(this.directory, "trace.zip");
+        Task<int>? counted = null;
+        page.Browser.OnPageCreated.AddObserver(e => counted = e.Page.Locate(new CssLocator("button")).CountAsync());
+
+        await using (await page.Browser.RecordTraceAsync(path, cancellationToken: TestContext.Current.CancellationToken))
+        {
+            await page.Browser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+            await counted!;
+        }
+
+        JsonArray stack = ReadLines(path, "trace.trace").Single(e => (string?)e["type"] == "before")["stack"]!.AsArray();
+        Assert.Equal(["TraceRecordingTests.CallersEndWhereTheLibraryCalledThem"], stack.Select(frame => (string?)frame!["function"]));
+    }
+
+    [Fact]
     public async Task PagesOpenedAndClosedAndTheirConsoleMessagesAndErrorsAreRecorded()
     {
         (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();

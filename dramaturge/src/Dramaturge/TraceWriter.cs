@@ -114,20 +114,107 @@ internal sealed class TraceWriter
     /// Writes the event that ends an action.
     /// </summary>
     /// <param name="callId">The action's ID.</param>
+    /// <param name="endTime">When the action ended.</param>
     /// <param name="error">The exception the action threw, or <see langword="null"/>.</param>
-    public void WriteAfter(string callId, Exception? error)
+    public void WriteAfter(string callId, double endTime, Exception? error)
     {
         this.Write(writer =>
         {
             writer.WriteString("type", "after");
             writer.WriteString("callId", callId);
-            writer.WriteNumber("endTime", Now);
+            writer.WriteNumber("endTime", endTime);
             if (error is not null)
             {
                 writer.WritePropertyName("error");
                 WriteError(writer, error.GetType().Name, error.Message, error.ToString());
             }
         });
+    }
+
+    /// <summary>
+    /// Writes the point in the page's viewport at which an action acted.
+    /// </summary>
+    /// <param name="callId">The action's ID.</param>
+    /// <param name="x">The point's distance from the viewport's left, in CSS pixels.</param>
+    /// <param name="y">The point's distance from the viewport's top, in CSS pixels.</param>
+    public void WriteInput(string callId, double x, double y)
+    {
+        this.Write(writer =>
+        {
+            writer.WriteString("type", "input");
+            writer.WriteString("callId", callId);
+            writer.WriteStartObject("point");
+            writer.WriteNumber("x", x);
+            writer.WriteNumber("y", y);
+            writer.WriteEndObject();
+        });
+    }
+
+    /// <summary>
+    /// Writes a snapshot of a frame's DOM, taken for an action.
+    /// </summary>
+    /// <param name="snapshot">The snapshot.</param>
+    public void WriteFrameSnapshot(TraceFrameSnapshot snapshot)
+    {
+        this.Write(writer =>
+        {
+            writer.WriteString("type", "frame-snapshot");
+            writer.WriteStartObject("snapshot");
+            writer.WriteString("phase", snapshot.Phase);
+            writer.WriteString("callId", snapshot.CallId);
+            writer.WriteString("pageId", snapshot.PageId);
+            writer.WriteString("frameId", snapshot.FrameId);
+            writer.WriteString("frameUrl", snapshot.FrameUrl);
+            writer.WriteNumber("timestamp", Now);
+            writer.WriteNumber("wallTime", snapshot.WallTime);
+            writer.WriteNumber("collectionTime", snapshot.CollectionTime);
+            if (snapshot.Doctype is not null)
+            {
+                writer.WriteString("doctype", snapshot.Doctype);
+            }
+
+            writer.WritePropertyName("html");
+            writer.WriteRawValue(snapshot.Html);
+            writer.WriteStartArray("resourceOverrides");
+            writer.WriteEndArray();
+            writer.WriteStartObject("viewport");
+            writer.WriteNumber("width", snapshot.ViewportWidth);
+            writer.WriteNumber("height", snapshot.ViewportHeight);
+            writer.WriteEndObject();
+            writer.WriteBoolean("isMainFrame", snapshot.IsMainFrame);
+            writer.WriteEndObject();
+        });
+    }
+
+    /// <summary>
+    /// Adds a frame of a page's filmstrip.
+    /// </summary>
+    /// <param name="pageId">The page's ID.</param>
+    /// <param name="jpeg">The frame, a JPEG image.</param>
+    public void WriteScreencastFrame(string pageId, byte[] jpeg)
+    {
+        (int width, int height) = JpegSize(jpeg);
+        string file = $"screencast/{pageId}-{Sha1(jpeg)}.jpeg";
+        this.AddFile(file, jpeg);
+        this.Write(writer =>
+        {
+            writer.WriteString("type", "screencast-frame");
+            writer.WriteString("pageId", pageId);
+            writer.WriteString("file", file);
+            writer.WriteNumber("width", width);
+            writer.WriteNumber("height", height);
+            writer.WriteNumber("timestamp", Now);
+        });
+    }
+
+    /// <summary>
+    /// Adds a source file of the code that called an action, named for its path, as the viewer finds it.
+    /// </summary>
+    /// <param name="path">The file's path, as the action's stack names it.</param>
+    /// <param name="content">The file's content.</param>
+    public void AddSource(string path, byte[] content)
+    {
+        this.AddFile($"src/{Sha1(Encoding.UTF8.GetBytes(path))}{System.IO.Path.GetExtension(path)}", content);
     }
 
     /// <summary>
@@ -227,11 +314,7 @@ internal sealed class TraceWriter
     public string AddResource(byte[] content)
     {
         string path = $"resources/{Sha1(content)}";
-        lock (this.lockObject)
-        {
-            this.resources[path] = content;
-        }
-
+        this.AddFile(path, content);
         return path;
     }
 
@@ -285,6 +368,21 @@ internal sealed class TraceWriter
         return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "darwin" : "linux";
     }
 
+    // A JPEG image's size is in its start-of-frame segment, baseline (0xC0) or progressive (0xC2); the segments
+    // before it are skipped by their lengths.
+    private static (int Width, int Height) JpegSize(byte[] jpeg)
+    {
+        for (int index = 2; index + 9 < jpeg.Length; index += 2 + ((jpeg[index + 2] << 8) | jpeg[index + 3]))
+        {
+            if (jpeg[index + 1] == 0xC0 || jpeg[index + 1] == 0xC2)
+            {
+                return ((jpeg[index + 7] << 8) | jpeg[index + 8], (jpeg[index + 5] << 8) | jpeg[index + 6]);
+            }
+        }
+
+        return (0, 0);
+    }
+
     private static string Sha1(byte[] content)
     {
         using SHA1 sha1 = SHA1.Create();
@@ -320,6 +418,14 @@ internal sealed class TraceWriter
         }
 
         writer.WriteEndArray();
+    }
+
+    private void AddFile(string path, byte[] content)
+    {
+        lock (this.lockObject)
+        {
+            this.resources[path] = content;
+        }
     }
 
     private void WriteEvent(string method, string? pageId, Action<Utf8JsonWriter> writeParameters)

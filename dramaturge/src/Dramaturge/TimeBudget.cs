@@ -29,7 +29,7 @@ internal readonly struct TimeBudget
         this.CancellationToken = cancellationToken;
     }
 
-    private TimeBudget(TimeBudget budget, ActionTrace trace)
+    private TimeBudget(TimeBudget budget, ActionTrace? trace)
     {
         this = budget;
         this.Trace = trace;
@@ -73,6 +73,13 @@ internal readonly struct TimeBudget
     /// <param name="trace">The action's trace entry.</param>
     /// <returns>The copy.</returns>
     public TimeBudget WithTrace(ActionTrace trace) => new(this, trace);
+
+    /// <summary>
+    /// Creates a copy of the budget with all its time left again, from now, for an operation whose start was
+    /// delayed by work that is not its own.
+    /// </summary>
+    /// <returns>The copy.</returns>
+    public TimeBudget Restart() => new(new TimeBudget(this.Duration, this.timeProvider, this.CancellationToken), this.Trace);
 
     /// <summary>
     /// Waits for an interval, or for the rest of the budget if less is left.

@@ -78,6 +78,9 @@
     <EmbeddedResource Include="Scripts/aria-snapshot.js">
       <LogicalName>aria-snapshot</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Scripts/dom-snapshot.js">
+      <LogicalName>dom-snapshot</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

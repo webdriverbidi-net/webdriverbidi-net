@@ -23,6 +23,7 @@ var Acquiescence = (() => {
   __export(index_exports, {
     AriaSnapshotGenerator: () => ariaSnapshotGenerator_default,
     AriaSnapshotMatcher: () => ariaSnapshotMatcher_default,
+    DomSnapshotGenerator: () => domSnapshotGenerator_default,
     ElementStateInspector: () => elementStateInspector_default,
     RequestAnimationFrameWaiter: () => RequestAnimationFrameWaiter,
     TimeoutWaiter: () => TimeoutWaiter
@@ -3386,6 +3387,218 @@ ${" ".repeat(column)}^`);
     }
   };
   var ariaSnapshotMatcher_default = AriaSnapshotMatcher;
+
+  // src/domSnapshotGenerator.ts
+  var DomSnapshotGenerator = class {
+    shadowRootAttribute = "__playwright_shadow_root_";
+    valueAttribute = "__playwright_value_";
+    checkedAttribute = "__playwright_checked_";
+    selectedAttribute = "__playwright_selected_";
+    scrollTopAttribute = "__playwright_scroll_top_";
+    scrollLeftAttribute = "__playwright_scroll_left_";
+    styleSheetAttribute = "__playwright_style_sheet_";
+    targetAttribute = "__playwright_target__";
+    customElementsAttribute = "__playwright_custom_elements__";
+    currentSrcAttribute = "__playwright_current_src__";
+    boundingRectAttribute = "__playwright_bounding_rect__";
+    popoverOpenAttribute = "__playwright_popover_open_";
+    dialogOpenAttribute = "__playwright_dialog_open_";
+    // META directives that could navigate, set cookies, or block the viewer's own content when shown.
+    droppedHttpEquivs = ["content-security-policy", "refresh", "set-cookie"];
+    /**
+     * Takes a snapshot of a document.
+     * @param document {Document} The document to take the snapshot of.
+     * @param options {DomSnapshotOptions} Options for the snapshot. If omitted, no element is marked and frames
+     * have an empty src.
+     * @returns {DomSnapshot} The snapshot.
+     */
+    generate(document2, options = {}) {
+      const start = performance.now();
+      const context = { options, customElements: /* @__PURE__ */ new Set(), headNesting: 0 };
+      const html = (document2.documentElement && this.visitElement(document2.documentElement, context)) ?? ["HTML"];
+      const view = document2.defaultView;
+      return {
+        doctype: document2.doctype?.name,
+        html,
+        viewport: { width: view?.innerWidth ?? 0, height: view?.innerHeight ?? 0 },
+        url: document2.URL,
+        wallTime: Date.now(),
+        collectionTime: performance.now() - start
+      };
+    }
+    visit(node, context) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.data;
+      }
+      return node.nodeType === Node.ELEMENT_NODE ? this.visitElement(node, context) : void 0;
+    }
+    visitShadowRoot(shadowRoot, context) {
+      const result = ["template", { [this.shadowRootAttribute]: "open" }];
+      this.visitChildren(shadowRoot, result, context);
+      this.addAdoptedStyleSheets(shadowRoot, result);
+      return result;
+    }
+    visitElement(element, context) {
+      const name = element.nodeName;
+      if (this.isLeftOut(element, name, context)) {
+        return void 0;
+      }
+      if (name === "STYLE") {
+        return [name, this.copyAttributes(element, name), this.styleText(element)];
+      }
+      const attributes = {};
+      this.addState(element, name, attributes, context);
+      const result = [name, attributes];
+      if (element.shadowRoot) {
+        result.push(this.visitShadowRoot(element.shadowRoot, context));
+      }
+      if (name === "HEAD") {
+        result.push(["BASE", { href: element.ownerDocument.baseURI }]);
+        context.headNesting++;
+      }
+      this.visitChildren(element, result, context);
+      if (name === "HEAD") {
+        context.headNesting--;
+      }
+      if (element === element.ownerDocument.documentElement) {
+        this.addAdoptedStyleSheets(element.ownerDocument, result);
+      }
+      if (name === "BODY" && context.customElements.size) {
+        attributes[this.customElementsAttribute] = [...context.customElements].join(",");
+      }
+      Object.assign(attributes, this.copyAttributes(element, name));
+      if (result.length === 2 && !Object.keys(attributes).length) {
+        return [name];
+      }
+      return result;
+    }
+    visitChildren(parent, result, context) {
+      for (let child = parent.firstChild; child; child = child.nextSibling) {
+        const snapshot = this.visit(child, context);
+        if (snapshot !== void 0) {
+          result.push(snapshot);
+        }
+      }
+    }
+    isLeftOut(element, name, context) {
+      if (name === "SCRIPT" || name === "NOSCRIPT") {
+        return true;
+      }
+      if (name === "LINK") {
+        const rel = (element.getAttribute("rel") ?? "").toLowerCase().split(/\s+/);
+        return rel.includes("preload") || rel.includes("prefetch");
+      }
+      if (name === "META") {
+        return this.droppedHttpEquivs.includes((element.getAttribute("http-equiv") ?? "").toLowerCase());
+      }
+      return (name === "IFRAME" || name === "FRAME") && context.headNesting > 0;
+    }
+    // State that the element's attributes do not show.
+    addState(element, name, attributes, context) {
+      if (element.localName.includes("-") && element.matches(":defined")) {
+        context.customElements.add(element.localName);
+      }
+      if (name === "INPUT" || name === "TEXTAREA") {
+        attributes[this.valueAttribute] = element.value;
+      }
+      if (name === "INPUT" && ["checkbox", "radio"].includes(element.type)) {
+        attributes[this.checkedAttribute] = String(element.checked);
+      }
+      if (name === "OPTION") {
+        attributes[this.selectedAttribute] = String(element.selected);
+      }
+      if (name === "CANVAS" || name === "IFRAME" || name === "FRAME") {
+        const rect = element.getBoundingClientRect();
+        attributes[this.boundingRectAttribute] = JSON.stringify({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
+      }
+      if (element.popover && element.matches(":popover-open")) {
+        attributes[this.popoverOpenAttribute] = "true";
+      }
+      if (name === "DIALOG" && element.open) {
+        attributes[this.dialogOpenAttribute] = element.matches(":modal") ? "modal" : "true";
+      }
+      if (element.scrollTop) {
+        attributes[this.scrollTopAttribute] = String(element.scrollTop);
+      }
+      if (element.scrollLeft) {
+        attributes[this.scrollLeftAttribute] = String(element.scrollLeft);
+      }
+      if (element === context.options.target) {
+        attributes[this.targetAttribute] = "";
+      }
+      if (name === "IFRAME" || name === "FRAME") {
+        attributes.src = context.options.frameSource?.(element) ?? "";
+      }
+      if (name === "IMG" || name === "PICTURE") {
+        attributes[this.currentSrcAttribute] = name === "IMG" ? this.sanitizeUrl(element.currentSrc) : "";
+      }
+    }
+    copyAttributes(element, name) {
+      const attributes = {};
+      for (const attribute of Array.from(element.attributes)) {
+        const attributeName = attribute.name;
+        if (this.isAttributeLeftOut(name, attributeName)) {
+          continue;
+        }
+        let value = attribute.value;
+        if (attributeName.startsWith("on")) {
+          value = "";
+        } else if (name === "META") {
+          value = this.sanitizeMetaAttribute(attributeName, value, element.getAttribute("http-equiv") ?? "");
+        } else if (name === "IMG" && attributeName === "src" || name === "LINK" && attributeName === "href") {
+          value = this.sanitizeUrl(value);
+        } else if ((name === "IMG" || name === "SOURCE") && attributeName === "srcset") {
+          value = this.sanitizeSrcSet(value);
+        }
+        attributes[attributeName] = value;
+      }
+      return attributes;
+    }
+    // A frame's src is given by the options, and its content by its own snapshot; a dialog's open state by an attribute
+    // of the snapshot's own.
+    isAttributeLeftOut(name, attributeName) {
+      return name === "LINK" && attributeName === "integrity" || name === "IFRAME" && ["src", "srcdoc", "sandbox"].includes(attributeName) || name === "FRAME" && attributeName === "src" || name === "DIALOG" && attributeName === "open";
+    }
+    // The snapshot is shown as UTF-8, whatever the document's own encoding.
+    sanitizeMetaAttribute(attributeName, value, httpEquiv) {
+      if (attributeName === "charset") {
+        return "utf-8";
+      }
+      if (httpEquiv.toLowerCase() !== "content-type" || attributeName !== "content") {
+        return value;
+      }
+      return value.replace(/charset=[^;]*/i, "charset=utf-8");
+    }
+    sanitizeUrl(url) {
+      return /^\s*(javascript|vbscript):/i.test(url) ? "" : url;
+    }
+    sanitizeSrcSet(srcset) {
+      return srcset.split(",").map((candidate) => {
+        const trimmed = candidate.trim();
+        const space = trimmed.lastIndexOf(" ");
+        return space === -1 ? this.sanitizeUrl(trimmed) : this.sanitizeUrl(trimmed.substring(0, space).trim()) + trimmed.substring(space);
+      }).join(", ");
+    }
+    // A style element whose rules were added by script, as CSS-in-JS libraries do, has no text of its own.
+    styleText(style) {
+      const sheet = style.sheet;
+      if (sheet?.disabled) {
+        return "";
+      }
+      const text = style.textContent;
+      return text.trim() || !sheet ? text : this.sheetText(sheet);
+    }
+    sheetText(sheet) {
+      return Array.from(sheet.cssRules).map((rule) => rule.cssText).join("\n");
+    }
+    addAdoptedStyleSheets(root, result) {
+      const sheets = root.adoptedStyleSheets ?? [];
+      for (const sheet of sheets) {
+        result.push(["template", { [this.styleSheetAttribute]: sheet.disabled ? "" : this.sheetText(sheet) }]);
+      }
+    }
+  };
+  var domSnapshotGenerator_default = DomSnapshotGenerator;
   return __toCommonJS(index_exports);
 })();
 /* istanbul ignore next -- @preserve */

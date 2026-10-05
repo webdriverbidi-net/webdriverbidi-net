@@ -9,8 +9,13 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using Dramaturge.Network;
 using WebDriverBiDi;
+using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Script;
+using StackFrame = System.Diagnostics.StackFrame;
+using StackTrace = System.Diagnostics.StackTrace;
 
 /// <summary>
 /// The recording of a browser's trace: the actions taken on its pages, with their timings, logs, errors, and the
@@ -20,20 +25,26 @@ using WebDriverBiDi;
 /// </summary>
 public sealed class TraceRecording : IAsyncDisposable
 {
+    private static readonly HashSet<Assembly> LibraryAssemblies = [typeof(TraceRecording).Assembly, typeof(BiDiDriver).Assembly, typeof(ScriptException).Assembly];
+
     private readonly Browser browser;
+    private readonly TraceRecordingOptions options;
     private readonly NetworkTrafficMonitor monitor;
     private readonly TraceWriter writer = new();
     private readonly double startTime = TraceWriter.Now;
     private readonly DateTime startWallTime = DateTime.UtcNow;
     private readonly object lockObject = new();
     private readonly List<IDisposable> observers = [];
+    private readonly List<Task> loadCaptures = [];
+    private readonly HashSet<string> sourceFiles = [];
     private readonly SemaphoreSlim stopLock = new(1, 1);
     private int lastCallId;
     private bool isStopped;
 
-    private TraceRecording(Browser browser, string path, NetworkTrafficMonitor monitor)
+    private TraceRecording(Browser browser, string path, TraceRecordingOptions options, NetworkTrafficMonitor monitor)
     {
         this.browser = browser;
+        this.options = options;
         this.Path = System.IO.Path.GetFullPath(path);
         this.monitor = monitor;
     }
@@ -69,10 +80,16 @@ public sealed class TraceRecording : IAsyncDisposable
             }
 
             this.browser.ReleaseTrace(this);
+            await Task.WhenAll(this.loadCaptures).ConfigureAwait(false);
             List<NetworkRequest> requests = [.. await this.monitor.GetCapturedTrafficAsync(this.browser.Group.Options.NavigationTimeout, cancellationToken).ConfigureAwait(false)];
             await this.monitor.DisposeAsync().ConfigureAwait(false);
             requests.AddRange(await this.monitor.GetCapturedTrafficAsync(TimeSpan.Zero, CancellationToken.None).ConfigureAwait(false));
             IReadOnlyList<string> network = HarGenerator.GenerateTraceEntries(requests, this.Place, this.writer.AddResource);
+            foreach (string file in this.sourceFiles.Where(File.Exists))
+            {
+                this.writer.AddSource(file, File.ReadAllBytes(file));
+            }
+
             this.writer.Save(this.Path, network);
             return this.Path;
         }
@@ -104,10 +121,10 @@ public sealed class TraceRecording : IAsyncDisposable
     {
         NetworkTrafficMonitorOptions monitorOptions = new();
         monitorOptions.UserContextIds.Add(browser.Id);
-        TraceRecording recording = new(browser, path, new NetworkTrafficMonitor(browser.Group.Driver, monitorOptions));
+        TraceRecording recording = new(browser, path, options ?? new TraceRecordingOptions(), new NetworkTrafficMonitor(browser.Group.Driver, monitorOptions));
 
         // The trace starts with its context's options, before any action the browser records once it is claimed.
-        recording.writer.WriteContextOptions(browser.Group.BrowserName, options?.Title, browser.Group.Options.TestIdAttribute);
+        recording.writer.WriteContextOptions(browser.Group.BrowserName, recording.options.Title, browser.Group.Options.TestIdAttribute);
         if (!browser.ClaimTrace(recording))
         {
             throw new InvalidOperationException("The browser is already recording a trace.");
@@ -127,6 +144,17 @@ public sealed class TraceRecording : IAsyncDisposable
         {
             recording.observers.Add(browser.OnPageCreated.AddObserver(e => recording.Follow(e.Page)));
             recording.observers.Add(browser.OnPageClosed.AddObserver(e => recording.writer.WritePageClosed(e.Page.Id)));
+            if (recording.options.Screenshots)
+            {
+                recording.observers.Add(browser.Group.Driver.BrowsingContext.OnLoad.AddObserver(
+                    e =>
+                    {
+                        recording.CaptureLoad(e.BrowsingContextId);
+                        return Task.CompletedTask;
+                    },
+                    ObservableEventHandlerOptions.RunHandlerAsynchronously));
+            }
+
             foreach (Page page in browser.Pages)
             {
                 recording.Follow(page);
@@ -148,7 +176,7 @@ public sealed class TraceRecording : IAsyncDisposable
     internal static Task<T> RunAsync<T>(Page page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
     {
         TraceRecording? recording = page.Browser.ActiveTrace;
-        return recording is null ? action(budget) : recording.RecordAsync(budget, call, action);
+        return recording is null ? action(budget) : recording.RecordAsync(page, budget, call, action);
     }
 
     /// <summary>
@@ -178,15 +206,46 @@ public sealed class TraceRecording : IAsyncDisposable
         this.writer.WriteLog(callId, message);
     }
 
-    // The frames of the code that called the library, which are those with source files outside it.
+    /// <summary>
+    /// Records the element an action acts on, as it acts.
+    /// </summary>
+    /// <param name="trace">The action's entry.</param>
+    /// <param name="frame">The element's frame.</param>
+    /// <param name="target">The element.</param>
+    /// <param name="offset">The point's offset from the element's center, or <see langword="null"/>.</param>
+    /// <returns>A task that completes when the element is recorded.</returns>
+    internal async Task RecordTargetAsync(ActionTrace trace, Frame frame, NodeRemoteValue target, PointerOffset? offset)
+    {
+        if (!this.options.Snapshots)
+        {
+            return;
+        }
+
+        (double X, double Y)? point = await this.SnapshotAsync(trace.Page, trace.CallId, "action", frame, target, offset).ConfigureAwait(false);
+        if (point is (double x, double y))
+        {
+            this.writer.WriteInput(trace.CallId, x, y);
+        }
+    }
+
+    // The frames of the code that called the library: those with source files after the library's own, up to the
+    // library's next frame, which, for code an event or a continuation runs, is what ran it. Frames without source
+    // files, such as the runtime's, are passed over.
     private static List<TraceStackFrame> CaptureStack()
     {
         List<TraceStackFrame> frames = [];
         foreach (StackFrame frame in new StackTrace(1, true).GetFrames())
         {
-            string? file = frame.GetFileName();
             (Type type, string method) = MethodOf(frame);
-            if (file is not null && type.Assembly != typeof(TraceRecording).Assembly)
+            string? file = frame.GetFileName();
+            if (LibraryAssemblies.Contains(type.Assembly))
+            {
+                if (frames.Count > 0)
+                {
+                    break;
+                }
+            }
+            else if (file is not null)
             {
                 frames.Add(new TraceStackFrame(file, frame.GetFileLineNumber(), frame.GetFileColumnNumber(), FunctionName(type, method)));
             }
@@ -222,6 +281,31 @@ public sealed class TraceRecording : IAsyncDisposable
         return $"{type.Name}.{method}";
     }
 
+    // The frames' placeholders in the snapshot become their browsing contexts' IDs, which name their own snapshots.
+    private static TraceFrameSnapshot ReadSnapshot(RemoteValue result, string phase, string callId, Page page, Frame frame)
+    {
+        using JsonDocument document = JsonDocument.Parse(Property(result, "json").As<StringRemoteValue>().Value);
+        JsonElement snapshot = document.RootElement;
+        string html = snapshot.GetProperty("html").GetRawText();
+        IList<RemoteValue> windows = Property(result, "frames").As<CollectionRemoteValue>().Value!;
+        for (int index = 0; index < windows.Count; index++)
+        {
+            string source = windows[index] is WindowProxyRemoteValue window ? $"/snapshot/{window.Value.BrowsingContextId}" : string.Empty;
+            html = html.Replace($"\"/snapshot/@{index}\"", $"\"{source}\"");
+        }
+
+        JsonElement viewport = snapshot.GetProperty("viewport");
+        string? doctype = snapshot.TryGetProperty("doctype", out JsonElement type) ? type.GetString() : null;
+        return new TraceFrameSnapshot(phase, callId, page.Id, frame.Id, frame.Url, frame == page.MainFrame, doctype, html, viewport.GetProperty("width").GetDouble(), viewport.GetProperty("height").GetDouble(), snapshot.GetProperty("wallTime").GetDouble(), snapshot.GetProperty("collectionTime").GetDouble());
+    }
+
+    private static RemoteValue Property(RemoteValue value, string name)
+    {
+        return value.As<KeyValuePairCollectionRemoteValue>().Value!.First(property => property.Key is string key && key == name).Value;
+    }
+
+    private static double Number(RemoteValue value, string name) => Property(value, name).As<NumberRemoteValue>().Value;
+
     private static TraceSourceLocation Locate(WebDriverBiDi.Script.StackTrace? stack)
     {
         WebDriverBiDi.Script.StackFrame? top = stack?.CallFrames.FirstOrDefault();
@@ -244,20 +328,119 @@ public sealed class TraceRecording : IAsyncDisposable
         return text.ToString();
     }
 
-    private async Task<T> RecordAsync<T>(TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
+    private async Task<T> RecordAsync<T>(Page page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
     {
-        ActionTrace trace = new(this, $"call@{Interlocked.Increment(ref this.lastCallId)}");
-        this.writer.WriteBefore(trace.CallId, call, CaptureStack());
+        ActionTrace trace = new(this, $"call@{Interlocked.Increment(ref this.lastCallId)}", page);
+        List<TraceStackFrame> stack = CaptureStack();
+        if (this.options.Sources)
+        {
+            lock (this.lockObject)
+            {
+                this.sourceFiles.UnionWith(stack.Select(frame => frame.File));
+            }
+        }
+
+        this.writer.WriteBefore(trace.CallId, call, stack);
+        if (this.options.Snapshots)
+        {
+            // The snapshot is not the action's own work, so it does not spend the action's time.
+            await this.SnapshotAsync(page, trace.CallId, "before", null, null, null).ConfigureAwait(false);
+            budget = budget.Restart();
+        }
+
+        Exception? error = null;
         try
         {
-            T result = await action(budget.WithTrace(trace)).ConfigureAwait(false);
-            this.writer.WriteAfter(trace.CallId, null);
-            return result;
+            return await action(budget.WithTrace(trace)).ConfigureAwait(false);
         }
         catch (Exception exception)
         {
-            this.writer.WriteAfter(trace.CallId, exception);
+            error = exception;
             throw;
+        }
+        finally
+        {
+            double endTime = TraceWriter.Now;
+            if (this.options.Snapshots)
+            {
+                await this.SnapshotAsync(page, trace.CallId, "after", null, null, null).ConfigureAwait(false);
+            }
+
+            if (this.options.Screenshots)
+            {
+                await this.ScreenshotAsync(page).ConfigureAwait(false);
+            }
+
+            this.writer.WriteAfter(trace.CallId, endTime, error);
+        }
+    }
+
+    // Each frame of the page is taken in its own document; a frame that cannot be, such as one navigating away, is
+    // left out. The point is the target's, when the target is in the page's main frame.
+    private async Task<(double X, double Y)?> SnapshotAsync(Page page, string callId, string phase, Frame? targetFrame, NodeRemoteValue? target, PointerOffset? offset)
+    {
+        (double X, double Y)? point = null;
+        TimeBudget budget = new(this.browser.Group.Options.ActionTimeout, this.browser.Group.Options.TimeProvider, CancellationToken.None);
+        foreach (Frame frame in page.Frames)
+        {
+            bool isTargetFrame = frame == targetFrame;
+            LocalValue targetArgument = isTargetFrame ? target!.ToSharedReference() : LocalValue.Null;
+            LocalValue offsetArgument = isTargetFrame && offset is PointerOffset at
+                ? LocalValue.Object(new Dictionary<string, LocalValue>() { ["x"] = LocalValue.Number(at.X), ["y"] = LocalValue.Number(at.Y) })
+                : LocalValue.Null;
+            try
+            {
+                RemoteValue result = await this.browser.Group.ScriptHost.CallDomSnapshotAsync(frame.Id, "(snapshots, target, offset) => snapshots.snapshot(target, offset)", [targetArgument, offsetArgument], budget).ConfigureAwait(false);
+                this.writer.WriteFrameSnapshot(ReadSnapshot(result, phase, callId, page, frame));
+                if (Property(result, "point") is KeyValuePairCollectionRemoteValue acted)
+                {
+                    point = (Number(acted, "x"), Number(acted, "y"));
+                }
+            }
+            catch (WebDriverBiDiException)
+            {
+            }
+        }
+
+        return point;
+    }
+
+    private async Task ScreenshotAsync(Page page)
+    {
+        try
+        {
+            CaptureScreenshotCommandParameters parameters = new(page.Id) { Format = new ImageFormat() { Type = "image/jpeg", Quality = 0.5 } };
+            TimeBudget budget = new(this.browser.Group.Options.ActionTimeout, this.browser.Group.Options.TimeProvider, CancellationToken.None);
+            CaptureScreenshotCommandResult result = await this.browser.Group.Driver.BrowsingContext.CaptureScreenshotAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+            this.writer.WriteScreencastFrame(page.Id, Convert.FromBase64String(result.Data));
+        }
+        catch (WebDriverBiDiException)
+        {
+            // A page that cannot be captured, such as one that has closed, has no frame.
+        }
+    }
+
+    // A page of the browser that loads a document gets a frame of the filmstrip; the capture is kept, so that
+    // stopping waits for it.
+    private void CaptureLoad(string contextId)
+    {
+        if (this.browser.Group.FindFrame(contextId) is not Frame frame || frame != frame.Page.MainFrame || frame.Page.Browser != this.browser)
+        {
+            return;
+        }
+
+        this.AddLoadCapture(frame.Page);
+    }
+
+    [ExcludeFromCodeCoverage] // Only a load dispatched as the recording stops finds it stopped.
+    private void AddLoadCapture(Page page)
+    {
+        lock (this.lockObject)
+        {
+            if (!this.isStopped)
+            {
+                this.loadCaptures.Add(this.ScreenshotAsync(page));
+            }
         }
     }
 

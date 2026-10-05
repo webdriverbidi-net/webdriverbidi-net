@@ -414,6 +414,11 @@ public sealed class ElementLocator
             ActionTarget? from = await this.PollAsync(budget, $"{this} to be ready to be dragged", () => this.FindActionTargetAsync("drag", options, budget)).ConfigureAwait(false);
             PointerActionOptions targetOptions = new() { Offset = options.TargetOffset, Force = options.Force };
             ActionTarget? to = await target.PollAsync(budget, $"{target} to be ready to be dropped on", () => target.FindActionTargetAsync("drop", targetOptions, budget)).ConfigureAwait(false);
+            if (budget.Trace is ActionTrace trace)
+            {
+                await trace.TargetAsync(this.Frame, from!.Node, from.Offset).ConfigureAwait(false);
+            }
+
             await this.PerformPointerInputAsync(options.Modifiers, PointerType.Mouse, budget, (pointer, builder) => builder
                 .AddAction(MoveTo(pointer, from!))
                 .AddAction(pointer.CreatePointerDown())
@@ -439,6 +444,7 @@ public sealed class ElementLocator
         return this.TraceAsync(this.Call("Dispatch \"{type}\"", "dispatchEvent", ("type", type)), this.CreateBudget(timeout, cancellationToken), async budget =>
         {
             NodeRemoteValue? node = await this.PollAsync(budget, $"{this} to be attached", () => this.TryFindOneAsync(budget)).ConfigureAwait(false);
+            await this.RecordTargetAsync(node!, budget).ConfigureAwait(false);
             LocalValue init = LocalValue.Object(eventInit?.ToDictionary(property => property.Key, property => property.Value) ?? []);
             RemoteValue dispatched = await this.Group.ScriptHost.CallActionsAsync(this.Frame.Id, "(actions, element, type, init) => actions.dispatchEvent(element, type, init)", [node!.ToSharedReference(), LocalValue.String(type), init], budget).ConfigureAwait(false);
             return dispatched.As<BooleanRemoteValue>().Value;
@@ -640,6 +646,7 @@ public sealed class ElementLocator
         return this.TraceAsync(this.Call("Set input files", "setInputFiles", ("files", fileList)), this.CreateBudget(timeout, cancellationToken), async budget =>
         {
             NodeRemoteValue? node = await this.PollAsync(budget, $"{this} to be attached", () => this.TryFindOneAsync(budget)).ConfigureAwait(false);
+            await this.RecordTargetAsync(node!, budget).ConfigureAwait(false);
             SetFilesCommandParameters parameters = new(this.Frame.Id, node!.ToSharedReference());
             parameters.Files.AddRange(fileList);
             await this.Group.Driver.Input.SetFilesAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
@@ -1191,6 +1198,11 @@ public sealed class ElementLocator
         return TraceRecording.RunAsync(this.Frame.Page, budget, call, action);
     }
 
+    private Task RecordTargetAsync(NodeRemoteValue node, TimeBudget budget)
+    {
+        return budget.Trace is ActionTrace trace ? trace.TargetAsync(this.Frame, node, null) : Task.CompletedTask;
+    }
+
     private async Task<bool> IsVisibleCoreAsync(TimeBudget budget)
     {
         IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
@@ -1527,6 +1539,11 @@ public sealed class ElementLocator
     private async Task PerformPointerActionAsync(string interactionType, string pastTense, PointerActionOptions options, TimeBudget budget, Action<PointerInputSource, InputBuilder> addActions, PointerType pointerType = PointerType.Mouse)
     {
         ActionTarget? target = await this.PollAsync(budget, $"{this} to be ready to be {pastTense}", () => this.FindActionTargetAsync(interactionType, options, budget)).ConfigureAwait(false);
+        if (budget.Trace is ActionTrace trace)
+        {
+            await trace.TargetAsync(this.Frame, target!.Node, target.Offset).ConfigureAwait(false);
+        }
+
         await this.PerformPointerInputAsync(options.Modifiers, pointerType, budget, (pointer, builder) =>
         {
             builder.AddAction(MoveTo(pointer, target!));

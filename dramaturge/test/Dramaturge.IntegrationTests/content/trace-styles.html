@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Styles made by script</title>
+    <style id="css-in-js"></style>
+  </head>
+  <body>
+    <h1>Styles</h1>
+    <styled-card id="card"></styled-card>
+    <script>
+      const adopted = new CSSStyleSheet();
+      adopted.replaceSync('h1 { color: rebeccapurple; }');
+      document.adoptedStyleSheets = [adopted];
+      document.getElementById('css-in-js').sheet.insertRule('.card { margin: 7px; }');
+      customElements.define('styled-card', class extends HTMLElement {
+        constructor() {
+          super();
+          const root = this.attachShadow({ mode: 'open' });
+          const inner = new CSSStyleSheet();
+          inner.replaceSync('p { padding: 3px; }');
+          root.adoptedStyleSheets = [inner];
+          root.innerHTML = '<p>In the shadow</p>';
+        }
+      });
+    </script>
+  </body>
+</html>

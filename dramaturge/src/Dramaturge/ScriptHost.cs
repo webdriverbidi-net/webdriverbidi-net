@@ -11,7 +11,7 @@ using WebDriverBiDi.Script;
 
 /// <summary>
 /// Runs the library's scripts in a sandbox, isolated from the page's own scripts, with the Acquiescence element
-/// state library, the element state reads, the page actions, and the accessibility snapshots installed: by a preload script in documents loaded after the group starts,
+/// state library, the element state reads, the page actions, and the accessibility and DOM snapshots installed: by a preload script in documents loaded after the group starts,
 /// and on first use in documents loaded before it.
 /// </summary>
 internal sealed class ScriptHost
@@ -20,10 +20,11 @@ internal sealed class ScriptHost
     private const string ActionsName = "dramaturgeActions";
     private const string StateName = "dramaturgeState";
     private const string SnapshotName = "dramaturgeSnapshots";
+    private const string DomSnapshotName = "dramaturgeDomSnapshots";
     private const string MissingMessage = "dramaturge: scripts not installed";
 
     private static readonly Lazy<string> InstallFunction = new(() =>
-        $"() => {{\n{ReadResource("acquiescence-library")}\nwindow.{InspectorName} = new Acquiescence.ElementStateInspector();\nwindow.{StateName} = {ReadResource("element-state")};\nwindow.{ActionsName} = {ReadResource("page-actions")};\nwindow.{SnapshotName} = {ReadResource("aria-snapshot")};\n}}");
+        $"() => {{\n{ReadResource("acquiescence-library")}\nwindow.{InspectorName} = new Acquiescence.ElementStateInspector();\nwindow.{StateName} = {ReadResource("element-state")};\nwindow.{ActionsName} = {ReadResource("page-actions")};\nwindow.{SnapshotName} = {ReadResource("aria-snapshot")};\nwindow.{DomSnapshotName} = {ReadResource("dom-snapshot")};\n}}");
 
     private readonly BiDiDriver driver;
     private readonly string sandboxName;
@@ -119,6 +120,20 @@ internal sealed class ScriptHost
     public Task<RemoteValue> CallSnapshotAsync(string contextId, string functionDeclaration, IReadOnlyList<LocalValue> arguments, TimeBudget budget)
     {
         return this.CallWithAsync(SnapshotName, contextId, functionDeclaration, arguments, budget);
+    }
+
+    /// <summary>
+    /// Calls a function in the sandbox of a browsing context, passing the DOM snapshots as its first argument, and
+    /// installing the scripts first if the document does not have them.
+    /// </summary>
+    /// <param name="contextId">The ID of the browsing context.</param>
+    /// <param name="functionDeclaration">The function, taking the DOM snapshots and then the arguments.</param>
+    /// <param name="arguments">The arguments after the DOM snapshots.</param>
+    /// <param name="budget">The time the call may take.</param>
+    /// <returns>The function's result.</returns>
+    public Task<RemoteValue> CallDomSnapshotAsync(string contextId, string functionDeclaration, IReadOnlyList<LocalValue> arguments, TimeBudget budget)
+    {
+        return this.CallWithAsync(DomSnapshotName, contextId, functionDeclaration, arguments, budget);
     }
 
     private static string ReadResource(string name)
