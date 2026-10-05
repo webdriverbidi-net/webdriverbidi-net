@@ -4,7 +4,8 @@
 // </copyright>
 
 // Records the user's actions for code generation, and, in the top frame, shows the toolbar that picks locators and
-// adds assertions. Each message goes through a channel as its JSON and the element it is about, or null.
+// adds assertions. Each message goes through a channel as its JSON, then the element it is about and that element's
+// nameable ancestors, or null.
 (() => {
   const buttons = [
     ['record', 'Record'],
@@ -94,7 +95,7 @@
     const describer = new Acquiescence.ElementDescriber();
     const describe = (element, details) => {
       const { target, ancestors } = describer.describe(element, { testIdAttribute });
-      send([JSON.stringify({ ...details, target: facts(target), ancestors: ancestors.map(facts) }), target.element]);
+      send([JSON.stringify({ ...details, target: facts(target), ancestors: ancestors.map(facts) }), target.element, ...ancestors.map((ancestor) => ancestor.element)]);
     };
     let toolbar = null;
     let current = null;

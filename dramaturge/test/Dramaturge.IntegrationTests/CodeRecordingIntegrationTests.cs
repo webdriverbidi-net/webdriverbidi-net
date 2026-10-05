@@ -45,10 +45,10 @@ public class CodeRecordingIntegrationTests
 
         Assert.Equal(
             [
-                "await page.Locate(new CssLocator(\"#go\")).ClickAsync();",
-                "await page.Locate(new CssLocator(\"#name\")).FillAsync(\"Ada\");",
-                "await page.Locate(new CssLocator(\"#agree\")).CheckAsync();",
-                "await page.Locate(new CssLocator(\"#done\")).ClickAsync();",
+                "await page.GetByRole(\"button\", \"Go\").ClickAsync();",
+                "await page.GetByRole(\"textbox\", \"Name\").FillAsync(\"Ada\");",
+                "await page.GetByRole(\"checkbox\", \"Agree\").CheckAsync();",
+                "await page.GetByRole(\"button\", \"Done\").ClickAsync();",
             ],
             statements);
     }
@@ -101,20 +101,24 @@ public class CodeRecordingIntegrationTests
         LocatorPickedEventArgs pick = await picked.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         await recording.StopAsync(TestContext.Current.CancellationToken);
 
+        // Firefox has no text locator (bug 1869538), so its text candidates are passed over.
+        bool hasTextLocator = browserKind != BrowserKind.Firefox;
+        string paragraph = hasTextLocator ? "page.GetByText(\"Hello\")" : "page.GetByRole(\"paragraph\")";
+        string item = hasTextLocator ? "page.GetByText(\"One\", exact: true)" : "page.GetByRole(\"listitem\")";
         Assert.Equal(
             [
-                "await page.Locate(new CssLocator(\"#go\")).ClickAsync();",
-                "await Expect(page.Locate(new CssLocator(\"#message\"))).ToBeVisibleAsync();",
-                "await Expect(page.Locate(new CssLocator(\"#message\"))).ToContainTextAsync(\"Hello\");",
-                "await page.Locate(new CssLocator(\"#name\")).FillAsync(\"Ada\");",
-                "await Expect(page.Locate(new CssLocator(\"#name\"))).ToHaveValueAsync(\"Ada\");",
-                "await page.Locate(new CssLocator(\"#agree\")).CheckAsync();",
-                "await Expect(page.Locate(new CssLocator(\"#agree\"))).ToBeCheckedAsync();",
-                "await Expect(page.Locate(new CssLocator(\"#list > li\"))).ToMatchAriaSnapshotAsync(\"\"\"\n    - listitem: One\n    \"\"\");",
-                "await page.Locate(new CssLocator(\"#done\")).DblClickAsync();",
+                "await page.GetByRole(\"button\", \"Go\").ClickAsync();",
+                $"await Expect({paragraph}).ToBeVisibleAsync();",
+                $"await Expect({paragraph}).ToContainTextAsync(\"Hello\");",
+                "await page.GetByRole(\"textbox\", \"Name\").FillAsync(\"Ada\");",
+                "await Expect(page.GetByRole(\"textbox\", \"Name\")).ToHaveValueAsync(\"Ada\");",
+                "await page.GetByRole(\"checkbox\", \"Agree\").CheckAsync();",
+                "await Expect(page.GetByRole(\"checkbox\", \"Agree\")).ToBeCheckedAsync();",
+                $"await Expect({item}).ToMatchAriaSnapshotAsync(\"\"\"\n    - listitem: One\n    \"\"\");",
+                "await page.GetByRole(\"button\", \"Done\").DblClickAsync();",
             ],
             statements);
-        Assert.Equal("page.Locate(new CssLocator(\"#go\"))", pick.Code);
+        Assert.Equal("page.GetByRole(\"button\", \"Go\")", pick.Code);
         Assert.Same(page, pick.Page);
         Assert.Equal(1, await pick.Locator.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(0, await page.EvaluateAsync<double>("() => document.querySelectorAll('dramaturge-toolbar').length", cancellationToken: TestContext.Current.CancellationToken));

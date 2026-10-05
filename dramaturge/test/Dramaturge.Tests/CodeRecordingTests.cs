@@ -491,8 +491,16 @@ public class CodeRecordingTests
     }
 
     // Sends an action as the page's recorder does, and waits until the driver has delivered it.
-    private static async Task SendAsync(BiDiDriver driver, FakeSession session, string channel, string? contextId, JsonObject action)
+    private static async Task SendAsync(BiDiDriver driver, FakeSession session, string channel, string? contextId, JsonObject action, params string[] elementIds)
     {
+        JsonArray data = [new JsonObject() { ["type"] = "string", ["value"] = action.ToJsonString() }];
+        // Each element's shared ID is named for its CSS path.
+        string target = action["target"] is JsonObject facts ? $"node-{facts["cssPath"]}" : "node-none";
+        foreach (string elementId in elementIds.Length == 0 ? [target] : elementIds)
+        {
+            data.Add(new JsonObject() { ["type"] = "node", ["sharedId"] = elementId, ["value"] = new JsonObject() { ["nodeType"] = 1, ["childNodeCount"] = 0 } });
+        }
+
         JsonObject source = new() { ["realm"] = "realm-1" };
         if (contextId is not null)
         {
@@ -502,13 +510,7 @@ public class CodeRecordingTests
         await session.RemoteEnd.RaiseEventAsync("script.message", new JsonObject()
         {
             ["channel"] = channel,
-            ["data"] = new JsonObject()
-            {
-                ["type"] = "array",
-                ["value"] = new JsonArray(
-                    new JsonObject() { ["type"] = "string", ["value"] = action.ToJsonString() },
-                    new JsonObject() { ["type"] = "node", ["sharedId"] = "node-1", ["value"] = new JsonObject() { ["nodeType"] = 1, ["childNodeCount"] = 0 } }),
-            },
+            ["data"] = new JsonObject() { ["type"] = "array", ["value"] = data },
             ["source"] = source,
         });
         await NetworkEvents.FlushAsync(driver);
@@ -530,7 +532,7 @@ public class CodeRecordingTests
         JsonObject action = new()
         {
             ["kind"] = kind,
-            ["target"] = new JsonObject() { ["cssPath"] = cssPath, ["role"] = null },
+            ["target"] = new JsonObject() { ["cssPath"] = cssPath, ["role"] = null, ["labels"] = new JsonArray() },
             ["ancestors"] = new JsonArray(),
         };
         foreach ((string name, JsonNode value) in details)

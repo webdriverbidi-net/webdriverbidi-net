@@ -34,6 +34,7 @@ public sealed class CodeRecording : IAsyncDisposable
     private Task processing = Task.CompletedTask;
     private RecordedStep? pending;
     private string? subscriptionId;
+    private (Frame Frame, string? ElementId, string Code, ElementLocator Locator)? lastLocator;
     private string mode = "record";
     private bool isStopped;
 
@@ -189,16 +190,11 @@ public sealed class CodeRecording : IAsyncDisposable
 
     private static string Capitalize(string name) => char.ToUpperInvariant(name[0]) + name.Substring(1);
 
-    private static string CssPath(JsonElement message) => message.GetProperty("target").GetProperty("cssPath").GetString()!;
-
-    private static string LocatorCode(string pageVariable, string cssPath) => $"{pageVariable}.Locate(new CssLocator({CodeWriter.Literal(cssPath)}))";
-
     // A step for an action, or null for an action the recording does not know.
-    private static RecordedStep? CreateStep(JsonElement action, string pageVariable)
+    private static RecordedStep? CreateStep(JsonElement action, string locator)
     {
-        string locator = LocatorCode(pageVariable, CssPath(action));
-        string[] locatorNamespaces = [CodeWriter.BrowsingContextNamespace];
-        string[] assertionNamespaces = [CodeWriter.BrowsingContextNamespace, CodeWriter.AssertionsNamespace];
+        string[] locatorNamespaces = locator.Contains("new CssLocator(") ? [CodeWriter.BrowsingContextNamespace] : [];
+        string[] assertionNamespaces = [.. locatorNamespaces, CodeWriter.AssertionsNamespace];
         string Statement(string call) => $"await {locator}.{call};";
         RecordedStep Assertion(string call) => new($"await Expect({locator}).{call};", assertionNamespaces, SettlesAtOnce: true);
         string? Modifiers() => CodeWriter.Modifiers(Strings(action.GetProperty("modifiers")));
@@ -312,27 +308,29 @@ public sealed class CodeRecording : IAsyncDisposable
             return;
         }
 
-        using JsonDocument document = JsonDocument.Parse(e.Data.As<CollectionRemoteValue>().Value![0].As<StringRemoteValue>().Value);
+        RemoteValueList data = e.Data.As<CollectionRemoteValue>().Value!;
+        using JsonDocument document = JsonDocument.Parse(data[0].As<StringRemoteValue>().Value);
         JsonElement message = document.RootElement;
+        string kind = message.GetProperty("kind").GetString()!;
+        if (kind == "mode")
+        {
+            await this.ChooseModeAsync(frame, message.GetProperty("mode").GetString()!).ConfigureAwait(false);
+            return;
+        }
+
+        (string Code, ElementLocator Locator) found = await this.FindLocatorAsync(frame, message, [.. data.Skip(1).Select(element => element.As<NodeRemoteValue>())]).ConfigureAwait(false);
         List<RecordedStep> settled = [];
         LocatorPickedEventArgs? picked = null;
-        string? chosenMode = null;
         lock (this.lockObject)
         {
-            switch (message.GetProperty("kind").GetString())
+            switch (kind)
             {
-                case "mode":
-                    // Using the toolbar settles the pending statement.
-                    settled.AddRange(this.TakePending());
-                    this.mode = chosenMode = message.GetProperty("mode").GetString()!;
-                    break;
                 case "pick":
                     settled.AddRange(this.TakePending());
-                    string cssPath = CssPath(message);
-                    picked = new LocatorPickedEventArgs(frame.Page, frame.Page.Locate(new CssLocator(cssPath)), LocatorCode(this.GetPageVariable(frame.Page, settled), cssPath));
+                    picked = new LocatorPickedEventArgs(frame.Page, found.Locator, $"{this.GetPageVariable(frame.Page, settled)}.{found.Code}");
                     break;
                 default:
-                    if (CreateStep(message, this.GetPageVariable(frame.Page, settled)) is RecordedStep step)
+                    if (CreateStep(message, $"{this.GetPageVariable(frame.Page, settled)}.{found.Code}") is RecordedStep step)
                     {
                         if (step.SettlesAtOnce || this.pending is null || !step.Replaces(this.pending))
                         {
@@ -353,11 +351,6 @@ public sealed class CodeRecording : IAsyncDisposable
             }
         }
 
-        if (chosenMode is not null)
-        {
-            this.SetModeInOtherDocuments(frame, chosenMode);
-        }
-
         foreach (RecordedStep step in settled)
         {
             await this.SettleAsync(step).ConfigureAwait(false);
@@ -367,6 +360,36 @@ public sealed class CodeRecording : IAsyncDisposable
         {
             await this.onLocatorPicked.InvokeNotifyObserversAsync(picked).ConfigureAwait(false);
         }
+    }
+
+    // Using the toolbar settles the pending statement.
+    private async Task ChooseModeAsync(Frame source, string chosenMode)
+    {
+        List<RecordedStep> settled;
+        lock (this.lockObject)
+        {
+            settled = [.. this.TakePending()];
+            this.mode = chosenMode;
+        }
+
+        this.SetModeInOtherDocuments(source, chosenMode);
+        foreach (RecordedStep step in settled)
+        {
+            await this.SettleAsync(step).ConfigureAwait(false);
+        }
+    }
+
+    // The element's locator; consecutive actions on one element, such as the fills of typing, share the first's.
+    private async Task<(string Code, ElementLocator Locator)> FindLocatorAsync(Frame frame, JsonElement message, IReadOnlyList<NodeRemoteValue> elements)
+    {
+        if (this.lastLocator is { } last && last.Frame == frame && last.ElementId == elements[0].SharedId)
+        {
+            return (last.Code, last.Locator);
+        }
+
+        (string code, ElementLocator locator) = await LocatorGenerator.GenerateAsync(frame, message.GetProperty("target"), [.. message.GetProperty("ancestors").EnumerateArray()], elements, this.CreateBudget(CancellationToken.None)).ConfigureAwait(false);
+        this.lastLocator = (frame, elements[0].SharedId, code, locator);
+        return (code, locator);
     }
 
     // The page's variable, declaring a page after the first, after settling the pending statement, when it has none.
