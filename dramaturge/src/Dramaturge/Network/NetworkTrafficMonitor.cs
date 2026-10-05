@@ -204,8 +204,11 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
     {
         NetworkModule network = this.driver.Network;
         starting.Observers.Add(network.OnBeforeRequestSent.AddObserver(e => this.HandleBeforeRequestSentAsync(starting, e), ObservableEventHandlerOptions.RunHandlerAsynchronously));
-        starting.Observers.Add(network.OnResponseCompleted.AddObserver(e => this.HandleResponseCompleted(starting, e), ObservableEventHandlerOptions.RunHandlerAsynchronously));
-        starting.Observers.Add(network.OnFetchError.AddObserver(e => this.HandleFetchError(e), ObservableEventHandlerOptions.RunHandlerAsynchronously));
+
+        // An outcome is recorded as its event is dispatched, in event order: run asynchronously, a handler that does not
+        // await would be offloaded, and a later event, or stopping, could be handled first.
+        starting.Observers.Add(network.OnResponseCompleted.AddObserver(e => this.HandleResponseCompleted(starting, e)));
+        starting.Observers.Add(network.OnFetchError.AddObserver(e => this.HandleFetchError(e)));
         List<string> subscribedEvents = [network.OnBeforeRequestSent.EventName, network.OnResponseCompleted.EventName, network.OnFetchError.EventName];
         if (starting.Credentials.Length > 0)
         {

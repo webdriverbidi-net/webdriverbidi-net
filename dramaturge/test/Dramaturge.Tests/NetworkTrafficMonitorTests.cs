@@ -194,6 +194,24 @@ public class NetworkTrafficMonitorTests
     }
 
     [Fact]
+    public async Task OutcomeIsRecordedOnceItsEventIsDispatched()
+    {
+        (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        await using NetworkTrafficMonitor monitor = new(driver, new NetworkTrafficMonitorOptions() { CaptureBodies = false });
+        await monitor.StartMonitoringAsync(TestContext.Current.CancellationToken);
+
+        await BeforeRequestSentAsync(remoteEnd, "request-1");
+        await ResponseCompletedAsync(remoteEnd, "request-1");
+        await BeforeRequestSentAsync(remoteEnd, "request-2");
+        await FetchErrorAsync(remoteEnd, "request-2", "net::ERR_FAILED");
+        await FlushAsync(driver);
+        IReadOnlyList<NetworkRequest> requests = await monitor.GetCapturedTrafficAsync(TimeSpan.Zero, TestContext.Current.CancellationToken);
+
+        Assert.Equal(["request-1:200:", "request-2:0:net::ERR_FAILED"], requests.Select(request => $"{request.RequestId}:{request.ResponseStatusCode}:{request.FetchErrorText}").Order());
+    }
+
+    [Fact]
     public async Task OutcomesForRequestsNotRecordedAreIgnored()
     {
         (BiDiDriver driver, FakeRemoteEnd remoteEnd) = await ConnectAsync();
