@@ -1,0 +1,287 @@
+// <copyright file="TraceRecording.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+namespace Dramaturge;
+
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Text;
+using Dramaturge.Network;
+using WebDriverBiDi;
+
+/// <summary>
+/// The recording of a browser's trace: the actions taken on its pages, with their timings, logs, errors, and the
+/// code that called them, and the pages' console messages, errors, and network traffic. Disposing it, or
+/// <see cref="StopAsync"/>, ends it and writes the trace, a zip file that Playwright's trace viewer opens, such as
+/// at https://trace.playwright.dev or with <c>npx playwright show-trace</c>.
+/// </summary>
+public sealed class TraceRecording : IAsyncDisposable
+{
+    private readonly Browser browser;
+    private readonly NetworkTrafficMonitor monitor;
+    private readonly TraceWriter writer = new();
+    private readonly double startTime = TraceWriter.Now;
+    private readonly DateTime startWallTime = DateTime.UtcNow;
+    private readonly object lockObject = new();
+    private readonly List<IDisposable> observers = [];
+    private readonly SemaphoreSlim stopLock = new(1, 1);
+    private int lastCallId;
+    private bool isStopped;
+
+    private TraceRecording(Browser browser, string path, NetworkTrafficMonitor monitor)
+    {
+        this.browser = browser;
+        this.Path = System.IO.Path.GetFullPath(path);
+        this.monitor = monitor;
+    }
+
+    /// <summary>
+    /// Gets the full path of the file the trace is written to.
+    /// </summary>
+    public string Path { get; }
+
+    /// <summary>
+    /// Ends the recording and writes the trace, after waiting, for at most <see cref="DramaturgeOptions.NavigationTimeout"/>,
+    /// for requests in flight; a request still in flight then is written as failed. Stopping again does nothing.
+    /// </summary>
+    /// <param name="cancellationToken">A token that cancels the wait for requests in flight.</param>
+    /// <returns>The trace's path.</returns>
+    public async Task<string> StopAsync(CancellationToken cancellationToken = default)
+    {
+        await this.stopLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (this.isStopped)
+            {
+                return this.Path;
+            }
+
+            lock (this.lockObject)
+            {
+                this.isStopped = true;
+                foreach (IDisposable observer in this.observers)
+                {
+                    observer.Dispose();
+                }
+            }
+
+            this.browser.ReleaseTrace(this);
+            List<NetworkRequest> requests = [.. await this.monitor.GetCapturedTrafficAsync(this.browser.Group.Options.NavigationTimeout, cancellationToken).ConfigureAwait(false)];
+            await this.monitor.DisposeAsync().ConfigureAwait(false);
+            requests.AddRange(await this.monitor.GetCapturedTrafficAsync(TimeSpan.Zero, CancellationToken.None).ConfigureAwait(false));
+            IReadOnlyList<string> network = HarGenerator.GenerateTraceEntries(requests, this.Place, this.writer.AddResource);
+            this.writer.Save(this.Path, network);
+            return this.Path;
+        }
+        finally
+        {
+            this.stopLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Ends the recording and writes the trace, as <see cref="StopAsync"/> does.
+    /// </summary>
+    /// <returns>A task that completes when the trace is written.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        await this.StopAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Starts recording a browser's trace.
+    /// </summary>
+    /// <param name="browser">The browser.</param>
+    /// <param name="path">The path of the trace to write.</param>
+    /// <param name="options">The recording's settings, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels starting.</param>
+    /// <returns>The recording.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the browser is already recording a trace.</exception>
+    internal static async Task<TraceRecording> StartAsync(Browser browser, string path, TraceRecordingOptions? options, CancellationToken cancellationToken)
+    {
+        NetworkTrafficMonitorOptions monitorOptions = new();
+        monitorOptions.UserContextIds.Add(browser.Id);
+        TraceRecording recording = new(browser, path, new NetworkTrafficMonitor(browser.Group.Driver, monitorOptions));
+
+        // The trace starts with its context's options, before any action the browser records once it is claimed.
+        recording.writer.WriteContextOptions(browser.Group.BrowserName, options?.Title, browser.Group.Options.TestIdAttribute);
+        if (!browser.ClaimTrace(recording))
+        {
+            throw new InvalidOperationException("The browser is already recording a trace.");
+        }
+
+        try
+        {
+            await recording.monitor.StartMonitoringAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            browser.ReleaseTrace(recording);
+            throw;
+        }
+
+        lock (recording.lockObject)
+        {
+            recording.observers.Add(browser.OnPageCreated.AddObserver(e => recording.Follow(e.Page)));
+            recording.observers.Add(browser.OnPageClosed.AddObserver(e => recording.writer.WritePageClosed(e.Page.Id)));
+            foreach (Page page in browser.Pages)
+            {
+                recording.Follow(page);
+            }
+        }
+
+        return recording;
+    }
+
+    /// <summary>
+    /// Runs an action, recorded in the trace of its page's browser if the browser is recording one.
+    /// </summary>
+    /// <typeparam name="T">The action's result type.</typeparam>
+    /// <param name="page">The page the action is taken on.</param>
+    /// <param name="budget">The action's budget.</param>
+    /// <param name="call">What the action is.</param>
+    /// <param name="action">The action, given its budget, which carries its trace entry when it is recorded.</param>
+    /// <returns>The action's result.</returns>
+    internal static Task<T> RunAsync<T>(Page page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
+    {
+        TraceRecording? recording = page.Browser.ActiveTrace;
+        return recording is null ? action(budget) : recording.RecordAsync(budget, call, action);
+    }
+
+    /// <summary>
+    /// Runs an action without a result, recorded in the trace of its page's browser if the browser is recording one.
+    /// </summary>
+    /// <param name="page">The page the action is taken on.</param>
+    /// <param name="budget">The action's budget.</param>
+    /// <param name="call">What the action is.</param>
+    /// <param name="action">The action, given its budget, which carries its trace entry when it is recorded.</param>
+    /// <returns>A task that completes when the action has.</returns>
+    internal static Task RunAsync(Page page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task> action)
+    {
+        return RunAsync(page, budget, call, async actionBudget =>
+        {
+            await action(actionBudget).ConfigureAwait(false);
+            return true;
+        });
+    }
+
+    /// <summary>
+    /// Writes a line of an action's log.
+    /// </summary>
+    /// <param name="callId">The action's ID.</param>
+    /// <param name="message">The line.</param>
+    internal void WriteLog(string callId, string message)
+    {
+        this.writer.WriteLog(callId, message);
+    }
+
+    // The frames of the code that called the library, which are those with source files outside it.
+    private static List<TraceStackFrame> CaptureStack()
+    {
+        List<TraceStackFrame> frames = [];
+        foreach (StackFrame frame in new StackTrace(1, true).GetFrames())
+        {
+            string? file = frame.GetFileName();
+            (Type type, string method) = MethodOf(frame);
+            if (file is not null && type.Assembly != typeof(TraceRecording).Assembly)
+            {
+                frames.Add(new TraceStackFrame(file, frame.GetFileLineNumber(), frame.GetFileColumnNumber(), FunctionName(type, method)));
+            }
+        }
+
+        return frames;
+    }
+
+    // A frame whose method was trimmed, or is not in a type, is taken for one of the library's own, and left out.
+    [ExcludeFromCodeCoverage] // Only trimming, and languages other than C#, leave a frame without a method's type.
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only the frame's method's name and declaring type are read; a frame whose method was trimmed is left out.")]
+    private static (Type Type, string Method) MethodOf(StackFrame frame)
+    {
+        MethodBase? method = frame.GetMethod();
+        return method?.DeclaringType is Type type ? (type, method.Name) : (typeof(TraceRecording), string.Empty);
+    }
+
+    // Async methods and lambdas run in types or methods the compiler generates, nested in the method's type and named
+    // for the method, such as <PlacesAnOrder>d__3, or, in a lambda class, <PlacesAnOrder>b__3_0.
+    private static string FunctionName(Type type, string method)
+    {
+        if (type.IsNested && type.Name.StartsWith("<", StringComparison.Ordinal))
+        {
+            method = type.Name.StartsWith("<>", StringComparison.Ordinal) ? method : type.Name;
+            type = type.DeclaringType!;
+        }
+
+        if (method.StartsWith("<", StringComparison.Ordinal))
+        {
+            method = method.Substring(1, method.IndexOf('>') - 1);
+        }
+
+        return $"{type.Name}.{method}";
+    }
+
+    private static TraceSourceLocation Locate(WebDriverBiDi.Script.StackTrace? stack)
+    {
+        WebDriverBiDi.Script.StackFrame? top = stack?.CallFrames.FirstOrDefault();
+        return top is null ? new TraceSourceLocation(string.Empty, 0, 0) : new TraceSourceLocation(top.Url, (long)top.LineNumber, (long)top.ColumnNumber);
+    }
+
+    private static string? DescribeStack(string message, WebDriverBiDi.Script.StackTrace? stack)
+    {
+        if (stack is null)
+        {
+            return null;
+        }
+
+        StringBuilder text = new($"Error: {message}");
+        foreach (WebDriverBiDi.Script.StackFrame frame in stack.CallFrames)
+        {
+            text.Append($"\n    at {(frame.FunctionName.Length == 0 ? "<anonymous>" : frame.FunctionName)} ({frame.Url}:{frame.LineNumber + 1}:{frame.ColumnNumber + 1})");
+        }
+
+        return text.ToString();
+    }
+
+    private async Task<T> RecordAsync<T>(TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
+    {
+        ActionTrace trace = new(this, $"call@{Interlocked.Increment(ref this.lastCallId)}");
+        this.writer.WriteBefore(trace.CallId, call, CaptureStack());
+        try
+        {
+            T result = await action(budget.WithTrace(trace)).ConfigureAwait(false);
+            this.writer.WriteAfter(trace.CallId, null);
+            return result;
+        }
+        catch (Exception exception)
+        {
+            this.writer.WriteAfter(trace.CallId, exception);
+            throw;
+        }
+    }
+
+    private void Follow(Page page)
+    {
+        lock (this.lockObject)
+        {
+            if (this.isStopped)
+            {
+                return;
+            }
+
+            this.writer.WritePageOpened(page.Id, page.Opener?.Id);
+            this.observers.Add(page.OnConsoleMessage.AddObserver(e => this.writer.WriteConsoleMessage(page.Id, e.Method == "warn" ? "warning" : e.Method, e.Text, Locate(e.StackTrace))));
+            this.observers.Add(page.OnPageError.AddObserver(e => this.writer.WritePageError(page.Id, e.Message, DescribeStack(e.Message, e.StackTrace), Locate(e.StackTrace))));
+        }
+    }
+
+    // A request's page is the page of the frame that made it, while the frame is known, and its start is the time
+    // since the recording started on the trace's clock.
+    private (string? PageId, double MonotonicTime) Place(NetworkRequest request)
+    {
+        string? contextId = request.BrowsingContextId;
+        string? pageId = contextId is null ? null : this.browser.Group.FindFrame(contextId)?.Page.Id ?? contextId;
+        return (pageId, this.startTime + (request.StartedDateTime.ToUniversalTime() - this.startWallTime).TotalMilliseconds);
+    }
+}

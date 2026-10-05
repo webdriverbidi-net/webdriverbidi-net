@@ -6,6 +6,7 @@
 #pragma warning disable SA1600 // Elements should be documented
 #pragma warning disable SA1602 // Enumeration items should be documented
 #pragma warning disable SA1649 // File name should match first type name
+#pragma warning disable SA1402 // File may only contain a single type
 
 namespace System.Diagnostics.CodeAnalysis;
 
@@ -26,5 +27,23 @@ internal sealed class DynamicallyAccessedMembersAttribute : Attribute
     }
 
     public DynamicallyAccessedMemberTypes MemberTypes { get; }
+}
+#endif // !NET5_0_OR_GREATER
+
+#if !NET5_0_OR_GREATER
+[AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
+internal sealed class UnconditionalSuppressMessageAttribute : Attribute
+{
+    public UnconditionalSuppressMessageAttribute(string category, string checkId)
+    {
+        this.Category = category;
+        this.CheckId = checkId;
+    }
+
+    public string Category { get; }
+
+    public string CheckId { get; }
+
+    public string? Justification { get; set; }
 }
 #endif // !NET5_0_OR_GREATER

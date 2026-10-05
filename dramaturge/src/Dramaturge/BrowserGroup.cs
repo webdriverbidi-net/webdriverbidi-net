@@ -112,6 +112,11 @@ public sealed class BrowserGroup : IAsyncDisposable
     internal ScriptHost ScriptHost { get; }
 
     /// <summary>
+    /// Gets the name of the browser, as the session reported it, or empty when the group did not start the session.
+    /// </summary>
+    internal string BrowserName { get; private init; } = string.Empty;
+
+    /// <summary>
     /// Launches a browser, connects a driver to it, and starts a session, if the launcher did not start one, with
     /// the session capabilities given to the builder. Disposing the group ends that session and closes the browser.
     /// </summary>
@@ -130,13 +135,15 @@ public sealed class BrowserGroup : IAsyncDisposable
             driver = new BiDiDriver(launcher.CreateTransport());
             await driver.StartAsync(launcher.ConnectionString, cancellationToken).ConfigureAwait(false);
             bool ownsSession = !launcher.IsBiDiSessionInitialized;
+            string browserName = string.Empty;
             if (ownsSession)
             {
                 NewCommandParameters parameters = new() { Capabilities = new CapabilitiesRequest() { AlwaysMatch = launcher.CreateCapabilityRequest() } };
-                await driver.Session.NewSessionAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
+                NewCommandResult session = await driver.Session.NewSessionAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
+                browserName = session.Capabilities.BrowserName;
             }
 
-            group = new BrowserGroup(driver, options ?? new DramaturgeOptions(), launcher, ownsSession);
+            group = new BrowserGroup(driver, options ?? new DramaturgeOptions(), launcher, ownsSession) { BrowserName = browserName };
         }
         catch
         {

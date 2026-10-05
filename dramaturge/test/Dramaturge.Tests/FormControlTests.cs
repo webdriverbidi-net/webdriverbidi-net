@@ -79,7 +79,7 @@ public class FormControlTests
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("radio-1"));
         AnswerScripts(session, (CheckedQuery, [Checked("checked", isRadio: true)]));
 
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("input")).UncheckAsync(cancellationToken: TestContext.Current.CancellationToken));
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("input")).UncheckAsync(new PointerActionOptions(), TestContext.Current.CancellationToken));
 
         Assert.Equal("css \"input\" is a radio button, which clicking cannot uncheck.", exception.Message);
         Assert.Empty(session.RemoteEnd.CommandsFor("input.performActions"));
@@ -95,7 +95,7 @@ public class FormControlTests
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", ProtocolJson.Nodes("box-1"));
         AnswerScripts(session, (CheckedQuery, [Checked(state)]), (Readiness, [Ready()]));
 
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("input")).SetCheckedAsync(isChecked, cancellationToken: TestContext.Current.CancellationToken));
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => page.Locate(new CssLocator("input")).SetCheckedAsync(isChecked, new PointerActionOptions(), TestContext.Current.CancellationToken));
 
         Assert.Equal($"Clicking css \"input\" did not {verb} it.", exception.Message);
         Assert.Single(session.RemoteEnd.CommandsFor("input.performActions"));

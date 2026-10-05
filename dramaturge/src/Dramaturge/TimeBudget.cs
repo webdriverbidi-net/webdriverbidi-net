@@ -29,6 +29,12 @@ internal readonly struct TimeBudget
         this.CancellationToken = cancellationToken;
     }
 
+    private TimeBudget(TimeBudget budget, ActionTrace trace)
+    {
+        this = budget;
+        this.Trace = trace;
+    }
+
     /// <summary>
     /// Gets the time the operation may take in all.
     /// </summary>
@@ -38,6 +44,11 @@ internal readonly struct TimeBudget
     /// Gets the token that cancels the operation.
     /// </summary>
     public CancellationToken CancellationToken { get; }
+
+    /// <summary>
+    /// Gets the trace entry of the action the budget is for, or <see langword="null"/> when no trace is recording.
+    /// </summary>
+    public ActionTrace? Trace { get; }
 
     /// <summary>
     /// Gets the time left, which is never negative.
@@ -55,6 +66,13 @@ internal readonly struct TimeBudget
     /// Gets a value indicating whether no time is left.
     /// </summary>
     public bool IsExhausted => this.Remaining == TimeSpan.Zero;
+
+    /// <summary>
+    /// Creates a copy of the budget, with the same time left, for an action recorded in a trace.
+    /// </summary>
+    /// <param name="trace">The action's trace entry.</param>
+    /// <returns>The copy.</returns>
+    public TimeBudget WithTrace(ActionTrace trace) => new(this, trace);
 
     /// <summary>
     /// Waits for an interval, or for the rest of the budget if less is left.

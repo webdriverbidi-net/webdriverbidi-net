@@ -45,6 +45,38 @@ public static partial class HarGenerator
         return JsonSerializer.Serialize(new HarRoot { Log = log }, HarJsonSerializerContext.Default.HarRoot);
     }
 
+    /// <summary>
+    /// Generates the network events of a trace: one HAR entry for each request, as a line of JSON, with its response
+    /// body in a file of the trace.
+    /// </summary>
+    /// <param name="requests">The captured network requests.</param>
+    /// <param name="place">Gives a request's page and its start on the trace's clock.</param>
+    /// <param name="addResource">Adds a body to the trace and returns its path there.</param>
+    /// <returns>The lines.</returns>
+    internal static IReadOnlyList<string> GenerateTraceEntries(IEnumerable<NetworkRequest> requests, Func<NetworkRequest, (string? PageId, double MonotonicTime)> place, Func<byte[], string> addResource)
+    {
+        List<string> lines = [];
+        foreach (NetworkRequest request in requests.OrderBy(request => request.StartedDateTime).ThenBy(request => request.RedirectCount))
+        {
+            (string? pageId, double monotonicTime) = place(request);
+            HarEntry entry = BuildEntry(request, pageId);
+            entry.MonotonicTime = monotonicTime;
+            entry.FrameRef = request.BrowsingContextId;
+            HarContent content = entry.Response.Content;
+            if (content.Text is not null)
+            {
+                byte[] body = content.Encoding == "base64" ? Convert.FromBase64String(content.Text) : Encoding.UTF8.GetBytes(content.Text);
+                content.File = addResource(body);
+                content.Text = null;
+                content.Encoding = null;
+            }
+
+            lines.Add($"{{\"type\":\"resource-snapshot\",\"snapshot\":{JsonSerializer.Serialize(entry, HarTraceJsonSerializerContext.Default.HarEntry)}}}");
+        }
+
+        return lines;
+    }
+
     private static string GetLibraryVersion()
     {
         // The SDK always generates the attribute.
@@ -282,6 +314,13 @@ public static partial class HarGenerator
     {
     }
 
+    // A trace's network events are HAR entries, one to a line.
+    [JsonSourceGenerationOptions(DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonSerializable(typeof(HarEntry))]
+    private sealed partial class HarTraceJsonSerializerContext : JsonSerializerContext
+    {
+    }
+
     private sealed class HarRoot
     {
         [JsonPropertyName("log")]
@@ -363,6 +402,12 @@ public static partial class HarGenerator
 
         [JsonPropertyName("_error")]
         public string? Error { get; set; }
+
+        [JsonPropertyName("_monotonicTime")]
+        public double? MonotonicTime { get; set; }
+
+        [JsonPropertyName("_frameref")]
+        public string? FrameRef { get; set; }
     }
 
     private sealed class HarCache
@@ -448,6 +493,9 @@ public static partial class HarGenerator
 
         [JsonPropertyName("comment")]
         public string? Comment { get; set; }
+
+        [JsonPropertyName("_file")]
+        public string? File { get; set; }
     }
 
     private sealed class HarPostData

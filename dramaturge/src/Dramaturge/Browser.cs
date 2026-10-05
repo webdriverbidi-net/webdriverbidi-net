@@ -29,6 +29,7 @@ public sealed class Browser
     private readonly List<RouteRegistration> routes = [];
     private readonly ObservableEventInvocable<PageEventArgs> onPageCreated = new("automation.pageCreated");
     private readonly ObservableEventInvocable<PageEventArgs> onPageClosed = new("automation.pageClosed");
+    private TraceRecording? activeTrace;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Browser"/> class.
@@ -79,6 +80,11 @@ public sealed class Browser
     /// Gets an observable event raised when a page of the browser closes.
     /// </summary>
     public ObservableEvent<PageEventArgs> OnPageClosed => this.onPageClosed;
+
+    /// <summary>
+    /// Gets the trace the browser is recording, or <see langword="null"/>.
+    /// </summary>
+    internal TraceRecording? ActiveTrace => Volatile.Read(ref this.activeTrace);
 
     /// <summary>
     /// Opens a page in the browser.
@@ -215,6 +221,21 @@ public sealed class Browser
     public Task<HarRecording> RecordHarAsync(string harPath, HarRecordingOptions? options = null, CancellationToken cancellationToken = default)
     {
         return HarRecording.StartAsync(this.Group, harPath, options, monitorOptions => monitorOptions.UserContextIds.Add(this.Id), cancellationToken);
+    }
+
+    /// <summary>
+    /// Starts recording the browser's trace: the actions taken on its pages, including pages opened later, and their
+    /// console messages, errors, and network traffic. Disposing the recording, or <see cref="TraceRecording.StopAsync"/>,
+    /// writes the trace, a zip file that Playwright's trace viewer opens.
+    /// </summary>
+    /// <param name="path">The path of the trace to write, such as trace.zip.</param>
+    /// <param name="options">The recording's settings, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels starting.</param>
+    /// <returns>The recording.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the browser is already recording a trace.</exception>
+    public Task<TraceRecording> RecordTraceAsync(string path, TraceRecordingOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return TraceRecording.StartAsync(this, path, options, cancellationToken);
     }
 
     /// <summary>
@@ -410,6 +431,25 @@ public sealed class Browser
 
         await this.onPageClosed.InvokeNotifyObserversAsync(new PageEventArgs(page)).ConfigureAwait(false);
         await page.NotifyClosedAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Makes a recording the browser's trace, unless it is recording another.
+    /// </summary>
+    /// <param name="recording">The recording.</param>
+    /// <returns><see langword="true"/> if the recording is now the browser's trace.</returns>
+    internal bool ClaimTrace(TraceRecording recording)
+    {
+        return Interlocked.CompareExchange(ref this.activeTrace, recording, null) is null;
+    }
+
+    /// <summary>
+    /// Ends a recording as the browser's trace.
+    /// </summary>
+    /// <param name="recording">The recording.</param>
+    internal void ReleaseTrace(TraceRecording recording)
+    {
+        Interlocked.CompareExchange(ref this.activeTrace, null, recording);
     }
 
     /// <summary>

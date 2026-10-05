@@ -63,10 +63,14 @@ public class ScriptTests
         session.RemoteEnd.AnswerWith("script.callFunction", ProtocolJson.Success(String("42")));
 
         string id = await DriveAsync(time, page.Locate(new CssLocator("#item")).EvaluateAsync<string>("(element, name) => element.dataset[name]", [LocalValue.String("id")], cancellationToken: TestContext.Current.CancellationToken));
-        RemoteValue raw = await page.Locate(new CssLocator("#item")).EvaluateAsync("(element) => element.id", cancellationToken: TestContext.Current.CancellationToken);
+        RemoteValue raw = await page.Locate(new CssLocator("#item")).EvaluateAsync("(element) => element.id", [], cancellationToken: TestContext.Current.CancellationToken);
+        string withoutArguments = await page.Locate(new CssLocator("#item")).EvaluateAsync<string>("(element) => element.id", cancellationToken: TestContext.Current.CancellationToken);
+        RemoteValue rawWithoutArguments = await page.Locate(new CssLocator("#item")).EvaluateAsync("(element) => element.id", cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal("42", id);
         Assert.IsType<StringRemoteValue>(raw);
+        Assert.Equal("42", withoutArguments);
+        Assert.IsType<StringRemoteValue>(rawWithoutArguments);
         JsonObject call = session.RemoteEnd.CommandsFor("script.callFunction")[0]["params"]!.AsObject();
         Assert.False(call["target"]!.AsObject().ContainsKey("sandbox"));
         Assert.Equal("item-1", (string?)call["arguments"]![0]!["sharedId"]);

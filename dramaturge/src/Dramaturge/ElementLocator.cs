@@ -263,10 +263,9 @@ public sealed class ElementLocator
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the command.</param>
     /// <returns>The number of matching elements.</returns>
-    public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+    public Task<int> CountAsync(CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(null, cancellationToken);
-        return (await this.ResolveAsync(null, budget).ConfigureAwait(false)).Count;
+        return this.TraceAsync(this.Call("Count", "count"), this.CreateBudget(null, cancellationToken), async budget => (await this.ResolveAsync(null, budget).ConfigureAwait(false)).Count);
     }
 
     /// <summary>
@@ -276,12 +275,9 @@ public sealed class ElementLocator
     /// <param name="cancellationToken">A token that cancels the commands.</param>
     /// <returns><see langword="true"/> if the element is visible; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
-    public async Task<bool> IsVisibleAsync(CancellationToken cancellationToken = default)
+    public Task<bool> IsVisibleAsync(CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(null, cancellationToken);
-        IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
-        this.ThrowIfAmbiguous(nodes);
-        return nodes.Count == 1 && await this.IsVisibleAsync(nodes[0], budget).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Is visible", "isVisible"), this.CreateBudget(null, cancellationToken), this.IsVisibleCoreAsync);
     }
 
     /// <summary>
@@ -293,14 +289,13 @@ public sealed class ElementLocator
     /// <returns>A task that completes when the element is in the state.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches, for any state but <see cref="ElementState.Detached"/>.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element does not reach the state in time.</exception>
-    public async Task WaitForAsync(ElementState state = ElementState.Visible, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task WaitForAsync(ElementState state = ElementState.Visible, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        await this.PollAsync(budget, $"{this} to be {state.ToString().ToLowerInvariant()}", async () =>
+        return this.TraceAsync(this.Call("Wait for {state}", "waitFor", ("state", state.ToString())), this.CreateBudget(timeout, cancellationToken), budget => this.PollAsync(budget, $"{this} to be {state.ToString().ToLowerInvariant()}", async () =>
         {
             (bool reached, string observed) = await this.CheckStateAsync(state, budget).ConfigureAwait(false);
             return (reached, reached, observed);
-        }).ConfigureAwait(false);
+        }));
     }
 
     /// <summary>
@@ -314,11 +309,9 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the element is not a frame element.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no frame is found in time.</exception>
-    public async Task<Frame> ContentFrameAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<Frame> ContentFrameAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        Frame? frame = await this.PollAsync(budget, $"the frame of {this}", () => this.FindContentFrameAsync(budget)).ConfigureAwait(false);
-        return frame!;
+        return this.TraceAsync(this.Call("Content frame", "contentFrame"), this.CreateBudget(timeout, cancellationToken), async budget => (await this.PollAsync(budget, $"the frame of {this}", () => this.FindContentFrameAsync(budget)).ConfigureAwait(false))!);
     }
 
     /// <summary>
@@ -337,12 +330,10 @@ public sealed class ElementLocator
     /// uses for <see cref="Frame.GetByRole"/>; act on an element from a snapshot through its ref, with
     /// <see cref="AriaSnapshot.Locator"/>.
     /// </remarks>
-    public async Task<AriaSnapshot> AriaSnapshotAsync(AriaSnapshotOptions? options = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<AriaSnapshot> AriaSnapshotAsync(AriaSnapshotOptions? options = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
         AriaSnapshotOptions snapshotOptions = options ?? new AriaSnapshotOptions();
-        AriaSnapshot? snapshot = await this.PollElementAsync(budget, async node => (true, await AriaSnapshotBuilder.TakeAsync(this.Frame, node, snapshotOptions, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
-        return snapshot!;
+        return this.TraceAsync(this.Call("Aria snapshot", "ariaSnapshot"), this.CreateBudget(timeout, cancellationToken), async budget => (await this.PollElementAsync(budget, async node => (true, await AriaSnapshotBuilder.TakeAsync(this.Frame, node, snapshotOptions, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false))!);
     }
 
     /// <summary>
@@ -357,13 +348,7 @@ public sealed class ElementLocator
     public Task ClickAsync(ClickOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new ClickOptions();
-        return this.PerformPointerActionAsync(options.ClickCount > 1 ? "doubleclick" : "click", "clicked", options, this.CreateBudget(options.Timeout, cancellationToken), (pointer, builder) =>
-        {
-            for (int click = 0; click < options.ClickCount; click++)
-            {
-                builder.AddAction(pointer.CreatePointerDown(options.Button)).AddAction(pointer.CreatePointerUp(options.Button));
-            }
-        });
+        return this.TraceAsync(this.Call("Click", "click"), this.CreateBudget(options.Timeout, cancellationToken), budget => this.ClickCoreAsync(options, options.ClickCount, budget));
     }
 
     /// <summary>
@@ -377,9 +362,7 @@ public sealed class ElementLocator
     public Task DblClickAsync(ClickOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new ClickOptions();
-        return this.ClickAsync(
-            new ClickOptions() { Button = options.Button, ClickCount = 2, Offset = options.Offset, Modifiers = options.Modifiers, Force = options.Force, Timeout = options.Timeout },
-            cancellationToken);
+        return this.TraceAsync(this.Call("Double click", "dblclick"), this.CreateBudget(options.Timeout, cancellationToken), budget => this.ClickCoreAsync(options, 2, budget));
     }
 
     /// <summary>
@@ -394,7 +377,7 @@ public sealed class ElementLocator
     public Task HoverAsync(PointerActionOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new PointerActionOptions();
-        return this.PerformPointerActionAsync("hover", "hovered", options, this.CreateBudget(options.Timeout, cancellationToken), (_, _) => { });
+        return this.TraceAsync(this.Call("Hover", "hover"), this.CreateBudget(options.Timeout, cancellationToken), budget => this.PerformPointerActionAsync("hover", "hovered", options, budget, (_, _) => { }));
     }
 
     /// <summary>
@@ -408,7 +391,7 @@ public sealed class ElementLocator
     public Task TapAsync(PointerActionOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new PointerActionOptions();
-        return this.PerformPointerActionAsync("click", "tapped", options, this.CreateBudget(options.Timeout, cancellationToken), (pointer, builder) => builder.AddAction(pointer.CreatePointerDown()).AddAction(pointer.CreatePointerUp()), PointerType.Touch);
+        return this.TraceAsync(this.Call("Tap", "tap"), this.CreateBudget(options.Timeout, cancellationToken), budget => this.PerformPointerActionAsync("click", "tapped", options, budget, (pointer, builder) => builder.AddAction(pointer.CreatePointerDown()).AddAction(pointer.CreatePointerUp()), PointerType.Touch));
     }
 
     /// <summary>
@@ -422,19 +405,21 @@ public sealed class ElementLocator
     /// <exception cref="ArgumentException">Thrown when the target finds elements in another frame.</exception>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches either locator.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when either element is not ready in time.</exception>
-    public async Task DragToAsync(ElementLocator target, DragOptions? options = null, CancellationToken cancellationToken = default)
+    public Task DragToAsync(ElementLocator target, DragOptions? options = null, CancellationToken cancellationToken = default)
     {
         this.RequireSameFrame(target, nameof(target));
         options ??= new DragOptions();
-        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
-        ActionTarget? from = await this.PollAsync(budget, $"{this} to be ready to be dragged", () => this.FindActionTargetAsync("drag", options, budget)).ConfigureAwait(false);
-        PointerActionOptions targetOptions = new() { Offset = options.TargetOffset, Force = options.Force };
-        ActionTarget? to = await target.PollAsync(budget, $"{target} to be ready to be dropped on", () => target.FindActionTargetAsync("drop", targetOptions, budget)).ConfigureAwait(false);
-        await this.PerformPointerInputAsync(options.Modifiers, PointerType.Mouse, budget, (pointer, builder) => builder
-            .AddAction(MoveTo(pointer, from!))
-            .AddAction(pointer.CreatePointerDown())
-            .AddAction(MoveTo(pointer, to!))
-            .AddAction(pointer.CreatePointerUp())).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Drag to {target}", "dragTo", ("target", target.ToString())), this.CreateBudget(options.Timeout, cancellationToken), async budget =>
+        {
+            ActionTarget? from = await this.PollAsync(budget, $"{this} to be ready to be dragged", () => this.FindActionTargetAsync("drag", options, budget)).ConfigureAwait(false);
+            PointerActionOptions targetOptions = new() { Offset = options.TargetOffset, Force = options.Force };
+            ActionTarget? to = await target.PollAsync(budget, $"{target} to be ready to be dropped on", () => target.FindActionTargetAsync("drop", targetOptions, budget)).ConfigureAwait(false);
+            await this.PerformPointerInputAsync(options.Modifiers, PointerType.Mouse, budget, (pointer, builder) => builder
+                .AddAction(MoveTo(pointer, from!))
+                .AddAction(pointer.CreatePointerDown())
+                .AddAction(MoveTo(pointer, to!))
+                .AddAction(pointer.CreatePointerUp())).ConfigureAwait(false);
+        });
     }
 
     /// <summary>
@@ -449,13 +434,15 @@ public sealed class ElementLocator
     /// <returns><see langword="false"/> if a listener canceled the event; otherwise, <see langword="true"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<bool> DispatchEventAsync(string type, IReadOnlyDictionary<string, LocalValue>? eventInit = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<bool> DispatchEventAsync(string type, IReadOnlyDictionary<string, LocalValue>? eventInit = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        NodeRemoteValue? node = await this.PollAsync(budget, $"{this} to be attached", () => this.TryFindOneAsync(budget)).ConfigureAwait(false);
-        LocalValue init = LocalValue.Object(eventInit?.ToDictionary(property => property.Key, property => property.Value) ?? []);
-        RemoteValue dispatched = await this.Group.ScriptHost.CallActionsAsync(this.Frame.Id, "(actions, element, type, init) => actions.dispatchEvent(element, type, init)", [node!.ToSharedReference(), LocalValue.String(type), init], budget).ConfigureAwait(false);
-        return dispatched.As<BooleanRemoteValue>().Value;
+        return this.TraceAsync(this.Call("Dispatch \"{type}\"", "dispatchEvent", ("type", type)), this.CreateBudget(timeout, cancellationToken), async budget =>
+        {
+            NodeRemoteValue? node = await this.PollAsync(budget, $"{this} to be attached", () => this.TryFindOneAsync(budget)).ConfigureAwait(false);
+            LocalValue init = LocalValue.Object(eventInit?.ToDictionary(property => property.Key, property => property.Value) ?? []);
+            RemoteValue dispatched = await this.Group.ScriptHost.CallActionsAsync(this.Frame.Id, "(actions, element, type, init) => actions.dispatchEvent(element, type, init)", [node!.ToSharedReference(), LocalValue.String(type), init], budget).ConfigureAwait(false);
+            return dispatched.As<BooleanRemoteValue>().Value;
+        });
     }
 
     /// <summary>
@@ -466,10 +453,9 @@ public sealed class ElementLocator
     /// <returns>A task that completes when the element is in view.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not in view in time.</exception>
-    public async Task ScrollIntoViewIfNeededAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task ScrollIntoViewIfNeededAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        await this.PollAsync(budget, $"{this} to be in view", () => this.TryScrollIntoViewAsync(budget)).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Scroll into view", "scrollIntoViewIfNeeded"), this.CreateBudget(timeout, cancellationToken), budget => this.PollAsync(budget, $"{this} to be in view", () => this.TryScrollIntoViewAsync(budget)));
     }
 
     /// <summary>
@@ -480,10 +466,9 @@ public sealed class ElementLocator
     /// <returns>A task that completes when the element has been focused.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task FocusAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task FocusAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        await this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Focus", "focus"), this.CreateBudget(timeout, cancellationToken), budget => this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)));
     }
 
     /// <summary>
@@ -494,10 +479,9 @@ public sealed class ElementLocator
     /// <returns>A task that completes when focus has been removed from the element.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task BlurAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task BlurAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        await this.PollAsync(budget, $"{this} to be blurred", () => this.TryCallOnElementAsync("(element) => element.blur()", budget)).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Blur", "blur"), this.CreateBudget(timeout, cancellationToken), budget => this.PollAsync(budget, $"{this} to be blurred", () => this.TryCallOnElementAsync("(element) => element.blur()", budget)));
     }
 
     /// <summary>
@@ -509,12 +493,14 @@ public sealed class ElementLocator
     /// <returns>A task that completes when the key has been pressed and released.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task PressAsync(string key, KeyActionOptions? options = null, CancellationToken cancellationToken = default)
+    public Task PressAsync(string key, KeyActionOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new KeyActionOptions();
-        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
-        await this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)).ConfigureAwait(false);
-        await this.PerformKeyActionsAsync(new InputBuilder().AddKeyChordAction([.. ModifierKeyValues.For(options.Modifiers), key]), budget).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Press \"{key}\"", "press", ("key", key)), this.CreateBudget(options.Timeout, cancellationToken), async budget =>
+        {
+            await this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)).ConfigureAwait(false);
+            await this.PerformKeyActionsAsync(new InputBuilder().AddKeyChordAction([.. ModifierKeyValues.For(options.Modifiers), key]), budget).ConfigureAwait(false);
+        });
     }
 
     /// <summary>
@@ -527,12 +513,14 @@ public sealed class ElementLocator
     /// <returns>A task that completes when the text has been typed.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task PressSequentiallyAsync(string text, PressSequentiallyOptions? options = null, CancellationToken cancellationToken = default)
+    public Task PressSequentiallyAsync(string text, PressSequentiallyOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new PressSequentiallyOptions();
-        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
-        await this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)).ConfigureAwait(false);
-        await this.PerformKeyActionsAsync(new InputBuilder().AddSendKeysToActiveElementAction(text, options.Delay), budget).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Type \"{text}\"", "pressSequentially", ("text", text)), this.CreateBudget(options.Timeout, cancellationToken), async budget =>
+        {
+            await this.PollAsync(budget, $"{this} to be focused", () => this.TryCallOnElementAsync(FocusFunction, budget)).ConfigureAwait(false);
+            await this.PerformKeyActionsAsync(new InputBuilder().AddSendKeysToActiveElementAction(text, options.Delay), budget).ConfigureAwait(false);
+        });
     }
 
     /// <summary>
@@ -548,7 +536,8 @@ public sealed class ElementLocator
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
     public Task FillAsync(string value, ActionOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return this.ReplaceTextAsync(value, "type", "filled", options ?? new ActionOptions(), cancellationToken);
+        options ??= new ActionOptions();
+        return this.TraceAsync(this.Call("Fill \"{value}\"", "fill", ("value", value)), this.CreateBudget(options.Timeout, cancellationToken), budget => this.ReplaceTextAsync(value, "type", "filled", options.Force, budget));
     }
 
     /// <summary>
@@ -563,7 +552,8 @@ public sealed class ElementLocator
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
     public Task ClearAsync(ActionOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return this.ReplaceTextAsync(string.Empty, "clear", "cleared", options ?? new ActionOptions(), cancellationToken);
+        options ??= new ActionOptions();
+        return this.TraceAsync(this.Call("Clear", "clear"), this.CreateBudget(options.Timeout, cancellationToken), budget => this.ReplaceTextAsync(string.Empty, "clear", "cleared", options.Force, budget));
     }
 
     /// <summary>
@@ -578,7 +568,8 @@ public sealed class ElementLocator
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
     public Task CheckAsync(PointerActionOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return this.SetCheckedAsync(true, options, cancellationToken);
+        options ??= new PointerActionOptions();
+        return this.TraceAsync(this.Call("Check", "check"), this.CreateBudget(options.Timeout, cancellationToken), budget => this.SetCheckedCoreAsync(true, options, budget));
     }
 
     /// <summary>
@@ -593,7 +584,8 @@ public sealed class ElementLocator
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
     public Task UncheckAsync(PointerActionOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return this.SetCheckedAsync(false, options, cancellationToken);
+        options ??= new PointerActionOptions();
+        return this.TraceAsync(this.Call("Uncheck", "uncheck"), this.CreateBudget(options.Timeout, cancellationToken), budget => this.SetCheckedCoreAsync(false, options, budget));
     }
 
     /// <summary>
@@ -607,28 +599,10 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the element cannot be checked, is a checked radio button being unchecked, or clicking it did not change its state.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
-    public async Task SetCheckedAsync(bool isChecked, PointerActionOptions? options = null, CancellationToken cancellationToken = default)
+    public Task SetCheckedAsync(bool isChecked, PointerActionOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new PointerActionOptions();
-        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
-        string awaited = $"{this} to report whether it is checked";
-        CheckedState? state = await this.PollAsync(budget, awaited, () => this.TryReadCheckedStateAsync(budget)).ConfigureAwait(false);
-        if (state!.IsChecked == isChecked)
-        {
-            return;
-        }
-
-        if (!isChecked && state.IsRadio)
-        {
-            throw new InvalidOperationException($"{this} is a radio button, which clicking cannot uncheck.");
-        }
-
-        await this.PerformPointerActionAsync("click", "clicked", options, budget, (pointer, builder) => builder.AddAction(pointer.CreatePointerDown()).AddAction(pointer.CreatePointerUp())).ConfigureAwait(false);
-        state = await this.PollAsync(budget, awaited, () => this.TryReadCheckedStateAsync(budget)).ConfigureAwait(false);
-        if (state!.IsChecked != isChecked)
-        {
-            throw new InvalidOperationException($"Clicking {this} did not {(isChecked ? "check" : "uncheck")} it.");
-        }
+        return this.TraceAsync(this.Call("Set checked {checked}", "setChecked", ("checked", isChecked ? "true" : "false")), this.CreateBudget(options.Timeout, cancellationToken), budget => this.SetCheckedCoreAsync(isChecked, options, budget));
     }
 
     /// <summary>
@@ -643,13 +617,11 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the element is not a <c>&lt;select&gt;</c> element, or several options are given for one that takes one.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element or an option is not ready in time.</exception>
-    public async Task<IReadOnlyList<string>> SelectOptionAsync(IEnumerable<SelectOption> selections, ActionOptions? options = null, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<string>> SelectOptionAsync(IEnumerable<SelectOption> selections, ActionOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new ActionOptions();
         List<SelectOption> chosen = [.. selections];
-        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
-        IReadOnlyList<string>? values = await this.PollAsync(budget, $"{this} to be ready to have options selected", () => this.TrySelectOptionsAsync(chosen, options.Force, budget)).ConfigureAwait(false);
-        return values!;
+        return this.TraceAsync(this.Call("Select option", "selectOption", ("options", chosen.Select(option => option.ToString()).ToList())), this.CreateBudget(options.Timeout, cancellationToken), async budget => (await this.PollAsync(budget, $"{this} to be ready to have options selected", () => this.TrySelectOptionsAsync(chosen, options.Force, budget)).ConfigureAwait(false))!);
     }
 
     /// <summary>
@@ -662,13 +634,16 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiCommandException">Thrown when the browser cannot set the files, such as for an element that is not a file input, or several files for an input that takes one.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task SetInputFilesAsync(IEnumerable<string> files, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task SetInputFilesAsync(IEnumerable<string> files, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        NodeRemoteValue? node = await this.PollAsync(budget, $"{this} to be attached", () => this.TryFindOneAsync(budget)).ConfigureAwait(false);
-        SetFilesCommandParameters parameters = new(this.Frame.Id, node!.ToSharedReference());
-        parameters.Files.AddRange(files);
-        await this.Group.Driver.Input.SetFilesAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        List<string> fileList = [.. files];
+        return this.TraceAsync(this.Call("Set input files", "setInputFiles", ("files", fileList)), this.CreateBudget(timeout, cancellationToken), async budget =>
+        {
+            NodeRemoteValue? node = await this.PollAsync(budget, $"{this} to be attached", () => this.TryFindOneAsync(budget)).ConfigureAwait(false);
+            SetFilesCommandParameters parameters = new(this.Frame.Id, node!.ToSharedReference());
+            parameters.Files.AddRange(fileList);
+            await this.Group.Driver.Input.SetFilesAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        });
     }
 
     /// <summary>
@@ -677,9 +652,9 @@ public sealed class ElementLocator
     /// <param name="cancellationToken">A token that cancels the commands.</param>
     /// <returns><see langword="true"/> if no element matches or the element is not visible; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
-    public async Task<bool> IsHiddenAsync(CancellationToken cancellationToken = default)
+    public Task<bool> IsHiddenAsync(CancellationToken cancellationToken = default)
     {
-        return !await this.IsVisibleAsync(cancellationToken).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Is hidden", "isHidden"), this.CreateBudget(null, cancellationToken), async budget => !await this.IsVisibleCoreAsync(budget).ConfigureAwait(false));
     }
 
     /// <summary>
@@ -690,9 +665,9 @@ public sealed class ElementLocator
     /// <returns><see langword="true"/> if the element is enabled; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<bool> IsEnabledAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<bool> IsEnabledAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return await this.QueryStateAsync("enabled", timeout, cancellationToken).ConfigureAwait(false) == "enabled";
+        return this.TraceAsync(this.Call("Is enabled", "isEnabled"), this.CreateBudget(timeout, cancellationToken), async budget => await this.QueryStateAsync("enabled", budget).ConfigureAwait(false) == "enabled");
     }
 
     /// <summary>
@@ -703,9 +678,9 @@ public sealed class ElementLocator
     /// <returns><see langword="true"/> if the element is disabled; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<bool> IsDisabledAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<bool> IsDisabledAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return !await this.IsEnabledAsync(timeout, cancellationToken).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Is disabled", "isDisabled"), this.CreateBudget(timeout, cancellationToken), async budget => await this.QueryStateAsync("enabled", budget).ConfigureAwait(false) != "enabled");
     }
 
     /// <summary>
@@ -718,9 +693,9 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the element is not an input, a text area, a select, or an editable element.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<bool> IsEditableAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<bool> IsEditableAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return await this.QueryStateAsync("editable", timeout, cancellationToken).ConfigureAwait(false) == "editable";
+        return this.TraceAsync(this.Call("Is editable", "isEditable"), this.CreateBudget(timeout, cancellationToken), async budget => await this.QueryStateAsync("editable", budget).ConfigureAwait(false) == "editable");
     }
 
     /// <summary>
@@ -733,11 +708,9 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the element cannot be checked.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<bool> IsCheckedAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<bool> IsCheckedAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        CheckedState? state = await this.PollAsync(budget, $"{this} to report whether it is checked", () => this.TryReadCheckedStateAsync(budget)).ConfigureAwait(false);
-        return state!.IsChecked;
+        return this.TraceAsync(this.Call("Is checked", "isChecked"), this.CreateBudget(timeout, cancellationToken), async budget => (await this.PollAsync(budget, $"{this} to report whether it is checked", () => this.TryReadCheckedStateAsync(budget)).ConfigureAwait(false))!.IsChecked);
     }
 
     /// <summary>
@@ -748,11 +721,9 @@ public sealed class ElementLocator
     /// <returns>The text content.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<string> TextContentAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<string> TextContentAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        string? text = await this.PollElementAsync(budget, async node => (true, await this.ReadTextAsync(node, false, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
-        return text!;
+        return this.TraceAsync(this.Call("Text content", "textContent"), this.CreateBudget(timeout, cancellationToken), async budget => (await this.PollElementAsync(budget, async node => (true, await this.ReadTextAsync(node, false, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false))!);
     }
 
     /// <summary>
@@ -764,11 +735,9 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the element is not an HTML element, such as an SVG one.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<string> InnerTextAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<string> InnerTextAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        string? text = await this.PollElementAsync(budget, async node => (true, await this.ReadTextAsync(node, true, budget).ConfigureAwait(false) ?? throw new InvalidOperationException($"{this} is not an HTML element."), string.Empty)).ConfigureAwait(false);
-        return text!;
+        return this.TraceAsync(this.Call("Inner text", "innerText"), this.CreateBudget(timeout, cancellationToken), async budget => (await this.PollElementAsync(budget, async node => (true, await this.ReadTextAsync(node, true, budget).ConfigureAwait(false) ?? throw new InvalidOperationException($"{this} is not an HTML element."), string.Empty)).ConfigureAwait(false))!);
     }
 
     /// <summary>
@@ -781,7 +750,7 @@ public sealed class ElementLocator
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
     public Task<string> InnerHtmlAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.ReadStringAsync("(element) => element.innerHTML", [], timeout, cancellationToken);
+        return this.TraceAsync(this.Call("Inner HTML", "innerHTML"), this.CreateBudget(timeout, cancellationToken), async budget => (await this.PollElementAsync(budget, async node => (true, await this.ReadStringAsync(node, "(element) => element.innerHTML", [], budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false))!);
     }
 
     /// <summary>
@@ -793,11 +762,9 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the element is not an input, a text area, or a select.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<string> InputValueAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<string> InputValueAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        string? value = await this.PollElementAsync(budget, async node => (true, await this.ReadValueAsync(node, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
-        return value!;
+        return this.TraceAsync(this.Call("Input value", "inputValue"), this.CreateBudget(timeout, cancellationToken), async budget => (await this.PollElementAsync(budget, async node => (true, await this.ReadValueAsync(node, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false))!);
     }
 
     /// <summary>
@@ -809,10 +776,9 @@ public sealed class ElementLocator
     /// <returns>The value, or <see langword="null"/> if the element does not have the attribute.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<string?> GetAttributeAsync(string name, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<string?> GetAttributeAsync(string name, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        return await this.PollElementAsync(budget, async node => (true, await this.ReadAttributeAsync(node, name, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
+        return this.TraceAsync(this.Call("Get attribute \"{name}\"", "getAttribute", ("name", name)), this.CreateBudget(timeout, cancellationToken), budget => this.PollElementAsync(budget, async node => (true, await this.ReadAttributeAsync(node, name, budget).ConfigureAwait(false), string.Empty)));
     }
 
     /// <summary>
@@ -824,14 +790,13 @@ public sealed class ElementLocator
     /// <returns>The box, or <see langword="null"/> if the element is not visible.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<BoundingBox?> BoundingBoxAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<BoundingBox?> BoundingBoxAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        return await this.PollElementAsync(budget, async node =>
+        return this.TraceAsync(this.Call("Bounding box", "boundingBox"), this.CreateBudget(timeout, cancellationToken), budget => this.PollElementAsync(budget, async node =>
         {
             RemoteValue box = await this.Group.ScriptHost.CallAsync(this.Frame.Id, "(inspector, element) => { if (!inspector.isElementVisible(element)) { return null; } const { x, y, width, height } = element.getBoundingClientRect(); return { x, y, width, height }; }", [node.ToSharedReference()], budget).ConfigureAwait(false);
             return (true, box is NullRemoteValue ? null : new BoundingBox(this.Frame, Number(box, "x"), Number(box, "y"), Number(box, "width"), Number(box, "height")), string.Empty);
-        }).ConfigureAwait(false);
+        }));
     }
 
     /// <summary>
@@ -843,10 +808,9 @@ public sealed class ElementLocator
     /// <returns>The image.</returns>
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the element is not ready in time.</exception>
-    public async Task<byte[]> ScreenshotAsync(ImageFormat? format = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<byte[]> ScreenshotAsync(ImageFormat? format = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        byte[]? image = await this.PollElementAsync(budget, async node =>
+        return this.TraceAsync(this.Call("Screenshot", "screenshot"), this.CreateBudget(timeout, cancellationToken), async budget => (await this.PollElementAsync(budget, async node =>
         {
             string? notReady = await this.CheckStatesAsync(node, "['stable', 'visible']", budget).ConfigureAwait(false);
             if (notReady is not null)
@@ -857,8 +821,7 @@ public sealed class ElementLocator
             CaptureScreenshotCommandParameters parameters = new(this.Frame.Id) { Clip = new ElementClipRectangle(node.ToSharedReference()), Format = format, Origin = ScreenshotOrigin.Document };
             CaptureScreenshotCommandResult result = await this.Group.Driver.BrowsingContext.CaptureScreenshotAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
             return (true, Convert.FromBase64String(result.Data), string.Empty);
-        }).ConfigureAwait(false);
-        return image!;
+        }).ConfigureAwait(false))!);
     }
 
     /// <summary>
@@ -873,16 +836,10 @@ public sealed class ElementLocator
     /// <exception cref="AmbiguousElementException">Thrown when more than one element matches.</exception>
     /// <exception cref="ScriptException">Thrown when the function throws.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no element matches in time.</exception>
-    public async Task<RemoteValue> EvaluateAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<RemoteValue> EvaluateAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         List<LocalValue> argumentList = [.. arguments ?? []];
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        RemoteValue? result = await this.PollElementAsync(budget, async node =>
-        {
-            RemoteValue value = await this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, function, [node.ToSharedReference(), .. argumentList], null, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
-            return (true, value, string.Empty);
-        }).ConfigureAwait(false);
-        return result!;
+        return this.TraceAsync(this.Call("Evaluate", "evaluate", ("function", function)), this.CreateBudget(timeout, cancellationToken), budget => this.EvaluateCoreAsync(function, argumentList, budget));
     }
 
     /// <summary>
@@ -898,7 +855,8 @@ public sealed class ElementLocator
     /// <returns>The function's result, converted.</returns>
     public async Task<T> EvaluateAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return RemoteValueConverter.Convert<T>(await this.EvaluateAsync(function, arguments, timeout, cancellationToken).ConfigureAwait(false));
+        List<LocalValue> argumentList = [.. arguments ?? []];
+        return await this.TraceAsync(this.Call("Evaluate", "evaluate", ("function", function)), this.CreateBudget(timeout, cancellationToken), async budget => RemoteValueConverter.Convert<T>(await this.EvaluateCoreAsync(function, argumentList, budget).ConfigureAwait(false))).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1212,6 +1170,77 @@ public sealed class ElementLocator
         return kept;
     }
 
+    private TracedCall Call(string title, string method, params (string Name, object Value)[] parameters)
+    {
+        Dictionary<string, object> values = new() { ["locator"] = this.ToString() };
+        foreach ((string name, object value) in parameters)
+        {
+            values[name] = value;
+        }
+
+        return new TracedCall(title, "{locator}", "Locator", method, values);
+    }
+
+    private Task<T> TraceAsync<T>(TracedCall call, TimeBudget budget, Func<TimeBudget, Task<T>> action)
+    {
+        return TraceRecording.RunAsync(this.Frame.Page, budget, call, action);
+    }
+
+    private Task TraceAsync(TracedCall call, TimeBudget budget, Func<TimeBudget, Task> action)
+    {
+        return TraceRecording.RunAsync(this.Frame.Page, budget, call, action);
+    }
+
+    private async Task<bool> IsVisibleCoreAsync(TimeBudget budget)
+    {
+        IList<NodeRemoteValue> nodes = await this.ResolveAsync(StrictMatchLimit, budget).ConfigureAwait(false);
+        this.ThrowIfAmbiguous(nodes);
+        return nodes.Count == 1 && await this.IsVisibleAsync(nodes[0], budget).ConfigureAwait(false);
+    }
+
+    private Task ClickCoreAsync(ClickOptions options, int clickCount, TimeBudget budget)
+    {
+        return this.PerformPointerActionAsync(clickCount > 1 ? "doubleclick" : "click", "clicked", options, budget, (pointer, builder) =>
+        {
+            for (int index = 0; index < clickCount; index++)
+            {
+                builder.AddAction(pointer.CreatePointerDown(options.Button)).AddAction(pointer.CreatePointerUp(options.Button));
+            }
+        });
+    }
+
+    private async Task SetCheckedCoreAsync(bool isChecked, PointerActionOptions options, TimeBudget budget)
+    {
+        string awaited = $"{this} to report whether it is checked";
+        CheckedState? state = await this.PollAsync(budget, awaited, () => this.TryReadCheckedStateAsync(budget)).ConfigureAwait(false);
+        if (state!.IsChecked == isChecked)
+        {
+            return;
+        }
+
+        if (!isChecked && state.IsRadio)
+        {
+            throw new InvalidOperationException($"{this} is a radio button, which clicking cannot uncheck.");
+        }
+
+        await this.PerformPointerActionAsync("click", "clicked", options, budget, (pointer, builder) => builder.AddAction(pointer.CreatePointerDown()).AddAction(pointer.CreatePointerUp())).ConfigureAwait(false);
+        state = await this.PollAsync(budget, awaited, () => this.TryReadCheckedStateAsync(budget)).ConfigureAwait(false);
+        if (state!.IsChecked != isChecked)
+        {
+            throw new InvalidOperationException($"Clicking {this} did not {(isChecked ? "check" : "uncheck")} it.");
+        }
+    }
+
+    private async Task<RemoteValue> EvaluateCoreAsync(string function, List<LocalValue> argumentList, TimeBudget budget)
+    {
+        RemoteValue? result = await this.PollElementAsync(budget, async node =>
+        {
+            RemoteValue value = await this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, function, [node.ToSharedReference(), .. argumentList], null, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+            return (true, value, string.Empty);
+        }).ConfigureAwait(false);
+        return result!;
+    }
+
     private TimeBudget CreateBudget(TimeSpan? timeout, CancellationToken cancellationToken)
     {
         return new TimeBudget(timeout ?? this.Group.Options.ActionTimeout, this.Group.Options.TimeProvider, cancellationToken);
@@ -1423,6 +1452,7 @@ public sealed class ElementLocator
     // that case with the protocol's own errors.
     private async Task<T> PollAsync<T>(TimeBudget budget, string awaited, Func<Task<(bool Done, T Result, string Observed)>> attempt)
     {
+        budget.Trace?.Log($"waiting for {awaited}");
         (bool done, T result, string? observed) = await this.TryPollAsync(budget, attempt).ConfigureAwait(false);
         return done ? result : throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for {awaited}; {observed}.");
     }
@@ -1442,6 +1472,7 @@ public sealed class ElementLocator
                 }
 
                 observed = seen;
+                budget.Trace?.Log(seen);
             }
             catch (WebDriverBiDiCommandException ex) when (ex.ErrorCode == ErrorCode.NoSuchNode)
             {
@@ -1575,13 +1606,6 @@ public sealed class ElementLocator
         return this.Group.Driver.Script.CallFunctionAsync(this.Frame.Id, functionDeclaration, [node.ToSharedReference(), .. arguments], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken);
     }
 
-    private async Task<string> ReadStringAsync(string functionDeclaration, IEnumerable<LocalValue> arguments, TimeSpan? timeout, CancellationToken cancellationToken)
-    {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        string? value = await this.PollElementAsync(budget, async node => (true, await this.ReadStringAsync(node, functionDeclaration, arguments, budget).ConfigureAwait(false), string.Empty)).ConfigureAwait(false);
-        return value!;
-    }
-
     private async Task<string> ReadStringAsync(NodeRemoteValue node, string functionDeclaration, IEnumerable<LocalValue> arguments, TimeBudget budget)
     {
         RemoteValue value = await this.CallOnElementAsync(node, functionDeclaration, arguments, budget).ConfigureAwait(false);
@@ -1609,9 +1633,8 @@ public sealed class ElementLocator
 
     // The state the library reports for the element, such as "enabled"; an element removed while it is checked is
     // looked up again.
-    private async Task<string> QueryStateAsync(string state, TimeSpan? timeout, CancellationToken cancellationToken)
+    private async Task<string> QueryStateAsync(string state, TimeBudget budget)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
         string? received = await this.PollElementAsync(budget, async node =>
         {
             string? received = await this.ReadElementStateAsync(node, state, budget).ConfigureAwait(false);
@@ -1697,10 +1720,9 @@ public sealed class ElementLocator
 
     // Selecting the element's text, then typing, replaces the text as a user would, with the events a user's typing
     // causes; an empty value deletes the selection.
-    private async Task ReplaceTextAsync(string value, string interactionType, string pastTense, ActionOptions options, CancellationToken cancellationToken)
+    private async Task ReplaceTextAsync(string value, string interactionType, string pastTense, bool force, TimeBudget budget)
     {
-        TimeBudget budget = this.CreateBudget(options.Timeout, cancellationToken);
-        await this.PollAsync(budget, $"{this} to be ready to be {pastTense}", () => this.TrySelectTextAsync(interactionType, options.Force, budget)).ConfigureAwait(false);
+        await this.PollAsync(budget, $"{this} to be ready to be {pastTense}", () => this.TrySelectTextAsync(interactionType, force, budget)).ConfigureAwait(false);
         InputBuilder builder = new();
         await this.PerformKeyActionsAsync(value.Length == 0 ? builder.AddKeyChordAction(Keys.Delete) : builder.AddSendKeysToActiveElementAction(value), budget).ConfigureAwait(false);
     }

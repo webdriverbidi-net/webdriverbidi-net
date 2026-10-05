@@ -70,10 +70,12 @@ public static class NetworkEvents
     /// <param name="startMilliseconds">The event's timestamp, in milliseconds after the default start.</param>
     /// <param name="sizesKnown">A value indicating whether the body size is reported.</param>
     /// <param name="userContext">The user context the event reports, or <see langword="null"/> for none.</param>
+    /// <param name="context">The browsing context that made the request, or <see langword="null"/> for none, as for a worker's.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static Task BeforeRequestSentAsync(FakeRemoteEnd remoteEnd, string requestId, string method = "GET", ulong bodySize = 0, ulong redirectCount = 0, string[]? intercepts = null, string url = "https://example.com/", string? navigation = null, Dictionary<string, string>? headers = null, JsonObject? timings = null, long startMilliseconds = 0, bool sizesKnown = true, string? userContext = null)
+    public static Task BeforeRequestSentAsync(FakeRemoteEnd remoteEnd, string requestId, string method = "GET", ulong bodySize = 0, ulong redirectCount = 0, string[]? intercepts = null, string url = "https://example.com/", string? navigation = null, Dictionary<string, string>? headers = null, JsonObject? timings = null, long startMilliseconds = 0, bool sizesKnown = true, string? userContext = null, string? context = ContextId)
     {
         JsonObject parameters = Base(requestId, redirectCount, intercepts, url, method, bodySize);
+        parameters["context"] = context;
         if (userContext is not null)
         {
             parameters["userContext"] = userContext;
