@@ -25,7 +25,8 @@ using StackTrace = System.Diagnostics.StackTrace;
 /// </summary>
 public sealed class TraceRecording : IAsyncDisposable
 {
-    private static readonly HashSet<Assembly> LibraryAssemblies = [typeof(TraceRecording).Assembly, typeof(BiDiDriver).Assembly, typeof(ScriptException).Assembly];
+    // The test framework packages build on this one, and its frames in them are the library's too.
+    private static readonly HashSet<string> LibraryAssemblies = ["Dramaturge", "Dramaturge.Browsers", "Dramaturge.MSTest", "Dramaturge.NUnit", "Dramaturge.TUnit", "Dramaturge.Xunit", "WebDriverBiDi", "WebDriverBiDi.Extensions"];
 
     private readonly Browser browser;
     private readonly TraceRecordingOptions options;
@@ -250,9 +251,9 @@ public sealed class TraceRecording : IAsyncDisposable
         }
     }
 
-    // The frames of the code that called the library: those with source files after the library's own, up to the
-    // library's next frame, which, for code an event or a continuation runs, is what ran it. Frames without source
-    // files, such as the runtime's, are passed over.
+    // The frames of the code that called the library: those with source files on this machine after the library's
+    // own, up to the library's next frame, which, for code an event or a continuation runs, is what ran it. Frames
+    // without such files, such as the runtime's and those of packages built elsewhere, are passed over.
     private static List<TraceStackFrame> CaptureStack()
     {
         List<TraceStackFrame> frames = [];
@@ -260,14 +261,14 @@ public sealed class TraceRecording : IAsyncDisposable
         {
             (Type type, string method) = MethodOf(frame);
             string? file = frame.GetFileName();
-            if (LibraryAssemblies.Contains(type.Assembly))
+            if (LibraryAssemblies.Contains(type.Assembly.GetName().Name!))
             {
                 if (frames.Count > 0)
                 {
                     break;
                 }
             }
-            else if (file is not null)
+            else if (file is not null && File.Exists(file))
             {
                 frames.Add(new TraceStackFrame(file, frame.GetFileLineNumber(), frame.GetFileColumnNumber(), FunctionName(type, method)));
             }

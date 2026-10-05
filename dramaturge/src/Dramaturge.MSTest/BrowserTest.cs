@@ -16,7 +16,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// own, closed when the class finishes; the class is the one running the test, so a test object created by a test
 /// shares its class's group. Each browser a test opens is isolated from others, and closed when the test ends; if the
 /// test fails, its pages are first captured to <see cref="ArtifactsDirectory"/>, with their
-/// videos if <see cref="VideoOnFailure"/> is on, and attached to the test's result.
+/// videos if <see cref="VideoOnFailure"/> is on and a trace if <see cref="TraceOnFailure"/> is, and attached to the test's result.
 /// </summary>
 public abstract class BrowserTest
 {
@@ -62,6 +62,20 @@ public abstract class BrowserTest
     protected VideoRecordingOptions? VideoOptions { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether each browser a test opens is traced from when it opens, a failed
+    /// test's traces being merged into one, trace.zip, beside its screenshots, and a passed test's deleted. The
+    /// default is <see langword="false"/>. Set it before the test opens a browser, as in the class's constructor.
+    /// Open the trace with Playwright's trace viewer, such as at https://trace.playwright.dev.
+    /// </summary>
+    protected bool TraceOnFailure { get; set; }
+
+    /// <summary>
+    /// Gets or sets the settings of the traces <see cref="TraceOnFailure"/> records, or <see langword="null"/> for
+    /// snapshots, screenshots, and sources.
+    /// </summary>
+    protected TraceRecordingOptions? TraceOptions { get; set; }
+
+    /// <summary>
     /// Gets the settings of the browsers the test opens without settings of their own.
     /// </summary>
     protected virtual BrowserOptions? BrowserOptions => null;
@@ -92,7 +106,7 @@ public abstract class BrowserTest
     /// <returns>The browser.</returns>
     public Task<Browser> NewBrowserAsync(BrowserOptions? options = null)
     {
-        return this.browsers.CreateAsync(this.Group, options ?? this.BrowserOptions, this.VideoOnFailure ? this.VideoOptions ?? new VideoRecordingOptions() : null, this.TestContext.CancellationTokenSource.Token);
+        return this.browsers.CreateAsync(this.Group, options ?? this.BrowserOptions, this.VideoOnFailure ? this.VideoOptions ?? new VideoRecordingOptions() : null, this.TraceOnFailure ? this.TraceOptions ?? TestBrowsers.DefaultTraceOptions : null, this.TestContext.CancellationTokenSource.Token);
     }
 
     /// <summary>

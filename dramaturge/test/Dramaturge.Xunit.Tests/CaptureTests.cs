@@ -310,6 +310,79 @@ public sealed class CaptureTests(FakeBrowserFixture fixture) : IClassFixture<Cla
 
     // Changes to the test context made in an async method are not seen by its caller, so the current test's own
     // context is unchanged once this returns.
+    [Fact]
+    public async Task FailedTestKeepsOneTraceOfItsBrowsers()
+    {
+        await this.SessionAsync();
+        string testDirectory = Path.Combine(this.artifactsDirectory, "Dramaturge.Xunit.CaptureTests.FailedTestKeepsOneTraceOfItsBrowsers");
+        CapturedTest test = new(fixture, this.artifactsDirectory, traceOnFailure: true);
+        await test.InitializeAsync();
+        Browser second = await test.NewBrowserAsync();
+        await second.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Ending ending = await EndAsync(test, TestResultState.FromException(0, new InvalidOperationException("The test failed.")));
+
+        TestAttachment trace = ending.Attachments["trace.zip"];
+        Assert.Equal("application/zip", trace.AsByteArray().MediaType);
+        Assert.Equal(["page-1.png", "page-2.png", "trace.zip"], Directory.GetFiles(testDirectory).Select(Path.GetFileName).Order());
+        string[] entries = TraceEntries(Path.Combine(testDirectory, "trace.zip"));
+        Assert.Equal(["0-trace.network", "0-trace.trace", "1-trace.network", "1-trace.trace"], entries.Where(entry => entry.Contains("trace.", StringComparison.Ordinal)).Order());
+        Assert.Contains(entries, entry => entry.StartsWith("src/", StringComparison.Ordinal));
+        Assert.Equal(entries.Length, entries.Distinct().Count());
+        Assert.Empty(ending.Warnings);
+    }
+
+    [Fact]
+    public async Task PassedTestsTracesAreDeleted()
+    {
+        await this.SessionAsync();
+        CapturedTest test = new(fixture, this.artifactsDirectory, trace: new TraceRecordingOptions());
+        await test.InitializeAsync();
+
+        Ending ending = await EndAsync(test, TestResultState.ForPassed(0));
+
+        Assert.Empty(ending.Attachments);
+        Assert.False(Directory.Exists(this.artifactsDirectory));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task TraceThatCannotStartIsAWarningOnAFailedTest(bool failed)
+    {
+        FakeSession session = await this.SessionAsync();
+        session.RemoteEnd.FailWith("network.addDataCollector", "unknown error", "No collectors.");
+        try
+        {
+            CapturedTest test = new(fixture, this.artifactsDirectory, screenshotOnFailure: false, traceOnFailure: true);
+            await test.InitializeAsync();
+
+            Ending ending = await EndAsync(test, failed ? TestResultState.FromException(0, new InvalidOperationException("The test failed.")) : TestResultState.ForPassed(0));
+
+            Assert.Empty(ending.Attachments);
+            if (failed)
+            {
+                string warning = Assert.Single(ending.Warnings);
+                Assert.StartsWith("Dramaturge could not record a trace of browser 1: ", warning);
+                Assert.Contains("No collectors.", warning);
+            }
+            else
+            {
+                Assert.Empty(ending.Warnings);
+            }
+        }
+        finally
+        {
+            session.RemoteEnd.AnswerWith("network.addDataCollector", new JsonObject() { ["collector"] = "collector-restored" });
+        }
+    }
+
+    private static string[] TraceEntries(string path)
+    {
+        using System.IO.Compression.ZipArchive zip = System.IO.Compression.ZipFile.OpenRead(path);
+        return [.. zip.Entries.Select(entry => entry.FullName)];
+    }
+
     private static async Task<Ending> EndAsync(BrowserTest test, TestResultState state)
     {
         ITestContext current = TestContext.Current;
@@ -324,13 +397,15 @@ public sealed class CaptureTests(FakeBrowserFixture fixture) : IClassFixture<Cla
     {
         private readonly FakeBrowserFixture fixture;
 
-        public CapturedTest(FakeBrowserFixture fixture, string artifactsDirectory, bool screenshotOnFailure = true, bool videoOnFailure = false, VideoRecordingOptions? video = null)
+        public CapturedTest(FakeBrowserFixture fixture, string artifactsDirectory, bool screenshotOnFailure = true, bool videoOnFailure = false, VideoRecordingOptions? video = null, bool traceOnFailure = false, TraceRecordingOptions? trace = null)
         {
             this.fixture = fixture;
             this.ArtifactsDirectory = artifactsDirectory;
             this.ScreenshotOnFailure = screenshotOnFailure;
             this.VideoOnFailure = videoOnFailure || video is not null;
             this.VideoOptions = video;
+            this.TraceOnFailure = traceOnFailure || trace is not null;
+            this.TraceOptions = trace;
         }
 
         protected override BrowserLauncherBuilder ConfigureLauncher(BrowserLauncherBuilder builder)

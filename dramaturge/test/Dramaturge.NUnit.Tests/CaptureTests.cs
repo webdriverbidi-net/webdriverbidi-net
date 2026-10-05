@@ -272,6 +272,54 @@ public class CaptureTests
         }
     }
 
+    [Test]
+    public async Task FailedTestKeepsOneTraceOfItsBrowsersAndAPassedTestDeletesIt()
+    {
+        CapturedTest passed = new(this.artifactsDirectory, trace: new TraceRecordingOptions());
+        await passed.SetUpBrowsersAsync();
+        TestEnding passedEnding = await TestEnding.EndAsync(passed, ResultState.Success);
+        bool directoryAfterPass = Directory.Exists(this.artifactsDirectory);
+        string testDirectory = Path.Combine(this.artifactsDirectory, "Dramaturge.NUnit.CaptureTests.FailedTestKeepsOneTraceOfItsBrowsersAndAPassedTestDeletesIt");
+        CapturedTest test = new(this.artifactsDirectory, traceOnFailure: true);
+        await test.SetUpBrowsersAsync();
+        Browser second = await test.NewBrowserAsync();
+        await second.NewPageAsync();
+
+        TestEnding ending = await TestEnding.EndAsync(test, ResultState.Failure);
+
+        Assert.That(passedEnding.Attachments, Is.Empty);
+        Assert.That(directoryAfterPass, Is.False);
+        Assert.That(ending.Attachments.Select(Path.GetFileName).Order(), Is.EqualTo(new[] { "page-1.png", "page-2.png", "trace.zip" }));
+        using System.IO.Compression.ZipArchive zip = System.IO.Compression.ZipFile.OpenRead(Path.Combine(testDirectory, "trace.zip"));
+        string[] entries = [.. zip.Entries.Select(entry => entry.FullName)];
+        Assert.That(entries.Where(entry => entry.Contains("trace.", StringComparison.Ordinal)).Order(), Is.EqualTo(new[] { "0-trace.network", "0-trace.trace", "1-trace.network", "1-trace.trace" }));
+        Assert.That(entries, Has.Some.StartsWith("src/"));
+        Assert.That(entries, Is.Unique);
+        Assert.That(ending.Output, Is.Empty);
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task TraceThatCannotStartIsWrittenForAFailedTest(bool failed)
+    {
+        FakeSession session = await this.SessionAsync();
+        session.RemoteEnd.FailWith("network.addDataCollector", "unknown error", "No collectors.");
+        try
+        {
+            CapturedTest test = new(this.artifactsDirectory, screenshotOnFailure: false, traceOnFailure: true);
+            await test.SetUpBrowsersAsync();
+
+            TestEnding ending = await TestEnding.EndAsync(test, failed ? ResultState.Failure : ResultState.Success);
+
+            Assert.That(ending.Attachments, Is.Empty);
+            Assert.That(ending.Output, failed ? Does.StartWith("Dramaturge could not record a trace of browser 1: ").And.Contain("No collectors.") : Is.Empty);
+        }
+        finally
+        {
+            session.RemoteEnd.AnswerWith("network.addDataCollector", new System.Text.Json.Nodes.JsonObject() { ["collector"] = "collector-restored" });
+        }
+    }
+
     // The fixture's group, and so its session, is launched by the first test object that needs it.
     private async Task<FakeSession> SessionAsync()
     {
@@ -283,12 +331,14 @@ public class CaptureTests
 
     private sealed class CapturedTest : PageTest
     {
-        public CapturedTest(string artifactsDirectory, bool screenshotOnFailure = true, bool videoOnFailure = false, VideoRecordingOptions? video = null)
+        public CapturedTest(string artifactsDirectory, bool screenshotOnFailure = true, bool videoOnFailure = false, VideoRecordingOptions? video = null, bool traceOnFailure = false, TraceRecordingOptions? trace = null)
         {
             this.ArtifactsDirectory = artifactsDirectory;
             this.ScreenshotOnFailure = screenshotOnFailure;
             this.VideoOnFailure = videoOnFailure || video is not null;
             this.VideoOptions = video;
+            this.TraceOnFailure = traceOnFailure || trace is not null;
+            this.TraceOptions = trace;
         }
 
         protected override BrowserLauncherBuilder ConfigureLauncher(BrowserLauncherBuilder builder)

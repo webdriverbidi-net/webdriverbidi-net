@@ -270,9 +270,62 @@ public class CaptureTests
         return FakeBrowserSetUp.Server.SessionFor(SessionName);
     }
 
-    private async Task<CapturedTest> StartAsync(string artifactsDirectory, bool screenshotOnFailure = true, bool videoOnFailure = false, VideoRecordingOptions? video = null)
+    [TestMethod]
+    public async Task FailedTestKeepsOneTraceOfItsBrowsersAndAPassedTestDeletesIt()
     {
-        CapturedTest test = new(artifactsDirectory, screenshotOnFailure, videoOnFailure, video) { TestContext = this.TestContext };
+        CapturedTest passed = await this.StartAsync(this.artifactsDirectory, trace: new TraceRecordingOptions());
+        EndingContext passedEnding = await EndingContext.EndAsync(passed, this.TestContext, UnitTestOutcome.Passed);
+        bool directoryAfterPass = Directory.Exists(this.artifactsDirectory);
+        CapturedTest test = await this.StartAsync(this.artifactsDirectory, traceOnFailure: true);
+        Browser second = await test.NewBrowserAsync();
+        await second.NewPageAsync();
+
+        EndingContext ending = await EndingContext.EndAsync(test, this.TestContext, UnitTestOutcome.Failed);
+
+        Assert.IsEmpty(passedEnding.ResultFiles);
+        Assert.IsFalse(directoryAfterPass);
+        CollectionAssert.AreEqual(new[] { "page-1.png", "page-2.png", "trace.zip" }, ending.ResultFiles.Select(Path.GetFileName).Order().ToList());
+        using System.IO.Compression.ZipArchive zip = System.IO.Compression.ZipFile.OpenRead(ending.ResultFiles.Single(file => file.EndsWith("trace.zip", StringComparison.Ordinal)));
+        string[] entries = [.. zip.Entries.Select(entry => entry.FullName)];
+        CollectionAssert.AreEqual(new[] { "0-trace.network", "0-trace.trace", "1-trace.network", "1-trace.trace" }, entries.Where(entry => entry.Contains("trace.", StringComparison.Ordinal)).Order().ToList());
+        Assert.IsTrue(entries.Any(entry => entry.StartsWith("src/", StringComparison.Ordinal)));
+        CollectionAssert.AllItemsAreUnique(entries);
+        Assert.AreEqual(string.Empty, ending.Output);
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task TraceThatCannotStartIsWrittenForAFailedTest(bool failed)
+    {
+        FakeSession session = await this.SessionAsync();
+        session.RemoteEnd.FailWith("network.addDataCollector", "unknown error", "No collectors.");
+        try
+        {
+            CapturedTest test = await this.StartAsync(this.artifactsDirectory, screenshotOnFailure: false, traceOnFailure: true);
+
+            EndingContext ending = await EndingContext.EndAsync(test, this.TestContext, failed ? UnitTestOutcome.Failed : UnitTestOutcome.Passed);
+
+            Assert.IsEmpty(ending.ResultFiles);
+            if (failed)
+            {
+                Assert.StartsWith("Dramaturge could not record a trace of browser 1: ", ending.Output);
+                Assert.Contains("No collectors.", ending.Output);
+            }
+            else
+            {
+                Assert.AreEqual(string.Empty, ending.Output);
+            }
+        }
+        finally
+        {
+            session.RemoteEnd.AnswerWith("network.addDataCollector", new System.Text.Json.Nodes.JsonObject() { ["collector"] = "collector-restored" });
+        }
+    }
+
+    private async Task<CapturedTest> StartAsync(string artifactsDirectory, bool screenshotOnFailure = true, bool videoOnFailure = false, VideoRecordingOptions? video = null, bool traceOnFailure = false, TraceRecordingOptions? trace = null)
+    {
+        CapturedTest test = new(artifactsDirectory, screenshotOnFailure, videoOnFailure, video, traceOnFailure, trace) { TestContext = this.TestContext };
         await test.SetUpBrowsersAsync();
         await test.OpenPageAsync();
         return test;
@@ -280,12 +333,14 @@ public class CaptureTests
 
     private sealed class CapturedTest : PageTest
     {
-        public CapturedTest(string artifactsDirectory, bool screenshotOnFailure, bool videoOnFailure, VideoRecordingOptions? video)
+        public CapturedTest(string artifactsDirectory, bool screenshotOnFailure, bool videoOnFailure, VideoRecordingOptions? video, bool traceOnFailure, TraceRecordingOptions? trace)
         {
             this.ArtifactsDirectory = artifactsDirectory;
             this.ScreenshotOnFailure = screenshotOnFailure;
             this.VideoOnFailure = videoOnFailure || video is not null;
             this.VideoOptions = video;
+            this.TraceOnFailure = traceOnFailure || trace is not null;
+            this.TraceOptions = trace;
         }
 
         protected override BrowserLauncherBuilder ConfigureLauncher(BrowserLauncherBuilder builder)
