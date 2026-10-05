@@ -81,6 +81,9 @@
     <EmbeddedResource Include="Scripts/dom-snapshot.js">
       <LogicalName>dom-snapshot</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Scripts/code-recorder.js">
+      <LogicalName>code-recorder</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

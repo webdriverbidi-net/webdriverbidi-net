@@ -30,6 +30,7 @@ public sealed class Browser
     private readonly ObservableEventInvocable<PageEventArgs> onPageCreated = new("automation.pageCreated");
     private readonly ObservableEventInvocable<PageEventArgs> onPageClosed = new("automation.pageClosed");
     private TraceRecording? activeTrace;
+    private CodeRecording? activeCodeRecording;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Browser"/> class.
@@ -239,6 +240,20 @@ public sealed class Browser
     public Task<TraceRecording> RecordTraceAsync(string path, TraceRecordingOptions? options = null, CancellationToken cancellationToken = default)
     {
         return TraceRecording.StartAsync(this, path, options, cancellationToken);
+    }
+
+    /// <summary>
+    /// Starts recording the actions a user takes in the browser's pages, including pages opened later, as C# code;
+    /// the documents already loaded are recorded once it returns, and a document loaded later from its
+    /// DOMContentLoaded event on. Disposing the recording, or <see cref="CodeRecording.StopAsync"/>, ends it.
+    /// </summary>
+    /// <param name="options">The recording's settings, or <see langword="null"/> for the defaults.</param>
+    /// <param name="cancellationToken">A token that cancels starting.</param>
+    /// <returns>The recording.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the browser is already recording code.</exception>
+    public Task<CodeRecording> RecordCodeAsync(CodeRecordingOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return CodeRecording.StartAsync(this, options, cancellationToken);
     }
 
     /// <summary>
@@ -453,6 +468,25 @@ public sealed class Browser
     internal void ReleaseTrace(TraceRecording recording)
     {
         Interlocked.CompareExchange(ref this.activeTrace, null, recording);
+    }
+
+    /// <summary>
+    /// Makes a recording the browser's code recording, unless it is recording another.
+    /// </summary>
+    /// <param name="recording">The recording.</param>
+    /// <returns><see langword="true"/> if the recording is now the browser's code recording.</returns>
+    internal bool ClaimCodeRecording(CodeRecording recording)
+    {
+        return Interlocked.CompareExchange(ref this.activeCodeRecording, recording, null) is null;
+    }
+
+    /// <summary>
+    /// Ends a recording as the browser's code recording.
+    /// </summary>
+    /// <param name="recording">The recording.</param>
+    internal void ReleaseCodeRecording(CodeRecording recording)
+    {
+        Interlocked.CompareExchange(ref this.activeCodeRecording, null, recording);
     }
 
     /// <summary>

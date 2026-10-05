@@ -32,6 +32,11 @@ public sealed class ScriptedBiDiServer : IAsyncDisposable
     public Uri Url => new($"ws://localhost:{this.server.Port}/session");
 
     /// <summary>
+    /// Gets or sets the browser name the session reports.
+    /// </summary>
+    public string BrowserName { get; set; } = "scripted";
+
+    /// <summary>
     /// Gets the methods of the commands received, in order.
     /// </summary>
     public IReadOnlyList<string> ReceivedMethods => [.. this.receivedCommands.Select(command => (string)command["method"]!)];
@@ -92,7 +97,7 @@ public sealed class ScriptedBiDiServer : IAsyncDisposable
             response["type"] = "success";
             response["result"] = method switch
             {
-                "session.new" => CreateNewSessionResult(),
+                "session.new" => this.CreateNewSessionResult(),
                 "session.subscribe" => new JsonObject() { ["subscription"] = "scripted-subscription" },
                 "script.addPreloadScript" => new JsonObject() { ["script"] = "scripted-preload-script" },
                 "browser.getUserContexts" => new JsonObject() { ["userContexts"] = new JsonArray(new JsonObject() { ["userContext"] = "default" }) },
@@ -104,7 +109,7 @@ public sealed class ScriptedBiDiServer : IAsyncDisposable
         await this.server.SendWebSocketDataAsync(e.ConnectionId, response.ToJsonString());
     }
 
-    private static JsonObject CreateNewSessionResult()
+    private JsonObject CreateNewSessionResult()
     {
         return new JsonObject()
         {
@@ -112,7 +117,7 @@ public sealed class ScriptedBiDiServer : IAsyncDisposable
             ["capabilities"] = new JsonObject()
             {
                 ["acceptInsecureCerts"] = false,
-                ["browserName"] = "scripted",
+                ["browserName"] = this.BrowserName,
                 ["browserVersion"] = "1.0",
                 ["platformName"] = "scripted",
                 ["setWindowRect"] = true,
