@@ -358,24 +358,38 @@ public sealed class Browser
     /// <returns>The page.</returns>
     internal async Task<Page> AddPageAsync(string id, string url, Page? opener = null)
     {
+        Page? existing;
         Page page;
         lock (this.lockObject)
         {
-            Page? existing = this.pages.Find(candidate => candidate.Id == id);
-            if (existing is not null)
+            existing = this.pages.Find(candidate => candidate.Id == id);
+            page = existing ?? new Page(this, id, url, opener);
+            if (existing is null)
             {
-                return existing;
+                this.pages.Add(page);
             }
-
-            page = new Page(this, id, url, opener);
-            this.pages.Add(page);
         }
 
-        this.Group.RegisterFrame(page.MainFrame);
-        await this.onPageCreated.InvokeNotifyObserversAsync(new PageEventArgs(page)).ConfigureAwait(false);
-        if (opener is not null)
+        // A page the browser's event added first is returned once that event's observers have run, so that what they
+        // do with the page, such as starting a recording, has happened when, for example, NewPageAsync returns.
+        if (existing is not null)
         {
-            await opener.NotifyPopupAsync(page).ConfigureAwait(false);
+            await existing.Created.ConfigureAwait(false);
+            return existing;
+        }
+
+        try
+        {
+            this.Group.RegisterFrame(page.MainFrame);
+            await this.onPageCreated.InvokeNotifyObserversAsync(new PageEventArgs(page)).ConfigureAwait(false);
+            if (opener is not null)
+            {
+                await opener.NotifyPopupAsync(page).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            page.MarkCreated();
         }
 
         return page;

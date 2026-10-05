@@ -26,6 +26,7 @@ public sealed class Page
     private readonly ObservableEventInvocable<PageErrorEventArgs> onPageError = new("automation.pageError");
     private readonly ObservableEventInvocable<DialogEventArgs> onDialog = new("automation.dialog");
     private readonly ObservableEventInvocable<PageEventArgs> onPopup = new("automation.popup");
+    private readonly TaskCompletionSource<bool> created = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly ObservableEventInvocable<DownloadEventArgs> onDownload = new("automation.download");
     private readonly List<TaskCompletionSource<Download>> downloadWaiters = [];
     private readonly List<RouteRegistration> routes = [];
@@ -135,6 +136,11 @@ public sealed class Page
     /// Gets an observable event raised when a document of the page begins a download.
     /// </summary>
     public ObservableEvent<DownloadEventArgs> OnDownload => this.onDownload;
+
+    /// <summary>
+    /// Gets a task that completes once the observers of the page's creation have been notified.
+    /// </summary>
+    internal Task Created => this.created.Task;
 
     /// <summary>
     /// Creates a locator for elements in the page's main frame.
@@ -975,6 +981,14 @@ public sealed class Page
         }
 
         return this.onDownload.InvokeNotifyObserversAsync(new DownloadEventArgs(download));
+    }
+
+    /// <summary>
+    /// Records that the observers of the page's creation have been notified.
+    /// </summary>
+    internal void MarkCreated()
+    {
+        this.created.TrySetResult(true);
     }
 
     /// <summary>

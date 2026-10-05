@@ -6,9 +6,21 @@
 namespace Dramaturge.Testing;
 
 /// <summary>
-/// A screenshot of a page taken after a failed test, or the failure to take or save it.
+/// A screenshot or video of a page saved for a failed test, or a failure to save or record one.
 /// </summary>
-/// <param name="Path">The file the screenshot was, or was to be, written to.</param>
-/// <param name="Screenshot">The PNG image, or <see langword="null"/> if it could not be taken or saved.</param>
-/// <param name="Error">The failure, or <see langword="null"/> if it was taken and saved.</param>
-internal sealed record PageCapture(string Path, byte[]? Screenshot, Exception? Error);
+/// <param name="Path">The file written, or to have been written.</param>
+/// <param name="Contents">The file's contents, or <see langword="null"/> for a failure.</param>
+/// <param name="MediaType">The file's media type, "image/png" or "video/webm".</param>
+/// <param name="Failure">What failed, as reported on the test, or <see langword="null"/> if the file was saved.</param>
+internal sealed record PageCapture(string Path, byte[]? Contents, string MediaType, string? Failure)
+{
+    /// <summary>
+    /// The media type of a screenshot.
+    /// </summary>
+    public const string Screenshot = "image/png";
+
+    /// <summary>
+    /// The media type of a video.
+    /// </summary>
+    public const string Video = "video/webm";
+}

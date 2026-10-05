@@ -13,7 +13,7 @@ using PinchHitter;
 /// <summary>
 /// A WebSocket server standing in for a browser, for code that connects through a launcher. Each connection is
 /// answered by its own <see cref="FakeSession"/>, found by the name in the connection's URL, and pages are captured as
-/// <see cref="Screenshot"/>.
+/// <see cref="Screenshot"/> and recorded as <see cref="Video"/>.
 /// </summary>
 public sealed class FakeBrowserServer : IAsyncDisposable
 {
@@ -21,6 +21,11 @@ public sealed class FakeBrowserServer : IAsyncDisposable
     /// The image every page is captured as: the PNG signature, which is enough for code that only saves it.
     /// </summary>
     public static readonly byte[] Screenshot = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
+    /// <summary>
+    /// The video every screencast is written as: the WebM signature.
+    /// </summary>
+    public static readonly byte[] Video = [0x1A, 0x45, 0xDF, 0xA3];
 
     private const string PathPrefix = "/session/";
 
@@ -74,6 +79,30 @@ public sealed class FakeBrowserServer : IAsyncDisposable
         session.RemoteEnd.AnswerWith("browsingContext.captureScreenshot", new JsonObject() { ["data"] = Convert.ToBase64String(Screenshot) });
     }
 
+    /// <summary>
+    /// Answers a session's screencast commands as a browser on this machine does: a screencast started with a folder
+    /// is written there, as <see cref="Video"/>, when it stops.
+    /// </summary>
+    /// <param name="session">The session.</param>
+    public static void AnswerScreencasts(FakeSession session)
+    {
+        ConcurrentDictionary<string, string> paths = new();
+        int count = 0;
+        session.RemoteEnd.AnswerWith("browsingContext.startScreencast", parameters =>
+        {
+            string screencast = $"screencast-{Interlocked.Increment(ref count)}";
+            string path = Path.Combine((string?)parameters["destinationFolder"] ?? Path.GetTempPath(), $"{screencast}.webm");
+            paths[screencast] = path;
+            return new JsonObject() { ["screencast"] = screencast, ["path"] = path };
+        });
+        session.RemoteEnd.AnswerWith("browsingContext.stopScreencast", parameters =>
+        {
+            string path = paths[(string)parameters["screencast"]!];
+            File.WriteAllBytes(path, Video);
+            return new JsonObject() { ["path"] = path };
+        });
+    }
+
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
@@ -102,6 +131,7 @@ public sealed class FakeBrowserServer : IAsyncDisposable
         FakeRemoteEnd remoteEnd = new();
         FakeSession session = new(remoteEnd);
         AnswerScreenshots(session);
+        AnswerScreencasts(session);
         remoteEnd.OnDataReceived.AddObserver(e => this.server.SendWebSocketDataAsync(connectionId, Encoding.UTF8.GetString(e.Data.Span)));
         await remoteEnd.StartAsync("ws://fake.browser.server/session");
         this.sessionsByConnection[connectionId] = session;

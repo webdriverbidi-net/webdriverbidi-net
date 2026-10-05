@@ -36,10 +36,10 @@ public class CaptureTests : PageTest
         this.ExpectEnding(context =>
         {
             string[] artifacts = [.. context.Output.Artifacts.Select(artifact => artifact.File.FullName)];
-            string[] expected = [Path.Combine(testDirectory, "page-1.png"), Path.Combine(testDirectory, "page-2.png")];
+            string[] expected = [Path.Combine(testDirectory, "page-1.png"), Path.Combine(testDirectory, "page-3.png")];
             string[] files = [.. Directory.GetFiles(testDirectory).Select(Path.GetFileName).Order()!];
             return !artifacts.SequenceEqual(expected) ? $"Attached {string.Join(", ", artifacts)}"
-                : !files.SequenceEqual(["page-1.png", "page-2.png"]) ? $"Saved {string.Join(", ", files)}"
+                : !files.SequenceEqual(["page-1.png", "page-3.png"]) ? $"Saved {string.Join(", ", files)}"
                 : !File.ReadAllBytes(expected[0]).SequenceEqual(FakeBrowserServer.Screenshot) ? "Saved another image"
                 : null;
         });

@@ -50,8 +50,9 @@ public class CaptureTests
 
         TestEnding ending = await TestEnding.EndAsync(test, ResultState.Failure);
 
-        Assert.That(ending.Attachments, Is.EqualTo(new[] { Path.Combine(testDirectory, "page-1.png"), Path.Combine(testDirectory, "page-2.png") }));
-        Assert.That(Directory.GetFiles(testDirectory).Select(Path.GetFileName).Order(), Is.EqualTo(new[] { "page-1.png", "page-2.png" }));
+        // Pages are numbered in the order they opened, so the closed second page has no screenshot.
+        Assert.That(ending.Attachments, Is.EqualTo(new[] { Path.Combine(testDirectory, "page-1.png"), Path.Combine(testDirectory, "page-3.png") }));
+        Assert.That(Directory.GetFiles(testDirectory).Select(Path.GetFileName).Order(), Is.EqualTo(new[] { "page-1.png", "page-3.png" }));
         Assert.That(File.ReadAllBytes(Path.Combine(testDirectory, "page-1.png")), Is.EqualTo(FakeBrowserServer.Screenshot));
         Assert.That(ending.Output, Is.Empty);
     }
@@ -163,12 +164,131 @@ public class CaptureTests
         Assert.That(new DefaultsFixture().Configure(builder), Is.SameAs(builder));
     }
 
+    [Test]
+    public async Task FailedTestKeepsAVideoOfEveryPageBesideItsScreenshots()
+    {
+        FakeSession session = await this.SessionAsync();
+        string testDirectory = Path.Combine(this.artifactsDirectory, "Dramaturge.NUnit.CaptureTests.FailedTestKeepsAVideoOfEveryPageBesideItsScreenshots");
+        int startsBefore = session.RemoteEnd.CommandsFor("browsingContext.startScreencast").Count;
+        CapturedTest test = new(this.artifactsDirectory, video: new VideoRecordingOptions() { Width = 640 });
+        await test.SetUpBrowsersAsync();
+        Page closed = await test.Browser.NewPageAsync();
+        await closed.CloseAsync();
+        Browser second = await test.NewBrowserAsync();
+        await second.NewPageAsync();
+
+        TestEnding ending = await TestEnding.EndAsync(test, ResultState.Failure);
+
+        string[] files = ["page-1.png", "page-1.webm", "page-2.webm", "page-3.png", "page-3.webm"];
+        Assert.That(ending.Attachments.Select(Path.GetFileName).Order(), Is.EqualTo(files));
+        Assert.That(Directory.GetFiles(testDirectory).Select(Path.GetFileName).Order(), Is.EqualTo(files));
+        Assert.That(File.ReadAllBytes(Path.Combine(testDirectory, "page-2.webm")), Is.EqualTo(FakeBrowserServer.Video));
+        System.Text.Json.Nodes.JsonNode start = session.RemoteEnd.CommandsFor("browsingContext.startScreencast")[startsBefore]["params"]!;
+        Assert.That(start["video"]!.ToJsonString(), Is.EqualTo("""{"width":640}"""));
+        Assert.That(Directory.Exists((string)start["destinationFolder"]!), Is.False);
+        Assert.That(ending.Output, Is.Empty);
+    }
+
+    [Test]
+    public async Task PassedTestsVideosAreDeletedAndWithScreenshotsOffAFailedTestKeepsThem()
+    {
+        CapturedTest passed = new(this.artifactsDirectory, videoOnFailure: true);
+        await passed.SetUpBrowsersAsync();
+        TestEnding passedEnding = await TestEnding.EndAsync(passed, ResultState.Success);
+        bool directoryAfterPass = Directory.Exists(this.artifactsDirectory);
+        CapturedTest failed = new(this.artifactsDirectory, screenshotOnFailure: false, videoOnFailure: true);
+        await failed.SetUpBrowsersAsync();
+        TestEnding failedEnding = await TestEnding.EndAsync(failed, ResultState.Failure);
+
+        Assert.That(passedEnding.Attachments, Is.Empty);
+        Assert.That(directoryAfterPass, Is.False);
+        Assert.That(failedEnding.Attachments.Select(Path.GetFileName), Is.EqualTo(new[] { "page-1.webm" }));
+    }
+
+    [Test]
+    public async Task BrowserThatCannotRecordIsReportedOnceAndTheTestRuns()
+    {
+        FakeSession session = await this.SessionAsync();
+        session.RemoteEnd.FailWith("browsingContext.startScreencast", "unsupported operation", "Method browsingContext.startScreencast is not implemented.");
+        try
+        {
+            CapturedTest test = new(this.artifactsDirectory, videoOnFailure: true);
+            await test.SetUpBrowsersAsync();
+            await test.Browser.NewPageAsync();
+
+            TestEnding ending = await TestEnding.EndAsync(test, ResultState.Success);
+
+            string[] lines = ending.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+            Assert.That(lines, Has.Length.EqualTo(1));
+            Assert.That(lines[0], Does.StartWith("Dramaturge could not record video: The browser cannot record video: "));
+        }
+        finally
+        {
+            FakeBrowserServer.AnswerScreencasts(session);
+        }
+    }
+
+    [TestCase("startScreencast", true, "Dramaturge could not record a video of page 1: ")]
+    [TestCase("startScreencast", false, null)]
+    [TestCase("stopScreencast", true, "Dramaturge could not save the video of page 1: ")]
+    [TestCase("stopScreencast", false, null)]
+    public async Task FailureToRecordOrSaveAVideoIsWrittenForAFailedTest(string command, bool failed, string? expected)
+    {
+        FakeSession session = await this.SessionAsync();
+        session.RemoteEnd.FailWith($"browsingContext.{command}", "unknown error", "The encoder is busy.");
+        try
+        {
+            CapturedTest test = new(this.artifactsDirectory, screenshotOnFailure: false, videoOnFailure: true);
+            await test.SetUpBrowsersAsync();
+
+            TestEnding ending = await TestEnding.EndAsync(test, failed ? ResultState.Failure : ResultState.Success);
+
+            Assert.That(ending.Attachments, Is.Empty);
+            Assert.That(ending.Output, expected is null ? Is.Empty : Does.StartWith(expected));
+        }
+        finally
+        {
+            FakeBrowserServer.AnswerScreencasts(session);
+        }
+    }
+
+    [Test]
+    public async Task VideoOfABrowserOnAnotherMachineIsReportedWhereItIs()
+    {
+        FakeSession session = await this.SessionAsync();
+        session.RemoteEnd.AnswerWith("browsingContext.stopScreencast", new System.Text.Json.Nodes.JsonObject() { ["path"] = "/home/grid/videos/screencast.webm" });
+        try
+        {
+            CapturedTest test = new(this.artifactsDirectory, screenshotOnFailure: false, videoOnFailure: true);
+            await test.SetUpBrowsersAsync();
+
+            TestEnding ending = await TestEnding.EndAsync(test, ResultState.Failure);
+
+            Assert.That(ending.Output.TrimEnd(), Is.EqualTo("Dramaturge could not save the video of page 1: the browser wrote it on its own machine, at /home/grid/videos/screencast.webm"));
+        }
+        finally
+        {
+            FakeBrowserServer.AnswerScreencasts(session);
+        }
+    }
+
+    // The fixture's group, and so its session, is launched by the first test object that needs it.
+    private async Task<FakeSession> SessionAsync()
+    {
+        CapturedTest test = new(this.artifactsDirectory);
+        await test.SetUpBrowsersAsync();
+        await TestEnding.EndAsync(test, ResultState.Success);
+        return FakeBrowserSetUp.Server.SessionFor(SessionName);
+    }
+
     private sealed class CapturedTest : PageTest
     {
-        public CapturedTest(string artifactsDirectory, bool screenshotOnFailure = true)
+        public CapturedTest(string artifactsDirectory, bool screenshotOnFailure = true, bool videoOnFailure = false, VideoRecordingOptions? video = null)
         {
             this.ArtifactsDirectory = artifactsDirectory;
             this.ScreenshotOnFailure = screenshotOnFailure;
+            this.VideoOnFailure = videoOnFailure || video is not null;
+            this.VideoOptions = video;
         }
 
         protected override BrowserLauncherBuilder ConfigureLauncher(BrowserLauncherBuilder builder)

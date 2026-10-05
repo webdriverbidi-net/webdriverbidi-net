@@ -16,8 +16,8 @@ using global::NUnit.Framework.Interfaces;
 /// overrides <see cref="ConfigureLauncher"/> or <see cref="GroupOptions"/>, when they share a group of the fixture's
 /// own, closed when the fixture finishes; the fixture is the one running the test, so a test object created by a
 /// test shares its fixture's group. Each browser a test opens is isolated from others, and closed when the test
-/// ends; if the test fails, its pages are first captured to <see cref="ArtifactsDirectory"/> and attached to the
-/// test's result. A test's browsers are kept on the fixture object, so tests of one fixture can run in parallel only
+/// ends; if the test fails, its pages are first captured to <see cref="ArtifactsDirectory"/>, with their videos if
+/// <see cref="VideoOnFailure"/> is on, and attached to the test's result. A test's browsers are kept on the fixture object, so tests of one fixture can run in parallel only
 /// with <see cref="FixtureLifeCycleAttribute"/> set to <see cref="LifeCycle.InstancePerTestCase"/>.
 /// </summary>
 public abstract class BrowserTest
@@ -43,6 +43,20 @@ public abstract class BrowserTest
     /// test. The default is TestResults/Dramaturge in the test assembly's directory.
     /// </summary>
     protected string ArtifactsDirectory { get; set; } = TestBrowsers.DefaultArtifactsDirectory;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether each page a test opens is recorded from when it opens, a failed test's
+    /// videos being kept beside its screenshots, and a passed test's deleted. The default is <see langword="false"/>.
+    /// Set it before the test opens a page, as in the class's constructor. A browser that cannot record video is
+    /// reported on the test, which runs as usual.
+    /// </summary>
+    protected bool VideoOnFailure { get; set; }
+
+    /// <summary>
+    /// Gets or sets the settings of the videos <see cref="VideoOnFailure"/> records, or <see langword="null"/> for the
+    /// browser's own.
+    /// </summary>
+    protected VideoRecordingOptions? VideoOptions { get; set; }
 
     /// <summary>
     /// Gets the settings of the browsers the test opens without settings of their own.
@@ -74,7 +88,7 @@ public abstract class BrowserTest
     /// <returns>The browser.</returns>
     public Task<Browser> NewBrowserAsync(BrowserOptions? options = null)
     {
-        return this.browsers.CreateAsync(this.Group, options ?? this.BrowserOptions, TestContext.CurrentContext.CancellationToken);
+        return this.browsers.CreateAsync(this.Group, options ?? this.BrowserOptions, this.VideoOnFailure ? this.VideoOptions ?? new VideoRecordingOptions() : null, TestContext.CurrentContext.CancellationToken);
     }
 
     /// <summary>
@@ -100,18 +114,16 @@ public abstract class BrowserTest
     public virtual async Task TearDownBrowsersAsync()
     {
         TestContext context = TestContext.CurrentContext;
-        if (this.ScreenshotOnFailure && context.Result.Outcome.Status == TestStatus.Failed)
+        bool failed = context.Result.Outcome.Status == TestStatus.Failed;
+        foreach (PageCapture capture in await this.browsers.FinishAsync(failed, this.ScreenshotOnFailure, this.ArtifactsDirectory, context.Test.FullName).ConfigureAwait(false))
         {
-            foreach (PageCapture capture in await this.browsers.CaptureAsync(this.ArtifactsDirectory, context.Test.FullName).ConfigureAwait(false))
+            if (capture.Failure is not null)
             {
-                if (capture.Screenshot is null)
-                {
-                    TestContext.Out.WriteLine($"Dramaturge could not save a screenshot to {capture.Path}: {capture.Error!.Message}");
-                }
-                else
-                {
-                    TestContext.AddTestAttachment(capture.Path, "A page open when the test failed");
-                }
+                TestContext.Out.WriteLine(capture.Failure);
+            }
+            else
+            {
+                TestContext.AddTestAttachment(capture.Path, capture.MediaType == PageCapture.Video ? "A video of a page of the failed test" : "A page open when the test failed");
             }
         }
 

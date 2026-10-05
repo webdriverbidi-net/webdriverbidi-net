@@ -69,6 +69,31 @@ public class BrowserTrackingTests
     }
 
     [Fact]
+    public async Task NewPageReturnsOnceTheObserversOfItsCreationHaveRun()
+    {
+        (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        await using BrowserGroup group = await BrowserGroup.ConnectAsync(driver, cancellationToken: TestContext.Current.CancellationToken);
+        TaskCompletionSource<bool> entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        group.DefaultBrowser.OnPageCreated.AddObserver(async _ =>
+        {
+            entered.TrySetResult(true);
+            await release.Task;
+        });
+
+        // The browser announces the page before answering the command, so the observer runs for the event.
+        Task<Page> opening = group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await session.RemoteEnd.WaitForCommandAsync("browsingContext.create");
+        await driver.Session.StatusAsync(new WebDriverBiDi.Session.StatusCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.False(opening.IsCompleted);
+        release.TrySetResult(true);
+        Assert.Same(Assert.Single(group.DefaultBrowser.Pages), await opening);
+    }
+
+    [Fact]
     public async Task PageCreatedWithoutAnEventIsStillTracked()
     {
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
