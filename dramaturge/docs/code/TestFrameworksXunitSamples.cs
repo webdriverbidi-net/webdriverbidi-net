@@ -107,3 +107,22 @@ public class ReportTests : PageTest
     }
 }
 #endregion
+
+#region Videos
+public class CheckoutTests : PageTest
+{
+    public CheckoutTests()
+    {
+        this.VideoOnFailure = true;
+        this.VideoOptions = new VideoRecordingOptions() { Width = 1280, Height = 720 };
+    }
+
+    [Fact]
+    public async Task PlacesAnOrder()
+    {
+        await this.Page.NavigateAsync("https://example.com/checkout");
+        await this.Page.GetByRole("button", "Place order").ClickAsync();
+        await Expect(this.Page.GetByRole("heading", "Thank you")).ToBeVisibleAsync();
+    }
+}
+#endregion

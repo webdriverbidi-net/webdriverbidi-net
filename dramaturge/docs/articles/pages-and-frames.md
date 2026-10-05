@@ -59,3 +59,13 @@ Answer the dialog from the observer, without awaiting the action that opened it:
 A page screenshot captures the viewport, the whole page, or a clip, as PNG unless another `ImageFormat` is given. An element's screenshot captures the element, whether or not it is scrolled into view. `PdfAsync` prints the page as a PDF. `SetViewportSizeAsync` sets the size of the page's viewport in CSS pixels, until `ResetViewportSizeAsync`.
 
 > **Chrome:** Chrome captures screenshots only of top-level browsing contexts, so a screenshot of an element in an iframe fails in Chrome.
+
+## Video
+
+[!code-csharp[Video](../code/PagesSamples.cs#Video)]
+
+`RecordVideoAsync` records the page until the recording is stopped or disposed. `VideoRecordingOptions` sets the video's width, height, and frame rate, which the browser may adjust to keep the viewport's shape; without them, the browser records the whole viewport at a rate of its own. The browser chooses the format, such as WebM. `StopAsync` returns the video's path, and stopping again returns the same path.
+
+The browser writes the file. A browser on this machine that writes it elsewhere, as Firefox 157 does to its downloads folder, has it moved to the path given, replacing any file there. A browser on another machine, such as a remote grid's, leaves the file on that machine, and `StopAsync` and `Path` give its path there.
+
+> **Chrome:** Chrome cannot record video yet, so `RecordVideoAsync` throws `NotSupportedException`.

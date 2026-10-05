@@ -4,7 +4,7 @@ Four packages give tests base classes that manage browsers for them, one for eac
 
 - **One browser launch per test run**, shared by every test class, unless a class configures a launch of its own.
 - **An isolated browser and page for each test**, closed when the test ends, so that no cookie or storage carries over from another test.
-- **Screenshots of a failed test's pages**, saved to files and attached to the test's result.
+- **Screenshots of a failed test's pages**, and videos of them if asked for, saved to files and attached to the test's result.
 - **The browser chosen by environment variables**, so that a CI matrix runs the same tests in each browser, or in code.
 
 | Package | Framework |
@@ -141,7 +141,7 @@ Each screenshot is also attached to the test's result, where the framework's rep
 
 | Framework | Attached with |
 | --- | --- |
-| xUnit | `TestContext.AddAttachment`, as a `image/png` attachment |
+| xUnit | `TestContext.AddAttachment`, as an `image/png` attachment, or `video/webm` for a video |
 | NUnit | `TestContext.AddTestAttachment` |
 | MSTest | `TestContext.AddResultFile` |
 | TUnit | `TestContext.Output.AttachArtifact` |
@@ -151,6 +151,16 @@ A page that cannot be captured, and a browser that cannot be closed, are reporte
 `ScreenshotOnFailure` turns capturing off, and `ArtifactsDirectory` changes the directory, for a class in its constructor or for one test:
 
 [!code-csharp[Screenshots](../code/TestFrameworksXunitSamples.cs#Screenshots)]
+
+### Videos
+
+With `VideoOnFailure` on, every page a test opens is recorded from when it opens, in every browser the test opens, including popups. When the test fails, each page's video is saved beside the screenshots, as `page-1.webm` and so on, and attached to the test's result; when it passes, the videos are deleted. `VideoOptions` sets the videos' size and frame rate. Turn it on before the test opens a page, which for a `PageTest` means in the constructor:
+
+[!code-csharp[Videos](../code/TestFrameworksXunitSamples.cs#Videos)]
+
+Pages are numbered in the order they opened, across all of a test's browsers, so a page's screenshot and video share a number. A page closed before the test failed has a video but no screenshot, so the screenshots' numbers can skip it: `page-1.png` and `page-3.png`, beside `page-1.webm`, `page-2.webm`, and `page-3.webm`.
+
+A browser that cannot record video, such as Chrome, is reported once, and the test runs as usual. A video that cannot be recorded or saved is reported for a failed test, as is one a browser on another machine, such as a remote grid's, wrote there; it is not copied from that machine.
 
 ## Lifecycle and Parallel Tests
 

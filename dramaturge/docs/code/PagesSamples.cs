@@ -164,4 +164,20 @@ public static class PagesSamples
         await page.ResetViewportSizeAsync();
         #endregion
     }
+
+    /// <summary>
+    /// Video.
+    /// </summary>
+    /// <param name="page">A page.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public static async Task Video(Page page)
+    {
+        #region Video
+        await using VideoRecording video = await page.RecordVideoAsync("videos/checkout.webm", new VideoRecordingOptions() { Width = 1280, Height = 720 });
+
+        await page.NavigateAsync("https://example.com/checkout");
+        await page.GetByRole("button", "Place order").ClickAsync();
+        string path = await video.StopAsync();
+        #endregion
+    }
 }

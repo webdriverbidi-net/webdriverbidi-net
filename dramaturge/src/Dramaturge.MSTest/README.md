@@ -7,7 +7,8 @@ Base classes for [MSTest](https://learn.microsoft.com/dotnet/core/testing/unit-t
 
 - **One browser launch per test assembly**, shared by every test class, unless a class configures a launch of its own.
 - **An isolated browser and page for each test**, closed when the test ends, so no cookies or storage carry over.
-- **Screenshots of a failed test's pages**, saved under `TestResults/Dramaturge` and attached to the test's result.
+- **Screenshots of a failed test's pages**, and videos of them if asked for, saved under `TestResults/Dramaturge`
+  and attached to the test's result.
 - **The browser chosen by the environment**: `DRAMATURGE_BROWSER` (`chrome`, `firefox`, `edge`, or `safari`),
   `DRAMATURGE_CHANNEL`, and `DRAMATURGE_HEADED=1`, or in code.
 

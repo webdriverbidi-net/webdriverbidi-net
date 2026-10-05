@@ -15,9 +15,9 @@ waits for the page so that your code does not have to.
   They throw `ExpectationFailedException`, so they work with any test framework.
 - **Accessibility snapshots** describe a page as assistive technology sees it, in Playwright's aria snapshot format,
   with refs that turn into locators, and `ToMatchAriaSnapshotAsync` to assert a page's structure.
-- **Pages** wait for navigation and load states, and handle dialogs, popups, downloads, screenshots, PDFs, routes that
-  answer or change requests, for a page or a whole browser, cookies, and network capture, with HAR files recorded and
-  replayed.
+- **Pages** wait for navigation and load states, and handle dialogs, popups, downloads, screenshots, PDFs, video,
+  routes that answer or change requests, for a page or a whole browser, cookies, and network capture, with HAR files
+  recorded and replayed.
 - Works on .NET Standard 2.0 and .NET 10, and with native AOT.
 
 ## Installation
