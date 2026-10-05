@@ -105,7 +105,7 @@ DownloadOutcome outcome = await download.WaitForEndAsync();
 
 - `NavigateAsync`, `ReloadAsync`, `GoBackAsync` wait for the load. A click does not: use `RunAndWaitForNavigationAsync`, `WaitForUrlAsync`, or `Expect(page).ToHaveUrlAsync`.
 - Dialogs: the browser dismisses them unless the user prompt handler is `Ignore` (`BrowserOptions.UnhandledPromptBehavior`, or on Firefox the session capability); then answer them in `page.OnDialog`, without awaiting the action that opened them.
-- `OnPopup`, `OnConsoleMessage`, `OnPageError`, `OnDownload`; `EvaluateAsync<T>` runs JavaScript in the page; frames come from `locator.ContentFrameAsync()`.
+- `RunAndWaitForPopupAsync(() => link.ClickAsync())` returns the page an action opens; `OnPopup`, `OnConsoleMessage`, `OnPageError`, `OnDownload`; `EvaluateAsync<T>` runs JavaScript in the page; frames come from `locator.ContentFrameAsync()`.
 - Video: `await using VideoRecording video = await page.RecordVideoAsync("run.webm", new VideoRecordingOptions { Width = 1280, Height = 720 })`; disposing or `StopAsync()` ends it and delivers the file. A remote browser keeps the file on its own machine, and `StopAsync()` returns that path.
 - Traces: `await using TraceRecording trace = await browser.RecordTraceAsync("trace.zip", new TraceRecordingOptions { Snapshots = true, Screenshots = true, Sources = true })` records every page of the browser (actions with logs and callers, DOM snapshots, filmstrip, console, network); open the zip at https://trace.playwright.dev or with `npx playwright show-trace` (Playwright 1.63 or later). One trace per browser at a time.
 

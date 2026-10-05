@@ -44,7 +44,7 @@ Answer the dialog from the observer, without awaiting the action that opened it:
 
 [!code-csharp[Popups](../code/PagesSamples.cs#Popups)]
 
-`OnPopup` reports a page this page opened, which also appears in its browser's `Pages` and `OnPageCreated`, with this page as its `Opener`.
+`RunAndWaitForPopupAsync` runs an action and returns the page it opened. `OnPopup` reports every page this page opens; each also appears in its browser's `Pages` and `OnPageCreated`, with this page as its `Opener`.
 
 ## Downloads
 

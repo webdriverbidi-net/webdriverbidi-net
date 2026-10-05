@@ -152,6 +152,21 @@ public class PageEventIntegrationTests
         Assert.Contains(popup, group.DefaultBrowser.Pages);
     }
 
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task PopupWaitReturnsThePageTheClickOpened(BrowserKind browserKind)
+    {
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await OpenAsync(group.DefaultBrowser, server);
+
+        Page popup = await page.RunAndWaitForPopupAsync(() => page.Locate(new CssLocator("#popup")).ClickAsync(cancellationToken: TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
+        string url = await popup.WaitForUrlAsync(server.UrlFor("second.html"), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Same(page, popup.Opener);
+        Assert.Equal(server.UrlFor("second.html"), url);
+    }
+
     private static async Task<Page> OpenAsync(Browser browser, TestPageServer server)
     {
         Page page = await browser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);

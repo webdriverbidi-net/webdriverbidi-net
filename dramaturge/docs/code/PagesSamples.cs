@@ -122,11 +122,7 @@ public static class PagesSamples
     public static async Task Popups(Page page)
     {
         #region Popups
-        TaskCompletionSource<Page> popup = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        page.OnPopup.AddObserver(e => popup.TrySetResult(e.Page));
-
-        await page.GetByRole("link", "Open help").ClickAsync();
-        Page help = await popup.Task;
+        Page help = await page.RunAndWaitForPopupAsync(() => page.GetByRole("link", "Open help").ClickAsync());
         await help.WaitForLoadStateAsync();
         #endregion
     }

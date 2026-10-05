@@ -29,6 +29,7 @@ public sealed class Page
     private readonly TaskCompletionSource<bool> created = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly ObservableEventInvocable<DownloadEventArgs> onDownload = new("automation.download");
     private readonly List<TaskCompletionSource<Download>> downloadWaiters = [];
+    private readonly List<TaskCompletionSource<Page>> popupWaiters = [];
     private readonly List<RouteRegistration> routes = [];
     private readonly List<NetworkWaiter<BeforeRequestSentEventArgs>> requestWaiters = [];
     private readonly List<NetworkWaiter<ResponseCompletedEventArgs>> responseWaiters = [];
@@ -449,6 +450,40 @@ public sealed class Page
             parameters.Contexts.Add(this.Id);
             AddPreloadScriptCommandResult result = await this.Browser.Group.Driver.Script.AddPreloadScriptAsync(parameters, cancellationToken: budget.CancellationToken).ConfigureAwait(false);
             return new InitScript(this.Browser.Group.Driver, result.PreloadScriptId);
+        });
+    }
+
+    /// <summary>
+    /// Runs an action that makes the page open another, such as a click on a link with a target, and waits for the
+    /// page it opens.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="timeout">The time to wait, from the start of the action, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>The page opened, which <see cref="OnPopup"/> also reports.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the page opens no other in time.</exception>
+    public Task<Page> RunAndWaitForPopupAsync(Func<Task> action, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return this.TraceAsync(Call("Run and wait for popup", null, "waitForPopup"), this.CreateNavigationBudget(timeout, cancellationToken), async budget =>
+        {
+            TaskCompletionSource<Page> next = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (this.lockObject)
+            {
+                this.popupWaiters.Add(next);
+            }
+
+            try
+            {
+                await action().ConfigureAwait(false);
+                return await budget.WaitAsync(next.Task, "a popup to open").ConfigureAwait(false);
+            }
+            finally
+            {
+                lock (this.lockObject)
+                {
+                    this.popupWaiters.Remove(next);
+                }
+            }
         });
     }
 
@@ -973,12 +1008,20 @@ public sealed class Page
     }
 
     /// <summary>
-    /// Raises <see cref="OnPopup"/>.
+    /// Hands a page this one opened to those waiting for one, then raises <see cref="OnPopup"/>.
     /// </summary>
     /// <param name="popup">The page this one opened.</param>
     /// <returns>A task that completes when observers are notified.</returns>
     internal Task NotifyPopupAsync(Page popup)
     {
+        lock (this.lockObject)
+        {
+            foreach (TaskCompletionSource<Page> waiter in this.popupWaiters)
+            {
+                waiter.TrySetResult(popup);
+            }
+        }
+
         return this.onPopup.InvokeNotifyObserversAsync(new PageEventArgs(popup));
     }
 

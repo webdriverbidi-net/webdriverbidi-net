@@ -155,6 +155,33 @@ public class PageEventTests
     }
 
     [Fact]
+    public async Task PopupWaitReturnsThePageTheActionOpened()
+    {
+        (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        TaskCompletionSource<Page> reported = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        page.OnPopup.AddObserver(e => reported.TrySetResult(e.Page));
+        FakeContext popupContext = session.AddContext();
+
+        Page popup = await page.RunAndWaitForPopupAsync(() => session.RemoteEnd.RaiseEventAsync("browsingContext.contextCreated", CreatedContext(popupContext.Id, page.Id)), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(popupContext.Id, popup.Id);
+        Assert.Same(page, popup.Opener);
+        Assert.Same(popup, await reported.Task.WaitAsync(EventWait, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task PopupWaitEndsWhenNoPageOpensInTime()
+    {
+        (BiDiDriver driver, FakeSession _, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+
+        WebDriverBiDiTimeoutException exception = await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(() => page.RunAndWaitForPopupAsync(() => Task.CompletedTask, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken));
+
+        Assert.Equal("Timed out after 0.1 seconds waiting for a popup to open.", exception.Message);
+    }
+
+    [Fact]
     public async Task PopupsAreReportedToTheirOpenerAfterTheBrowserTracksThem()
     {
         (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
