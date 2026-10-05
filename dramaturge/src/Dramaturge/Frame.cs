@@ -226,11 +226,9 @@ public sealed class Frame
     /// <param name="timeout">The time the navigation may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the navigation.</param>
     /// <returns>The URL navigated to, after any redirects.</returns>
-    public async Task<string> NavigateAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<string> NavigateAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        NavigateCommandParameters parameters = new(this.Id, url) { Wait = wait };
-        NavigateCommandResult result = await this.Group.Driver.BrowsingContext.NavigateAsync(parameters, this.NavigationTimeout(timeout), cancellationToken).ConfigureAwait(false);
-        return result.Url;
+        return this.TraceAsync(Call("Navigate", "{url}", "goto", ("url", url)), this.CreateBudget(timeout, cancellationToken), budget => this.NavigateCoreAsync(url, wait, budget));
     }
 
     /// <summary>
@@ -240,11 +238,9 @@ public sealed class Frame
     /// <param name="timeout">The time the reload may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the reload.</param>
     /// <returns>The URL reloaded.</returns>
-    public async Task<string> ReloadAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<string> ReloadAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        ReloadCommandParameters parameters = new(this.Id) { Wait = wait };
-        ReloadCommandResult result = await this.Group.Driver.BrowsingContext.ReloadAsync(parameters, this.NavigationTimeout(timeout), cancellationToken).ConfigureAwait(false);
-        return result.Url;
+        return this.TraceAsync(Call("Reload", null, "reload"), this.CreateBudget(timeout, cancellationToken), budget => this.ReloadCoreAsync(wait, budget));
     }
 
     /// <summary>
@@ -260,7 +256,7 @@ public sealed class Frame
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the document does not load in time.</exception>
     public Task WaitForLoadStateAsync(ReadinessState state = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.WaitForLoadStateAsync(state, this.CreateBudget(timeout, cancellationToken));
+        return this.TraceAsync(Call("Wait for load state", "{state}", "waitForLoadState", ("state", state.ToString())), this.CreateBudget(timeout, cancellationToken), budget => this.WaitForLoadStateAsync(state, budget));
     }
 
     /// <summary>
@@ -322,13 +318,9 @@ public sealed class Frame
     /// <returns>The frame's URL after the navigation.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the frame is detached while waiting.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the frame does not navigate, or the document does not load, in time.</exception>
-    public async Task<string> RunAndWaitForNavigationAsync(Func<Task> action, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<string> RunAndWaitForNavigationAsync(Func<Task> action, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        int before = this.Navigations;
-        await action().ConfigureAwait(false);
-        await this.WaitForNavigationAsync(before, wait, budget).ConfigureAwait(false);
-        return this.Url;
+        return this.TraceAsync(Call("Run and wait for navigation", null, "waitForNavigation"), this.CreateBudget(timeout, cancellationToken), budget => this.RunAndWaitForNavigationCoreAsync(action, wait, budget));
     }
 
     /// <summary>
@@ -343,7 +335,7 @@ public sealed class Frame
     /// <exception cref="ScriptException">Thrown when the function throws.</exception>
     public Task<RemoteValue> EvaluateAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.Group.Driver.Script.CallFunctionAsync(this.Id, function, arguments, null, timeout ?? this.Group.Options.ActionTimeout, cancellationToken);
+        return this.TraceAsync(Call("Evaluate", null, "evaluate", ("function", function)), this.CreateActionBudget(timeout, cancellationToken), budget => this.EvaluateCoreAsync(function, arguments, budget));
     }
 
     /// <summary>
@@ -360,9 +352,9 @@ public sealed class Frame
     /// <exception cref="InvalidCastException">Thrown when the result cannot be converted to the type.</exception>
     /// <exception cref="NotSupportedException">Thrown when the type is not one a result converts to.</exception>
     /// <exception cref="OverflowException">Thrown when a number is outside the range of the type.</exception>
-    public async Task<T> EvaluateAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<T> EvaluateAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return RemoteValueConverter.Convert<T>(await this.EvaluateAsync(function, arguments, timeout, cancellationToken).ConfigureAwait(false));
+        return this.TraceAsync(Call("Evaluate", null, "evaluate", ("function", function)), this.CreateActionBudget(timeout, cancellationToken), async budget => RemoteValueConverter.Convert<T>(await this.EvaluateCoreAsync(function, arguments, budget).ConfigureAwait(false)));
     }
 
     /// <summary>
@@ -376,43 +368,9 @@ public sealed class Frame
     /// <returns>The truthy value.</returns>
     /// <exception cref="ScriptException">Thrown when the function throws.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the function does not return a truthy value in time.</exception>
-    public async Task<RemoteValue> WaitForFunctionAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<RemoteValue> WaitForFunctionAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        List<LocalValue> argumentList = [.. arguments ?? []];
-        TimeBudget budget = new(timeout ?? this.Group.Options.ActionTimeout, this.Group.Options.TimeProvider, cancellationToken);
-        string observed = "it was still running";
-        while (true)
-        {
-            int navigationsStarted = this.NavigationsStarted;
-            try
-            {
-                RemoteValue result = await this.Group.Driver.Script.CallFunctionAsync(this.Id, function, argumentList, null, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
-                if (IsTruthy(result))
-                {
-                    return result;
-                }
-
-                observed = $"it last returned {DescribeFalsy(result)}";
-            }
-            catch (WebDriverBiDiCommandException) when (this.NavigationsStarted != navigationsStarted)
-            {
-                observed = "the frame navigated while it ran";
-            }
-            catch (WebDriverBiDiTimeoutException)
-            {
-                // The call was given the rest of the budget, so timing out means the budget is spent.
-                break;
-            }
-
-            // The delay ends with the budget, at once if none is left.
-            await budget.DelayAsync(this.Group.Options.PollInterval).ConfigureAwait(false);
-            if (budget.IsExhausted)
-            {
-                break;
-            }
-        }
-
-        throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for the function to return a truthy value; {observed}.");
+        return this.TraceAsync(Call("Wait for function", null, "waitForFunction", ("function", function)), this.CreateActionBudget(timeout, cancellationToken), budget => this.WaitForFunctionCoreAsync(function, arguments, budget));
     }
 
     /// <summary>
@@ -428,9 +386,9 @@ public sealed class Frame
     /// <returns>The truthy value, converted.</returns>
     /// <exception cref="ScriptException">Thrown when the function throws.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the function does not return a truthy value in time.</exception>
-    public async Task<T> WaitForFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<T> WaitForFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return RemoteValueConverter.Convert<T>(await this.WaitForFunctionAsync(function, arguments, timeout, cancellationToken).ConfigureAwait(false));
+        return this.TraceAsync(Call("Wait for function", null, "waitForFunction", ("function", function)), this.CreateActionBudget(timeout, cancellationToken), async budget => RemoteValueConverter.Convert<T>(await this.WaitForFunctionCoreAsync(function, arguments, budget).ConfigureAwait(false)));
     }
 
     /// <summary>
@@ -441,17 +399,9 @@ public sealed class Frame
     /// <param name="timeout">The time it may take, or <see langword="null"/> for <see cref="DramaturgeOptions.NavigationTimeout"/>.</param>
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the document has loaded as far as the state.</returns>
-    public async Task SetContentAsync(string html, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task SetContentAsync(string html, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        string state = wait switch
-        {
-            ReadinessState.Complete => "complete",
-            ReadinessState.Interactive => "interactive",
-            _ => "none",
-        };
-        await this.Group.ScriptHost.CallActionsAsync(this.Id, "(actions, html, state) => actions.setContent(html, state)", [LocalValue.String(html), LocalValue.String(state)], budget).ConfigureAwait(false);
-        this.RecordLoadState(wait == ReadinessState.Complete ? LoadState.Complete : null);
+        return this.TraceAsync(Call("Set content", null, "setContent"), this.CreateBudget(timeout, cancellationToken), budget => this.SetContentCoreAsync(html, wait, budget));
     }
 
     /// <summary>
@@ -527,14 +477,9 @@ public sealed class Frame
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the frame is detached while waiting.</exception>
     /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>
-    internal async Task ExpectUrlAsync(string expected, bool isNot, TextPattern pattern, TimeSpan? timeout, CancellationToken cancellationToken)
+    internal Task ExpectUrlAsync(string expected, bool isNot, TextPattern pattern, TimeSpan? timeout, CancellationToken cancellationToken)
     {
-        TimeBudget budget = this.CreateExpectBudget(timeout, cancellationToken);
-        if (!await this.TryWaitUntilAsync(() => pattern.Matches(this.url) != isNot, $"the page {expected}", budget).ConfigureAwait(false))
-        {
-            string url = TextPattern.Quote(this.Url);
-            throw new ExpectationFailedException($"Expected the page {expected}; received {url} after {budget.Duration.TotalSeconds} seconds.", expected, url, budget.Duration);
-        }
+        return this.TraceAsync(ExpectCall(expected), this.CreateExpectBudget(timeout, cancellationToken), budget => this.ExpectUrlCoreAsync(expected, isNot, pattern, budget));
     }
 
     /// <summary>
@@ -548,34 +493,129 @@ public sealed class Frame
     /// <param name="cancellationToken">A token that cancels the expectation.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>
-    internal async Task ExpectTitleAsync(string expected, bool isNot, TextPattern pattern, TimeSpan? timeout, CancellationToken cancellationToken)
+    internal Task ExpectTitleAsync(string expected, bool isNot, TextPattern pattern, TimeSpan? timeout, CancellationToken cancellationToken)
     {
-        TimeBudget budget = this.CreateExpectBudget(timeout, cancellationToken);
-        string? actual = null;
-        string? observed = null;
+        return this.TraceAsync(ExpectCall(expected), this.CreateExpectBudget(timeout, cancellationToken), budget => this.ExpectTitleCoreAsync(expected, isNot, pattern, budget));
+    }
+
+    /// <summary>
+    /// Navigates the frame, waiting for the new document to load as far as a state.
+    /// </summary>
+    /// <param name="url">The URL.</param>
+    /// <param name="wait">How far the new document must load.</param>
+    /// <param name="budget">The time the navigation may take.</param>
+    /// <returns>The URL navigated to, after any redirects.</returns>
+    internal async Task<string> NavigateCoreAsync(string url, ReadinessState wait, TimeBudget budget)
+    {
+        NavigateCommandParameters parameters = new(this.Id, url) { Wait = wait };
+        NavigateCommandResult result = await this.Group.Driver.BrowsingContext.NavigateAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        return result.Url;
+    }
+
+    /// <summary>
+    /// Reloads the frame, waiting for the reloaded document to load as far as a state.
+    /// </summary>
+    /// <param name="wait">How far the reloaded document must load.</param>
+    /// <param name="budget">The time the reload may take.</param>
+    /// <returns>The URL reloaded.</returns>
+    internal async Task<string> ReloadCoreAsync(ReadinessState wait, TimeBudget budget)
+    {
+        ReloadCommandParameters parameters = new(this.Id) { Wait = wait };
+        ReloadCommandResult result = await this.Group.Driver.BrowsingContext.ReloadAsync(parameters, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+        return result.Url;
+    }
+
+    /// <summary>
+    /// Runs an action, then waits for the frame to navigate and the new document to load as far as a state.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="wait">How far the new document must load.</param>
+    /// <param name="budget">The time the navigation may take.</param>
+    /// <returns>The frame's URL after the navigation.</returns>
+    internal async Task<string> RunAndWaitForNavigationCoreAsync(Func<Task> action, ReadinessState wait, TimeBudget budget)
+    {
+        int before = this.Navigations;
+        await action().ConfigureAwait(false);
+        await this.WaitForNavigationAsync(before, wait, budget).ConfigureAwait(false);
+        return this.Url;
+    }
+
+    /// <summary>
+    /// Calls a function in the frame's own realm.
+    /// </summary>
+    /// <param name="function">The function.</param>
+    /// <param name="arguments">Its arguments, or <see langword="null"/> for none.</param>
+    /// <param name="budget">The time the call may take.</param>
+    /// <returns>The function's result.</returns>
+    internal Task<RemoteValue> EvaluateCoreAsync(string function, IEnumerable<LocalValue>? arguments, TimeBudget budget)
+    {
+        return this.Group.Driver.Script.CallFunctionAsync(this.Id, function, arguments, null, budget.Remaining, budget.CancellationToken);
+    }
+
+    /// <summary>
+    /// Waits for the frame's URL to satisfy a condition, then for its document to load as far as a state.
+    /// </summary>
+    /// <param name="matches">The condition.</param>
+    /// <param name="awaited">The URL awaited, for a timeout's message.</param>
+    /// <param name="wait">How far the document must load.</param>
+    /// <param name="budget">The time the wait may take.</param>
+    /// <returns>The frame's URL.</returns>
+    internal async Task<string> WaitForUrlCoreAsync(Func<string, bool> matches, string awaited, ReadinessState wait, TimeBudget budget)
+    {
+        await this.WaitUntilAsync(() => matches(this.url), awaited, () => $"the frame's URL was {this.url}", budget).ConfigureAwait(false);
+        await this.WaitForLoadStateAsync(wait, budget).ConfigureAwait(false);
+        return this.Url;
+    }
+
+    /// <summary>
+    /// Waits for the frame's document to load as far as a state.
+    /// </summary>
+    /// <param name="state">The state.</param>
+    /// <param name="budget">The time the wait may take.</param>
+    /// <returns>A task that completes when the document has loaded as far as the state.</returns>
+    internal async Task WaitForLoadStateAsync(ReadinessState state, TimeBudget budget)
+    {
+        if (state == ReadinessState.None)
+        {
+            return;
+        }
+
+        LoadState target = state == ReadinessState.Interactive ? LoadState.Interactive : LoadState.Complete;
+        await this.ReadUnknownLoadStateAsync(budget).ConfigureAwait(false);
+        await this.WaitUntilAsync(() => this.loadState >= target, $"the frame's document to be {target.ToString().ToLowerInvariant()}", () => $"it was {this.loadState?.ToString().ToLowerInvariant() ?? "unknown"}", budget).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Calls a function in the frame's own realm until it returns a truthy value.
+    /// </summary>
+    /// <param name="function">The function.</param>
+    /// <param name="arguments">Its arguments, or <see langword="null"/> for none.</param>
+    /// <param name="budget">The time the wait may take.</param>
+    /// <returns>The truthy value.</returns>
+    internal async Task<RemoteValue> WaitForFunctionCoreAsync(string function, IEnumerable<LocalValue>? arguments, TimeBudget budget)
+    {
+        List<LocalValue> argumentList = [.. arguments ?? []];
+        string observed = "it was still running";
         while (true)
         {
             int navigationsStarted = this.NavigationsStarted;
             try
             {
-                RemoteValue title = await this.Group.Driver.Script.CallFunctionAsync(this.Id, "() => document.title", [], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
-                string text = TextPattern.Normalize(title.As<StringRemoteValue>().Value);
-                actual = TextPattern.Quote(text);
-                if (pattern.Matches(text) != isNot)
+                RemoteValue result = await this.Group.Driver.Script.CallFunctionAsync(this.Id, function, argumentList, null, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+                if (IsTruthy(result))
                 {
-                    return;
+                    return result;
                 }
 
-                observed = $"received {actual}";
+                observed = $"it last returned {DescribeFalsy(result)}";
             }
             catch (WebDriverBiDiCommandException) when (this.NavigationsStarted != navigationsStarted)
             {
-                observed = "the frame navigated while the title was read";
+                observed = "the frame navigated while it ran";
             }
             catch (WebDriverBiDiTimeoutException)
             {
                 // The call was given the rest of the budget, so timing out means the budget is spent.
-                observed ??= "a command was still running";
                 break;
             }
 
@@ -587,7 +627,26 @@ public sealed class Frame
             }
         }
 
-        throw new ExpectationFailedException($"Expected the page {expected}; {observed} after {budget.Duration.TotalSeconds} seconds.", expected, actual, budget.Duration);
+        throw new WebDriverBiDiTimeoutException($"Timed out after {budget.Duration.TotalSeconds} seconds waiting for the function to return a truthy value; {observed}.");
+    }
+
+    /// <summary>
+    /// Replaces the frame's document's content, waiting for it to load as far as a state.
+    /// </summary>
+    /// <param name="html">The HTML.</param>
+    /// <param name="wait">How far the content must load.</param>
+    /// <param name="budget">The time it may take.</param>
+    /// <returns>A task that completes when the content is set.</returns>
+    internal async Task SetContentCoreAsync(string html, ReadinessState wait, TimeBudget budget)
+    {
+        string state = wait switch
+        {
+            ReadinessState.Complete => "complete",
+            ReadinessState.Interactive => "interactive",
+            _ => "none",
+        };
+        await this.Group.ScriptHost.CallActionsAsync(this.Id, "(actions, html, state) => actions.setContent(html, state)", [LocalValue.String(html), LocalValue.String(state)], budget).ConfigureAwait(false);
+        this.RecordLoadState(wait == ReadinessState.Complete ? LoadState.Complete : null);
     }
 
     /// <summary>
@@ -654,6 +713,16 @@ public sealed class Frame
         }
     }
 
+    private static TracedCall Call(string title, string? subtitle, string method, params (string Name, object Value)[] parameters)
+    {
+        return TraceRecording.Call("Frame", title, subtitle, method, parameters);
+    }
+
+    private static TracedCall ExpectCall(string expected)
+    {
+        return TraceRecording.Call("Expect", $"Expect {expected}", null, "expect");
+    }
+
     private static bool IsTruthy(RemoteValue value)
     {
         return value switch
@@ -702,6 +771,71 @@ public sealed class Frame
         };
     }
 
+    private Task<T> TraceAsync<T>(TracedCall call, TimeBudget budget, Func<TimeBudget, Task<T>> action)
+    {
+        return TraceRecording.RunAsync(this.Page.Browser, this.Page, budget, call, action);
+    }
+
+    private Task TraceAsync(TracedCall call, TimeBudget budget, Func<TimeBudget, Task> action)
+    {
+        return TraceRecording.RunAsync(this.Page.Browser, this.Page, budget, call, action);
+    }
+
+    private TimeBudget CreateActionBudget(TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        return new TimeBudget(timeout ?? this.Group.Options.ActionTimeout, this.Group.Options.TimeProvider, cancellationToken);
+    }
+
+    private async Task ExpectUrlCoreAsync(string expected, bool isNot, TextPattern pattern, TimeBudget budget)
+    {
+        if (!await this.TryWaitUntilAsync(() => pattern.Matches(this.url) != isNot, $"the page {expected}", budget).ConfigureAwait(false))
+        {
+            string url = TextPattern.Quote(this.Url);
+            throw new ExpectationFailedException($"Expected the page {expected}; received {url} after {budget.Duration.TotalSeconds} seconds.", expected, url, budget.Duration);
+        }
+    }
+
+    private async Task ExpectTitleCoreAsync(string expected, bool isNot, TextPattern pattern, TimeBudget budget)
+    {
+        string? actual = null;
+        string? observed = null;
+        while (true)
+        {
+            int navigationsStarted = this.NavigationsStarted;
+            try
+            {
+                RemoteValue title = await this.Group.Driver.Script.CallFunctionAsync(this.Id, "() => document.title", [], this.Group.Options.SandboxName, budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
+                string text = TextPattern.Normalize(title.As<StringRemoteValue>().Value);
+                actual = TextPattern.Quote(text);
+                if (pattern.Matches(text) != isNot)
+                {
+                    return;
+                }
+
+                observed = $"received {actual}";
+            }
+            catch (WebDriverBiDiCommandException) when (this.NavigationsStarted != navigationsStarted)
+            {
+                observed = "the frame navigated while the title was read";
+            }
+            catch (WebDriverBiDiTimeoutException)
+            {
+                // The call was given the rest of the budget, so timing out means the budget is spent.
+                observed ??= "a command was still running";
+                break;
+            }
+
+            // The delay ends with the budget, at once if none is left.
+            await budget.DelayAsync(this.Group.Options.PollInterval).ConfigureAwait(false);
+            if (budget.IsExhausted)
+            {
+                break;
+            }
+        }
+
+        throw new ExpectationFailedException($"Expected the page {expected}; {observed} after {budget.Duration.TotalSeconds} seconds.", expected, actual, budget.Duration);
+    }
+
     private TimeBudget CreateBudget(TimeSpan? timeout, CancellationToken cancellationToken)
     {
         return new TimeBudget(this.NavigationTimeout(timeout), this.Group.Options.TimeProvider, cancellationToken);
@@ -717,24 +851,9 @@ public sealed class Frame
         return timeout ?? this.Group.Options.NavigationTimeout;
     }
 
-    private async Task<string> WaitForUrlAsync(Func<string, bool> matches, string awaited, ReadinessState wait, TimeSpan? timeout, CancellationToken cancellationToken)
+    private Task<string> WaitForUrlAsync(Func<string, bool> matches, string awaited, ReadinessState wait, TimeSpan? timeout, CancellationToken cancellationToken)
     {
-        TimeBudget budget = this.CreateBudget(timeout, cancellationToken);
-        await this.WaitUntilAsync(() => matches(this.url), awaited, () => $"the frame's URL was {this.url}", budget).ConfigureAwait(false);
-        await this.WaitForLoadStateAsync(wait, budget).ConfigureAwait(false);
-        return this.Url;
-    }
-
-    private async Task WaitForLoadStateAsync(ReadinessState state, TimeBudget budget)
-    {
-        if (state == ReadinessState.None)
-        {
-            return;
-        }
-
-        LoadState target = state == ReadinessState.Interactive ? LoadState.Interactive : LoadState.Complete;
-        await this.ReadUnknownLoadStateAsync(budget).ConfigureAwait(false);
-        await this.WaitUntilAsync(() => this.loadState >= target, $"the frame's document to be {target.ToString().ToLowerInvariant()}", () => $"it was {this.loadState?.ToString().ToLowerInvariant() ?? "unknown"}", budget).ConfigureAwait(false);
+        return this.TraceAsync(Call("Wait for URL", "{url}", "waitForURL", ("url", awaited)), this.CreateBudget(timeout, cancellationToken), budget => this.WaitForUrlCoreAsync(matches, awaited, wait, budget));
     }
 
     // A document whose state no event has reported is asked. An event that changes the frame's state while it is

@@ -64,7 +64,7 @@ public sealed class Mouse
             source.Actions.Add(new PointerMoveAction() { X = fromX + ((x - fromX) * step / steps), Y = fromY + ((y - fromY) * step / steps) });
         }
 
-        return this.PerformAsync(source, cancellationToken);
+        return this.TraceAsync(Call("Mouse move", "{point}", "move", ("point", Describe(x, y))), cancellationToken, budget => this.PerformAsync(source, budget.CancellationToken));
     }
 
     /// <summary>
@@ -77,7 +77,7 @@ public sealed class Mouse
     {
         PointerSourceActions source = CreatePointerSource();
         source.Actions.Add(new PointerDownAction((ulong)button));
-        return this.PerformAsync(source, cancellationToken);
+        return this.TraceAsync(Call("Mouse down", "{button}", "down", ("button", button.ToString())), cancellationToken, budget => this.PerformAsync(source, budget.CancellationToken));
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public sealed class Mouse
     {
         PointerSourceActions source = CreatePointerSource();
         source.Actions.Add(new PointerUpAction((ulong)button));
-        return this.PerformAsync(source, cancellationToken);
+        return this.TraceAsync(Call("Mouse up", "{button}", "up", ("button", button.ToString())), cancellationToken, budget => this.PerformAsync(source, budget.CancellationToken));
     }
 
     /// <summary>
@@ -110,16 +110,7 @@ public sealed class Mouse
             throw new ArgumentOutOfRangeException(nameof(clickCount), clickCount, "The click count must be at least 1.");
         }
 
-        PointerSourceActions source = CreatePointerSource();
-        this.MoveTo(x, y);
-        source.Actions.Add(new PointerMoveAction() { X = x, Y = y });
-        for (int click = 0; click < clickCount; click++)
-        {
-            source.Actions.Add(new PointerDownAction((ulong)button));
-            source.Actions.Add(new PointerUpAction((ulong)button));
-        }
-
-        return this.PerformAsync(source, cancellationToken);
+        return this.TraceAsync(Call("Mouse click", "{point}", "click", ("point", Describe(x, y))), cancellationToken, budget => this.ClickCoreAsync(x, y, button, clickCount, budget.CancellationToken));
     }
 
     /// <summary>
@@ -132,7 +123,7 @@ public sealed class Mouse
     /// <returns>A task that completes when the double click has been performed.</returns>
     public Task DblClickAsync(double x, double y, PointerButton button = PointerButton.Left, CancellationToken cancellationToken = default)
     {
-        return this.ClickAsync(x, y, button, 2, cancellationToken);
+        return this.TraceAsync(Call("Mouse double click", "{point}", "dblclick", ("point", Describe(x, y))), cancellationToken, budget => this.ClickCoreAsync(x, y, button, 2, budget.CancellationToken));
     }
 
     /// <summary>
@@ -147,7 +138,17 @@ public sealed class Mouse
         (double atX, double atY) = this.Position;
         WheelSourceActions source = new(WheelSourceId);
         source.Actions.Add(new WheelScrollAction() { X = (long)atX, Y = (long)atY, DeltaX = deltaX, DeltaY = deltaY });
-        return this.PerformAsync(source, cancellationToken);
+        return this.TraceAsync(Call("Mouse wheel", "{delta}", "wheel", ("delta", Describe(deltaX, deltaY))), cancellationToken, budget => this.PerformAsync(source, budget.CancellationToken));
+    }
+
+    private static TracedCall Call(string title, string? subtitle, string method, params (string Name, object Value)[] parameters)
+    {
+        return TraceRecording.Call("Mouse", title, subtitle, method, parameters);
+    }
+
+    private static string Describe(double x, double y)
+    {
+        return FormattableString.Invariant($"({x}, {y})");
     }
 
     private static PointerSourceActions CreatePointerSource()
@@ -165,6 +166,26 @@ public sealed class Mouse
             this.y = y;
             return from;
         }
+    }
+
+    private Task ClickCoreAsync(double x, double y, PointerButton button, int clickCount, CancellationToken cancellationToken)
+    {
+        PointerSourceActions source = CreatePointerSource();
+        this.MoveTo(x, y);
+        source.Actions.Add(new PointerMoveAction() { X = x, Y = y });
+        for (int click = 0; click < clickCount; click++)
+        {
+            source.Actions.Add(new PointerDownAction((ulong)button));
+            source.Actions.Add(new PointerUpAction((ulong)button));
+        }
+
+        return this.PerformAsync(source, cancellationToken);
+    }
+
+    private Task TraceAsync(TracedCall call, CancellationToken cancellationToken, Func<TimeBudget, Task> action)
+    {
+        TimeBudget budget = new(this.page.Browser.Group.Options.ActionTimeout, this.page.Browser.Group.Options.TimeProvider, cancellationToken);
+        return TraceRecording.RunAsync(this.page.Browser, this.page, budget, call, action);
     }
 
     private Task PerformAsync(SourceActions source, CancellationToken cancellationToken)

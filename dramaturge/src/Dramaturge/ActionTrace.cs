@@ -20,23 +20,16 @@ internal sealed class ActionTrace
     /// </summary>
     /// <param name="recording">The recording the action is in.</param>
     /// <param name="callId">The action's ID in the trace.</param>
-    /// <param name="page">The page the action is taken on.</param>
-    public ActionTrace(TraceRecording recording, string callId, Page page)
+    public ActionTrace(TraceRecording recording, string callId)
     {
         this.recording = recording;
         this.CallId = callId;
-        this.Page = page;
     }
 
     /// <summary>
     /// Gets the action's ID in the trace.
     /// </summary>
     public string CallId { get; }
-
-    /// <summary>
-    /// Gets the page the action is taken on.
-    /// </summary>
-    public Page Page { get; }
 
     /// <summary>
     /// Adds a line to the action's log, unless it repeats the last.

@@ -8,9 +8,11 @@ namespace Dramaturge;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Dramaturge.TestUtilities;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
+using static Dramaturge.Assertions;
 using static Dramaturge.TestUtilities.NetworkEvents;
 
 public sealed class TraceRecordingTests : IDisposable
@@ -117,8 +119,73 @@ public sealed class TraceRecordingTests : IDisposable
             await counted!;
         }
 
-        JsonArray stack = ReadLines(path, "trace.trace").Single(e => (string?)e["type"] == "before")["stack"]!.AsArray();
+        JsonArray stack = ReadLines(path, "trace.trace").Single(e => (string?)e["title"] == "Count")["stack"]!.AsArray();
         Assert.Equal(["TraceRecordingTests.CallersEndWhereTheLibraryCalledThem"], stack.Select(frame => (string?)frame!["function"]));
+    }
+
+    [Fact]
+    public async Task EachTypesActionsAreRecordedUnderItsName()
+    {
+        (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        JsonObject snapshot = new()
+        {
+            ["type"] = "object",
+            ["value"] = new JsonArray(
+                new JsonArray("json", new JsonObject() { ["type"] = "string", ["value"] = """{"html":["HTML"],"viewport":{"width":800,"height":600},"url":"about:blank","wallTime":1,"collectionTime":1}""" }),
+                new JsonArray("frames", new JsonObject() { ["type"] = "array", ["value"] = new JsonArray() }),
+                new JsonArray("point", new JsonObject() { ["type"] = "null" })),
+        };
+        session.RemoteEnd.AnswerWith("script.callFunction", parameters => ProtocolJson.Success(((string)parameters["functionDeclaration"]!).Contains("snapshots.snapshot") ? (JsonObject)snapshot.DeepClone() : new JsonObject() { ["type"] = "string", ["value"] = "42" }));
+        session.RemoteEnd.AnswerWith("storage.getCookies", new JsonObject() { ["cookies"] = new JsonArray(), ["partitionKey"] = new JsonObject() });
+        string path = Path.Combine(this.directory, "trace.zip");
+
+        await using (await page.Browser.RecordTraceAsync(path, new TraceRecordingOptions() { Snapshots = true }, TestContext.Current.CancellationToken))
+        {
+            Page opened = await page.Browser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+            await opened.NavigateAsync("https://example.com/", cancellationToken: TestContext.Current.CancellationToken);
+            await opened.EvaluateAsync<string>("() => '42'", cancellationToken: TestContext.Current.CancellationToken);
+            await opened.MainFrame.EvaluateAsync("() => '42'", cancellationToken: TestContext.Current.CancellationToken);
+            await opened.Keyboard.PressAsync("Enter", cancellationToken: TestContext.Current.CancellationToken);
+            await opened.Mouse.ClickAsync(10, 20, cancellationToken: TestContext.Current.CancellationToken);
+            await Expect(opened).ToHaveUrlAsync("https://example.com/", cancellationToken: TestContext.Current.CancellationToken);
+            await page.Browser.GetCookiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            await opened.CloseAsync(TestContext.Current.CancellationToken);
+        }
+
+        List<JsonObject> befores = [.. ReadLines(path, "trace.trace").Where(e => (string?)e["type"] == "before")];
+        Assert.Equal(
+            ["Browser:New page", "Page:Navigate", "Page:Evaluate", "Frame:Evaluate", "Keyboard:Press", "Mouse:Mouse click", "Expect:Expect to have URL \"https://example.com/\"", "Browser:Get cookies", "Page:Close"],
+            befores.Select(e => $"{e["class"]}:{e["title"]}"));
+        Assert.Equal("https://example.com/", (string?)befores[1]["params"]!["url"]);
+        Assert.Equal("(10, 20)", (string?)befores[5]["params"]!["point"]);
+        List<JsonObject> snapshots = [.. ReadLines(path, "trace.trace").Where(e => (string?)e["type"] == "frame-snapshot")];
+        Assert.DoesNotContain(snapshots, e => (string?)e["snapshot"]!["callId"] == (string?)befores[0]["callId"]);
+        Assert.Contains(snapshots, e => (string?)e["snapshot"]!["callId"] == (string?)befores[1]["callId"]);
+    }
+
+    [Fact]
+    public async Task FrameActionsAreRecordedAsTheFrames()
+    {
+        (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        session.RemoteEnd.AnswerWith("script.callFunction", ProtocolJson.Success(new JsonObject() { ["type"] = "string", ["value"] = "42" }));
+        Frame frame = page.MainFrame;
+        string path = Path.Combine(this.directory, "trace.zip");
+
+        await using (await page.Browser.RecordTraceAsync(path, cancellationToken: TestContext.Current.CancellationToken))
+        {
+            await frame.WaitForLoadStateAsync(ReadinessState.None, cancellationToken: TestContext.Current.CancellationToken);
+            await frame.WaitForUrlAsync(new Regex("^about:"), ReadinessState.None, cancellationToken: TestContext.Current.CancellationToken);
+            await frame.WaitForUrlAsync(url => url.Length > 0, ReadinessState.None, cancellationToken: TestContext.Current.CancellationToken);
+            await frame.RunAndWaitForNavigationAsync(() => frame.NavigateAsync("https://example.com/", ReadinessState.None, cancellationToken: TestContext.Current.CancellationToken), ReadinessState.None, cancellationToken: TestContext.Current.CancellationToken);
+            await frame.WaitForFunctionAsync<string>("() => '42'", timeout: TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+            await frame.SetContentAsync("<p>Hello</p>", ReadinessState.None, cancellationToken: TestContext.Current.CancellationToken);
+        }
+
+        Assert.Equal(
+            ["Wait for load state", "Wait for URL", "Wait for URL", "Run and wait for navigation", "Navigate", "Wait for function", "Set content"],
+            ReadLines(path, "trace.trace").Where(e => (string?)e["type"] == "before" && (string?)e["class"] == "Frame").Select(e => (string?)e["title"]));
     }
 
     [Fact]

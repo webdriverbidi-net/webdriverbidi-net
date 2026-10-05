@@ -47,8 +47,8 @@ public sealed class TraceIntegrationTests : IDisposable
         Assert.Equal("context-options", (string?)events[0]["type"]);
         Assert.False(string.IsNullOrEmpty((string?)events[0]["browserName"]));
         Assert.Single(events, e => (string?)e["method"] == "page");
-        JsonObject click = Assert.Single(events, e => (string?)e["type"] == "before");
-        Assert.Equal("Click", (string?)click["title"]);
+        Assert.Equal(["New page", "Navigate", "Click"], events.Where(e => (string?)e["type"] == "before").Select(e => (string?)e["title"]));
+        JsonObject click = events.Single(e => (string?)e["title"] == "Click");
         Assert.Contains(events, e => (string?)e["type"] == "after" && (string?)e["callId"] == (string?)click["callId"] && e["error"] is null);
         Assert.Equal(["log", "warning"], events.Where(e => (string?)e["type"] == "console").Select(e => (string?)e["messageType"]));
         JsonNode document = Assert.Single(Lines(path, "trace.network"), line => ((string)line["snapshot"]!["request"]!["url"]!).EndsWith("/events.html", StringComparison.Ordinal))["snapshot"]!;

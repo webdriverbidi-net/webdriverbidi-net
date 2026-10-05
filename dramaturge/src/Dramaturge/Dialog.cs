@@ -72,7 +72,7 @@ public sealed class Dialog
     /// <exception cref="InvalidOperationException">Thrown when the browser handled the dialog itself.</exception>
     public Task AcceptAsync(string? promptText = null, CancellationToken cancellationToken = default)
     {
-        return this.HandleAsync(true, promptText, cancellationToken);
+        return this.TraceAsync(Call("Accept dialog", null, "accept"), cancellationToken, budget => this.HandleAsync(true, promptText, budget.CancellationToken));
     }
 
     /// <summary>
@@ -83,7 +83,19 @@ public sealed class Dialog
     /// <exception cref="InvalidOperationException">Thrown when the browser handled the dialog itself.</exception>
     public Task DismissAsync(CancellationToken cancellationToken = default)
     {
-        return this.HandleAsync(false, null, cancellationToken);
+        return this.TraceAsync(Call("Dismiss dialog", null, "dismiss"), cancellationToken, budget => this.HandleAsync(false, null, budget.CancellationToken));
+    }
+
+    private static TracedCall Call(string title, string? subtitle, string method, params (string Name, object Value)[] parameters)
+    {
+        return TraceRecording.Call("Dialog", title, subtitle, method, parameters);
+    }
+
+    // Recorded without the page: its scripts cannot run while it waits on the request or the dialog, so neither can a snapshot's.
+    private Task TraceAsync(TracedCall call, CancellationToken cancellationToken, Func<TimeBudget, Task> action)
+    {
+        TimeBudget budget = new(this.Page.Browser.Group.Options.ActionTimeout, this.Page.Browser.Group.Options.TimeProvider, cancellationToken);
+        return TraceRecording.RunAsync(this.Page.Browser, null, budget, call, action);
     }
 
     private Task HandleAsync(bool accept, string? promptText, CancellationToken cancellationToken)

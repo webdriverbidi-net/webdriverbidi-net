@@ -923,27 +923,11 @@ public sealed class ElementLocator
     /// <param name="describeDetails">Describes what the last check saw, in lines after the failure message's first, or <see langword="null"/> for none.</param>
     /// <returns>A task that completes when the expectation is met.</returns>
     /// <exception cref="ExpectationFailedException">Thrown when the expectation is not met in time.</exception>
-    internal async Task ExpectAsync(string expected, bool isNot, TimeSpan? timeout, CancellationToken cancellationToken, Func<TimeBudget, Task<Observation?>> observe, Func<string, string>? describeDetails = null)
+    internal Task ExpectAsync(string expected, bool isNot, TimeSpan? timeout, CancellationToken cancellationToken, Func<TimeBudget, Task<Observation?>> observe, Func<string, string>? describeDetails = null)
     {
         TimeBudget budget = new(timeout ?? this.Group.Options.ExpectTimeout, this.Group.Options.TimeProvider, cancellationToken);
-        string? actual = null;
-        (bool met, bool _, string? observed) = await this.TryPollAsync(budget, async () =>
-        {
-            Observation? observation = await observe(budget).ConfigureAwait(false);
-            if (observation is null)
-            {
-                return (false, false, DescribeNotReady("notconnected"));
-            }
-
-            actual = observation.Actual;
-            bool holds = observation.Holds != isNot;
-            return (holds, holds, actual is null ? "no element matched" : observation.Summary ?? $"received {actual}");
-        }).ConfigureAwait(false);
-        if (!met)
-        {
-            string details = actual is not null && describeDetails is not null ? describeDetails(actual) : string.Empty;
-            throw new ExpectationFailedException($"Expected {this} {expected}; {observed} after {budget.Duration.TotalSeconds} seconds.{details}", expected, actual, budget.Duration);
-        }
+        TracedCall call = TraceRecording.Call("Expect", $"Expect {expected}", "{locator}", "expect", ("locator", this.ToString()));
+        return this.TraceAsync(call, budget, actionBudget => this.ExpectCoreAsync(expected, isNot, observe, describeDetails, actionBudget));
     }
 
     /// <summary>
@@ -1179,28 +1163,44 @@ public sealed class ElementLocator
 
     private TracedCall Call(string title, string method, params (string Name, object Value)[] parameters)
     {
-        Dictionary<string, object> values = new() { ["locator"] = this.ToString() };
-        foreach ((string name, object value) in parameters)
-        {
-            values[name] = value;
-        }
-
-        return new TracedCall(title, "{locator}", "Locator", method, values);
+        return TraceRecording.Call("Locator", title, "{locator}", method, [("locator", this.ToString()), .. parameters]);
     }
 
     private Task<T> TraceAsync<T>(TracedCall call, TimeBudget budget, Func<TimeBudget, Task<T>> action)
     {
-        return TraceRecording.RunAsync(this.Frame.Page, budget, call, action);
+        return TraceRecording.RunAsync(this.Frame.Page.Browser, this.Frame.Page, budget, call, action);
     }
 
     private Task TraceAsync(TracedCall call, TimeBudget budget, Func<TimeBudget, Task> action)
     {
-        return TraceRecording.RunAsync(this.Frame.Page, budget, call, action);
+        return TraceRecording.RunAsync(this.Frame.Page.Browser, this.Frame.Page, budget, call, action);
     }
 
     private Task RecordTargetAsync(NodeRemoteValue node, TimeBudget budget)
     {
         return budget.Trace is ActionTrace trace ? trace.TargetAsync(this.Frame, node, null) : Task.CompletedTask;
+    }
+
+    private async Task ExpectCoreAsync(string expected, bool isNot, Func<TimeBudget, Task<Observation?>> observe, Func<string, string>? describeDetails, TimeBudget budget)
+    {
+        string? actual = null;
+        (bool met, bool _, string? observed) = await this.TryPollAsync(budget, async () =>
+        {
+            Observation? observation = await observe(budget).ConfigureAwait(false);
+            if (observation is null)
+            {
+                return (false, false, DescribeNotReady("notconnected"));
+            }
+
+            actual = observation.Actual;
+            bool holds = observation.Holds != isNot;
+            return (holds, holds, actual is null ? "no element matched" : observation.Summary ?? $"received {actual}");
+        }).ConfigureAwait(false);
+        if (!met)
+        {
+            string details = actual is not null && describeDetails is not null ? describeDetails(actual) : string.Empty;
+            throw new ExpectationFailedException($"Expected {this} {expected}; {observed} after {budget.Duration.TotalSeconds} seconds.{details}", expected, actual, budget.Duration);
+        }
     }
 
     private async Task<bool> IsVisibleCoreAsync(TimeBudget budget)

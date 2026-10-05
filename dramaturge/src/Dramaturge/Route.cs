@@ -5,6 +5,7 @@
 
 namespace Dramaturge;
 
+using System.Globalization;
 using WebDriverBiDi.Network;
 
 /// <summary>
@@ -68,7 +69,7 @@ public sealed class Route
     /// <exception cref="InvalidOperationException">Thrown when the request has been handled already.</exception>
     public Task FulfillAsync(ulong statusCode = 200, string? body = null, IReadOnlyDictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
     {
-        return this.FulfillAsync(statusCode, body is null ? null : BytesValue.FromString(body), headers, cancellationToken);
+        return this.TraceAsync(Call("Fulfill", "{status}", "fulfill", ("status", statusCode.ToString(CultureInfo.InvariantCulture))), cancellationToken, budget => this.FulfillAsync(statusCode, body is null ? null : BytesValue.FromString(body), headers, budget.CancellationToken));
     }
 
     /// <summary>
@@ -82,7 +83,7 @@ public sealed class Route
     /// <exception cref="InvalidOperationException">Thrown when the request has been handled already.</exception>
     public Task FulfillAsync(ulong statusCode, byte[] body, IReadOnlyDictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
     {
-        return this.FulfillAsync(statusCode, BytesValue.FromByteArray(body), headers, cancellationToken);
+        return this.TraceAsync(Call("Fulfill", "{status}", "fulfill", ("status", statusCode.ToString(CultureInfo.InvariantCulture))), cancellationToken, budget => this.FulfillAsync(statusCode, BytesValue.FromByteArray(body), headers, budget.CancellationToken));
     }
 
     /// <summary>
@@ -102,7 +103,7 @@ public sealed class Route
             Headers = ToHeaders(overrides?.Headers),
             Body = overrides?.Body is string body ? BytesValue.FromString(body) : null,
         };
-        return this.Browser.Group.Driver.Network.ContinueRequestAsync(parameters, cancellationToken: cancellationToken);
+        return this.TraceAsync(Call("Continue", null, "continue"), cancellationToken, budget => this.Browser.Group.Driver.Network.ContinueRequestAsync(parameters, cancellationToken: budget.CancellationToken));
     }
 
     /// <summary>
@@ -114,7 +115,7 @@ public sealed class Route
     public Task AbortAsync(CancellationToken cancellationToken = default)
     {
         this.MarkHandled();
-        return this.Browser.Group.Driver.Network.FailRequestAsync(new FailRequestCommandParameters(this.Request.RequestId), cancellationToken: cancellationToken);
+        return this.TraceAsync(Call("Abort", null, "abort"), cancellationToken, budget => this.Browser.Group.Driver.Network.FailRequestAsync(new FailRequestCommandParameters(this.Request.RequestId), cancellationToken: budget.CancellationToken));
     }
 
     /// <summary>
@@ -133,9 +134,21 @@ public sealed class Route
         return this.Browser.Group.Driver.Network.ProvideResponseAsync(parameters);
     }
 
+    private static TracedCall Call(string title, string? subtitle, string method, params (string Name, object Value)[] parameters)
+    {
+        return TraceRecording.Call("Route", title, subtitle, method, parameters);
+    }
+
     private static List<Header>? ToHeaders(IReadOnlyDictionary<string, string>? headers)
     {
         return headers is null ? null : [.. headers.Select(header => new Header(header.Key, header.Value))];
+    }
+
+    // Recorded without the page: its scripts cannot run while it waits on the request or the dialog, so neither can a snapshot's.
+    private Task TraceAsync(TracedCall call, CancellationToken cancellationToken, Func<TimeBudget, Task> action)
+    {
+        TimeBudget budget = new(this.Browser.Group.Options.ActionTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
+        return TraceRecording.RunAsync(this.Browser, null, budget, call, action);
     }
 
     private Task FulfillAsync(ulong statusCode, BytesValue? body, IReadOnlyDictionary<string, string>? headers, CancellationToken cancellationToken)

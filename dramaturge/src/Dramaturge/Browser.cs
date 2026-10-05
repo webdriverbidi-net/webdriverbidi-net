@@ -92,11 +92,14 @@ public sealed class Browser
     /// <param name="type">Whether the page opens as a tab or a window.</param>
     /// <param name="cancellationToken">A token that cancels the command.</param>
     /// <returns>The page.</returns>
-    public async Task<Page> NewPageAsync(CreateType type = CreateType.Tab, CancellationToken cancellationToken = default)
+    public Task<Page> NewPageAsync(CreateType type = CreateType.Tab, CancellationToken cancellationToken = default)
     {
-        CreateCommandParameters parameters = new(type) { UserContextId = this.Id };
-        CreateCommandResult result = await this.Group.Driver.BrowsingContext.CreateAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return await this.AddPageAsync(result.BrowsingContextId, "about:blank").ConfigureAwait(false);
+        return this.TraceAsync(Call("New page", null, "newPage"), cancellationToken, async budget =>
+        {
+            CreateCommandParameters parameters = new(type) { UserContextId = this.Id };
+            CreateCommandResult result = await this.Group.Driver.BrowsingContext.CreateAsync(parameters, cancellationToken: budget.CancellationToken).ConfigureAwait(false);
+            return await this.AddPageAsync(result.BrowsingContextId, "about:blank").ConfigureAwait(false);
+        });
     }
 
     /// <summary>
@@ -243,18 +246,9 @@ public sealed class Browser
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the commands.</param>
     /// <returns>A task that completes when the routes are removed.</returns>
-    public async Task UnrouteAllAsync(CancellationToken cancellationToken = default)
+    public Task UnrouteAllAsync(CancellationToken cancellationToken = default)
     {
-        List<RouteRegistration> removed;
-        lock (this.lockObject)
-        {
-            removed = [.. this.routes];
-        }
-
-        foreach (RouteRegistration route in removed)
-        {
-            await route.RemoveAsync(cancellationToken).ConfigureAwait(false);
-        }
+        return this.TraceAsync(Call("Unroute all", null, "unrouteAll"), cancellationToken, budget => this.UnrouteAllCoreAsync(budget.CancellationToken));
     }
 
     /// <summary>
@@ -265,7 +259,7 @@ public sealed class Browser
     /// <returns>A task that completes when the behavior is set.</returns>
     public Task AllowDownloadsAsync(string destinationFolder, CancellationToken cancellationToken = default)
     {
-        return this.SetDownloadBehaviorAsync(new DownloadBehaviorAllowed(destinationFolder), cancellationToken);
+        return this.TraceAsync(Call("Allow downloads", "{folder}", "allowDownloads", ("folder", destinationFolder)), cancellationToken, budget => this.SetDownloadBehaviorAsync(new DownloadBehaviorAllowed(destinationFolder), budget.CancellationToken));
     }
 
     /// <summary>
@@ -275,7 +269,7 @@ public sealed class Browser
     /// <returns>A task that completes when the behavior is set.</returns>
     public Task DenyDownloadsAsync(CancellationToken cancellationToken = default)
     {
-        return this.SetDownloadBehaviorAsync(new DownloadBehaviorDenied(), cancellationToken);
+        return this.TraceAsync(Call("Deny downloads", null, "denyDownloads"), cancellationToken, budget => this.SetDownloadBehaviorAsync(new DownloadBehaviorDenied(), budget.CancellationToken));
     }
 
     /// <summary>
@@ -285,7 +279,7 @@ public sealed class Browser
     /// <returns>A task that completes when the behavior is reset.</returns>
     public Task ResetDownloadBehaviorAsync(CancellationToken cancellationToken = default)
     {
-        return this.SetDownloadBehaviorAsync(null, cancellationToken);
+        return this.TraceAsync(Call("Reset download behavior", null, "resetDownloadBehavior"), cancellationToken, budget => this.SetDownloadBehaviorAsync(null, budget.CancellationToken));
     }
 
     /// <summary>
@@ -295,18 +289,21 @@ public sealed class Browser
     /// <param name="name">The name, or <see langword="null"/> for any.</param>
     /// <param name="cancellationToken">A token that cancels the command.</param>
     /// <returns>The cookies.</returns>
-    public async Task<IReadOnlyList<BrowserCookie>> GetCookiesAsync(string? domain = null, string? name = null, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<BrowserCookie>> GetCookiesAsync(string? domain = null, string? name = null, CancellationToken cancellationToken = default)
     {
-        GetCookiesCommandParameters parameters = new() { Filter = CreateFilter(domain, name), Partition = this.CreatePartition() };
-        GetCookiesCommandResult result = await this.Group.Driver.Storage.GetCookiesAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return [.. result.Cookies.Select(cookie => new BrowserCookie(cookie.Name, ReadValue(cookie.Value), cookie.Domain)
+        return this.TraceAsync(Call("Get cookies", null, "cookies"), cancellationToken, async budget =>
         {
-            Path = cookie.Path,
-            HttpOnly = cookie.HttpOnly,
-            Secure = cookie.Secure,
-            SameSite = cookie.SameSite,
-            Expires = cookie.Expires,
-        })];
+            GetCookiesCommandParameters parameters = new() { Filter = CreateFilter(domain, name), Partition = this.CreatePartition() };
+            GetCookiesCommandResult result = await this.Group.Driver.Storage.GetCookiesAsync(parameters, cancellationToken: budget.CancellationToken).ConfigureAwait(false);
+            return (IReadOnlyList<BrowserCookie>)[.. result.Cookies.Select(cookie => new BrowserCookie(cookie.Name, ReadValue(cookie.Value), cookie.Domain)
+            {
+                Path = cookie.Path,
+                HttpOnly = cookie.HttpOnly,
+                Secure = cookie.Secure,
+                SameSite = cookie.SameSite,
+                Expires = cookie.Expires,
+            })];
+        });
     }
 
     /// <summary>
@@ -315,20 +312,23 @@ public sealed class Browser
     /// <param name="cookies">The cookies.</param>
     /// <param name="cancellationToken">A token that cancels the commands.</param>
     /// <returns>A task that completes when the cookies are added.</returns>
-    public async Task AddCookiesAsync(IEnumerable<BrowserCookie> cookies, CancellationToken cancellationToken = default)
+    public Task AddCookiesAsync(IEnumerable<BrowserCookie> cookies, CancellationToken cancellationToken = default)
     {
-        foreach (BrowserCookie cookie in cookies)
+        return this.TraceAsync(Call("Add cookies", null, "addCookies"), cancellationToken, async budget =>
         {
-            PartialCookie partial = new(cookie.Name, BytesValue.FromString(cookie.Value), cookie.Domain)
+            foreach (BrowserCookie cookie in cookies)
             {
-                Path = cookie.Path,
-                HttpOnly = cookie.HttpOnly,
-                Secure = cookie.Secure,
-                SameSite = cookie.SameSite,
-                Expires = cookie.Expires,
-            };
-            await this.Group.Driver.Storage.SetCookieAsync(new SetCookieCommandParameters(partial) { Partition = this.CreatePartition() }, cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
+                PartialCookie partial = new(cookie.Name, BytesValue.FromString(cookie.Value), cookie.Domain)
+                {
+                    Path = cookie.Path,
+                    HttpOnly = cookie.HttpOnly,
+                    Secure = cookie.Secure,
+                    SameSite = cookie.SameSite,
+                    Expires = cookie.Expires,
+                };
+                await this.Group.Driver.Storage.SetCookieAsync(new SetCookieCommandParameters(partial) { Partition = this.CreatePartition() }, cancellationToken: budget.CancellationToken).ConfigureAwait(false);
+            }
+        });
     }
 
     /// <summary>
@@ -341,7 +341,7 @@ public sealed class Browser
     public Task ClearCookiesAsync(string? domain = null, string? name = null, CancellationToken cancellationToken = default)
     {
         DeleteCookiesCommandParameters parameters = new() { Filter = CreateFilter(domain, name), Partition = this.CreatePartition() };
-        return this.Group.Driver.Storage.DeleteCookiesAsync(parameters, cancellationToken: cancellationToken);
+        return this.TraceAsync(Call("Clear cookies", null, "clearCookies"), cancellationToken, budget => this.Group.Driver.Storage.DeleteCookiesAsync(parameters, cancellationToken: budget.CancellationToken));
     }
 
     /// <summary>
@@ -350,23 +350,26 @@ public sealed class Browser
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the commands.</param>
     /// <returns>A task that completes when the browser is closed.</returns>
-    public async Task CloseAsync(CancellationToken cancellationToken = default)
+    public Task CloseAsync(CancellationToken cancellationToken = default)
     {
-        if (this.IsDefault)
+        return this.TraceAsync(Call("Close", null, "close"), cancellationToken, async budget =>
         {
-            foreach (Page page in this.Pages)
+            if (this.IsDefault)
             {
-                await this.Group.Driver.BrowsingContext.CloseAsync(new WebDriverBiDi.BrowsingContext.CloseCommandParameters(page.Id), cancellationToken: cancellationToken).ConfigureAwait(false);
+                foreach (Page page in this.Pages)
+                {
+                    await this.Group.Driver.BrowsingContext.CloseAsync(new WebDriverBiDi.BrowsingContext.CloseCommandParameters(page.Id), cancellationToken: budget.CancellationToken).ConfigureAwait(false);
+                }
+
+                return;
             }
 
-            return;
-        }
+            await this.Group.Driver.Browser.RemoveUserContextAsync(new RemoveUserContextCommandParameters(this.Id), cancellationToken: budget.CancellationToken).ConfigureAwait(false);
+            this.Group.RemoveBrowser(this);
 
-        await this.Group.Driver.Browser.RemoveUserContextAsync(new RemoveUserContextCommandParameters(this.Id), cancellationToken: cancellationToken).ConfigureAwait(false);
-        this.Group.RemoveBrowser(this);
-
-        // A browser's routes stop the requests of every browser, so they must not outlive it.
-        await this.UnrouteAllAsync(cancellationToken).ConfigureAwait(false);
+            // A browser's routes stop the requests of every browser, so they must not outlive it.
+            await this.UnrouteAllCoreAsync(budget.CancellationToken).ConfigureAwait(false);
+        });
     }
 
     /// <summary>
@@ -498,6 +501,11 @@ public sealed class Browser
         }
     }
 
+    private static TracedCall Call(string title, string? subtitle, string method, params (string Name, object Value)[] parameters)
+    {
+        return TraceRecording.Call("Browser", title, subtitle, method, parameters);
+    }
+
     private static CookieFilter? CreateFilter(string? domain, string? name)
     {
         return domain is null && name is null ? null : new CookieFilter() { Domain = domain, Name = name };
@@ -512,6 +520,32 @@ public sealed class Browser
     private StorageKeyPartitionDescriptor CreatePartition()
     {
         return new StorageKeyPartitionDescriptor() { UserContextId = this.Id };
+    }
+
+    private async Task UnrouteAllCoreAsync(CancellationToken cancellationToken)
+    {
+        List<RouteRegistration> removed;
+        lock (this.lockObject)
+        {
+            removed = [.. this.routes];
+        }
+
+        foreach (RouteRegistration route in removed)
+        {
+            await route.RemoveAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private Task<T> TraceAsync<T>(TracedCall call, CancellationToken cancellationToken, Func<TimeBudget, Task<T>> action)
+    {
+        TimeBudget budget = new(this.Group.Options.ActionTimeout, this.Group.Options.TimeProvider, cancellationToken);
+        return TraceRecording.RunAsync(this, null, budget, call, action);
+    }
+
+    private Task TraceAsync(TracedCall call, CancellationToken cancellationToken, Func<TimeBudget, Task> action)
+    {
+        TimeBudget budget = new(this.Group.Options.ActionTimeout, this.Group.Options.TimeProvider, cancellationToken);
+        return TraceRecording.RunAsync(this, null, budget, call, action);
     }
 
     private Task SetDownloadBehaviorAsync(DownloadBehavior? behavior, CancellationToken cancellationToken)
@@ -529,12 +563,17 @@ public sealed class Browser
         }
     }
 
-    private async Task<RouteRegistration> AddHarRouteAsync(string harPath, Func<RequestData, bool> matches, string description, HarRouteOptions? options, CancellationToken cancellationToken)
+    private Task<RouteRegistration> AddHarRouteAsync(string harPath, Func<RequestData, bool> matches, string description, HarRouteOptions? options, CancellationToken cancellationToken)
+    {
+        return this.TraceAsync(Call("Route from HAR", "{har}", "routeFromHAR", ("har", harPath), ("url", description)), cancellationToken, budget => this.AddHarRouteCoreAsync(harPath, matches, description, options, budget.CancellationToken));
+    }
+
+    private async Task<RouteRegistration> AddHarRouteCoreAsync(string harPath, Func<RequestData, bool> matches, string description, HarRouteOptions? options, CancellationToken cancellationToken)
     {
         HarRouter router = await HarRouter.CreateAsync(this.Group, harPath, options, parameters => parameters.UserContexts.Add(this.Id), cancellationToken).ConfigureAwait(false);
         try
         {
-            return await this.AddRouteAsync(matches, $"{description} from the HAR {Path.GetFileName(harPath)}", router.HandleAsync, options?.Filter, cancellationToken, router.RemoveAsync).ConfigureAwait(false);
+            return await this.AddRouteCoreAsync(matches, $"{description} from the HAR {Path.GetFileName(harPath)}", router.HandleAsync, options?.Filter, cancellationToken, router.RemoveAsync).ConfigureAwait(false);
         }
         catch
         {
@@ -545,7 +584,12 @@ public sealed class Browser
 
     // Each route has its own intercept, with its filter, for every page of every browser: an intercept can be limited
     // to pages, but not to a user context.
-    private async Task<RouteRegistration> AddRouteAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken, Func<CancellationToken, Task>? removing = null)
+    private Task<RouteRegistration> AddRouteAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken)
+    {
+        return this.TraceAsync(Call("Route", "{url}", "route", ("url", description)), cancellationToken, budget => this.AddRouteCoreAsync(matches, description, handler, filter, budget.CancellationToken));
+    }
+
+    private async Task<RouteRegistration> AddRouteCoreAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken, Func<CancellationToken, Task>? removing = null)
     {
         await this.Group.EnsureNetworkEventsAsync(cancellationToken).ConfigureAwait(false);
         AddInterceptCommandParameters parameters = new(InterceptPhase.BeforeRequestSent);

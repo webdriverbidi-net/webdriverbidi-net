@@ -165,31 +165,53 @@ public sealed class TraceRecording : IAsyncDisposable
     }
 
     /// <summary>
-    /// Runs an action, recorded in the trace of its page's browser if the browser is recording one.
+    /// Describes an action for a trace.
+    /// </summary>
+    /// <param name="className">The name of the class the action is called on, such as Page.</param>
+    /// <param name="title">The title the viewer shows, which can name a parameter in braces.</param>
+    /// <param name="subtitle">The subtitle, or <see langword="null"/>.</param>
+    /// <param name="method">The name of the method called.</param>
+    /// <param name="parameters">The parameters, each a string or a list of strings.</param>
+    /// <returns>The description.</returns>
+    internal static TracedCall Call(string className, string title, string? subtitle, string method, params (string Name, object Value)[] parameters)
+    {
+        Dictionary<string, object> values = [];
+        foreach ((string name, object value) in parameters)
+        {
+            values[name] = value;
+        }
+
+        return new TracedCall(title, subtitle, className, method, values);
+    }
+
+    /// <summary>
+    /// Runs an action, recorded in the browser's trace if it is recording one.
     /// </summary>
     /// <typeparam name="T">The action's result type.</typeparam>
-    /// <param name="page">The page the action is taken on.</param>
+    /// <param name="browser">The browser the action is taken in.</param>
+    /// <param name="page">The page the action is taken on, which snapshots and screenshots are of, or <see langword="null"/> for an action on no page.</param>
     /// <param name="budget">The action's budget.</param>
     /// <param name="call">What the action is.</param>
     /// <param name="action">The action, given its budget, which carries its trace entry when it is recorded.</param>
     /// <returns>The action's result.</returns>
-    internal static Task<T> RunAsync<T>(Page page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
+    internal static Task<T> RunAsync<T>(Browser browser, Page? page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
     {
-        TraceRecording? recording = page.Browser.ActiveTrace;
+        TraceRecording? recording = browser.ActiveTrace;
         return recording is null ? action(budget) : recording.RecordAsync(page, budget, call, action);
     }
 
     /// <summary>
-    /// Runs an action without a result, recorded in the trace of its page's browser if the browser is recording one.
+    /// Runs an action without a result, recorded in the browser's trace if it is recording one.
     /// </summary>
-    /// <param name="page">The page the action is taken on.</param>
+    /// <param name="browser">The browser the action is taken in.</param>
+    /// <param name="page">The page the action is taken on, or <see langword="null"/> for an action on no page.</param>
     /// <param name="budget">The action's budget.</param>
     /// <param name="call">What the action is.</param>
     /// <param name="action">The action, given its budget, which carries its trace entry when it is recorded.</param>
     /// <returns>A task that completes when the action has.</returns>
-    internal static Task RunAsync(Page page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task> action)
+    internal static Task RunAsync(Browser browser, Page? page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task> action)
     {
-        return RunAsync(page, budget, call, async actionBudget =>
+        return RunAsync(browser, page, budget, call, async actionBudget =>
         {
             await action(actionBudget).ConfigureAwait(false);
             return true;
@@ -221,7 +243,7 @@ public sealed class TraceRecording : IAsyncDisposable
             return;
         }
 
-        (double X, double Y)? point = await this.SnapshotAsync(trace.Page, trace.CallId, "action", frame, target, offset).ConfigureAwait(false);
+        (double X, double Y)? point = await this.SnapshotAsync(frame.Page, trace.CallId, "action", frame, target, offset).ConfigureAwait(false);
         if (point is (double x, double y))
         {
             this.writer.WriteInput(trace.CallId, x, y);
@@ -328,9 +350,9 @@ public sealed class TraceRecording : IAsyncDisposable
         return text.ToString();
     }
 
-    private async Task<T> RecordAsync<T>(Page page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
+    private async Task<T> RecordAsync<T>(Page? page, TimeBudget budget, TracedCall call, Func<TimeBudget, Task<T>> action)
     {
-        ActionTrace trace = new(this, $"call@{Interlocked.Increment(ref this.lastCallId)}", page);
+        ActionTrace trace = new(this, $"call@{Interlocked.Increment(ref this.lastCallId)}");
         List<TraceStackFrame> stack = CaptureStack();
         if (this.options.Sources)
         {
@@ -341,7 +363,7 @@ public sealed class TraceRecording : IAsyncDisposable
         }
 
         this.writer.WriteBefore(trace.CallId, call, stack);
-        if (this.options.Snapshots)
+        if (this.options.Snapshots && page is not null)
         {
             // The snapshot is not the action's own work, so it does not spend the action's time.
             await this.SnapshotAsync(page, trace.CallId, "before", null, null, null).ConfigureAwait(false);
@@ -361,17 +383,25 @@ public sealed class TraceRecording : IAsyncDisposable
         finally
         {
             double endTime = TraceWriter.Now;
-            if (this.options.Snapshots)
+            if (page is not null)
             {
-                await this.SnapshotAsync(page, trace.CallId, "after", null, null, null).ConfigureAwait(false);
-            }
-
-            if (this.options.Screenshots)
-            {
-                await this.ScreenshotAsync(page).ConfigureAwait(false);
+                await this.CaptureAfterAsync(page, trace.CallId).ConfigureAwait(false);
             }
 
             this.writer.WriteAfter(trace.CallId, endTime, error);
+        }
+    }
+
+    private async Task CaptureAfterAsync(Page page, string callId)
+    {
+        if (this.options.Snapshots)
+        {
+            await this.SnapshotAsync(page, callId, "after", null, null, null).ConfigureAwait(false);
+        }
+
+        if (this.options.Screenshots)
+        {
+            await this.ScreenshotAsync(page).ConfigureAwait(false);
         }
     }
 

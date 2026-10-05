@@ -254,7 +254,7 @@ public sealed class Page
     /// <returns>The URL navigated to, after any redirects.</returns>
     public Task<string> NavigateAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.NavigateAsync(url, wait, timeout, cancellationToken);
+        return this.TraceAsync(Call("Navigate", "{url}", "goto", ("url", url)), this.CreateNavigationBudget(timeout, cancellationToken), budget => this.MainFrame.NavigateCoreAsync(url, wait, budget));
     }
 
     /// <summary>
@@ -266,7 +266,7 @@ public sealed class Page
     /// <returns>The URL reloaded.</returns>
     public Task<string> ReloadAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.ReloadAsync(wait, timeout, cancellationToken);
+        return this.TraceAsync(Call("Reload", null, "reload"), this.CreateNavigationBudget(timeout, cancellationToken), budget => this.MainFrame.ReloadCoreAsync(wait, budget));
     }
 
     /// <summary>
@@ -280,7 +280,7 @@ public sealed class Page
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the page does not navigate, or the document does not load, in time.</exception>
     public Task<string> GoBackAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.TraverseHistoryAsync(-1, wait, timeout, cancellationToken);
+        return this.TraceAsync(Call("Go back", null, "goBack"), this.CreateNavigationBudget(timeout, cancellationToken), budget => this.TraverseHistoryAsync(-1, wait, budget));
     }
 
     /// <summary>
@@ -294,7 +294,7 @@ public sealed class Page
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the page does not navigate, or the document does not load, in time.</exception>
     public Task<string> GoForwardAsync(ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.TraverseHistoryAsync(1, wait, timeout, cancellationToken);
+        return this.TraceAsync(Call("Go forward", null, "goForward"), this.CreateNavigationBudget(timeout, cancellationToken), budget => this.TraverseHistoryAsync(1, wait, budget));
     }
 
     /// <summary>
@@ -307,7 +307,7 @@ public sealed class Page
     /// <returns>A task that completes when the document has loaded as far as the state.</returns>
     public Task WaitForLoadStateAsync(ReadinessState state = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.WaitForLoadStateAsync(state, timeout, cancellationToken);
+        return this.TraceAsync(Call("Wait for load state", "{state}", "waitForLoadState", ("state", state.ToString())), this.CreateNavigationBudget(timeout, cancellationToken), budget => this.MainFrame.WaitForLoadStateAsync(state, budget));
     }
 
     /// <summary>
@@ -320,7 +320,7 @@ public sealed class Page
     /// <returns>The page's URL.</returns>
     public Task<string> WaitForUrlAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.WaitForUrlAsync(url, wait, timeout, cancellationToken);
+        return this.WaitForUrlAsync(candidate => candidate == url, $"the URL {url}", wait, timeout, cancellationToken);
     }
 
     /// <summary>
@@ -333,7 +333,7 @@ public sealed class Page
     /// <returns>The page's URL.</returns>
     public Task<string> WaitForUrlAsync(Regex url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.WaitForUrlAsync(url, wait, timeout, cancellationToken);
+        return this.WaitForUrlAsync(url.IsMatch, $"a URL matching {url}", wait, timeout, cancellationToken);
     }
 
     /// <summary>
@@ -346,7 +346,7 @@ public sealed class Page
     /// <returns>The page's URL.</returns>
     public Task<string> WaitForUrlAsync(Func<string, bool> url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.WaitForUrlAsync(url, wait, timeout, cancellationToken);
+        return this.WaitForUrlAsync(url, "a URL satisfying the condition", wait, timeout, cancellationToken);
     }
 
     /// <summary>
@@ -360,7 +360,7 @@ public sealed class Page
     /// <returns>The page's URL after the navigation.</returns>
     public Task<string> RunAndWaitForNavigationAsync(Func<Task> action, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.RunAndWaitForNavigationAsync(action, wait, timeout, cancellationToken);
+        return this.TraceAsync(Call("Run and wait for navigation", null, "waitForNavigation"), this.CreateNavigationBudget(timeout, cancellationToken), budget => this.MainFrame.RunAndWaitForNavigationCoreAsync(action, wait, budget));
     }
 
     /// <summary>
@@ -373,7 +373,7 @@ public sealed class Page
     /// <returns>The function's result.</returns>
     public Task<RemoteValue> EvaluateAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.EvaluateAsync(function, arguments, timeout, cancellationToken);
+        return this.TraceAsync(Call("Evaluate", null, "evaluate", ("function", function)), this.CreateActionBudget(timeout, cancellationToken), budget => this.MainFrame.EvaluateCoreAsync(function, arguments, budget));
     }
 
     /// <summary>
@@ -388,7 +388,7 @@ public sealed class Page
     /// <returns>The function's result, converted.</returns>
     public Task<T> EvaluateAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.EvaluateAsync<T>(function, arguments, timeout, cancellationToken);
+        return this.TraceAsync(Call("Evaluate", null, "evaluate", ("function", function)), this.CreateActionBudget(timeout, cancellationToken), async budget => RemoteValueConverter.Convert<T>(await this.MainFrame.EvaluateCoreAsync(function, arguments, budget).ConfigureAwait(false)));
     }
 
     /// <summary>
@@ -402,7 +402,7 @@ public sealed class Page
     /// <returns>The truthy value.</returns>
     public Task<RemoteValue> WaitForFunctionAsync(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.WaitForFunctionAsync(function, arguments, timeout, cancellationToken);
+        return this.TraceAsync(Call("Wait for function", null, "waitForFunction", ("function", function)), this.CreateActionBudget(timeout, cancellationToken), budget => this.MainFrame.WaitForFunctionCoreAsync(function, arguments, budget));
     }
 
     /// <summary>
@@ -417,7 +417,7 @@ public sealed class Page
     /// <returns>The truthy value, converted.</returns>
     public Task<T> WaitForFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string function, IEnumerable<LocalValue>? arguments = null, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.WaitForFunctionAsync<T>(function, arguments, timeout, cancellationToken);
+        return this.TraceAsync(Call("Wait for function", null, "waitForFunction", ("function", function)), this.CreateActionBudget(timeout, cancellationToken), async budget => RemoteValueConverter.Convert<T>(await this.MainFrame.WaitForFunctionCoreAsync(function, arguments, budget).ConfigureAwait(false)));
     }
 
     /// <summary>
@@ -431,7 +431,7 @@ public sealed class Page
     /// <returns>A task that completes when the document has loaded as far as the state.</returns>
     public Task SetContentAsync(string html, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.MainFrame.SetContentAsync(html, wait, timeout, cancellationToken);
+        return this.TraceAsync(Call("Set content", null, "setContent"), this.CreateNavigationBudget(timeout, cancellationToken), budget => this.MainFrame.SetContentCoreAsync(html, wait, budget));
     }
 
     /// <summary>
@@ -441,12 +441,15 @@ public sealed class Page
     /// <param name="function">The script, as a function of no arguments, such as <c>() =&gt; { window.seed = 42; }</c>.</param>
     /// <param name="cancellationToken">A token that cancels the command.</param>
     /// <returns>The added script, which can be removed.</returns>
-    public async Task<InitScript> AddInitScriptAsync(string function, CancellationToken cancellationToken = default)
+    public Task<InitScript> AddInitScriptAsync(string function, CancellationToken cancellationToken = default)
     {
-        AddPreloadScriptCommandParameters parameters = new(function);
-        parameters.Contexts.Add(this.Id);
-        AddPreloadScriptCommandResult result = await this.Browser.Group.Driver.Script.AddPreloadScriptAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return new InitScript(this.Browser.Group.Driver, result.PreloadScriptId);
+        return this.TraceAsync(Call("Add init script", null, "addInitScript", ("function", function)), this.CreateActionBudget(null, cancellationToken), async budget =>
+        {
+            AddPreloadScriptCommandParameters parameters = new(function);
+            parameters.Contexts.Add(this.Id);
+            AddPreloadScriptCommandResult result = await this.Browser.Group.Driver.Script.AddPreloadScriptAsync(parameters, cancellationToken: budget.CancellationToken).ConfigureAwait(false);
+            return new InitScript(this.Browser.Group.Driver, result.PreloadScriptId);
+        });
     }
 
     /// <summary>
@@ -458,27 +461,29 @@ public sealed class Page
     /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>The download.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no download begins in time.</exception>
-    public async Task<Download> RunAndWaitForDownloadAsync(Func<Task> action, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+    public Task<Download> RunAndWaitForDownloadAsync(Func<Task> action, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = new(timeout ?? this.Browser.Group.Options.NavigationTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
-        TaskCompletionSource<Download> next = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        lock (this.lockObject)
+        return this.TraceAsync(Call("Run and wait for download", null, "waitForDownload"), this.CreateNavigationBudget(timeout, cancellationToken), async budget =>
         {
-            this.downloadWaiters.Add(next);
-        }
-
-        try
-        {
-            await action().ConfigureAwait(false);
-            return await budget.WaitAsync(next.Task, "a download to begin").ConfigureAwait(false);
-        }
-        finally
-        {
+            TaskCompletionSource<Download> next = new(TaskCreationOptions.RunContinuationsAsynchronously);
             lock (this.lockObject)
             {
-                this.downloadWaiters.Remove(next);
+                this.downloadWaiters.Add(next);
             }
-        }
+
+            try
+            {
+                await action().ConfigureAwait(false);
+                return await budget.WaitAsync(next.Task, "a download to begin").ConfigureAwait(false);
+            }
+            finally
+            {
+                lock (this.lockObject)
+                {
+                    this.downloadWaiters.Remove(next);
+                }
+            }
+        });
     }
 
     /// <summary>
@@ -487,7 +492,7 @@ public sealed class Page
     /// <param name="options">The part to capture and the format, or <see langword="null"/> for the viewport as PNG.</param>
     /// <param name="cancellationToken">A token that cancels the command.</param>
     /// <returns>The image.</returns>
-    public async Task<byte[]> ScreenshotAsync(PageScreenshotOptions? options = null, CancellationToken cancellationToken = default)
+    public Task<byte[]> ScreenshotAsync(PageScreenshotOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new PageScreenshotOptions();
         CaptureScreenshotCommandParameters parameters = new(this.Id)
@@ -496,8 +501,11 @@ public sealed class Page
             Clip = options.Clip,
             Format = options.Format,
         };
-        CaptureScreenshotCommandResult result = await this.Browser.Group.Driver.BrowsingContext.CaptureScreenshotAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return Convert.FromBase64String(result.Data);
+        return this.TraceAsync(Call("Screenshot", null, "screenshot"), this.CreateActionBudget(null, cancellationToken), async budget =>
+        {
+            CaptureScreenshotCommandResult result = await this.Browser.Group.Driver.BrowsingContext.CaptureScreenshotAsync(parameters, cancellationToken: budget.CancellationToken).ConfigureAwait(false);
+            return Convert.FromBase64String(result.Data);
+        });
     }
 
     /// <summary>
@@ -514,8 +522,7 @@ public sealed class Page
     /// </remarks>
     public Task<AriaSnapshot> AriaSnapshotAsync(AriaSnapshotOptions? options = null, CancellationToken cancellationToken = default)
     {
-        TimeBudget budget = new(this.Browser.Group.Options.ActionTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
-        return AriaSnapshotBuilder.TakeAsync(this.MainFrame, null, options ?? new AriaSnapshotOptions(), budget);
+        return this.TraceAsync(Call("Aria snapshot", null, "ariaSnapshot"), this.CreateActionBudget(null, cancellationToken), budget => AriaSnapshotBuilder.TakeAsync(this.MainFrame, null, options ?? new AriaSnapshotOptions(), budget));
     }
 
     /// <summary>
@@ -524,7 +531,7 @@ public sealed class Page
     /// <param name="options">The page setup, or <see langword="null"/> for the browser's defaults.</param>
     /// <param name="cancellationToken">A token that cancels the command.</param>
     /// <returns>The PDF document.</returns>
-    public async Task<byte[]> PdfAsync(PdfOptions? options = null, CancellationToken cancellationToken = default)
+    public Task<byte[]> PdfAsync(PdfOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new PdfOptions();
         PrintCommandParameters parameters = new(this.Id)
@@ -537,8 +544,11 @@ public sealed class Page
             ShrinkToFit = options.ShrinkToFit,
         };
         parameters.PageRanges.AddRange(options.PageRanges);
-        PrintCommandResult result = await this.Browser.Group.Driver.BrowsingContext.PrintAsync(parameters, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return Convert.FromBase64String(result.Data);
+        return this.TraceAsync(Call("PDF", null, "pdf"), this.CreateActionBudget(null, cancellationToken), async budget =>
+        {
+            PrintCommandResult result = await this.Browser.Group.Driver.BrowsingContext.PrintAsync(parameters, cancellationToken: budget.CancellationToken).ConfigureAwait(false);
+            return Convert.FromBase64String(result.Data);
+        });
     }
 
     /// <summary>
@@ -551,7 +561,8 @@ public sealed class Page
     /// <returns>A task that completes when the viewport has the size.</returns>
     public Task SetViewportSizeAsync(ulong width, ulong height, CancellationToken cancellationToken = default)
     {
-        return this.SetViewportAsync(new Viewport() { Width = width, Height = height }, cancellationToken);
+        string size = $"{width}x{height}";
+        return this.TraceAsync(Call("Set viewport size", "{size}", "setViewportSize", ("size", size)), this.CreateActionBudget(null, cancellationToken), budget => this.SetViewportAsync(new Viewport() { Width = width, Height = height }, budget.CancellationToken));
     }
 
     /// <summary>
@@ -561,7 +572,7 @@ public sealed class Page
     /// <returns>A task that completes when the viewport has its default size.</returns>
     public Task ResetViewportSizeAsync(CancellationToken cancellationToken = default)
     {
-        return this.SetViewportAsync(SetViewportCommandParameters.ResetToDefaultViewport, cancellationToken);
+        return this.TraceAsync(Call("Reset viewport size", null, "resetViewportSize"), this.CreateActionBudget(null, cancellationToken), budget => this.SetViewportAsync(SetViewportCommandParameters.ResetToDefaultViewport, budget.CancellationToken));
     }
 
     /// <summary>
@@ -719,18 +730,21 @@ public sealed class Page
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the commands.</param>
     /// <returns>A task that completes when the routes are removed.</returns>
-    public async Task UnrouteAllAsync(CancellationToken cancellationToken = default)
+    public Task UnrouteAllAsync(CancellationToken cancellationToken = default)
     {
-        List<RouteRegistration> removed;
-        lock (this.lockObject)
+        return this.TraceAsync(Call("Unroute all", null, "unrouteAll"), this.CreateActionBudget(null, cancellationToken), async budget =>
         {
-            removed = [.. this.routes];
-        }
+            List<RouteRegistration> removed;
+            lock (this.lockObject)
+            {
+                removed = [.. this.routes];
+            }
 
-        foreach (RouteRegistration route in removed)
-        {
-            await route.RemoveAsync(cancellationToken).ConfigureAwait(false);
-        }
+            foreach (RouteRegistration route in removed)
+            {
+                await route.RemoveAsync(budget.CancellationToken).ConfigureAwait(false);
+            }
+        });
     }
 
     /// <summary>
@@ -744,7 +758,7 @@ public sealed class Page
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such request is sent in time.</exception>
     public Task<BeforeRequestSentEventArgs> RunAndWaitForRequestAsync(Func<Task> action, string url, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.RunAndWaitForNetworkEventAsync(this.requestWaiters, action, request => request.Url == url, $"a request to {url}", timeout, cancellationToken);
+        return this.RunAndWaitForNetworkEventAsync(this.requestWaiters, "request", action, request => request.Url == url, $"a request to {url}", timeout, cancellationToken);
     }
 
     /// <summary>
@@ -758,7 +772,7 @@ public sealed class Page
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such request is sent in time.</exception>
     public Task<BeforeRequestSentEventArgs> RunAndWaitForRequestAsync(Func<Task> action, Regex url, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.RunAndWaitForNetworkEventAsync(this.requestWaiters, action, request => url.IsMatch(request.Url), $"a request to a URL matching {url}", timeout, cancellationToken);
+        return this.RunAndWaitForNetworkEventAsync(this.requestWaiters, "request", action, request => url.IsMatch(request.Url), $"a request to a URL matching {url}", timeout, cancellationToken);
     }
 
     /// <summary>
@@ -772,7 +786,7 @@ public sealed class Page
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such request is sent in time.</exception>
     public Task<BeforeRequestSentEventArgs> RunAndWaitForRequestAsync(Func<Task> action, Func<RequestData, bool> request, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.RunAndWaitForNetworkEventAsync(this.requestWaiters, action, request, "a request satisfying the condition", timeout, cancellationToken);
+        return this.RunAndWaitForNetworkEventAsync(this.requestWaiters, "request", action, request, "a request satisfying the condition", timeout, cancellationToken);
     }
 
     /// <summary>
@@ -786,7 +800,7 @@ public sealed class Page
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such response completes in time.</exception>
     public Task<ResponseCompletedEventArgs> RunAndWaitForResponseAsync(Func<Task> action, string url, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.RunAndWaitForNetworkEventAsync(this.responseWaiters, action, request => request.Url == url, $"a response to a request to {url}", timeout, cancellationToken);
+        return this.RunAndWaitForNetworkEventAsync(this.responseWaiters, "response", action, request => request.Url == url, $"a response to a request to {url}", timeout, cancellationToken);
     }
 
     /// <summary>
@@ -801,7 +815,7 @@ public sealed class Page
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such response completes in time.</exception>
     public Task<ResponseCompletedEventArgs> RunAndWaitForResponseAsync(Func<Task> action, Regex url, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.RunAndWaitForNetworkEventAsync(this.responseWaiters, action, request => url.IsMatch(request.Url), $"a response to a request to a URL matching {url}", timeout, cancellationToken);
+        return this.RunAndWaitForNetworkEventAsync(this.responseWaiters, "response", action, request => url.IsMatch(request.Url), $"a response to a request to a URL matching {url}", timeout, cancellationToken);
     }
 
     /// <summary>
@@ -815,7 +829,7 @@ public sealed class Page
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when no such response completes in time.</exception>
     public Task<ResponseCompletedEventArgs> RunAndWaitForResponseAsync(Func<Task> action, Func<RequestData, bool> request, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        return this.RunAndWaitForNetworkEventAsync(this.responseWaiters, action, request, "a response to a request satisfying the condition", timeout, cancellationToken);
+        return this.RunAndWaitForNetworkEventAsync(this.responseWaiters, "response", action, request, "a response to a request satisfying the condition", timeout, cancellationToken);
     }
 
     /// <summary>
@@ -825,7 +839,7 @@ public sealed class Page
     /// <returns>A task that completes when the page is in front.</returns>
     public Task BringToFrontAsync(CancellationToken cancellationToken = default)
     {
-        return this.Browser.Group.Driver.BrowsingContext.ActivateAsync(new ActivateCommandParameters(this.Id), cancellationToken: cancellationToken);
+        return this.TraceAsync(Call("Bring to front", null, "bringToFront"), this.CreateActionBudget(null, cancellationToken), budget => this.Browser.Group.Driver.BrowsingContext.ActivateAsync(new ActivateCommandParameters(this.Id), cancellationToken: budget.CancellationToken));
     }
 
     /// <summary>
@@ -833,10 +847,13 @@ public sealed class Page
     /// </summary>
     /// <param name="cancellationToken">A token that cancels the command.</param>
     /// <returns>A task that completes when the page is closed.</returns>
-    public async Task CloseAsync(CancellationToken cancellationToken = default)
+    public Task CloseAsync(CancellationToken cancellationToken = default)
     {
-        await this.Browser.Group.Driver.BrowsingContext.CloseAsync(new WebDriverBiDi.BrowsingContext.CloseCommandParameters(this.Id), cancellationToken: cancellationToken).ConfigureAwait(false);
-        await this.Browser.Group.RemoveContextAsync(this.Id).ConfigureAwait(false);
+        return this.TraceAsync(Call("Close", null, "close"), this.CreateActionBudget(null, cancellationToken), async budget =>
+        {
+            await this.Browser.Group.Driver.BrowsingContext.CloseAsync(new WebDriverBiDi.BrowsingContext.CloseCommandParameters(this.Id), cancellationToken: budget.CancellationToken).ConfigureAwait(false);
+            await this.Browser.Group.RemoveContextAsync(this.Id).ConfigureAwait(false);
+        });
     }
 
     /// <summary>
@@ -1046,17 +1063,52 @@ public sealed class Page
         }
     }
 
+    private static TracedCall Call(string title, string? subtitle, string method, params (string Name, object Value)[] parameters)
+    {
+        return TraceRecording.Call("Page", title, subtitle, method, parameters);
+    }
+
+    private Task<T> TraceAsync<T>(TracedCall call, TimeBudget budget, Func<TimeBudget, Task<T>> action)
+    {
+        return TraceRecording.RunAsync(this.Browser, this, budget, call, action);
+    }
+
+    private Task TraceAsync(TracedCall call, TimeBudget budget, Func<TimeBudget, Task> action)
+    {
+        return TraceRecording.RunAsync(this.Browser, this, budget, call, action);
+    }
+
+    private TimeBudget CreateActionBudget(TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        return new TimeBudget(timeout ?? this.Browser.Group.Options.ActionTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
+    }
+
+    private TimeBudget CreateNavigationBudget(TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        return new TimeBudget(timeout ?? this.Browser.Group.Options.NavigationTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
+    }
+
+    private Task<string> WaitForUrlAsync(Func<string, bool> matches, string awaited, ReadinessState wait, TimeSpan? timeout, CancellationToken cancellationToken)
+    {
+        return this.TraceAsync(Call("Wait for URL", "{url}", "waitForURL", ("url", awaited)), this.CreateNavigationBudget(timeout, cancellationToken), budget => this.MainFrame.WaitForUrlCoreAsync(matches, awaited, wait, budget));
+    }
+
     private Task SetViewportAsync(Viewport viewport, CancellationToken cancellationToken)
     {
         return this.Browser.Group.Driver.BrowsingContext.SetViewportAsync(new SetViewportCommandParameters() { BrowsingContextId = this.Id, Viewport = viewport }, cancellationToken: cancellationToken);
     }
 
-    private async Task<RouteRegistration> AddHarRouteAsync(string harPath, Func<RequestData, bool> matches, string description, HarRouteOptions? options, CancellationToken cancellationToken)
+    private Task<RouteRegistration> AddHarRouteAsync(string harPath, Func<RequestData, bool> matches, string description, HarRouteOptions? options, CancellationToken cancellationToken)
+    {
+        return this.TraceAsync(Call("Route from HAR", "{har}", "routeFromHAR", ("har", harPath), ("url", description)), this.CreateActionBudget(null, cancellationToken), budget => this.AddHarRouteCoreAsync(harPath, matches, description, options, budget.CancellationToken));
+    }
+
+    private async Task<RouteRegistration> AddHarRouteCoreAsync(string harPath, Func<RequestData, bool> matches, string description, HarRouteOptions? options, CancellationToken cancellationToken)
     {
         HarRouter router = await HarRouter.CreateAsync(this.Browser.Group, harPath, options, parameters => parameters.Contexts.Add(this.Id), cancellationToken).ConfigureAwait(false);
         try
         {
-            return await this.AddRouteAsync(matches, $"{description} from the HAR {Path.GetFileName(harPath)}", router.HandleAsync, options?.Filter, cancellationToken, router.RemoveAsync).ConfigureAwait(false);
+            return await this.AddRouteCoreAsync(matches, $"{description} from the HAR {Path.GetFileName(harPath)}", router.HandleAsync, options?.Filter, cancellationToken, router.RemoveAsync).ConfigureAwait(false);
         }
         catch
         {
@@ -1067,7 +1119,12 @@ public sealed class Page
 
     // Each route has its own intercept, with its filter, limited to the page; the browser marks a request with every
     // intercept that stopped it.
-    private async Task<RouteRegistration> AddRouteAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken, Func<CancellationToken, Task>? removing = null)
+    private Task<RouteRegistration> AddRouteAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken)
+    {
+        return this.TraceAsync(Call("Route", "{url}", "route", ("url", description)), this.CreateActionBudget(null, cancellationToken), budget => this.AddRouteCoreAsync(matches, description, handler, filter, budget.CancellationToken));
+    }
+
+    private async Task<RouteRegistration> AddRouteCoreAsync(Func<RequestData, bool> matches, string description, Func<Route, Task> handler, UrlPattern? filter, CancellationToken cancellationToken, Func<CancellationToken, Task>? removing = null)
     {
         BrowserGroup group = this.Browser.Group;
         await group.EnsureNetworkEventsAsync(cancellationToken).ConfigureAwait(false);
@@ -1089,10 +1146,16 @@ public sealed class Page
         return route;
     }
 
-    private async Task<T> RunAndWaitForNetworkEventAsync<T>(List<NetworkWaiter<T>> waiters, Func<Task> action, Func<RequestData, bool> matches, string awaited, TimeSpan? timeout, CancellationToken cancellationToken)
+    // The kind is request or response.
+    private Task<T> RunAndWaitForNetworkEventAsync<T>(List<NetworkWaiter<T>> waiters, string kind, Func<Task> action, Func<RequestData, bool> matches, string awaited, TimeSpan? timeout, CancellationToken cancellationToken)
     {
-        TimeBudget budget = new(timeout ?? this.Browser.Group.Options.NavigationTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
-        await this.Browser.Group.EnsureNetworkEventsAsync(cancellationToken).ConfigureAwait(false);
+        TracedCall call = Call($"Run and wait for {kind}", "{url}", $"waitFor{kind}", ("url", awaited));
+        return this.TraceAsync(call, this.CreateNavigationBudget(timeout, cancellationToken), budget => this.RunAndWaitForNetworkEventCoreAsync(waiters, action, matches, awaited, budget));
+    }
+
+    private async Task<T> RunAndWaitForNetworkEventCoreAsync<T>(List<NetworkWaiter<T>> waiters, Func<Task> action, Func<RequestData, bool> matches, string awaited, TimeBudget budget)
+    {
+        await this.Browser.Group.EnsureNetworkEventsAsync(budget.CancellationToken).ConfigureAwait(false);
         NetworkWaiter<T> waiter = new(matches);
         lock (this.lockObject)
         {
@@ -1114,9 +1177,8 @@ public sealed class Page
     }
 
     // History traversal has no wait of its own, so the navigation it causes is awaited from the frame's events.
-    private async Task<string> TraverseHistoryAsync(long delta, ReadinessState wait, TimeSpan? timeout, CancellationToken cancellationToken)
+    private async Task<string> TraverseHistoryAsync(long delta, ReadinessState wait, TimeBudget budget)
     {
-        TimeBudget budget = new(timeout ?? this.Browser.Group.Options.NavigationTimeout, this.Browser.Group.Options.TimeProvider, cancellationToken);
         int before = this.MainFrame.Navigations;
         await this.Browser.Group.Driver.BrowsingContext.TraverseHistoryAsync(new TraverseHistoryCommandParameters(this.Id, delta), budget.Remaining, budget.CancellationToken).ConfigureAwait(false);
         await this.MainFrame.WaitForNavigationAsync(before, wait, budget).ConfigureAwait(false);
