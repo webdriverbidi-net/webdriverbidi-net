@@ -24,6 +24,11 @@ internal static class CodeWriter
     /// </summary>
     public const string InputNamespace = "WebDriverBiDi.Input";
 
+    /// <summary>
+    /// The using directive's name that brings <see cref="Assertions.Expect(ElementLocator)"/> into scope.
+    /// </summary>
+    public const string AssertionsNamespace = "static Dramaturge.Assertions";
+
     private const string DefaultTestIdAttribute = "data-testid";
 
     // The key names KeyboardEvent.key gives that are also members of Keys.
@@ -57,6 +62,27 @@ internal static class CodeWriter
         }
 
         return builder.Append('"').ToString();
+    }
+
+    /// <summary>
+    /// Writes lines of text as a raw string literal whose lines are indented one level more than the statement, and
+    /// that has more quotes around it than any run of quotes in the text.
+    /// </summary>
+    /// <param name="text">The text, with <c>\n</c> line endings.</param>
+    /// <returns>The literal.</returns>
+    public static string RawLiteral(string text)
+    {
+        int longestQuotes = 0;
+        int quotes = 0;
+        foreach (char character in text)
+        {
+            quotes = character == '"' ? quotes + 1 : 0;
+            longestQuotes = Math.Max(longestQuotes, quotes);
+        }
+
+        string delimiter = new('"', Math.Max(3, longestQuotes + 1));
+        IEnumerable<string> lines = text.TrimEnd('\n').Split('\n').Select(line => line.Length == 0 ? line : $"    {line}");
+        return $"{delimiter}\n{string.Join("\n", lines)}\n    {delimiter}";
     }
 
     /// <summary>
@@ -173,6 +199,6 @@ internal static class CodeWriter
 
     private static IEnumerable<string> Indent(IReadOnlyList<string> statements, string indent)
     {
-        return statements.Select(statement => indent + statement);
+        return statements.SelectMany(statement => statement.Split('\n')).Select(line => line.Length == 0 ? line : indent + line);
     }
 }

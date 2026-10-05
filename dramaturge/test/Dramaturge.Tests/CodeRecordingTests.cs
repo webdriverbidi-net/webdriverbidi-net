@@ -218,7 +218,7 @@ public class CodeRecordingTests
         Assert.Equal(6, calls.Count);
         Assert.Equal([page.Id, frame.Id], contexts[..2].Order());
         Assert.Equal([popup.Id, page.Id, frame.Id, popup.Id], contexts[2..]);
-        Assert.All(calls[..3], call => Assert.Contains("recorder.start(send, testIdAttribute)", (string?)call["functionDeclaration"]));
+        Assert.All(calls[..3], call => Assert.Contains("recorder.start(send, testIdAttribute, mode)", (string?)call["functionDeclaration"]));
         Assert.All(calls[3..], call => Assert.Contains("recorder.stop()", (string?)call["functionDeclaration"]));
         JsonObject channel = calls[0]["arguments"]![0]!.AsObject();
         Assert.Equal("channel", (string?)channel["type"]);
@@ -226,6 +226,7 @@ public class CodeRecordingTests
         Assert.Equal(0, (int?)channel["value"]!["serializationOptions"]!["maxDomDepth"]);
         Assert.Equal("none", (string?)channel["value"]!["ownership"]);
         Assert.Equal("data-qa", (string?)calls[0]["arguments"]![1]!["value"]);
+        Assert.Equal("record", (string?)calls[0]["arguments"]![2]!["value"]);
         Assert.Single(session.RemoteEnd.CommandsFor("session.unsubscribe"));
     }
 
@@ -276,6 +277,141 @@ public class CodeRecordingTests
                 "await page.Locate(new CssLocator(\"#back\")).ClickAsync();",
             ],
             Statements(code));
+    }
+
+    [Fact]
+    public async Task AssertionsSettleAtOnceAsTheirStatements()
+    {
+        (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        CodeRecording recording = await page.Browser.RecordCodeAsync(cancellationToken: TestContext.Current.CancellationToken);
+        string channel = await GetChannelAsync(session);
+        List<string> statements = [];
+        TaskCompletionSource twoSettled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        recording.OnStatement.AddObserver(e =>
+        {
+            statements.Add(e.Statement);
+            if (statements.Count == 2)
+            {
+                twoSettled.TrySetResult();
+            }
+        });
+
+        await SendAsync(driver, session, channel, page.Id, Fill("#name", "Ada"));
+        await SendAsync(driver, session, channel, page.Id, Action("assertVisible", "#name"));
+        await twoSettled.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await SendAsync(driver, session, channel, page.Id, Action("assertText", "#message", ("text", "Hello, \"Ada\"")));
+        await SendAsync(driver, session, channel, page.Id, Action("assertValue", "#name", ("value", "Ada")));
+        await SendAsync(driver, session, channel, page.Id, Action("assertChecked", "#agree", ("checked", true)));
+        await SendAsync(driver, session, channel, page.Id, Action("assertChecked", "#other", ("checked", false)));
+        await SendAsync(driver, session, channel, page.Id, Action("assertSnapshot", "#list", ("snapshot", "- list:\n  - listitem: Say \"\"\"hi\"\"\"\n\n  - listitem: Two\n")));
+        string code = await recording.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            """""
+            using Dramaturge;
+            using Dramaturge.Browsers;
+            using WebDriverBiDi.BrowsingContext;
+            using static Dramaturge.Assertions;
+
+            await using BrowserGroup group = await BrowserGroup.LaunchAsync(BrowserLauncher.ConfigureFromEnvironment().WithHeadlessOption(false));
+            Page page = await group.DefaultBrowser.NewPageAsync();
+            await page.Locate(new CssLocator("#name")).FillAsync("Ada");
+            await Expect(page.Locate(new CssLocator("#name"))).ToBeVisibleAsync();
+            await Expect(page.Locate(new CssLocator("#message"))).ToContainTextAsync("Hello, \"Ada\"");
+            await Expect(page.Locate(new CssLocator("#name"))).ToHaveValueAsync("Ada");
+            await Expect(page.Locate(new CssLocator("#agree"))).ToBeCheckedAsync();
+            await Expect(page.Locate(new CssLocator("#other"))).Not.ToBeCheckedAsync();
+            await Expect(page.Locate(new CssLocator("#list"))).ToMatchAriaSnapshotAsync(""""
+                - list:
+                  - listitem: Say """hi"""
+
+                  - listitem: Two
+                """");
+
+            """"".Replace("\r\n", "\n"),
+            code);
+        Assert.Equal(["await page.Locate(new CssLocator(\"#name\")).FillAsync(\"Ada\");", "await Expect(page.Locate(new CssLocator(\"#name\"))).ToBeVisibleAsync();"], statements[..2]);
+    }
+
+    [Fact]
+    public async Task SnapshotAssertionIsIndentedWithTheTest()
+    {
+        (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        CodeRecording recording = await page.Browser.RecordCodeAsync(new CodeRecordingOptions() { Target = CodeTarget.NUnit }, TestContext.Current.CancellationToken);
+        string channel = await GetChannelAsync(session);
+
+        await SendAsync(driver, session, channel, page.Id, Action("assertSnapshot", "#list", ("snapshot", "- list:\n  - listitem: One")));
+        string code = await recording.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains(
+            """"
+                    await Expect(page.Locate(new CssLocator("#list"))).ToMatchAriaSnapshotAsync("""
+                        - list:
+                          - listitem: One
+                        """);
+                }
+            """".Replace("\r\n", "\n"),
+            code);
+        Assert.Contains("using static Dramaturge.Assertions;\n", code);
+    }
+
+    [Fact]
+    public async Task ToolbarModeSettlesThePendingStatementAndIsSetInTheOtherDocuments()
+    {
+        (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        FakeContext frame = await session.CreateFrameAsync(page.Id);
+        await WaitUntilAsync(() => page.Frames.Count == 2);
+        Page second = await page.Browser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        CodeRecording recording = await page.Browser.RecordCodeAsync(cancellationToken: TestContext.Current.CancellationToken);
+        string channel = await GetChannelAsync(session);
+        TaskCompletionSource<string> settled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        recording.OnStatement.AddObserver(e => settled.TrySetResult(e.Statement));
+
+        await SendAsync(driver, session, channel, page.Id, Fill("#name", "Ada"));
+        await SendAsync(driver, session, channel, page.Id, Mode("pick"));
+        string statement = await settled.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await session.RemoteEnd.WaitForCommandAsync("script.callFunction", 5);
+        Page third = await page.Browser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await RaiseDomContentLoadedAsync(session, third.Id);
+        await session.RemoteEnd.WaitForCommandAsync("script.callFunction", 6);
+        string code = await recording.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("await page.Locate(new CssLocator(\"#name\")).FillAsync(\"Ada\");", statement);
+        List<JsonObject> calls = [.. session.RemoteEnd.CommandsFor("script.callFunction").Select(call => call["params"]!.AsObject())];
+        List<JsonObject> modeCalls = [.. calls.Where(call => ((string)call["functionDeclaration"]!).Contains("recorder.setMode(mode)"))];
+        Assert.Equal([frame.Id, second.Id], modeCalls.Select(call => (string?)call["target"]!["context"]).Order());
+        Assert.All(modeCalls, call => Assert.Equal("pick", (string?)call["arguments"]![0]!["value"]));
+        JsonObject thirdInstall = calls.Single(call => (string?)call["target"]!["context"] == third.Id && ((string)call["functionDeclaration"]!).Contains("recorder.start"));
+        Assert.Equal("pick", (string?)thirdInstall["arguments"]![2]!["value"]);
+        Assert.Equal(["await page.Locate(new CssLocator(\"#name\")).FillAsync(\"Ada\");"], Statements(code));
+    }
+
+    [Fact]
+    public async Task PickedElementIsReportedAndNotRecorded()
+    {
+        (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
+        await using BiDiDriver ownedDriver = driver;
+        Page second = await page.Browser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        CodeRecording recording = await page.Browser.RecordCodeAsync(cancellationToken: TestContext.Current.CancellationToken);
+        string channel = await GetChannelAsync(session);
+        List<LocatorPickedEventArgs> picks = [];
+        recording.OnLocatorPicked.AddObserver(picks.Add);
+
+        await SendAsync(driver, session, channel, page.Id, Click("#go"));
+        await SendAsync(driver, session, channel, page.Id, Action("pick", "#go"));
+        await SendAsync(driver, session, channel, second.Id, Action("pick", "#search"));
+        string code = await recording.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, picks.Count);
+        Assert.Same(page, picks[0].Page);
+        Assert.Equal("css \"#go\"", picks[0].Locator.ToString());
+        Assert.Equal("page.Locate(new CssLocator(\"#go\"))", picks[0].Code);
+        Assert.Same(second, picks[1].Page);
+        Assert.Equal("page1.Locate(new CssLocator(\"#search\"))", picks[1].Code);
+        Assert.Equal(["await page.Locate(new CssLocator(\"#go\")).ClickAsync();", "Page page1 = await page.Browser.NewPageAsync();"], Statements(code));
     }
 
     [Fact]
@@ -409,6 +545,8 @@ public class CodeRecordingTests
     {
         return Action("click", cssPath, ("button", button), ("clickCount", clickCount), ("modifiers", new JsonArray([.. (modifiers ?? []).Select(modifier => JsonValue.Create(modifier))])));
     }
+
+    private static JsonObject Mode(string mode) => new() { ["kind"] = "mode", ["mode"] = mode };
 
     private static JsonObject Fill(string cssPath, string value) => Action("fill", cssPath, ("value", value));
 

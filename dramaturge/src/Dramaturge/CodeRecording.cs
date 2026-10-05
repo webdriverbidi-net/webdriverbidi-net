@@ -8,6 +8,7 @@ namespace Dramaturge;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using WebDriverBiDi;
+using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 
@@ -23,15 +24,17 @@ public sealed class CodeRecording : IAsyncDisposable
     private readonly string channelId = $"dramaturge-code-{Guid.NewGuid():N}";
     private readonly object lockObject = new();
     private readonly List<IDisposable> observers = [];
-    private readonly List<Task> installs = [];
+    private readonly List<Task> documentCalls = [];
     private readonly List<string> statements = [];
     private readonly HashSet<string> namespaces = [];
     private readonly Dictionary<Page, string> pageVariables = [];
     private readonly ObservableEventInvocable<CodeStatementEventArgs> onStatement = new("automation.codeStatement");
+    private readonly ObservableEventInvocable<LocatorPickedEventArgs> onLocatorPicked = new("automation.locatorPicked");
     private readonly SemaphoreSlim stopLock = new(1, 1);
     private Task processing = Task.CompletedTask;
     private RecordedStep? pending;
     private string? subscriptionId;
+    private string mode = "record";
     private bool isStopped;
 
     private CodeRecording(Browser browser, CodeTarget target)
@@ -61,6 +64,11 @@ public sealed class CodeRecording : IAsyncDisposable
     public ObservableEvent<CodeStatementEventArgs> OnStatement => this.onStatement;
 
     /// <summary>
+    /// Gets an event raised with each element the user picks with the toolbar's Pick locator.
+    /// </summary>
+    public ObservableEvent<LocatorPickedEventArgs> OnLocatorPicked => this.onLocatorPicked;
+
+    /// <summary>
     /// Ends the recording: settles the last statement, and stops recording in the browser's documents. Stopping
     /// again does nothing.
     /// </summary>
@@ -77,7 +85,6 @@ public sealed class CodeRecording : IAsyncDisposable
             }
 
             Task processed;
-            Task[] installing;
             lock (this.lockObject)
             {
                 this.isStopped = true;
@@ -87,11 +94,16 @@ public sealed class CodeRecording : IAsyncDisposable
                 }
 
                 processed = this.processing;
-                installing = [.. this.installs];
             }
 
             await processed.ConfigureAwait(false);
-            await Task.WhenAll(installing).ConfigureAwait(false);
+            Task[] calls;
+            lock (this.lockObject)
+            {
+                calls = [.. this.documentCalls];
+            }
+
+            await Task.WhenAll(calls).ConfigureAwait(false);
             await this.RunStepAsync("Removing the code recording's event subscription", () => this.browser.Group.Driver.Session.UnsubscribeAsync(new UnsubscribeByIdsCommandParameters(this.subscriptionId!), cancellationToken: cancellationToken)).ConfigureAwait(false);
             foreach (Frame frame in this.browser.Pages.SelectMany(page => page.Frames))
             {
@@ -177,12 +189,18 @@ public sealed class CodeRecording : IAsyncDisposable
 
     private static string Capitalize(string name) => char.ToUpperInvariant(name[0]) + name.Substring(1);
 
+    private static string CssPath(JsonElement message) => message.GetProperty("target").GetProperty("cssPath").GetString()!;
+
+    private static string LocatorCode(string pageVariable, string cssPath) => $"{pageVariable}.Locate(new CssLocator({CodeWriter.Literal(cssPath)}))";
+
     // A step for an action, or null for an action the recording does not know.
     private static RecordedStep? CreateStep(JsonElement action, string pageVariable)
     {
-        string locator = $"{pageVariable}.Locate(new CssLocator({CodeWriter.Literal(action.GetProperty("target").GetProperty("cssPath").GetString()!)}))";
+        string locator = LocatorCode(pageVariable, CssPath(action));
         string[] locatorNamespaces = [CodeWriter.BrowsingContextNamespace];
+        string[] assertionNamespaces = [CodeWriter.BrowsingContextNamespace, CodeWriter.AssertionsNamespace];
         string Statement(string call) => $"await {locator}.{call};";
+        RecordedStep Assertion(string call) => new($"await Expect({locator}).{call};", assertionNamespaces, SettlesAtOnce: true);
         string? Modifiers() => CodeWriter.Modifiers(Strings(action.GetProperty("modifiers")));
 
         switch (action.GetProperty("kind").GetString())
@@ -217,6 +235,16 @@ public sealed class CodeRecording : IAsyncDisposable
                 return new(Statement($"SelectOptionAsync({CodeWriter.Collection(Strings(action.GetProperty("values")).Select(value => $"SelectOption.ByValue({CodeWriter.Literal(value)})"))})"), locatorNamespaces);
             case "setInputFiles":
                 return new(Statement($"SetInputFilesAsync({CodeWriter.Collection(Strings(action.GetProperty("files")).Select(CodeWriter.Literal))})"), locatorNamespaces);
+            case "assertVisible":
+                return Assertion("ToBeVisibleAsync()");
+            case "assertText":
+                return Assertion($"ToContainTextAsync({CodeWriter.Literal(action.GetProperty("text").GetString()!)})");
+            case "assertValue":
+                return Assertion($"ToHaveValueAsync({CodeWriter.Literal(action.GetProperty("value").GetString()!)})");
+            case "assertChecked":
+                return Assertion(action.GetProperty("checked").GetBoolean() ? "ToBeCheckedAsync()" : "Not.ToBeCheckedAsync()");
+            case "assertSnapshot":
+                return Assertion($"ToMatchAriaSnapshotAsync({CodeWriter.RawLiteral(action.GetProperty("snapshot").GetString()!)})");
             default:
                 return null;
         }
@@ -237,7 +265,7 @@ public sealed class CodeRecording : IAsyncDisposable
         {
             if (!this.isStopped)
             {
-                this.installs.Add(this.Install(contextId));
+                this.documentCalls.Add(this.Install(contextId));
             }
         }
     }
@@ -246,9 +274,15 @@ public sealed class CodeRecording : IAsyncDisposable
     private Task Install(string contextId)
     {
         ChannelValue channel = new(new ChannelProperties(this.channelId) { SerializationOptions = new SerializationOptions() { MaxDomDepth = 0 }, Ownership = ResultOwnership.None });
+        string current;
+        lock (this.lockObject)
+        {
+            current = this.mode;
+        }
+
         return this.RunStepAsync(
             $"Starting the code recording in browsing context {contextId}",
-            () => this.browser.Group.ScriptHost.CallRecorderAsync(contextId, "(recorder, send, testIdAttribute) => recorder.start(send, testIdAttribute)", [channel, LocalValue.String(this.browser.Group.Options.TestIdAttribute)], this.CreateBudget(CancellationToken.None)));
+            () => this.browser.Group.ScriptHost.CallRecorderAsync(contextId, "(recorder, send, testIdAttribute, mode) => recorder.start(send, testIdAttribute, mode)", [channel, LocalValue.String(this.browser.Group.Options.TestIdAttribute), LocalValue.String(current)], this.CreateBudget(CancellationToken.None)));
     }
 
     // Handles messages one at a time, in the order they arrive.
@@ -278,35 +312,91 @@ public sealed class CodeRecording : IAsyncDisposable
             return;
         }
 
+        using JsonDocument document = JsonDocument.Parse(e.Data.As<CollectionRemoteValue>().Value![0].As<StringRemoteValue>().Value);
+        JsonElement message = document.RootElement;
         List<RecordedStep> settled = [];
+        LocatorPickedEventArgs? picked = null;
+        string? chosenMode = null;
         lock (this.lockObject)
         {
-            if (!this.pageVariables.TryGetValue(frame.Page, out string? variable))
+            switch (message.GetProperty("kind").GetString())
             {
-                variable = this.pageVariables.Count == 0 ? "page" : $"page{this.pageVariables.Count}";
-                this.pageVariables[frame.Page] = variable;
-                if (variable != "page")
-                {
+                case "mode":
+                    // Using the toolbar settles the pending statement.
                     settled.AddRange(this.TakePending());
-                    settled.Add(new($"Page {variable} = await page.Browser.NewPageAsync();", []));
-                }
-            }
-
-            using JsonDocument document = JsonDocument.Parse(e.Data.As<CollectionRemoteValue>().Value![0].As<StringRemoteValue>().Value);
-            if (CreateStep(document.RootElement, variable) is RecordedStep step)
-            {
-                if (this.pending is null || !step.Replaces(this.pending))
-                {
+                    this.mode = chosenMode = message.GetProperty("mode").GetString()!;
+                    break;
+                case "pick":
                     settled.AddRange(this.TakePending());
-                }
+                    string cssPath = CssPath(message);
+                    picked = new LocatorPickedEventArgs(frame.Page, frame.Page.Locate(new CssLocator(cssPath)), LocatorCode(this.GetPageVariable(frame.Page, settled), cssPath));
+                    break;
+                default:
+                    if (CreateStep(message, this.GetPageVariable(frame.Page, settled)) is RecordedStep step)
+                    {
+                        if (step.SettlesAtOnce || this.pending is null || !step.Replaces(this.pending))
+                        {
+                            settled.AddRange(this.TakePending());
+                        }
 
-                this.pending = step;
+                        if (step.SettlesAtOnce)
+                        {
+                            settled.Add(step);
+                        }
+                        else
+                        {
+                            this.pending = step;
+                        }
+                    }
+
+                    break;
             }
+        }
+
+        if (chosenMode is not null)
+        {
+            this.SetModeInOtherDocuments(frame, chosenMode);
         }
 
         foreach (RecordedStep step in settled)
         {
             await this.SettleAsync(step).ConfigureAwait(false);
+        }
+
+        if (picked is not null)
+        {
+            await this.onLocatorPicked.InvokeNotifyObserversAsync(picked).ConfigureAwait(false);
+        }
+    }
+
+    // The page's variable, declaring a page after the first, after settling the pending statement, when it has none.
+    private string GetPageVariable(Page page, List<RecordedStep> settled)
+    {
+        if (!this.pageVariables.TryGetValue(page, out string? variable))
+        {
+            variable = this.pageVariables.Count == 0 ? "page" : $"page{this.pageVariables.Count}";
+            this.pageVariables[page] = variable;
+            if (variable != "page")
+            {
+                settled.AddRange(this.TakePending());
+                settled.Add(new($"Page {variable} = await page.Browser.NewPageAsync();", []));
+            }
+        }
+
+        return variable;
+    }
+
+    // The document that chose the mode has applied it already.
+    private void SetModeInOtherDocuments(Frame source, string chosenMode)
+    {
+        lock (this.lockObject)
+        {
+            foreach (Frame frame in this.browser.Pages.SelectMany(page => page.Frames).Where(frame => frame != source))
+            {
+                this.documentCalls.Add(this.RunStepAsync(
+                    $"Setting the code recording's mode in browsing context {frame.Id}",
+                    () => this.browser.Group.ScriptHost.CallRecorderAsync(frame.Id, "(recorder, mode) => recorder.setMode(mode)", [LocalValue.String(chosenMode)], this.CreateBudget(CancellationToken.None))));
+            }
         }
     }
 
@@ -346,9 +436,9 @@ public sealed class CodeRecording : IAsyncDisposable
         }
     }
 
-    // An action's statement; a step with a merge key replaces the pending step with the same key: a fill of the same
-    // field, or the next click of the same series.
-    private sealed record RecordedStep(string Statement, IReadOnlyList<string> Namespaces, string? MergeKey = null, int ClickCount = 0)
+    // An action's or an assertion's statement; a step with a merge key replaces the pending step with the same key: a
+    // fill of the same field, or the next click of the same series. An assertion settles at once.
+    private sealed record RecordedStep(string Statement, IReadOnlyList<string> Namespaces, string? MergeKey = null, int ClickCount = 0, bool SettlesAtOnce = false)
     {
         public bool Replaces(RecordedStep earlier)
         {
