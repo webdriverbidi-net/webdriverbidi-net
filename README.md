@@ -95,10 +95,6 @@ To run the project unit tests, execute the following in a terminal window:
 
     dotnet test
 
-Dramaturge, in the `dramaturge` directory, builds from its own solution (see below):
-
-    dotnet build dramaturge/Dramaturge.sln
-
 ## Development
 The repository's projects are grouped below. Each project's `.csproj` file is named after its directory.
 
@@ -112,13 +108,9 @@ The repository's projects are grouped below. Each project's `.csproj` file is na
 | `src/WebDriverBiDi.Logging` | `Microsoft.Extensions.Logging` (`ILogger`) integration | `WebDriverBiDi.Logging` |
 | `src/WebDriverBiDi.Extensions` | Convenience extension methods and an input action builder | `WebDriverBiDi.Extensions` |
 
-The `dramaturge` directory holds Dramaturge, a higher-level automation library built on this one that waits
-automatically for elements to be ready for interaction, with its browser launcher (`Dramaturge.Browsers`) and
-command-line tool (`Dramaturge.Tool`). It is to move to a repository of its own, and until then is kept
-self-contained: it builds from its own `dramaturge/Dramaturge.sln`, with its own configuration, signing key,
-documentation, and scripts, and references only the `WebDriverBiDi` and `WebDriverBiDi.Extensions` projects
-outside its directory. Nothing outside the directory references it, and it is not released from this
-repository.
+Dramaturge, a higher-level automation library built on this one that waits automatically for elements to be
+ready for interaction, with its browser launcher and command-line tool, is developed in its own repository,
+[webdriverbidi-net/dramaturge](https://github.com/webdriverbidi-net/dramaturge).
 
 ### Demo
 

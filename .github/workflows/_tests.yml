@@ -1,5 +1,5 @@
 # Reusable workflow: build the solution and run all tests (unit, analyzer,
-# logging, integration), and, unless include-dramaturge is false, Dramaturge's. Called by ci.yml (on PR and main push) and by
+# logging, integration). Called by ci.yml (on PR and main push) and by
 # release.yml (on tag push). Not triggered directly.
 #
 # The leading underscore in the filename is a convention to signal "not a
@@ -12,13 +12,6 @@ name: Tests (reusable)
 
 on:
   workflow_call:
-    inputs:
-      include-dramaturge:
-        # The Dramaturge steps run on pull requests and main pushes, so a core change that breaks Dramaturge fails
-        # before it merges; release.yml turns them off, so they never block a WebDriverBiDi release.
-        description: Whether to build and test Dramaturge as well.
-        type: boolean
-        default: true
 
 permissions:
   contents: read
@@ -42,19 +35,11 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Restore Dramaturge dependencies
-        if: inputs.include-dramaturge
-        run: dotnet restore dramaturge/Dramaturge.sln
-
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
         # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
         # warning-free today, so this gate only fails on a newly introduced warning.
         run: dotnet build --configuration Release --no-restore -warnaserror
-
-      - name: Build Dramaturge
-        if: inputs.include-dramaturge
-        run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
 
   unit-tests:
     name: Unit tests
@@ -75,21 +60,12 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Restore Dramaturge dependencies
-        if: inputs.include-dramaturge
-        run: dotnet restore dramaturge/Dramaturge.sln
-
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
         # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
         # warning-free today, so this gate only fails on a newly introduced warning.
         run: dotnet build --configuration Release --no-restore -warnaserror
 
-      - name: Build Dramaturge
-        if: inputs.include-dramaturge
-        run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
-
-      # Note that each coverage report is scoped only to the assemblies being tested
       - name: Test WebDriverBiDi library (with coverage)
         run: >
           dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
@@ -122,18 +98,6 @@ jobs:
       - name: Enforce logging coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-logging.*.info
 
-      - name: Test Dramaturge browser management library (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.Browsers.Tests --configuration Release --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.Browsers]*"
-          --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-browsers
-
-      - name: Enforce Dramaturge browser management coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge-browsers.*.info
-
       - name: Test extensions library (with coverage)
         run: >
           dotnet test --project test/WebDriverBiDi.Extensions.Tests --configuration Release --no-build --verbosity normal
@@ -144,82 +108,6 @@ jobs:
       - name: Enforce extensions coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-extensions.*.info
 
-      - name: Test Dramaturge command-line tool (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.Tool.Tests --configuration Release --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.Tool]*"
-          --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-tool
-
-      - name: Enforce Dramaturge command-line tool coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge-tool.*.info
-
-      - name: Test Dramaturge automation library (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.Tests --configuration Release --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge]*"
-          --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge
-
-      - name: Enforce Dramaturge automation coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-dramaturge.*.info
-
-      - name: Test Dramaturge xUnit package (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.Xunit.Tests --configuration Release --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.Xunit]*"
-          --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-xunit
-
-      - name: Test Dramaturge NUnit package (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.NUnit.Tests --configuration Release --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.NUnit]*"
-          --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-nunit
-
-      - name: Test Dramaturge MSTest package (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.MSTest.Tests --configuration Release --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.MSTest]*"
-          --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-mstest
-
-      - name: Test Dramaturge TUnit package (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.TUnit.Tests --configuration Release --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.TUnit]*"
-          --results-directory test/coverage --coverlet-file-prefix lcov-dramaturge-tunit
-
-      # These tests reach what each package's own cannot: no shared browser registered. A report names its sources, not
-      # its assembly, and the packages share sources, so each package's coverage is collected, and merged, on its own.
-      - name: Test Dramaturge test framework packages without their shared browser registered (with coverage)
-        if: inputs.include-dramaturge
-        run: |
-          for package in Xunit NUnit MSTest TUnit; do
-            prefix="lcov-dramaturge-$(echo "$package" | tr '[:upper:]' '[:lower:]')"
-            dotnet test --project dramaturge/test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Release --no-build --verbosity normal \
-              --coverlet --coverlet-output-format lcov --coverlet-include "[Dramaturge.$package]*" \
-              --results-directory test/coverage --coverlet-file-prefix "$prefix-unregistered"
-            ./dramaturge/scripts/merge-lcov.sh "test/coverage/$prefix-merged.info" test/coverage/"$prefix".*.info test/coverage/"$prefix"-unregistered.*.info
-          done
-
-      - name: Enforce Dramaturge test framework package coverage thresholds
-        if: inputs.include-dramaturge
-        run: |
-          for package in xunit nunit mstest tunit; do
-            ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 "test/coverage/lcov-dramaturge-$package-merged.info"
-          done
-
       - name: Enforce combined coverage thresholds
         # Perform an aggregate threshold check
         run: >
@@ -229,23 +117,6 @@ jobs:
           test/coverage/lcov-logging.*.info
           test/coverage/lcov-extensions.*.info
 
-      - name: Enforce combined Dramaturge coverage thresholds
-        if: inputs.include-dramaturge
-        run: >
-          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
-          test/coverage/lcov-dramaturge-browsers.*.info
-          test/coverage/lcov-dramaturge-tool.*.info
-          test/coverage/lcov-dramaturge.*.info
-          test/coverage/lcov-dramaturge-xunit-merged.info
-          test/coverage/lcov-dramaturge-nunit-merged.info
-          test/coverage/lcov-dramaturge-mstest-merged.info
-          test/coverage/lcov-dramaturge-tunit-merged.info
-
-      # The analyzer package's shipped layout is produced entirely by a pack target that nothing else
-      # runs: the Roslyn 5.9 variant is compiled only inside it, every other CI build and test uses the
-      # 4.8 default, and the staging paths it packs from are literal strings that must be kept in step
-      # with the variant list by hand. Packing here means a mistake in that target fails a PR rather
-      # than the release.
       - name: Pack the analyzer package
         # The version properties mirror the ones release.yml passes to its own pack step. Supplying
         # them to the pack invocation is the only way the shipped analyzer assemblies get stamped:
@@ -319,18 +190,6 @@ jobs:
 
           exit "$status"
 
-      # Dramaturge is released from its own repository; packing it here, without pushing, proves its packages pack.
-      - name: Pack Dramaturge
-        if: inputs.include-dramaturge
-        run: |
-          dotnet pack dramaturge/Dramaturge.sln --configuration Release --no-build --output test/dramaturge-packages
-          for id in Dramaturge Dramaturge.Browsers Dramaturge.Tool Dramaturge.Xunit Dramaturge.NUnit Dramaturge.MSTest Dramaturge.TUnit; do
-            ls test/dramaturge-packages/"$id".[0-9]*.nupkg >/dev/null || { echo "FAIL no package for $id was produced."; exit 1; }
-          done
-
-      # release.yml pushes only the packages scripts/check-release-packages.sh allows. Running the same check on a
-      # pack of the solution here means a change that would break it, such as a Dramaturge project added to the
-      # solution, fails a pull request rather than the release.
       - name: Pack the solution and check its packages
         run: |
           dotnet pack WebDriverBiDi.NET.sln --configuration Release --no-build --output test/release-packages
@@ -342,7 +201,7 @@ jobs:
           # A coveralls.io outage must not fail the job that gates pull requests and the tag release.
           fail-on-error: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info test/coverage/lcov-dramaturge-browsers.*.info test/coverage/lcov-extensions.*.info test/coverage/lcov-dramaturge-tool.*.info test/coverage/lcov-dramaturge.*.info test/coverage/lcov-dramaturge-xunit-merged.info test/coverage/lcov-dramaturge-nunit-merged.info test/coverage/lcov-dramaturge-mstest-merged.info test/coverage/lcov-dramaturge-tunit-merged.info
+          files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info test/coverage/lcov-extensions.*.info
           format: lcov
 
   # Deliberately a job of its own rather than a `configuration` matrix on unit-tests; see the
@@ -366,16 +225,8 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Restore Dramaturge dependencies
-        if: inputs.include-dramaturge
-        run: dotnet restore dramaturge/Dramaturge.sln
-
       - name: Build
         run: dotnet build --configuration Debug --no-restore -warnaserror
-
-      - name: Build Dramaturge
-        if: inputs.include-dramaturge
-        run: dotnet build dramaturge/Dramaturge.sln --configuration Debug --no-restore -warnaserror
 
       - name: Test WebDriverBiDi library (with coverage)
         run: >
@@ -408,18 +259,6 @@ jobs:
       - name: Enforce logging coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-logging.*.info
 
-      - name: Test Dramaturge browser management library (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.Browsers.Tests --configuration Debug --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.Browsers]*"
-          --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-browsers
-
-      - name: Enforce Dramaturge browser management coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge-browsers.*.info
-
       - name: Test extensions library (with coverage)
         run: >
           dotnet test --project test/WebDriverBiDi.Extensions.Tests --configuration Debug --no-build --verbosity normal
@@ -430,82 +269,6 @@ jobs:
       - name: Enforce extensions coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-extensions.*.info
 
-      - name: Test Dramaturge command-line tool (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.Tool.Tests --configuration Debug --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.Tool]*"
-          --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-tool
-
-      - name: Enforce Dramaturge command-line tool coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge-tool.*.info
-
-      - name: Test Dramaturge automation library (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.Tests --configuration Debug --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge]*"
-          --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge
-
-      - name: Enforce Dramaturge automation coverage thresholds
-        if: inputs.include-dramaturge
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-dramaturge.*.info
-
-      - name: Test Dramaturge xUnit package (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.Xunit.Tests --configuration Debug --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.Xunit]*"
-          --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-xunit
-
-      - name: Test Dramaturge NUnit package (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.NUnit.Tests --configuration Debug --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.NUnit]*"
-          --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-nunit
-
-      - name: Test Dramaturge MSTest package (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.MSTest.Tests --configuration Debug --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.MSTest]*"
-          --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-mstest
-
-      - name: Test Dramaturge TUnit package (with coverage)
-        if: inputs.include-dramaturge
-        run: >
-          dotnet test --project dramaturge/test/Dramaturge.TUnit.Tests --configuration Debug --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-include "[Dramaturge.TUnit]*"
-          --results-directory test/coverage-debug --coverlet-file-prefix lcov-dramaturge-tunit
-
-      # These tests reach what each package's own cannot: no shared browser registered. A report names its sources, not
-      # its assembly, and the packages share sources, so each package's coverage is collected, and merged, on its own.
-      - name: Test Dramaturge test framework packages without their shared browser registered (with coverage)
-        if: inputs.include-dramaturge
-        run: |
-          for package in Xunit NUnit MSTest TUnit; do
-            prefix="lcov-dramaturge-$(echo "$package" | tr '[:upper:]' '[:lower:]')"
-            dotnet test --project dramaturge/test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Debug --no-build --verbosity normal \
-              --coverlet --coverlet-output-format lcov --coverlet-include "[Dramaturge.$package]*" \
-              --results-directory test/coverage-debug --coverlet-file-prefix "$prefix-unregistered"
-            ./dramaturge/scripts/merge-lcov.sh "test/coverage-debug/$prefix-merged.info" test/coverage-debug/"$prefix".*.info test/coverage-debug/"$prefix"-unregistered.*.info
-          done
-
-      - name: Enforce Dramaturge test framework package coverage thresholds
-        if: inputs.include-dramaturge
-        run: |
-          for package in xunit nunit mstest tunit; do
-            ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 "test/coverage-debug/lcov-dramaturge-$package-merged.info"
-          done
-
       - name: Enforce combined coverage thresholds
         run: >
           ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
@@ -513,18 +276,6 @@ jobs:
           test/coverage-debug/lcov-analyzers.*.info
           test/coverage-debug/lcov-logging.*.info
           test/coverage-debug/lcov-extensions.*.info
-
-      - name: Enforce combined Dramaturge coverage thresholds
-        if: inputs.include-dramaturge
-        run: >
-          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
-          test/coverage-debug/lcov-dramaturge-browsers.*.info
-          test/coverage-debug/lcov-dramaturge-tool.*.info
-          test/coverage-debug/lcov-dramaturge.*.info
-          test/coverage-debug/lcov-dramaturge-xunit-merged.info
-          test/coverage-debug/lcov-dramaturge-nunit-merged.info
-          test/coverage-debug/lcov-dramaturge-mstest-merged.info
-          test/coverage-debug/lcov-dramaturge-tunit-merged.info
 
   unit-tests-windows:
     name: Unit tests (Windows)
@@ -545,21 +296,12 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Restore Dramaturge dependencies
-        if: inputs.include-dramaturge
-        run: dotnet restore dramaturge/Dramaturge.sln
-
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
         # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
         # warning-free today, so this gate only fails on a newly introduced warning.
         run: dotnet build --configuration Release --no-restore -warnaserror
 
-      - name: Build Dramaturge
-        if: inputs.include-dramaturge
-        run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
-
-      # Running tests on Windows will deliberately not produce code coverage metrics
       - name: Test WebDriverBiDi library
         run: dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
 
@@ -569,48 +311,11 @@ jobs:
       - name: Test structured logging library
         run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
 
-      - name: Test Dramaturge browser management library
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.Browsers.Tests --configuration Release --no-build --verbosity normal
-
       - name: Test extensions library
         run: dotnet test --project test/WebDriverBiDi.Extensions.Tests --configuration Release --no-build --verbosity normal
 
-      - name: Test Dramaturge command-line tool
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.Tool.Tests --configuration Release --no-build --verbosity normal
-
-      - name: Test Dramaturge automation library
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.Tests --configuration Release --no-build --verbosity normal
-
-      - name: Test Dramaturge xUnit package
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.Xunit.Tests --configuration Release --no-build --verbosity normal
-
-      - name: Test Dramaturge NUnit package
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.NUnit.Tests --configuration Release --no-build --verbosity normal
-
-      - name: Test Dramaturge MSTest package
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.MSTest.Tests --configuration Release --no-build --verbosity normal
-
-      - name: Test Dramaturge TUnit package
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.TUnit.Tests --configuration Release --no-build --verbosity normal
-
-      - name: Test Dramaturge test framework packages without their shared browser registered
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.TestFrameworks.Unregistered.Tests --configuration Release --no-build --verbosity normal
-
-      # Runs the netstandard2.0 builds on the real .NET Framework, which only Windows has.
       - name: Test on .NET Framework
         run: dotnet test --project test/WebDriverBiDi.NetFramework.Tests --configuration Release --no-build --verbosity normal
-
-      - name: Test Dramaturge browser management library on .NET Framework
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.Browsers.NetFramework.Tests --configuration Release --no-build --verbosity normal
 
   # Compatibility tests build and run a separate consumer application against a specific build of
   # the library (currently the netstandard2.0 one) over a scripted WebSocket server. They need no
@@ -643,28 +348,14 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Restore Dramaturge dependencies
-        if: inputs.include-dramaturge
-        run: dotnet restore dramaturge/Dramaturge.sln
-
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
         # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
         # warning-free today, so this gate only fails on a newly introduced warning.
         run: dotnet build --configuration Release --no-restore -warnaserror
 
-      - name: Build Dramaturge
-        if: inputs.include-dramaturge
-        run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
-
       - name: Run compatibility tests
         run: dotnet test --project test/WebDriverBiDi.Compatibility.Tests --configuration Release --no-build --verbosity normal
-        env:
-          CI: true
-
-      - name: Run Dramaturge compatibility tests
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.Browsers.Compatibility.Tests --configuration Release --no-build --verbosity normal
         env:
           CI: true
 
@@ -697,19 +388,11 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Restore Dramaturge dependencies
-        if: inputs.include-dramaturge
-        run: dotnet restore dramaturge/Dramaturge.sln
-
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
         # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
         # warning-free today, so this gate only fails on a newly introduced warning.
         run: dotnet build --configuration Release --no-restore -warnaserror
-
-      - name: Build Dramaturge
-        if: inputs.include-dramaturge
-        run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
 
       - name: Create local browser directory
         run: mkdir -p "$GITHUB_WORKSPACE/browsers"
@@ -733,23 +416,6 @@ jobs:
         run: dotnet test --project test/WebDriverBiDi.Integration.Tests --configuration Release --no-build --verbosity normal
         env:
           CI: true
-          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
-          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
-
-      - name: Run Dramaturge integration tests
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.IntegrationTests --configuration Release --no-build --verbosity normal
-        env:
-          CI: true
-          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
-          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
-
-      - name: Run Dramaturge examples
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/samples/Dramaturge.Examples --configuration Release --no-build --verbosity normal
-        env:
-          CI: true
-          DRAMATURGE_BROWSER: ${{ matrix.browser.browser-type }}
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
 
@@ -788,19 +454,11 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Restore Dramaturge dependencies
-        if: inputs.include-dramaturge
-        run: dotnet restore dramaturge/Dramaturge.sln
-
       - name: Build
         # -warnaserror enforces the project's "PRs should contain no warnings" convention
         # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
         # warning-free today, so this gate only fails on a newly introduced warning.
         run: dotnet build --configuration Release --no-restore -warnaserror
-
-      - name: Build Dramaturge
-        if: inputs.include-dramaturge
-        run: dotnet build dramaturge/Dramaturge.sln --configuration Release --no-restore -warnaserror
 
       - name: Create local browser directory
         run: New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\browsers" | Out-Null
@@ -839,22 +497,5 @@ jobs:
         run: dotnet test --project test/WebDriverBiDi.Integration.Tests --configuration Release --no-build --verbosity normal
         env:
           CI: true
-          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}
-          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}
-
-      - name: Run Dramaturge integration tests
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/test/Dramaturge.IntegrationTests --configuration Release --no-build --verbosity normal
-        env:
-          CI: true
-          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}
-          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}
-
-      - name: Run Dramaturge examples
-        if: inputs.include-dramaturge
-        run: dotnet test --project dramaturge/samples/Dramaturge.Examples --configuration Release --no-build --verbosity normal
-        env:
-          CI: true
-          DRAMATURGE_BROWSER: ${{ matrix.browser.browser-type }}
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}

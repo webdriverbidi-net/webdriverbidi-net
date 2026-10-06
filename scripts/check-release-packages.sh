@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Fails unless the NuGet packages in a directory are exactly the ones this repository releases, so that no
-# other package, such as one of Dramaturge's, can be pushed from here. The release workflow runs it on its pack
+# other package can be pushed from here. The release workflow runs it on its pack
 # output before pushing, and the CI unit-test job runs it on a pack of the solution, so a change that would
 # break it fails a pull request rather than a release.
 #

@@ -57,9 +57,6 @@ jobs:
               - 'README.md'
               - 'src/*/README.md'
               - 'skills/**'
-              - 'dramaturge/docs/**'
-              - 'dramaturge/src/*/README.md'
-              - 'dramaturge/skills/**'
             benchmarks:
               - 'src/WebDriverBiDi/**'
               - 'test/WebDriverBiDi.Benchmarks/**'
@@ -82,9 +79,6 @@ jobs:
       - name: Validate documentation code regions
         run: ./docs/tools/validate-doc-regions.sh
 
-      - name: Validate Dramaturge documentation code regions
-        run: ./dramaturge/docs/tools/validate-doc-regions.sh
-
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -97,19 +91,6 @@ jobs:
       # reference they need resolves.
       - name: Generate llms.txt
         run: dotnet run docs/tools/generate-llms.cs -- docs https://webdriverbidi-net.github.io/webdriverbidi-net/ "$RUNNER_TEMP/llms"
-
-      # Dramaturge's site is published only from its own repository; building it here proves it builds.
-      - name: Build the Dramaturge documentation site
-        working-directory: dramaturge
-        run: |
-          dotnet build src/Dramaturge/Dramaturge.csproj --configuration Release
-          for package in Xunit NUnit MSTest TUnit; do dotnet build "src/Dramaturge.$package/Dramaturge.$package.csproj" --configuration Release; done
-          dotnet tool restore
-          cd docs
-          dotnet docfx metadata docfx.json
-          dotnet docfx build docfx.json --warningsAsErrors
-          cd ..
-          dotnet run docs/tools/generate-llms.cs -- docs https://webdriverbidi-net.github.io/dramaturge/ "$RUNNER_TEMP/dramaturge-llms"
 
   benchmarks:
     name: Benchmarks

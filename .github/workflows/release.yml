@@ -32,9 +32,6 @@ jobs:
   tests:
     name: Tests
     uses: ./.github/workflows/_tests.yml
-    with:
-      # Dramaturge is released from its own repository, so its tests do not gate this one's releases.
-      include-dramaturge: false
 
   validate-docs:
     name: Validate documentation
@@ -190,8 +187,7 @@ jobs:
       - name: Pack releasable packages
         # `dotnet pack` on the solution packs only projects with
         # IsPackable=true, which is WebDriverBiDi, WebDriverBiDi.Analyzers,
-        # WebDriverBiDi.Logging, and WebDriverBiDi.Extensions; the Dramaturge projects
-        # are not in the solution and are released separately. Symbol-package emission
+        # WebDriverBiDi.Logging, and WebDriverBiDi.Extensions. Symbol-package emission
         # is configured per-project in the csproj files (the analyzer has no managed
         # assembly to symbolicate).
         #
