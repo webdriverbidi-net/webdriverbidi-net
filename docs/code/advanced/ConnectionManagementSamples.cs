@@ -196,12 +196,11 @@ public static class ConnectionManagementSamples
         Transport transport = new Transport(connection);
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-        // Raised when the browser closes the connection; a failed read raises
-        // OnConnectionError instead. Either way the transport is already marked
-        // disconnected by the time the observer runs.
-        connection.OnRemoteDisconnected.AddObserver((ConnectionDisconnectedEventArgs e) =>
+        // Raised when the browser closes the connection or a read fails, once the
+        // transport is marked disconnected and earlier events have been delivered.
+        driver.OnConnectionLost.AddObserver((ConnectionLostEventArgs e) =>
         {
-            Console.WriteLine("Browser closed the connection");
+            Console.WriteLine($"Connection lost: {e.Exception.Message}");
         });
 
         await driver.StartAsync(webSocketUrl);

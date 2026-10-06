@@ -92,6 +92,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private const string UnknownMessageReceivedEventName = "transport.unknownMessageReceived";
     private const string EventHandlerErrorOccurredEventName = "transport.eventHandlerErrorOccurred";
     private const string LogMessageEventName = "transport.logMessage";
+    private const string ConnectionLostEventName = "transport.connectionLost";
 
     private const string NormalShutdownReason = "Normal shutdown";
 
@@ -100,6 +101,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private readonly ObservableEventInvocable<UnknownMessageReceivedEventArgs> invocableUnknownMessageReceivedObservableEvent;
     private readonly ObservableEventInvocable<EventHandlerErrorOccurredEventArgs> invocableErrorHandlerErrorOccurredObservableEvent;
     private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent;
+    private readonly ObservableEventInvocable<ConnectionLostEventArgs> invocableConnectionLostObservableEvent;
 
     private readonly ConcurrentDictionary<string, EventMessageRegistration> eventMessageTypes = [];
     private readonly ConcurrentDictionary<Type, JsonTypeInfo> responseTypeInfoCache = [];
@@ -213,6 +215,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         this.invocableUnknownMessageReceivedObservableEvent = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
         this.invocableErrorHandlerErrorOccurredObservableEvent = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
         this.invocableLogMessageObservableEvent = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
+        this.invocableConnectionLostObservableEvent = this.CreateObservableEvent<ConnectionLostEventArgs>(ConnectionLostEventName);
 
         // Route failures of observers of the connection's own events through this transport's
         // unhandled-error pipeline, so that a fault in a user's asynchronously-run observer of
@@ -253,6 +256,21 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// Gets an observable event that notifies when a log message is written.
     /// </summary>
     public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.invocableLogMessageObservableEvent;
+
+    /// <summary>
+    /// Gets an observable event that notifies when an established connection ends without the client stopping
+    /// it: the remote end closed it, as when the browser exits, or it failed.
+    /// </summary>
+    /// <remarks>
+    /// It is raised by the loop that dispatches the session's messages, after every message received before the
+    /// loss, once the transport has torn the session down: its state is <see cref="TransportState.Disconnected"/>
+    /// and commands in flight have failed. Like any observer run on that loop, an observer can stop the
+    /// transport, but connecting it again waits for the loop to finish, at most <see cref="ShutdownTimeout"/>, so
+    /// reconnect from outside the observer, or from one added with
+    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>. It is not raised when the client stops
+    /// the transport, nor for a connection lost while it is being established, which fails the start instead.
+    /// </remarks>
+    public ObservableEvent<ConnectionLostEventArgs> OnConnectionLost => this.invocableConnectionLostObservableEvent;
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
@@ -780,7 +798,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // The session records the loop as it schedules it, on this thread and under the connection
             // lock, so a later connect cannot mistake this session's queue for one nothing will read and
             // drain it out from under this reader.
-            Task messageQueueProcessingTask = this.session.StartMessageQueueProcessing(this.ReadIncomingMessagesAsync);
+            Task messageQueueProcessingTask = this.session.StartMessageQueueProcessing(this.ProcessSessionMessagesAsync);
 
             // Defence-in-depth: ReadIncomingMessagesAsync catches per-message exceptions in
             // its inner loop, so under normal operation this continuation never fires. It
@@ -1914,6 +1932,26 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         await this.HandleConnectionDisconnectionAsync(() => new WebDriverBiDiConnectionException($"Unexpected connection error: {connectionError.Message}", connectionError), logMessage, WebDriverBiDiLogLevel.Error, $"Connection error: {connectionError.Message}").ConfigureAwait(false);
     }
 
+    // Reads the session's messages and then, for a session that ended because its connection was lost, reports
+    // the loss, so that it follows every message received before it without holding up whoever reported the loss.
+    // A reader that faults is returned as it is, with every exception, for the fault to be captured.
+    private Task ProcessSessionMessagesAsync()
+    {
+        TransportSession session = this.session;
+        return this.ReadIncomingMessagesAsync().ContinueWith(
+            reading => reading.Status == TaskStatus.RanToCompletion && session.LostConnection is WebDriverBiDiConnectionException lostConnection ? this.ReportConnectionLostAsync(session, lostConnection) : reading,
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default).Unwrap();
+    }
+
+    private async Task ReportConnectionLostAsync(TransportSession session, WebDriverBiDiConnectionException lostConnection)
+    {
+        // An observer's fault is attributed to the session that was lost.
+        this.sessionId.Value = session.Id;
+        await this.invocableConnectionLostObservableEvent.InvokeNotifyObserversAsync(new ConnectionLostEventArgs(lostConnection)).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Tears down the session after the connection is lost, failing every pending command.
     /// </summary>
@@ -2005,6 +2043,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // with an appropriate exception.
             await this.PendingCommands.CloseAsync().ConfigureAwait(false);
             this.PendingCommands.FailAllPendingCommands(connectionExceptionFactory);
+
+            // The reader reports the loss once it has drained the queue.
+            this.session.LostConnection = connectionExceptionFactory();
 
             // Close the incoming message queue so that the reader task drains any
             // messages already received and then exits, rather than waiting forever on
@@ -2492,6 +2533,12 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         /// has no predecessor, and reports a completed task.
         /// </remarks>
         public Task MessageQueueProcessingTask => this.messageQueueProcessingTask ?? this.previousMessageQueueProcessingTask;
+
+        /// <summary>
+        /// Gets or sets the exception describing the loss of this session's connection, set before its queue is
+        /// closed when the connection ended without the client stopping it, and <see langword="null"/> otherwise.
+        /// </summary>
+        public WebDriverBiDiConnectionException? LostConnection { get; set; }
 
         /// <summary>
         /// Starts processing this session's message queue.

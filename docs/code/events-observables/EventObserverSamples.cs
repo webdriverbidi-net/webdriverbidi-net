@@ -1226,7 +1226,7 @@ public static class EventObserverSamples
     }
 
     /// <summary>
-    /// All five driver-level observable events — no session.SubscribeAsync required.
+    /// All six driver-level observable events — no session.SubscribeAsync required.
     /// </summary>
     public static void DriverLevelEventsListing(BiDiDriver driver)
     {
@@ -1237,6 +1237,22 @@ public static class EventObserverSamples
         _ = driver.OnUnknownMessageReceived;    // Message that did not match any protocol structure
         _ = driver.OnEventHandlerErrorOccurred; // An observer threw an exception
         _ = driver.OnLogMessage;                // A library-internal log message
+        _ = driver.OnConnectionLost;            // The connection ended without StopAsync
+        #endregion
+    }
+
+    /// <summary>
+    /// OnConnectionLost — learn that the browser has gone away without sending a command.
+    /// </summary>
+    public static void OnConnectionLostSample(BiDiDriver driver)
+    {
+        #region OnConnectionLost
+        driver.OnConnectionLost.AddObserver((ConnectionLostEventArgs e) =>
+        {
+            // For example, "Remote end closed the connection" when the browser exits
+            Console.WriteLine($"Connection lost: {e.Exception.Message}");
+        });
+        // No session.SubscribeAsync needed, and StopAsync does not raise it
         #endregion
     }
 

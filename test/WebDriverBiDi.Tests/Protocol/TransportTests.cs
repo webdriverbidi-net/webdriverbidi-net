@@ -1551,6 +1551,8 @@ public class TransportTests
             StartBarrierReached = startReached,
         };
         TestTransport transport = new(connection);
+        int losses = 0;
+        transport.OnConnectionLost.AddObserver(_ => losses++);
 
         Task connectTask = transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
         await startReached.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
@@ -1563,6 +1565,9 @@ public class TransportTests
         Assert.Contains("lost while the session was being established", exception.Message);
         WebDriverBiDiConnectionException reportedLoss = Assert.IsType<WebDriverBiDiConnectionException>(exception.InnerException);
         Assert.Contains("Remote end closed the connection", reportedLoss.Message);
+
+        // The caller learns of it from the failed start, not from OnConnectionLost.
+        Assert.Equal(0, losses);
 
         // The attempt rolled back, so the transport is left ready for another one rather than stuck
         // part-way through a session that never started.
@@ -3699,6 +3704,132 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Assert.Contains("Transport must be connected", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken))).Message);
+    }
+
+    [Fact]
+    public async Task TestRemoteDisconnectRaisesConnectionLostOnceTheSessionIsTornDown()
+    {
+        List<(ConnectionLostEventArgs Args, TransportState State)> losses = [];
+        TaskCompletionSource lost = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        transport.OnConnectionLost.AddObserver(e =>
+        {
+            losses.Add((e, transport.State));
+            lost.TrySetResult();
+        });
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        await lost.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+
+        (ConnectionLostEventArgs args, TransportState state) = Assert.Single(losses);
+        Assert.Equal("Remote end closed the connection", args.Exception.Message);
+        Assert.Null(args.Exception.InnerException);
+        Assert.Equal(TransportState.Disconnected, state);
+        Assert.Equal("transport.connectionLost", transport.OnConnectionLost.EventName);
+    }
+
+    [Fact]
+    public async Task TestConnectionErrorRaisesConnectionLostWithTheError()
+    {
+        TaskCompletionSource<ConnectionLostEventArgs> lost = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        transport.OnConnectionLost.AddObserver(e => lost.TrySetResult(e));
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        Exception simulatedError = new("WebSocket connection dropped");
+
+        await connection.RaiseConnectionErrorEventAsync(simulatedError);
+
+        ConnectionLostEventArgs args = await lost.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+        Assert.Equal("Unexpected connection error: WebSocket connection dropped", args.Exception.Message);
+        Assert.Same(simulatedError, args.Exception.InnerException);
+    }
+
+    [Fact]
+    public async Task TestStoppingTheTransportDoesNotRaiseConnectionLost()
+    {
+        int losses = 0;
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        transport.OnConnectionLost.AddObserver(_ => losses++);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        Assert.Equal(0, losses);
+    }
+
+    [Fact]
+    public async Task TestConnectionLostFollowsTheMessagesReceivedBeforeTheLoss()
+    {
+        List<string> order = [];
+        TaskCompletionSource lost = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        transport.OnUnknownMessageReceived.AddObserver(_ => order.Add("message"));
+        transport.OnConnectionLost.AddObserver(_ =>
+        {
+            order.Add("lost");
+            lost.TrySetResult();
+        });
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "invalid" }""");
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "invalid" }""");
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        await lost.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+
+        Assert.Equal(["message", "message", "lost"], order);
+    }
+
+    [Fact]
+    public async Task TestConnectionLossIsReportedWithoutWaitingForAStuckHandler()
+    {
+        // The loss is reported promptly to the connection that saw it; the event follows once the handler returns.
+        TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource handling = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource lost = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        transport.OnUnknownMessageReceived.AddObserver(async _ =>
+        {
+            handling.TrySetResult();
+            await release.Task;
+        });
+        transport.OnConnectionLost.AddObserver(_ => lost.TrySetResult());
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync("""{ "type": "invalid" }""");
+        await handling.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        TransportState stateWhileHandling = transport.State;
+        bool lostWhileHandling = lost.Task.IsCompleted;
+        release.TrySetResult();
+        await lost.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+
+        Assert.Equal(TransportState.Disconnected, stateWhileHandling);
+        Assert.False(lostWhileHandling);
+    }
+
+    [Fact]
+    public async Task TestConnectionLostObserverRunAsynchronouslyCanReconnect()
+    {
+        // An observer run on the message loop would wait for that loop to finish before reconnecting.
+        TaskCompletionSource<Task> reconnect = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        transport.OnConnectionLost.AddObserver(_ => reconnect.TrySetResult(transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken)), ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        await (await reconnect.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken)).WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+
+        Assert.Equal(TransportState.Connected, transport.State);
     }
 
     [Fact]

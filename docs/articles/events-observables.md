@@ -127,7 +127,7 @@ observable events in the library.
 
 ### Driver-Level Observable Events
 
-In addition to the module events above, `BiDiDriver` exposes five observable events that reflect the
+In addition to the module events above, `BiDiDriver` exposes six observable events that reflect the
 library's own communication layer. These events do **not** correspond to WebDriver BiDi protocol events
 and do **not** require a `session.SubscribeAsync` call — they fire whenever the transport or driver
 itself raises the underlying condition.
@@ -215,6 +215,25 @@ it suppresses everything.
 
 > **Note:** For browser console log messages, use `driver.Log.OnEntryAdded` (a module-level event that
 > requires `session.SubscribeAsync`). `OnLogMessage` is for library diagnostics only.
+
+#### OnConnectionLost
+
+Fires when an established connection ends without the driver being stopped: the browser closed it, as it
+does when it exits, or the connection failed. Without it, a browser that quits is noticed only when the next
+command fails.
+
+[!code-csharp[OnConnectionLost](../code/events-observables/EventObserverSamples.cs#OnConnectionLost)]
+
+The event is raised by the loop that delivers events, after every event received before the loss, once the
+session has been torn down: `IsStarted` is `false` and commands in flight have failed with
+`WebDriverBiDiConnectionException`. Like any observer run on that loop, an observer of it can call `StopAsync`,
+but calling `StartAsync` from it waits for the loop to finish, for at most `Transport.ShutdownTimeout`;
+reconnect from outside the observer, or from one added with `ObservableEventHandlerOptions.RunHandlerAsynchronously`. The
+`Exception` property is a `WebDriverBiDiConnectionException` whose message says whether the remote end closed
+the connection or the connection failed; for a failure, its `InnerException` is the connection's error.
+`StopAsync` does not raise it, and neither does a connection lost while `StartAsync` is still connecting,
+which fails `StartAsync` instead. See [Recovering From a Remote Disconnect](advanced/connection-management.md#recovering-from-a-remote-disconnect)
+for reconnecting afterwards.
 
 ### Event Names
 

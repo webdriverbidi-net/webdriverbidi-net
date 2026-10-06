@@ -139,6 +139,28 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestConnectionLossIsForwardedToTheDriverUntilItIsDisposed()
+    {
+        TaskCompletionSource<ConnectionLostEventArgs> lost = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.OnConnectionLost.AddObserver(e => lost.TrySetResult(e));
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        ConnectionLostEventArgs args = await lost.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        int forwarders = transport.OnConnectionLost.CurrentObserverCount;
+        await driver.DisposeAsync();
+
+        Assert.Equal("Remote end closed the connection", args.Exception.Message);
+        Assert.False(driver.IsStarted);
+        Assert.Equal("driver.connectionLost", driver.OnConnectionLost.EventName);
+        Assert.Equal(1, forwarders);
+        Assert.Equal(0, transport.OnConnectionLost.CurrentObserverCount);
+    }
+
+    [Fact]
     public async Task TestCanExecuteReceiveErrorWithoutCommand()
     {
         ErrorResult? response = null;

@@ -75,7 +75,9 @@ Every session the transport opens is closed out the same way, however it ends: a
 `TransportStopped`. A local stop raises `ConnectionClosing` first, with the termination reason, and raises the
 closing pair even if the connection's own stop fails. A session the remote end closes, or that ends in a
 connection error, raises no `ConnectionClosing`; its `TransportStopped` reason names the cause
-(`"Remote end closed the connection"`, or `"Connection error: "` followed by the error). A connect attempt that
+(`"Remote end closed the connection"`, or `"Connection error: "` followed by the error). Application code that
+needs to react to such a loss observes `driver.OnConnectionLost` (see
+[OnConnectionLost](../events-observables.md#onconnectionlost)). A connect attempt that
 fails after `ConnectionOpening` raises `ConnectionError` with the failure, and no `ConnectionOpened`.
 
 Every event except `AsyncHandlerTaskCount` begins its payload with `connectionId` and `sessionId`, and its

@@ -262,7 +262,7 @@ Combine all approaches for comprehensive error management. See the [Collect Mode
 1. **Use Terminate mode during development**: Surfaces handler bugs and protocol issues as exceptions instead of leaving them to diagnostic events nothing may be watching
 2. **Handle errors inside event handlers**: Use try-catch within handlers when possible
 3. **Use Collect mode for diagnostics**: Helpful for troubleshooting event handler issues
-4. **Monitor connection events**: Use OnConnectionError for real-time error visibility
+4. **Monitor connection events**: Use `driver.OnConnectionLost` to learn when the connection ends, and `OnConnectionError` for real-time error visibility
 5. **Remember the threading model**: Event handlers run on separate threads
 6. **Check for errors at logical points**: With Collect mode, inspect errors after operations
 7. **Don't lean on Ignore mode to hide errors**: The Ignore default is appropriate for production only when your handlers do their own error handling (see the mode table below); it is not a substitute for explicit error handling
@@ -491,7 +491,7 @@ When the connection fails or behaves unexpectedly:
 
 1. **Verify the WebSocket URL**: Ensure the URL is a WebDriver BiDi endpoint — the `webSocketUrl` from a driver session (e.g., `ws://localhost:9515/session/...`) or Firefox's `/session` — not Chrome's CDP `/devtools/browser/...` URL, which accepts the connection but fails every command.
 2. **Check browser is running**: The remote end must be listening before you connect.
-3. **Use connection events**: Subscribe to `connection.OnConnectionError` and `connection.OnLogMessage` for real-time diagnostics.
+3. **Use connection events**: Subscribe to `connection.OnConnectionError` and `connection.OnLogMessage` for real-time diagnostics, and to `driver.OnConnectionLost` to learn when the browser has closed the connection.
 4. **Inspect `UnhandledErrors`**: `Transport.UnhandledErrors` is `protected`, so it is readable only from within your own `Transport` subclass (see [Custom Modules — Pending commands and unhandled errors](custom-modules.md#pending-commands-and-unhandled-errors) for its members); from application code, observe collected errors through the `AggregateException` thrown by `StopAsync()` (when using `TransportErrorBehavior.Collect`).
 
 ### Interpreting TransportErrorBehavior

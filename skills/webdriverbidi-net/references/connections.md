@@ -28,4 +28,4 @@ A connection that is refused is retried every 500 milliseconds until the connect
 7. Commands.
 8. `StopAsync()`, then dispose (`await using` does it).
 
-A stopped driver can be started again. More: https://webdriverbidi-net.github.io/webdriverbidi-net/articles/browser-setup.html and https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/connection-management.html
+A stopped driver can be started again. When the browser closes the connection, as when it exits, in-flight commands fail with `WebDriverBiDiConnectionException`, `IsStarted` becomes false, and `driver.OnConnectionLost` is raised (not by `StopAsync`); to reconnect, call `StopAsync()`, then `StartAsync()`. More: https://webdriverbidi-net.github.io/webdriverbidi-net/articles/browser-setup.html and https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/connection-management.html

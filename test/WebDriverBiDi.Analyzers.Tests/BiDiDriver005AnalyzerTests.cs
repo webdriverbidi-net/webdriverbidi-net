@@ -92,6 +92,41 @@ public class BiDiDriver005AnalyzerTests
     }
 
     /// <summary>
+    /// Tests that AddObserver on the driver's connection-loss event does not report a diagnostic.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnConnectionLost_NoDiagnostic()
+    {
+        // OnConnectionLost reports the end of the library's own connection, not a protocol event, so it needs no
+        // subscription.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.OnConnectionLost.AddObserver(async (e) => { });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that AddObserver on driver internal events does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

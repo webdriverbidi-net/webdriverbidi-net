@@ -11,7 +11,7 @@ using WebDriverBiDi.Protocol;
 /// Interface for a driver that exposes events related to WebDriver BiDi protocol communication. This interface
 /// is implemented by <see cref="BiDiDriver"/> and can be used for testing, or to allow users to implement their
 /// own driver classes. It provides observable events for protocol events, errors received, unknown messages,
-/// and log messages.
+/// errors in observers, log messages, and the loss of the connection.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -56,6 +56,12 @@ public interface IBiDiDriverEvents
     /// Gets an observable event that notifies when a log message is emitted by this driver.
     /// </summary>
     ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
+
+    /// <summary>
+    /// Gets an observable event that notifies when an established connection ends without the client stopping
+    /// it: the remote end closed it, or it failed.
+    /// </summary>
+    ObservableEvent<ConnectionLostEventArgs> OnConnectionLost { get; }
 
     /// <summary>
     /// Gets a value indicating whether a message at the given level would be raised on

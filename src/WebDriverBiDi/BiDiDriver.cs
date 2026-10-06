@@ -70,18 +70,21 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     private const string UnknownMessageReceivedEventName = "driver.unknownMessageReceived";
     private const string EventHandlerErrorOccurredEventName = "driver.eventHandlerErrorOccurred";
     private const string LogMessageEventName = "driver.logMessage";
+    private const string ConnectionLostEventName = "driver.connectionLost";
 
     private readonly EventObserver<EventReceivedEventArgs> transportEventReceivedObserver;
     private readonly EventObserver<ErrorReceivedEventArgs> transportErrorReceivedObserver;
     private readonly EventObserver<UnknownMessageReceivedEventArgs> transportUnknownMessageReceivedObserver;
     private readonly EventObserver<LogMessageEventArgs> transportLogMessageObserver;
     private readonly EventObserver<EventHandlerErrorOccurredEventArgs> transportEventHandlerErrorOccurredObserver;
+    private readonly EventObserver<ConnectionLostEventArgs> transportConnectionLostObserver;
 
     private readonly ObservableEventInvocable<EventReceivedEventArgs> invocableEventReceivedObservableEvent;
     private readonly ObservableEventInvocable<ErrorReceivedEventArgs> invocableErrorReceivedObservableEvent;
     private readonly ObservableEventInvocable<UnknownMessageReceivedEventArgs> invocableUnknownMessageReceivedObservableEvent;
     private readonly ObservableEventInvocable<EventHandlerErrorOccurredEventArgs> invocableEventHandlerErrorOccurredObservableEvent;
     private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent;
+    private readonly ObservableEventInvocable<ConnectionLostEventArgs> invocableConnectionLostObservableEvent;
 
     private readonly BuiltInModuleExecutor moduleExecutor;
     private readonly Transport transport;
@@ -215,12 +218,14 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
         this.transportUnknownMessageReceivedObserver = this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync, description: "driver dispatch of unknown messages");
         this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync, description: "driver dispatch of transport log messages");
         this.transportEventHandlerErrorOccurredObserver = this.transport.OnEventHandlerErrorOccurred.AddObserver(this.OnTransportEventHandlerErrorOccurredAsync, description: "driver dispatch of event handler errors");
+        this.transportConnectionLostObserver = this.transport.OnConnectionLost.AddObserver(this.OnTransportConnectionLostAsync, description: "driver dispatch of connection loss");
 
         this.invocableEventReceivedObservableEvent = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
         this.invocableErrorReceivedObservableEvent = this.CreateObservableEvent<ErrorReceivedEventArgs>(UnexpectedErrorReceivedEventName);
         this.invocableUnknownMessageReceivedObservableEvent = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
         this.invocableEventHandlerErrorOccurredObservableEvent = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
         this.invocableLogMessageObservableEvent = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
+        this.invocableConnectionLostObservableEvent = this.CreateObservableEvent<ConnectionLostEventArgs>(ConnectionLostEventName);
 
         this.moduleExecutor = new(this);
 
@@ -300,6 +305,20 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     /// Gets an observable event that notifies when a log message is emitted by this driver.
     /// </summary>
     public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.invocableLogMessageObservableEvent;
+
+    /// <summary>
+    /// Gets an observable event that notifies when an established connection ends without the client stopping
+    /// it: the remote end closed it, as when the browser exits, or it failed.
+    /// </summary>
+    /// <remarks>
+    /// It is raised after the events received before the loss, once the session has been torn down:
+    /// <see cref="IsStarted"/> is <see langword="false"/> and commands in flight have failed. Starting the driver
+    /// again from inside an observer waits for the loop that runs it, as for any event observer, so restart from
+    /// outside the observer, or from one added with <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>.
+    /// It is not raised when the driver is stopped, nor for a
+    /// connection lost while it is being established, which fails <see cref="StartAsync(string, CancellationToken)"/> instead.
+    /// </remarks>
+    public ObservableEvent<ConnectionLostEventArgs> OnConnectionLost => this.invocableConnectionLostObservableEvent;
 
     /// <summary>
     /// Gets the bluetooth module as described in the W3C Web Bluetooth Specification.
@@ -835,6 +854,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
         await this.transportUnknownMessageReceivedObserver.DisposeAsync().ConfigureAwait(false);
         await this.transportLogMessageObserver.DisposeAsync().ConfigureAwait(false);
         await this.transportEventHandlerErrorOccurredObserver.DisposeAsync().ConfigureAwait(false);
+        await this.transportConnectionLostObserver.DisposeAsync().ConfigureAwait(false);
         await this.transport.DisposeAsync().ConfigureAwait(false);
     }
 
@@ -1032,6 +1052,11 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     private Task OnTransportLogMessageAsync(LogMessageEventArgs e)
     {
         return this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e);
+    }
+
+    private Task OnTransportConnectionLostAsync(ConnectionLostEventArgs e)
+    {
+        return this.invocableConnectionLostObservableEvent.InvokeNotifyObserversAsync(e);
     }
 
     /// <summary>
