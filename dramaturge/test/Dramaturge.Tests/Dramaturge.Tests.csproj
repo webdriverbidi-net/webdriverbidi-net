@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dramaturge\Dramaturge.csproj" />
+    <ProjectReference Include="..\Dramaturge.TestUtilities\Dramaturge.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>

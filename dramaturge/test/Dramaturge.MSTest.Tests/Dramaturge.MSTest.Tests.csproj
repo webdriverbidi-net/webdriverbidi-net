@@ -16,15 +16,11 @@
   <ItemGroup>
     <PackageReference Include="MSTest" Version="4.4.1" />
     <PackageReference Include="coverlet.MTP" Version="10.0.1" />
-    <PackageReference Include="PinchHitter" Version="0.0.20" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="../Dramaturge.Tests/TestUtilities/FakeBrowserServer.cs;../Dramaturge.Tests/TestUtilities/FakeContext.cs;../Dramaturge.Tests/TestUtilities/FakeRemoteEnd.cs;../Dramaturge.Tests/TestUtilities/FakeResponse.cs;../Dramaturge.Tests/TestUtilities/FakeSession.cs" Link="TestUtilities/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dramaturge.MSTest\Dramaturge.MSTest.csproj" />
+    <ProjectReference Include="..\Dramaturge.TestUtilities\Dramaturge.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>
