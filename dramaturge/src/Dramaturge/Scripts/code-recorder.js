@@ -181,6 +181,15 @@
       session?.apply(mode);
     },
 
+    // Each frame element's window, then its description as a message has it.
+    describeFrames(testIdAttribute) {
+      const describer = new Acquiescence.ElementDescriber();
+      return Array.from(document.querySelectorAll('iframe, frame')).filter((element) => element.contentWindow).map((element) => {
+        const { target, ancestors } = describer.describe(element, { testIdAttribute });
+        return [element.contentWindow, JSON.stringify({ target: facts(target), ancestors: ancestors.map(facts) }), target.element, ...ancestors.map((ancestor) => ancestor.element)];
+      });
+    },
+
     stop() {
       session?.stop();
       session = null;

@@ -9,6 +9,7 @@ using System.Text.Json.Nodes;
 using Dramaturge.Browsers;
 using Dramaturge.TestUtilities;
 using WebDriverBiDi;
+using static Dramaturge.TestUtilities.RecorderMessages;
 
 public class CodeRecordingTests
 {
@@ -482,38 +483,6 @@ public class CodeRecordingTests
         Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
         session.RemoteEnd.AnswerWith("script.callFunction", ProtocolJson.Success(new JsonObject() { ["type"] = "undefined" }));
         return (driver, session, page);
-    }
-
-    private static async Task<string> GetChannelAsync(FakeSession session)
-    {
-        JsonObject install = await session.RemoteEnd.WaitForCommandAsync("script.callFunction");
-        return (string)install["params"]!["arguments"]![0]!["value"]!["channel"]!;
-    }
-
-    // Sends an action as the page's recorder does, and waits until the driver has delivered it.
-    private static async Task SendAsync(BiDiDriver driver, FakeSession session, string channel, string? contextId, JsonObject action, params string[] elementIds)
-    {
-        JsonArray data = [new JsonObject() { ["type"] = "string", ["value"] = action.ToJsonString() }];
-        // Each element's shared ID is named for its CSS path.
-        string target = action["target"] is JsonObject facts ? $"node-{facts["cssPath"]}" : "node-none";
-        foreach (string elementId in elementIds.Length == 0 ? [target] : elementIds)
-        {
-            data.Add(new JsonObject() { ["type"] = "node", ["sharedId"] = elementId, ["value"] = new JsonObject() { ["nodeType"] = 1, ["childNodeCount"] = 0 } });
-        }
-
-        JsonObject source = new() { ["realm"] = "realm-1" };
-        if (contextId is not null)
-        {
-            source["context"] = contextId;
-        }
-
-        await session.RemoteEnd.RaiseEventAsync("script.message", new JsonObject()
-        {
-            ["channel"] = channel,
-            ["data"] = new JsonObject() { ["type"] = "array", ["value"] = data },
-            ["source"] = source,
-        });
-        await NetworkEvents.FlushAsync(driver);
     }
 
     private static Task RaiseDomContentLoadedAsync(FakeSession session, string contextId)

@@ -14,7 +14,7 @@ using WebDriverBiDi.Script;
 /// ancestors: the first candidate that Dramaturge's own resolution finds the element alone with, in the order test
 /// ID, role and name, label, placeholder, alt text, title, text, and role; then one of those within an ancestor
 /// found alone by its test ID, role and name, or ID; then the first that finds the element among others, with its
-/// index; then the element's CSS path.
+/// index. When none finds the element, its CSS path, if that does, or else its first candidate.
 /// </summary>
 internal static class LocatorGenerator
 {
@@ -52,10 +52,15 @@ internal static class LocatorGenerator
             }
         }
 
-        // An element gone from its document, as when its click navigated, can no longer be found; its first candidate is the likeliest.
-        if (containing is null && candidates.Count > 0 && !await IsConnectedAsync(frame, elements[0], budget).ConfigureAwait(false))
+        // No candidate finds the element when the lookups see another document, as after a click that navigated, or
+        // when the browser names it otherwise. Its CSS path still finds it in the second case; in the first, its first
+        // candidate is the likeliest. Scoping or an index only narrows matches that include it.
+        if (containing is null)
         {
-            return (candidates[0].Code, candidates[0].OnFrame(frame));
+            Candidate path = Css(target.GetProperty("cssPath").GetString()!);
+            List<string?> found = candidates.Count == 0 ? [] : await ResolveAsync(path.OnFrame(frame), budget).ConfigureAwait(false);
+            Candidate chosen = candidates.Count == 0 || (found.Count == 1 && found[0] == targetId) ? path : candidates[0];
+            return (chosen.Code, chosen.OnFrame(frame));
         }
 
         for (int i = 0; i < ancestors.Count && i + 1 < elements.Count; i++)
@@ -76,13 +81,7 @@ internal static class LocatorGenerator
             }
         }
 
-        if (containing is not null)
-        {
-            return ($"{containing.Code}.Nth({index})", containing.OnFrame(frame).Nth(index));
-        }
-
-        Candidate path = Css(target.GetProperty("cssPath").GetString()!);
-        return (path.Code, path.OnFrame(frame));
+        return ($"{containing.Code}.Nth({index})", containing.OnFrame(frame).Nth(index));
     }
 
     private static IEnumerable<Candidate> TargetCandidates(JsonElement facts)
@@ -178,19 +177,6 @@ internal static class LocatorGenerator
         catch (Exception)
         {
             return [];
-        }
-    }
-
-    private static async Task<bool> IsConnectedAsync(Frame frame, NodeRemoteValue element, TimeBudget budget)
-    {
-        try
-        {
-            RemoteValue connected = await frame.Page.Browser.Group.ScriptHost.CallAsync(frame.Id, "(inspector, element) => element.isConnected", [element.ToSharedReference()], budget).ConfigureAwait(false);
-            return connected.As<BooleanRemoteValue>().Value;
-        }
-        catch (Exception)
-        {
-            return false;
         }
     }
 

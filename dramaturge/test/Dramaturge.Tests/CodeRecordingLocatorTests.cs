@@ -8,6 +8,7 @@ namespace Dramaturge;
 using System.Text.Json.Nodes;
 using Dramaturge.TestUtilities;
 using WebDriverBiDi;
+using static Dramaturge.TestUtilities.RecorderMessages;
 
 // The element acted on is node-1; the fake finds it alone with one kind of locator, and among others with the rest.
 public class CodeRecordingLocatorTests
@@ -83,25 +84,25 @@ public class CodeRecordingLocatorTests
     }
 
     [Fact]
-    public async Task ElementNoCandidateFindsIsLocatedByItsCssPath()
+    public async Task ElementTheBrowserNamesOtherwiseIsLocatedByItsCssPath()
     {
         (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
         await using BiDiDriver ownedDriver = driver;
-        Answer(session, _ => [], connected: true);
+        Answer(session, request => request.Kind == "css" ? [Target] : []);
 
-        string statement = await RecordClickAsync(driver, session, page, Facts(), [new JsonObject() { ["role"] = "generic", ["cssPath"] = "#main > div", ["labels"] = new JsonArray() }], [Target, "node-2"]);
+        string statement = await RecordClickAsync(driver, session, page, Facts());
 
         Assert.Equal("await page.Locate(new CssLocator(\"#save\")).ClickAsync();", statement);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(null)]
-    public async Task ElementGoneFromItsDocumentIsLocatedByItsFirstCandidate(bool? connected)
+    [Fact]
+    public async Task ElementGoneFromTheDocumentTheLookupsSeeIsLocatedByItsFirstCandidate()
     {
         (BiDiDriver driver, FakeSession session, Page page) = await OpenPageAsync();
         await using BiDiDriver ownedDriver = driver;
-        Answer(session, _ => [], connected);
+
+        // The document the lookups now see has another element at the CSS path.
+        Answer(session, request => request.Kind == "css" ? ["node-9"] : []);
 
         string statement = await RecordClickAsync(driver, session, page, Facts());
 
@@ -149,12 +150,12 @@ public class CodeRecordingLocatorTests
         TaskCompletionSource settled = new(TaskCreationOptions.RunContinuationsAsynchronously);
         recording.OnStatement.AddObserver(_ => settled.TrySetResult());
 
-        await SendAsync(driver, session, channel, page.Id, Action("fill", Facts(), ("value", "A")));
-        await SendAsync(driver, session, channel, page.Id, Action("fill", Facts(), ("value", "Ad")));
+        await SendAsync(driver, session, channel, page.Id, Action("fill", Facts(), ("value", "A")), Target);
+        await SendAsync(driver, session, channel, page.Id, Action("fill", Facts(), ("value", "Ad")), Target);
         await SendAsync(driver, session, channel, page.Id, new JsonObject() { ["kind"] = "mode", ["mode"] = "record" });
         await settled.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         int lookups = session.RemoteEnd.CommandsFor("browsingContext.locateNodes").Count;
-        await SendAsync(driver, session, channel, second.Id, Action("fill", Facts(), ("value", "B")));
+        await SendAsync(driver, session, channel, second.Id, Action("fill", Facts(), ("value", "B")), Target);
         string code = await recording.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, lookups);
@@ -175,7 +176,7 @@ public class CodeRecordingLocatorTests
         TaskCompletionSource<LocatorPickedEventArgs> picked = new(TaskCreationOptions.RunContinuationsAsynchronously);
         recording.OnLocatorPicked.AddObserver(e => picked.TrySetResult(e));
 
-        await SendAsync(driver, session, channel, page.Id, Action("pick", Facts()));
+        await SendAsync(driver, session, channel, page.Id, Action("pick", Facts()), Target);
         LocatorPickedEventArgs pick = await picked.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         string code = await recording.StopAsync(TestContext.Current.CancellationToken);
 
@@ -201,8 +202,8 @@ public class CodeRecordingLocatorTests
         };
     }
 
-    // Answers each lookup with the shared IDs of the elements it finds, and the connection check, which fails when not given.
-    private static void Answer(FakeSession session, Func<Request, string[]> find, bool? connected = true)
+    // Answers each lookup with the shared IDs of the elements it finds.
+    private static void Answer(FakeSession session, Func<Request, string[]> find)
     {
         session.RemoteEnd.AnswerWith("browsingContext.locateNodes", parameters => ProtocolJson.Nodes(find(Classify(parameters))));
         session.RemoteEnd.AnswerWith("script.callFunction", parameters =>
@@ -213,11 +214,6 @@ public class CodeRecordingLocatorTests
             {
                 Request request = new("label", (bool)arguments[1]!["value"]!, arguments.Count > 2, (string)arguments[0]!["value"]!);
                 return new FakeResponse(ProtocolJson.Success(new JsonObject() { ["type"] = "array", ["value"] = ProtocolJson.Nodes(find(request))["nodes"]!.DeepClone() }));
-            }
-
-            if (function.Contains("element.isConnected"))
-            {
-                return connected is bool value ? new FakeResponse(ProtocolJson.Boolean(value)) : FakeResponse.Failure("no such node", "The document has gone.");
             }
 
             return new FakeResponse(ProtocolJson.Success(new JsonObject() { ["type"] = "undefined" }));
@@ -264,12 +260,6 @@ public class CodeRecordingLocatorTests
         return (driver, session, page);
     }
 
-    private static async Task<string> GetChannelAsync(FakeSession session)
-    {
-        JsonObject install = await session.RemoteEnd.WaitForCommandAsync("script.callFunction");
-        return (string)install["params"]!["arguments"]![0]!["value"]!["channel"]!;
-    }
-
     private static JsonObject Action(string kind, JsonObject facts, params (string Name, JsonNode Value)[] details)
     {
         JsonObject action = new() { ["kind"] = kind, ["target"] = facts, ["ancestors"] = new JsonArray() };
@@ -279,23 +269,6 @@ public class CodeRecordingLocatorTests
         }
 
         return action;
-    }
-
-    private static async Task SendAsync(BiDiDriver driver, FakeSession session, string channel, string contextId, JsonObject action, params string[] elementIds)
-    {
-        JsonArray data = [new JsonObject() { ["type"] = "string", ["value"] = action.ToJsonString() }];
-        foreach (string elementId in elementIds.Length == 0 ? [Target] : elementIds)
-        {
-            data.Add(new JsonObject() { ["type"] = "node", ["sharedId"] = elementId, ["value"] = new JsonObject() { ["nodeType"] = 1, ["childNodeCount"] = 0 } });
-        }
-
-        await session.RemoteEnd.RaiseEventAsync("script.message", new JsonObject()
-        {
-            ["channel"] = channel,
-            ["data"] = new JsonObject() { ["type"] = "array", ["value"] = data },
-            ["source"] = new JsonObject() { ["realm"] = "realm-1", ["context"] = contextId },
-        });
-        await NetworkEvents.FlushAsync(driver);
     }
 
     // A lookup the recording made: the kind of locator, whether it matches exactly, whether it searches within other elements, and its value.

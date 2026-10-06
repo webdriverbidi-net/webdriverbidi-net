@@ -28,6 +28,8 @@ public sealed class CodeRecording : IAsyncDisposable
     private readonly List<string> statements = [];
     private readonly HashSet<string> namespaces = [];
     private readonly Dictionary<Page, string> pageVariables = [];
+    private readonly Dictionary<Frame, string> frameVariables = [];
+    private readonly HashSet<Page> actedPages = [];
     private readonly ObservableEventInvocable<CodeStatementEventArgs> onStatement = new("automation.codeStatement");
     private readonly ObservableEventInvocable<LocatorPickedEventArgs> onLocatorPicked = new("automation.locatorPicked");
     private readonly SemaphoreSlim stopLock = new(1, 1);
@@ -36,6 +38,7 @@ public sealed class CodeRecording : IAsyncDisposable
     private string? subscriptionId;
     private (Frame Frame, string? ElementId, string Code, ElementLocator Locator)? lastLocator;
     private string mode = "record";
+    private int downloadCount;
     private bool isStopped;
 
     private CodeRecording(Browser browser, CodeTarget target)
@@ -162,6 +165,11 @@ public sealed class CodeRecording : IAsyncDisposable
         {
             recording.observers.Add(driver.Script.OnMessage.AddObserver(recording.OnMessage));
             recording.observers.Add(driver.BrowsingContext.OnDomContentLoaded.AddObserver(e => recording.OnDocumentLoaded(e.BrowsingContextId)));
+            recording.observers.Add(driver.BrowsingContext.OnNavigationStarted.AddObserver(e => recording.OnPageEvent(e.BrowsingContextId, frame => frame == frame.Page.MainFrame && e.Url != "about:blank", page => recording.OnNavigationAsync(page, e.Url))));
+            recording.observers.Add(driver.BrowsingContext.OnDownloadWillBegin.AddObserver(e => recording.OnPageEvent(e.BrowsingContextId, _ => true, recording.OnDownloadAsync)));
+            recording.observers.Add(driver.BrowsingContext.OnUserPromptOpened.AddObserver(e => recording.OnPageEvent(e.BrowsingContextId, _ => true, page => recording.OnDialogAsync(page, e.PromptType, e.Message))));
+            recording.observers.Add(browser.OnPageCreated.AddObserver(e => recording.Enqueue(() => recording.OnPopupAsync(e.Page))));
+            recording.observers.Add(browser.OnPageClosed.AddObserver(e => recording.Enqueue(() => recording.OnPageClosedAsync(e.Page))));
         }
 
         try
@@ -186,6 +194,8 @@ public sealed class CodeRecording : IAsyncDisposable
         return recording;
     }
 
+    private static string[] LocatorNamespaces(string locator) => locator.Contains("new CssLocator(") ? [CodeWriter.BrowsingContextNamespace] : [];
+
     private static string[] Strings(JsonElement array) => [.. array.EnumerateArray().Select(item => item.GetString()!)];
 
     private static string Capitalize(string name) => char.ToUpperInvariant(name[0]) + name.Substring(1);
@@ -193,9 +203,9 @@ public sealed class CodeRecording : IAsyncDisposable
     // A step for an action, or null for an action the recording does not know.
     private static RecordedStep? CreateStep(JsonElement action, string locator)
     {
-        string[] locatorNamespaces = locator.Contains("new CssLocator(") ? [CodeWriter.BrowsingContextNamespace] : [];
+        string[] locatorNamespaces = LocatorNamespaces(locator);
         string[] assertionNamespaces = [.. locatorNamespaces, CodeWriter.AssertionsNamespace];
-        string Statement(string call) => $"await {locator}.{call};";
+        RecordedStep Action(string call, IReadOnlyList<string> namespaces, string? mergeKey = null, int clickCount = 0) => new($"await {locator}.{call};", namespaces, mergeKey, clickCount) { Call = $"{locator}.{call}" };
         RecordedStep Assertion(string call) => new($"await Expect({locator}).{call};", assertionNamespaces, SettlesAtOnce: true);
         string? Modifiers() => CodeWriter.Modifiers(Strings(action.GetProperty("modifiers")));
 
@@ -210,13 +220,13 @@ public sealed class CodeRecording : IAsyncDisposable
                     clickCount > 2 ? $"ClickCount = {clickCount}" : null,
                     modifiers is null ? null : $"Modifiers = {modifiers}");
                 string method = clickCount == 2 ? "DblClickAsync" : "ClickAsync";
-                return new(Statement($"{method}({options})"), button == "Left" ? locatorNamespaces : [.. locatorNamespaces, CodeWriter.InputNamespace], $"click {locator} {button} {modifiers}", clickCount);
+                return Action($"{method}({options})", button == "Left" ? locatorNamespaces : [.. locatorNamespaces, CodeWriter.InputNamespace], $"click {locator} {button} {modifiers}", clickCount);
             case "check":
-                return new(Statement("CheckAsync()"), locatorNamespaces);
+                return Action("CheckAsync()", locatorNamespaces);
             case "uncheck":
-                return new(Statement("UncheckAsync()"), locatorNamespaces);
+                return Action("UncheckAsync()", locatorNamespaces);
             case "fill":
-                return new(Statement($"FillAsync({CodeWriter.Literal(action.GetProperty("value").GetString()!)})"), locatorNamespaces, $"fill {locator}");
+                return Action($"FillAsync({CodeWriter.Literal(action.GetProperty("value").GetString()!)})", locatorNamespaces, $"fill {locator}");
             case "press":
                 string pressed = action.GetProperty("key").GetString()!;
                 string? key = CodeWriter.Key(pressed);
@@ -226,11 +236,11 @@ public sealed class CodeRecording : IAsyncDisposable
                 }
 
                 string pressOptions = CodeWriter.Options(Modifiers() is string held ? $"Modifiers = {held}" : null);
-                return new(Statement($"PressAsync({key}{(pressOptions.Length == 0 ? string.Empty : ", " + pressOptions)})"), key.StartsWith("Keys.", StringComparison.Ordinal) ? [.. locatorNamespaces, CodeWriter.InputNamespace] : locatorNamespaces);
+                return Action($"PressAsync({key}{(pressOptions.Length == 0 ? string.Empty : ", " + pressOptions)})", key.StartsWith("Keys.", StringComparison.Ordinal) ? [.. locatorNamespaces, CodeWriter.InputNamespace] : locatorNamespaces);
             case "select":
-                return new(Statement($"SelectOptionAsync({CodeWriter.Collection(Strings(action.GetProperty("values")).Select(value => $"SelectOption.ByValue({CodeWriter.Literal(value)})"))})"), locatorNamespaces);
+                return Action($"SelectOptionAsync({CodeWriter.Collection(Strings(action.GetProperty("values")).Select(value => $"SelectOption.ByValue({CodeWriter.Literal(value)})"))})", locatorNamespaces);
             case "setInputFiles":
-                return new(Statement($"SetInputFilesAsync({CodeWriter.Collection(Strings(action.GetProperty("files")).Select(CodeWriter.Literal))})"), locatorNamespaces);
+                return Action($"SetInputFilesAsync({CodeWriter.Collection(Strings(action.GetProperty("files")).Select(CodeWriter.Literal))})", locatorNamespaces);
             case "assertVisible":
                 return Assertion("ToBeVisibleAsync()");
             case "assertText":
@@ -281,34 +291,39 @@ public sealed class CodeRecording : IAsyncDisposable
             () => this.browser.Group.ScriptHost.CallRecorderAsync(contextId, "(recorder, send, testIdAttribute, mode) => recorder.start(send, testIdAttribute, mode)", [channel, LocalValue.String(this.browser.Group.Options.TestIdAttribute), LocalValue.String(current)], this.CreateBudget(CancellationToken.None)));
     }
 
-    // Handles messages one at a time, in the order they arrive.
+    // The sender's frame is found as the message arrives: its page may close before the message is handled.
     private void OnMessage(MessageEventArgs e)
     {
-        if (e.ChannelId != this.channelId)
+        Frame? frame = e.Source.BrowsingContextId is string contextId ? this.browser.Group.FindFrame(contextId) : null;
+        if (e.ChannelId == this.channelId && frame?.Page.Browser == this.browser)
         {
-            return;
+            this.Enqueue(() => this.HandleAsync(frame, e.Data.As<CollectionRemoteValue>().Value!));
         }
+    }
 
+    // An event in one of the browser's frames that satisfies a condition is handled for the frame's page.
+    private void OnPageEvent(string contextId, Func<Frame, bool> condition, Func<Page, Task> handle)
+    {
+        if (this.browser.Group.FindFrame(contextId) is Frame frame && frame.Page.Browser == this.browser && condition(frame))
+        {
+            this.Enqueue(() => handle(frame.Page));
+        }
+    }
+
+    // Handles messages and events one at a time, in the order they arrive.
+    private void Enqueue(Func<Task> handle)
+    {
         lock (this.lockObject)
         {
             if (!this.isStopped)
             {
-                this.processing = this.processing.ContinueWith(_ => this.HandleAsync(e), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).Unwrap();
+                this.processing = this.processing.ContinueWith(_ => this.RunStepAsync("Recording a message or an event", handle), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).Unwrap();
             }
         }
     }
 
-    private async Task HandleAsync(MessageEventArgs e)
+    private async Task HandleAsync(Frame frame, RemoteValueList data)
     {
-        Frame? frame = e.Source.BrowsingContextId is string contextId ? this.browser.Group.FindFrame(contextId) : null;
-
-        // Actions in a page's child frames are not recorded.
-        if (frame is null || frame.Page.Browser != this.browser || frame != frame.Page.MainFrame)
-        {
-            return;
-        }
-
-        RemoteValueList data = e.Data.As<CollectionRemoteValue>().Value!;
         using JsonDocument document = JsonDocument.Parse(data[0].As<StringRemoteValue>().Value);
         JsonElement message = document.RootElement;
         string kind = message.GetProperty("kind").GetString()!;
@@ -318,20 +333,29 @@ public sealed class CodeRecording : IAsyncDisposable
             return;
         }
 
+        if (await this.DescribeFramesAsync(frame).ConfigureAwait(false) is not List<(Frame Frame, string Code)> frames)
+        {
+            return;
+        }
+
         (string Code, ElementLocator Locator) found = await this.FindLocatorAsync(frame, message, [.. data.Skip(1).Select(element => element.As<NodeRemoteValue>())]).ConfigureAwait(false);
         List<RecordedStep> settled = [];
         LocatorPickedEventArgs? picked = null;
         lock (this.lockObject)
         {
+            this.actedPages.Add(frame.Page);
+            string pageVariable = this.GetPageVariable(frame.Page, settled);
+            string locator = $"{this.DeclareFrames(frame, frames, pageVariable, settled)}.{found.Code}";
             switch (kind)
             {
                 case "pick":
                     settled.AddRange(this.TakePending());
-                    picked = new LocatorPickedEventArgs(frame.Page, found.Locator, $"{this.GetPageVariable(frame.Page, settled)}.{found.Code}");
+                    picked = new LocatorPickedEventArgs(frame.Page, found.Locator, locator);
                     break;
                 default:
-                    if (CreateStep(message, $"{this.GetPageVariable(frame.Page, settled)}.{found.Code}") is RecordedStep step)
+                    if (CreateStep(message, locator) is RecordedStep created)
                     {
+                        RecordedStep step = created with { Page = frame.Page, PageVariable = pageVariable };
                         if (step.SettlesAtOnce || this.pending is null || !step.Replaces(this.pending))
                         {
                             settled.AddRange(this.TakePending());
@@ -360,6 +384,167 @@ public sealed class CodeRecording : IAsyncDisposable
         {
             await this.onLocatorPicked.InvokeNotifyObserversAsync(picked).ConfigureAwait(false);
         }
+    }
+
+    // A navigation the pending action on the page caused waits for it; one in a popup the action opened is the popup's
+    // own; any other is the user's, as when typing an address.
+    private Task OnNavigationAsync(Page page, string url)
+    {
+        return this.ChangeAsync(settled =>
+        {
+            if (this.pending is { Call: not null } action && action.Page == page)
+            {
+                this.pending = action.WithEffect(null, "RunAndWaitForNavigationAsync");
+            }
+            else if (page.Opener is null || this.actedPages.Contains(page))
+            {
+                settled.AddRange(this.TakePending());
+                settled.Add(new($"await {this.GetPageVariable(page, settled)}.NavigateAsync({CodeWriter.Literal(url)});", []));
+            }
+        });
+    }
+
+    private Task OnPopupAsync(Page popup)
+    {
+        return this.ChangeAsync(_ =>
+        {
+            if (this.pending is { Call: not null } action && action.Page == popup.Opener && !action.HasEffect)
+            {
+                this.pending = action.WithEffect($"Page {this.NameVariable(popup)} = ", "RunAndWaitForPopupAsync");
+            }
+        });
+    }
+
+    private Task OnDownloadAsync(Page page)
+    {
+        return this.ChangeAsync(_ =>
+        {
+            if (this.pending is { Call: not null } action && action.Page == page && !action.HasEffect)
+            {
+                string variable = this.downloadCount++ == 0 ? "download" : $"download{this.downloadCount - 1}";
+                this.pending = action.WithEffect($"Download {variable} = ", "RunAndWaitForDownloadAsync");
+            }
+        });
+    }
+
+    // A dialog is noted; the browser handles it as the session's prompt behaviour says, on replay as when recording.
+    private Task OnDialogAsync(Page page, UserPromptType type, string message)
+    {
+        string kind = type.ToString().ToLowerInvariant();
+        return this.ChangeAsync(settled =>
+        {
+            if (this.pending is { Call: not null } action && action.Page == page)
+            {
+                this.pending = action with { Comments = [.. action.Comments, $"// Opens a dialog ({kind}): {CodeWriter.Literal(message)}"] };
+            }
+            else
+            {
+                settled.AddRange(this.TakePending());
+                settled.Add(new($"// A dialog opened ({kind}): {CodeWriter.Literal(message)}", []));
+            }
+        });
+    }
+
+    // Closing the first page ends the session, rather than being a step of it.
+    private Task OnPageClosedAsync(Page page)
+    {
+        return this.ChangeAsync(settled =>
+        {
+            if (this.pageVariables.TryGetValue(page, out string? variable) && variable != "page")
+            {
+                settled.AddRange(this.TakePending());
+                settled.Add(new($"await {variable}.CloseAsync();", []));
+            }
+        });
+    }
+
+    // Changes the pending and settled statements under the lock, then settles those it settled.
+    private async Task ChangeAsync(Action<List<RecordedStep>> change)
+    {
+        List<RecordedStep> settled = [];
+        lock (this.lockObject)
+        {
+            change(settled);
+        }
+
+        foreach (RecordedStep step in settled)
+        {
+            await this.SettleAsync(step).ConfigureAwait(false);
+        }
+    }
+
+    // The frames from the page's main frame down to a frame that have no variable yet, each with its element's
+    // locator in its parent, or null when a frame's element cannot be found, as in a shadow root.
+    private async Task<List<(Frame Frame, string Code)>?> DescribeFramesAsync(Frame frame)
+    {
+        List<(Frame Frame, string Code)> frames = [];
+        for (Frame current = frame; current.ParentFrame is Frame parent; current = parent)
+        {
+            lock (this.lockObject)
+            {
+                if (this.frameVariables.ContainsKey(current))
+                {
+                    break;
+                }
+            }
+
+            if (await this.FindFrameElementAsync(parent, current).ConfigureAwait(false) is not string code)
+            {
+                await this.browser.Group.LogAsync($"An action in browsing context {frame.Id} was not recorded: the element of frame {current.Id} was not found in its parent.", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+                return null;
+            }
+
+            frames.Insert(0, (current, code));
+        }
+
+        return frames;
+    }
+
+    // The locator, in its parent, of a frame's element, or null when it cannot be found.
+    private async Task<string?> FindFrameElementAsync(Frame parent, Frame child)
+    {
+        TimeBudget budget = this.CreateBudget(CancellationToken.None);
+        RemoteValueList? values;
+        try
+        {
+            RemoteValue described = await this.browser.Group.ScriptHost.CallRecorderAsync(parent.Id, "(recorder, testIdAttribute) => recorder.describeFrames(testIdAttribute)", [LocalValue.String(this.browser.Group.Options.TestIdAttribute)], budget).ConfigureAwait(false);
+            values = described.As<CollectionRemoteValue>().Value!.Select(entry => entry.As<CollectionRemoteValue>().Value!).FirstOrDefault(entry => entry[0].As<WindowProxyRemoteValue>().Value.BrowsingContextId == child.Id);
+        }
+        catch (Exception)
+        {
+            // A parent that cannot describe its frames, as one that has closed, finds none.
+            return null;
+        }
+
+        if (values is null)
+        {
+            return null;
+        }
+
+        JsonElement description;
+        using (JsonDocument document = JsonDocument.Parse(values[1].As<StringRemoteValue>().Value))
+        {
+            description = document.RootElement.Clone();
+        }
+
+        NodeRemoteValue[] elements = [.. values.Skip(2).Select(element => element.As<NodeRemoteValue>())];
+        return (await LocatorGenerator.GenerateAsync(parent, description.GetProperty("target"), [.. description.GetProperty("ancestors").EnumerateArray()], elements, budget).ConfigureAwait(false)).Code;
+    }
+
+    // Declares the frames without variables, top down, each after settling the pending statement, and gives the
+    // variable of the frame acted in: its page's for a main frame.
+    private string DeclareFrames(Frame frame, List<(Frame Frame, string Code)> frames, string pageVariable, List<RecordedStep> settled)
+    {
+        string Variable(Frame target) => target.ParentFrame is null ? pageVariable : this.frameVariables[target];
+        foreach ((Frame declared, string code) in frames)
+        {
+            settled.AddRange(this.TakePending());
+            string variable = this.frameVariables.Count == 0 ? "frame" : $"frame{this.frameVariables.Count}";
+            settled.Add(new($"Frame {variable} = await {Variable(declared.ParentFrame!)}.{code}.ContentFrameAsync();", LocatorNamespaces(code)));
+            this.frameVariables[declared] = variable;
+        }
+
+        return Variable(frame);
     }
 
     // Using the toolbar settles the pending statement.
@@ -397,8 +582,7 @@ public sealed class CodeRecording : IAsyncDisposable
     {
         if (!this.pageVariables.TryGetValue(page, out string? variable))
         {
-            variable = this.pageVariables.Count == 0 ? "page" : $"page{this.pageVariables.Count}";
-            this.pageVariables[page] = variable;
+            variable = this.NameVariable(page);
             if (variable != "page")
             {
                 settled.AddRange(this.TakePending());
@@ -406,6 +590,13 @@ public sealed class CodeRecording : IAsyncDisposable
             }
         }
 
+        return variable;
+    }
+
+    private string NameVariable(Page page)
+    {
+        string variable = this.pageVariables.Count == 0 ? "page" : $"page{this.pageVariables.Count}";
+        this.pageVariables[page] = variable;
         return variable;
     }
 
@@ -434,11 +625,11 @@ public sealed class CodeRecording : IAsyncDisposable
     {
         lock (this.lockObject)
         {
-            this.statements.Add(step.Statement);
+            this.statements.Add(step.Text);
             this.namespaces.UnionWith(step.Namespaces);
         }
 
-        await this.onStatement.InvokeNotifyObserversAsync(new CodeStatementEventArgs(step.Statement)).ConfigureAwait(false);
+        await this.onStatement.InvokeNotifyObserversAsync(new CodeStatementEventArgs(step.Text)).ConfigureAwait(false);
     }
 
     private TimeBudget CreateBudget(CancellationToken cancellationToken)
@@ -460,12 +651,31 @@ public sealed class CodeRecording : IAsyncDisposable
     }
 
     // An action's or an assertion's statement; a step with a merge key replaces the pending step with the same key: a
-    // fill of the same field, or the next click of the same series. An assertion settles at once.
+    // fill of the same field, or the next click of the same series, unless an effect or a dialog was attached to it.
+    // An assertion settles at once. An action's call, on its page, can be wrapped in a wait for what it causes.
     private sealed record RecordedStep(string Statement, IReadOnlyList<string> Namespaces, string? MergeKey = null, int ClickCount = 0, bool SettlesAtOnce = false)
     {
+        public string? Call { get; init; }
+
+        public Page? Page { get; init; }
+
+        public string? PageVariable { get; init; }
+
+        public bool HasEffect { get; init; }
+
+        public IReadOnlyList<string> Comments { get; init; } = [];
+
+        public string Text => string.Join("\n", [.. this.Comments, this.Statement]);
+
         public bool Replaces(RecordedStep earlier)
         {
-            return this.MergeKey is not null && this.MergeKey == earlier.MergeKey && (this.ClickCount == 0 || this.ClickCount == earlier.ClickCount + 1);
+            return this.MergeKey is not null && this.MergeKey == earlier.MergeKey && (this.ClickCount == 0 || this.ClickCount == earlier.ClickCount + 1) && !earlier.HasEffect && earlier.Comments.Count == 0;
+        }
+
+        // The first effect wraps the call; a later one, such as a navigation after a popup, is left out.
+        public RecordedStep WithEffect(string? declaration, string wait)
+        {
+            return this.HasEffect ? this : this with { Statement = $"{declaration}await {this.PageVariable}.{wait}(() => {this.Call});", HasEffect = true };
         }
     }
 }
