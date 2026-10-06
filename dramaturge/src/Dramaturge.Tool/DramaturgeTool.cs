@@ -82,7 +82,7 @@ public static class DramaturgeTool
         Argument<string?> codegenUrl = new("url") { Arity = ArgumentArity.ZeroOrOne, Description = "The address to open first." };
         Option<CodeTarget> codegenTarget = new("--target") { Description = "The kind of file to write.", DefaultValueFactory = _ => CodeTarget.Program };
         Option<BrowserKind> codegenBrowser = new("--browser") { Description = "The browser to record in.", DefaultValueFactory = _ => BrowserKind.Chrome };
-        Option<BrowserReleaseChannel?> codegenChannel = new("--channel") { Description = "The browser's release channel. Defaults to stable." };
+        Option<string?> codegenChannel = new("--channel") { Description = "The browser's release channel, as install names it: stable (the default), beta, dev, and canary for Chrome and Edge, or nightly and esr for Firefox." };
         Option<string?> codegenTestId = new("--test-id-attribute") { Description = "The attribute test IDs are read from. Defaults to data-testid." };
         Option<string?> codegenOutput = new("--output", "-o") { Description = "A file to keep the whole code in as it is recorded." };
         Command codegen = new("codegen", "Record the actions you take in a browser as C#, until you close the browser or press Ctrl+C.") { codegenUrl, codegenTarget, codegenBrowser, codegenChannel, codegenTestId, codegenOutput };

@@ -45,7 +45,7 @@ See [Using with Coding Agents](https://webdriverbidi-net.github.io/dramaturge/ar
 | --- | --- |
 | [Dramaturge](https://www.nuget.org/packages/Dramaturge) | The automation API |
 | [Dramaturge.Browsers](https://www.nuget.org/packages/Dramaturge.Browsers) | Locates, downloads, and launches browsers, locally, on a remote grid, or already running |
-| [Dramaturge.Tool](https://www.nuget.org/packages/Dramaturge.Tool) | The `dramaturge` command-line tool, which installs and manages the browsers Dramaturge.Browsers downloads |
+| [Dramaturge.Tool](https://www.nuget.org/packages/Dramaturge.Tool) | The `dramaturge` command-line tool, which installs and manages the browsers Dramaturge.Browsers downloads, and records what you do in a browser as C# |
 | [Dramaturge.Xunit](https://www.nuget.org/packages/Dramaturge.Xunit), [Dramaturge.NUnit](https://www.nuget.org/packages/Dramaturge.NUnit), [Dramaturge.MSTest](https://www.nuget.org/packages/Dramaturge.MSTest), [Dramaturge.TUnit](https://www.nuget.org/packages/Dramaturge.TUnit) | Base classes for tests in each framework: a browser launched once per run, an isolated browser and page for each test, and screenshots of failed tests |
 
 ## Documentation

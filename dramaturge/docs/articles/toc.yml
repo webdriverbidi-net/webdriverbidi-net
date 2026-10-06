@@ -18,6 +18,8 @@
   href: network.md
 - name: Tracing
   href: tracing.md
+- name: Code Generation
+  href: codegen.md
 - name: Configuration
   href: configuration.md
 - name: Network Capture

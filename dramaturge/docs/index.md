@@ -22,6 +22,8 @@ with one API, and waits for the page so that tests do not have to.
   answer or change requests, cookies, and network capture to HAR.
 - **Records traces**: a browser's actions, DOM snapshots, screenshots, console, and network traffic, which
   Playwright's trace viewer opens.
+- **Writes code for you**: `dramaturge codegen` records what you do in a browser as C#, with locators and
+  assertions.
 
 ## Packages
 
@@ -29,7 +31,7 @@ with one API, and waits for the page so that tests do not have to.
 | --- | --- |
 | `Dramaturge` | The automation API |
 | `Dramaturge.Browsers` | Locates, downloads, and launches browsers |
-| `Dramaturge.Tool` | The `dramaturge` command-line tool, which installs and manages the browsers Dramaturge downloads |
+| `Dramaturge.Tool` | The `dramaturge` command-line tool, which installs and manages the browsers Dramaturge downloads, and records code |
 
 ## Where to Start
 
@@ -38,4 +40,5 @@ with one API, and waits for the page so that tests do not have to.
 - [Configuration](articles/configuration.md): timeouts and per-browser settings
 - [Network Capture](articles/network-capture.md): recording a page's traffic
 - [Tracing](articles/tracing.md): recording what a browser did, for Playwright's trace viewer
+- [Code Generation](articles/codegen.md): recording what you do in a browser as C#
 - [API Reference](api/index.md)

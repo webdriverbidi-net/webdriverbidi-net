@@ -14,6 +14,8 @@ Four packages give tests base classes that manage browsers for them, one for eac
 | `Dramaturge.MSTest` | MSTest 4 and later |
 | `Dramaturge.TUnit` | TUnit 1.6 and later |
 
+To start a test by recording it, `dramaturge codegen` writes a `PageTest` class for any of the four; see [Code Generation](codegen.md).
+
 The packages are for .NET 10. Each has the same two base classes, with the same members:
 
 - **`PageTest`** gives each test a `Browser` and a `Page` in it. Most tests use it.

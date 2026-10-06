@@ -1,6 +1,6 @@
 ---
 name: dramaturge
-description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, test base classes for xUnit, NUnit, MSTest, and TUnit (Dramaturge.Xunit, Dramaturge.NUnit, Dramaturge.MSTest, Dramaturge.TUnit: PageTest, BrowserTest), finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, accessibility snapshots (AriaSnapshotAsync, ToMatchAriaSnapshotAsync), routes for a page or a whole browser, recording and replaying HAR files (RecordHarAsync, RouteFromHarAsync), video (RecordVideoAsync, VideoOnFailure), traces (RecordTraceAsync, TraceOnFailure), dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
+description: Writing C# browser automation or browser tests with Dramaturge (the Dramaturge NuGet package), built on WebDriver BiDi: launching Chrome, Firefox, or Edge with BrowserGroup, test base classes for xUnit, NUnit, MSTest, and TUnit (Dramaturge.Xunit, Dramaturge.NUnit, Dramaturge.MSTest, Dramaturge.TUnit: PageTest, BrowserTest), finding elements with locators (GetByRole, GetByLabel, GetByText, GetByTestId), acting on them (ClickAsync, FillAsync), asserting with Expect, accessibility snapshots (AriaSnapshotAsync, ToMatchAriaSnapshotAsync), routes for a page or a whole browser, recording and replaying HAR files (RecordHarAsync, RouteFromHarAsync), video (RecordVideoAsync, VideoOnFailure), traces (RecordTraceAsync, TraceOnFailure), code generation (dramaturge codegen, RecordCodeAsync), dialogs, downloads, and network capture. Use when creating, reviewing, or debugging such code or tests.
 ---
 
 # Dramaturge
@@ -108,6 +108,7 @@ DownloadOutcome outcome = await download.WaitForEndAsync();
 - `RunAndWaitForPopupAsync(() => link.ClickAsync())` returns the page an action opens; `OnPopup`, `OnConsoleMessage`, `OnPageError`, `OnDownload`; `EvaluateAsync<T>` runs JavaScript in the page; frames come from `locator.ContentFrameAsync()`.
 - Video: `await using VideoRecording video = await page.RecordVideoAsync("run.webm", new VideoRecordingOptions { Width = 1280, Height = 720 })`; disposing or `StopAsync()` ends it and delivers the file. A remote browser keeps the file on its own machine, and `StopAsync()` returns that path.
 - Traces: `await using TraceRecording trace = await browser.RecordTraceAsync("trace.zip", new TraceRecordingOptions { Snapshots = true, Screenshots = true, Sources = true })` records every page of the browser (actions with logs and callers, DOM snapshots, filmstrip, console, network); open the zip at https://trace.playwright.dev or with `npx playwright show-trace` (Playwright 1.63 or later). One trace per browser at a time.
+- Code generation: `dramaturge codegen https://example.com/ --target xunit -o RecordedTests.cs` (Dramaturge.Tool) opens a browser with a window and writes what the user does as C#, with a toolbar to pick locators and add assertions; `browser.RecordCodeAsync()` is the API under it. Treat the output as a draft: rename the test, replace typed values (passwords included) and file names, and check any `Nth` or CSS locator.
 
 ## Accessibility Snapshots
 
@@ -150,7 +151,7 @@ Routes answer (`FulfillAsync`), change (`ContinueAsync`), or fail (`AbortAsync`)
 ## Known Browser Gaps
 
 - Firefox: `GetByText` is unsupported (its innerText locator, bug 1869538); native HTML5 drag-and-drop fires only `dragstart` (bug 1515879); the dialog handler given to a new browser is ignored (bug 1975279).
-- Chrome: a route's `FulfillAsync` with only a status code is sent to the network instead; give a body or header. A popup's first request is never stopped, so no browser route sees it. Screenshots of elements inside iframes fail. Video is not supported: `RecordVideoAsync` throws `NotSupportedException`, and `VideoOnFailure` gives one warning per test.
+- Chrome: a route's `FulfillAsync` with only a status code is sent to the network instead; give a body or header. A popup's first request is never stopped, so no browser route sees it. Screenshots of elements inside iframes fail. `GetByRole` finds nothing inside an iframe; use another locator there. Video is not supported: `RecordVideoAsync` throws `NotSupportedException`, and `VideoOnFailure` gives one warning per test.
 - Snapshot names versus `GetByRole`: both browsers leave table rows unnamed; Chrome does not name a `figure` from its `figcaption`; Firefox names a value-less submit button "Submit Query" and gives an `svg` without a role another role than `image`. Firefox still finds a ref's element after its frame navigates away, instead of throwing.
 
 ## Rules

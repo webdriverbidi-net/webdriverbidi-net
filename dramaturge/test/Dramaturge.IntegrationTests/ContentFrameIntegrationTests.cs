@@ -46,6 +46,21 @@ public class ContentFrameIntegrationTests
 
     [Theory]
     [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task RoleLocatorFindsAnElementInAFrame(BrowserKind browserKind)
+    {
+        Assert.SkipWhen(browserKind == BrowserKind.Chrome, "Chrome's accessibility locator finds no element in a child frame.");
+        await using TestPageServer server = await TestPageServer.StartAsync();
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await page.NavigateAsync(server.UrlFor("recording-effects.html"), cancellationToken: TestContext.Current.CancellationToken);
+
+        Frame frame = await page.Locate(new CssLocator("#frame")).ContentFrameAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, await frame.GetByRole("button", "Inner").CountAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
     public async Task ElementThatIsNotAFrameIsReported(BrowserKind browserKind)
     {
         await using TestPageServer server = await TestPageServer.StartAsync();

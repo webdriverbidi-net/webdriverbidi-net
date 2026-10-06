@@ -25,8 +25,8 @@
     <Authors>WebDriverBiDi.NET Committers</Authors>
     <Company>WebDriverBiDi.NET Committers</Company>
     <Title>Dramaturge - Command-Line Tool</Title>
-    <Description>The dramaturge command-line tool: installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches.</Description>
-    <PackageTags>dramaturge;webdriver;bidi;browser-automation;browsers;tool</PackageTags>
+    <Description>The dramaturge command-line tool: installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches, and records browser actions as C#.</Description>
+    <PackageTags>dramaturge;webdriver;bidi;browser-automation;browsers;tool;codegen</PackageTags>
     <PackageProjectUrl>https://webdriverbidi-net.github.io/dramaturge/</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

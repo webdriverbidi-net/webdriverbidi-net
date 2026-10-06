@@ -20,6 +20,8 @@ waits for the page so that your code does not have to.
   recorded and replayed.
 - **Traces** record a browser's actions, DOM snapshots, screenshots, console, and network traffic, which Playwright's
   trace viewer opens.
+- **Code generation** (`RecordCodeAsync`, and `dramaturge codegen` in Dramaturge.Tool) records what a user does in a
+  browser as C#, with locators and assertions.
 - Works on .NET Standard 2.0 and .NET 10, and with native AOT.
 
 ## Installation

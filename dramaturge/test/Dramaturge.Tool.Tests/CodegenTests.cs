@@ -118,15 +118,18 @@ public sealed class CodegenTests : IDisposable
         Assert.Contains("Picked: page.Locate(new CssLocator(\"#go\"))", result.Error);
     }
 
-    [Fact]
-    public async Task InvalidTestIdAttributeStopsTheCommandBeforeTheBrowserStarts()
+    [Theory]
+    [InlineData("--test-id-attribute", "1st", "chrome", "'1st' is not an attribute name.")]
+    [InlineData("--channel", "canary", "firefox", "'canary' is not a channel; firefox channels are stable, beta, dev, nightly, esr.")]
+    [InlineData("--channel", "Nightly", "edge", "'Nightly' is not a channel; edge channels are stable, beta, dev, canary.")]
+    public async Task InvalidSettingStopsTheCommandBeforeTheBrowserStarts(string option, string value, string browser, string expectedError)
     {
         await using FakeBrowserServer server = await FakeBrowserServer.StartAsync();
 
-        ToolResult result = await RunAsync(server, CancellationToken.None, "codegen", "--test-id-attribute", "1st");
+        ToolResult result = await RunAsync(server, CancellationToken.None, "codegen", "--browser", browser, option, value);
 
         Assert.Equal(1, result.ExitCode);
-        Assert.Contains("'1st' is not an attribute name.", result.Error);
+        Assert.Contains(expectedError, result.Error);
         Assert.Throws<KeyNotFoundException>(() => server.SessionFor(SessionName));
     }
 

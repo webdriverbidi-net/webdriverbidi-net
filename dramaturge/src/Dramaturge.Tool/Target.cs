@@ -73,6 +73,22 @@ internal sealed class Target
     };
 
     /// <summary>
+    /// Parses a release channel of a browser, in the browser's own name for it, as a target names it.
+    /// </summary>
+    /// <param name="browser">The browser.</param>
+    /// <param name="channel">The channel's name, in any case.</param>
+    /// <returns>The channel.</returns>
+    /// <exception cref="ArgumentException">Thrown when the browser has no channel of that name.</exception>
+    public static BrowserReleaseChannel ParseChannel(BrowserKind browser, string channel)
+    {
+        string name = browser.ToString().ToLowerInvariant();
+        Target target = new(channel, name == "firefox" ? "firefox" : "chrome", TargetSpecKind.Channel, channel.ToLowerInvariant());
+        return target.Channels.Contains(target.Spec)
+            ? target.Channel
+            : throw new ArgumentException($"'{channel}' is not a channel; {name} channels are {string.Join(", ", target.Channels)}.");
+    }
+
+    /// <summary>
     /// Parses a target.
     /// </summary>
     /// <param name="text">The target as written.</param>

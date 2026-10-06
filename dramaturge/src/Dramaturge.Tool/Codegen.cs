@@ -28,20 +28,19 @@ internal static class Codegen
     public static async Task<int> RunAsync(CodegenSettings settings, BrowserDownloadOptions downloadOptions, Func<BrowserLauncherBuilder, BrowserLauncherBuilder> configureLauncher, TextWriter output, TextWriter error, CancellationToken cancellationToken)
     {
         DramaturgeOptions options;
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(settings.Browser).WithHeadlessOption(false).WithDownloadOptions(downloadOptions);
         try
         {
             options = settings.TestIdAttribute is null ? new DramaturgeOptions() : new DramaturgeOptions() { TestIdAttribute = settings.TestIdAttribute };
+            if (settings.Channel is not null)
+            {
+                builder = builder.WithReleaseChannel(Target.ParseChannel(settings.Browser, settings.Channel));
+            }
         }
         catch (ArgumentException ex)
         {
             error.WriteLine(ex.Message);
             return 1;
-        }
-
-        BrowserLauncherBuilder builder = BrowserLauncher.Configure(settings.Browser).WithHeadlessOption(false).WithDownloadOptions(downloadOptions);
-        if (settings.Channel is BrowserReleaseChannel channel)
-        {
-            builder = builder.WithReleaseChannel(channel);
         }
 
         BrowserGroup group;

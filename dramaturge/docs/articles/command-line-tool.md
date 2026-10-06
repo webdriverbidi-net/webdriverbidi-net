@@ -1,6 +1,6 @@
 # Command-Line Tool
 
-The `dramaturge` command-line tool, from the `Dramaturge.Tool` package, installs, lists, and removes the browsers and drivers that [Dramaturge.Browsers](browser-setup.md) keeps in its cache. It is most useful in continuous integration: install the browsers while building a machine image or before the tests run, so that no test waits for a download.
+The `dramaturge` command-line tool, from the `Dramaturge.Tool` package, installs, lists, and removes the browsers and drivers that [Dramaturge.Browsers](browser-setup.md) keeps in its cache, and records what you do in a browser as C#. Installing is most useful in continuous integration: install the browsers while building a machine image or before the tests run, so that no test waits for a download.
 
 It uses the same cache, download sources, and verification as the library, because it is the library: each release of the tool bundles the Dramaturge.Browsers of the same version.
 
@@ -53,6 +53,14 @@ dramaturge clear
 ```
 
 `list` shows each cached browser and driver, as `name@version`, with its channel, size, the date a channel or driver lookup last used it, and its directory. `clear` removes what its targets select (a channel, a milestone, a version, or everything of a name) or, with no targets, everything; `--dry-run` shows what it would remove. Drivers are shared by every channel, so a driver is selected by version, not channel.
+
+## Recording Code
+
+```bash
+dramaturge codegen https://example.com/ -o Recorded.cs
+```
+
+`codegen` opens a browser with a window and writes what you do in it as C#: a program, or, with `--target`, an xUnit, NUnit, MSTest, or TUnit test class. A toolbar in the page picks locators and adds assertions. [Code Generation](codegen.md) describes it.
 
 ## The Cache
 
