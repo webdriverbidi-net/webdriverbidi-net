@@ -412,6 +412,12 @@ jobs:
           unzip chrome-canary.zip -d "$GITHUB_WORKSPACE/browsers"
           mv "$GITHUB_WORKSPACE/browsers/chrome-linux64" "$GITHUB_WORKSPACE/browsers/chrome-canary"
 
+      - name: Allow Chrome's user-namespace sandbox
+        # Ubuntu 24.04's AppArmor blocks unprivileged user namespaces, so Chrome for Testing
+        # aborts with "No usable sandbox!" unless the restriction is lifted.
+        if: matrix.browser.name == 'chrome-canary'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - name: Run integration tests
         run: dotnet test --project test/WebDriverBiDi.Integration.Tests --configuration Release --no-build --verbosity normal
         env:
