@@ -230,6 +230,41 @@ public class BrowserTrackingTests
     }
 
     [Fact]
+    public async Task LostConnectionClosesEveryPage()
+    {
+        (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();
+        await using BiDiDriver ownedDriver = driver;
+        BrowserGroup group = await BrowserGroup.ConnectAsync(driver, cancellationToken: TestContext.Current.CancellationToken);
+        Page first = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Browser other = await group.CreateBrowserAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Page second = await other.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        List<Page> closed = [];
+        TaskCompletionSource allClosed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Closed(Page page)
+        {
+            closed.Add(page);
+            if (closed.Count == 2)
+            {
+                allClosed.TrySetResult();
+            }
+        }
+
+        group.DefaultBrowser.OnPageClosed.AddObserver(e => Closed(e.Page));
+        other.OnPageClosed.AddObserver(e => Closed(e.Page));
+        List<string> messages = [];
+        group.OnLogMessage.AddObserver(e => messages.Add(e.Message));
+
+        await session.RemoteEnd.CloseFromRemoteEndAsync();
+        await allClosed.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Assert.Equal([first, second], closed);
+        Assert.True(first.IsClosed);
+        Assert.Empty(group.DefaultBrowser.Pages);
+        Assert.Empty(other.Pages);
+        Assert.Contains("The connection to the browser was lost: Remote end closed the connection", messages);
+    }
+
+    [Fact]
     public async Task DisposalFailuresAreReportedAndDisposalContinues()
     {
         (BiDiDriver driver, FakeSession session) = await FakeSession.ConnectAsync();

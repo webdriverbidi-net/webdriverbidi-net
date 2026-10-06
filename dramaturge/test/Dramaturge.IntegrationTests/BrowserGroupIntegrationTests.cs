@@ -119,4 +119,38 @@ public class BrowserGroupIntegrationTests
         Assert.True(otherPageOpenAfterFirstClose);
         Assert.DoesNotContain(browser, group.Browsers);
     }
+
+    [Theory]
+    [MemberData(nameof(TestBrowsers.All), MemberType = typeof(TestBrowsers))]
+    public async Task BrowserThatEndsTheConnectionClosesItsPages(BrowserKind browserKind)
+    {
+        await using BrowserGroup group = await TestBrowsers.LaunchAsync(browserKind);
+        Page page = await group.DefaultBrowser.NewPageAsync(cancellationToken: TestContext.Current.CancellationToken);
+        TaskCompletionSource<string> lost = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        group.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.StartsWith("The connection to the browser was lost", StringComparison.Ordinal))
+            {
+                lost.TrySetResult(e.Message);
+            }
+        });
+
+        // browser.close ends the session and closes the browser, which closes the connection from its end.
+        try
+        {
+            await group.Driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
+        }
+        catch (WebDriverBiDi.WebDriverBiDiConnectionException)
+        {
+            // The connection can close before the command's response arrives.
+        }
+
+        string message = await lost.Task.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+        await TestBrowsers.WaitUntilAsync(() => page.IsClosed, "the page to close");
+
+        // Firefox closes its WebSocket; Chrome's pipe breaks, which is reported as a connection error.
+        Assert.Matches("^The connection to the browser was lost: (Remote end closed the connection|Unexpected connection error: .+)$", message);
+        Assert.False(group.Driver.IsStarted);
+        Assert.Empty(group.DefaultBrowser.Pages);
+    }
 }

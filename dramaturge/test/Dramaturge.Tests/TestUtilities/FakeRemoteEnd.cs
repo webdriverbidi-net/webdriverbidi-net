@@ -149,6 +149,15 @@ public sealed class FakeRemoteEnd : Connection
     }
 
     /// <summary>
+    /// Closes the connection from the remote end, as a browser that exits does.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public Task CloseFromRemoteEndAsync()
+    {
+        return this.NotifyRemoteDisconnectedObserversAsync();
+    }
+
+    /// <summary>
     /// Delivers an event, as the remote end would.
     /// </summary>
     /// <param name="method">The event's method, such as "network.beforeRequestSent".</param>

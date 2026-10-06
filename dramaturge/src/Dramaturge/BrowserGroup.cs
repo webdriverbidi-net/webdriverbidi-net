@@ -14,6 +14,7 @@ using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
 using WebDriverBiDi.Permissions;
+using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Session;
 
 /// <summary>
@@ -63,6 +64,7 @@ public sealed class BrowserGroup : IAsyncDisposable
         this.observers.Add(driver.Network.OnBeforeRequestSent.AddObserver(this.OnBeforeRequestSentAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously));
         this.observers.Add(driver.Network.OnResponseCompleted.AddObserver(e => this.FindFrame(e.BrowsingContextId ?? string.Empty)?.Page.NotifyResponse(e)));
         this.observers.Add(driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyedAsync));
+        this.observers.Add(driver.OnConnectionLost.AddObserver(this.OnConnectionLostAsync));
         this.observers.Add(driver.BrowsingContext.OnNavigationStarted.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordNavigationStarted()));
         this.observers.Add(driver.BrowsingContext.OnNavigationCommitted.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordNewDocument(e.Url)));
         this.observers.Add(driver.BrowsingContext.OnFragmentNavigated.AddObserver(e => this.FindFrame(e.BrowsingContextId)?.RecordSameDocumentNavigation(e.Url)));
@@ -640,6 +642,17 @@ public sealed class BrowserGroup : IAsyncDisposable
         // A request no tracked page made, such as a worker's, belongs to the browser of its user context.
         Browser? browser = frame?.Page.Browser ?? (e.UserContextId is string userContextId ? this.FindBrowser(userContextId) : null);
         return browser is null ? this.ContinueRequestAsync(e.Request) : browser.HandleBlockedRequestAsync(frame?.Page, frame, e);
+    }
+
+    // A connection that ends without the group stopping it, as when the browser exits, closes every page, as the
+    // browser does not report them closed.
+    private async Task OnConnectionLostAsync(ConnectionLostEventArgs e)
+    {
+        await this.LogAsync($"The connection to the browser was lost: {e.Exception.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+        foreach (Page page in this.Browsers.SelectMany(browser => browser.Pages))
+        {
+            await this.RemoveContextAsync(page.Id).ConfigureAwait(false);
+        }
     }
 
     private Task OnContextDestroyedAsync(ContextDestroyedEventArgs e)

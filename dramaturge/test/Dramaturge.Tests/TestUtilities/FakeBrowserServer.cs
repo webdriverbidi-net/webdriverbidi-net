@@ -77,6 +77,17 @@ public sealed class FakeBrowserServer : IAsyncDisposable
     }
 
     /// <summary>
+    /// Closes the connection of the session of a name from the server's end, as a browser that exits does.
+    /// </summary>
+    /// <param name="name">The session's name.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public Task DisconnectAsync(string name)
+    {
+        FakeSession session = this.SessionFor(name);
+        return this.server.DisconnectAsync(this.sessionsByConnection.Single(pair => pair.Value == session).Key);
+    }
+
+    /// <summary>
     /// Answers a session's screenshot commands with <see cref="Screenshot"/>, as it does unless told otherwise.
     /// </summary>
     /// <param name="session">The session.</param>

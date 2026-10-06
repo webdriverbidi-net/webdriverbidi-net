@@ -49,6 +49,23 @@ public sealed class CodegenTests : IDisposable
     }
 
     [Fact]
+    public async Task RecordingEndsWhenTheBrowserExits()
+    {
+        await using FakeBrowserServer server = await FakeBrowserServer.StartAsync();
+
+        Task<ToolResult> running = RunAsync(server, CancellationToken.None, "codegen");
+        FakeSession session = await ConnectedSessionAsync(server);
+        string channel = await ChannelAsync(session);
+        await SendClickAsync(session, channel, session.Contexts[0].Id, "#go");
+        await server.DisconnectAsync(SessionName);
+        ToolResult result = await running;
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("await page.Locate(new CssLocator(\"#go\")).ClickAsync();", result.OutputLines);
+        Assert.Contains("using Dramaturge;", result.OutputLines);
+    }
+
+    [Fact]
     public async Task OutputFileIsKeptCurrentUntilTheRecordingIsCancelled()
     {
         await using FakeBrowserServer server = await FakeBrowserServer.StartAsync();
