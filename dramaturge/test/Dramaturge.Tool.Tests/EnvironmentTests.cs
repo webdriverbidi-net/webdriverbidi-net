@@ -88,7 +88,7 @@ public sealed class EnvironmentTests : IDisposable
                 ManifestUrl = new Uri(this.mirror.ManifestPath),
                 Platform = new BrowserPlatform(OperatingSystemFamily.Linux, Architecture.X64),
             },
-            TestContext.Current.CancellationToken);
+            cancellationToken: TestContext.Current.CancellationToken);
         return new ToolResult(exitCode, output.ToString(), error.ToString());
     }
 }

@@ -188,13 +188,12 @@ internal static class CodeWriter
     // The launcher of the recorded browser, or the one the environment chooses when the browser is not one Dramaturge launches.
     private static string Launcher(string browserName)
     {
-        return browserName switch
-        {
-            "firefox" => "BrowserLauncher.Configure(BrowserKind.Firefox)",
-            "chrome" => "BrowserLauncher.Configure(BrowserKind.Chrome)",
-            "msedge" => "BrowserLauncher.Configure(BrowserKind.Edge)",
-            _ => "BrowserLauncher.ConfigureFromEnvironment()",
-        };
+        // A driver reports a name such as "chrome"; Chrome launched without one reports its product, such as "Chrome/131.0.6778.85".
+        bool Names(string prefix) => browserName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+        return Names("firefox") ? "BrowserLauncher.Configure(BrowserKind.Firefox)"
+            : Names("msedge") || Names("edg") ? "BrowserLauncher.Configure(BrowserKind.Edge)"
+            : Names("chrome") ? "BrowserLauncher.Configure(BrowserKind.Chrome)"
+            : "BrowserLauncher.ConfigureFromEnvironment()";
     }
 
     private static IEnumerable<string> Indent(IReadOnlyList<string> statements, string indent)

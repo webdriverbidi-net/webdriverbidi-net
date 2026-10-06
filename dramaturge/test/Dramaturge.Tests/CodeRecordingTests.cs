@@ -179,7 +179,9 @@ public class CodeRecordingTests
     [Theory]
     [InlineData("firefox", "BrowserLauncher.Configure(BrowserKind.Firefox)")]
     [InlineData("chrome", "BrowserLauncher.Configure(BrowserKind.Chrome)")]
+    [InlineData("Chrome/157.0.8081.0", "BrowserLauncher.Configure(BrowserKind.Chrome)")]
     [InlineData("msedge", "BrowserLauncher.Configure(BrowserKind.Edge)")]
+    [InlineData("Edg/131.0.2903.51", "BrowserLauncher.Configure(BrowserKind.Edge)")]
     [InlineData("scripted", "BrowserLauncher.ConfigureFromEnvironment()")]
     public async Task ProgramLaunchesTheRecordedBrowser(string browserName, string launcher)
     {

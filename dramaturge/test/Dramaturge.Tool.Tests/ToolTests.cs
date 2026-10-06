@@ -149,7 +149,7 @@ public sealed class ToolTests : IDisposable
                 Platform = new BrowserPlatform(OperatingSystemFamily.Linux, Architecture.X64),
                 Progress = progress,
             },
-            TestContext.Current.CancellationToken);
+            cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(0, exitCode);
         Assert.Equal([$"Downloading Chrome Stable {Mirror.ChromeVersion}: 0%"], error.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries));
@@ -291,7 +291,7 @@ public sealed class ToolTests : IDisposable
     {
         StringWriter output = new();
         StringWriter error = new();
-        int exitCode = await DramaturgeTool.RunAsync(args, output, error, this.Options, TestContext.Current.CancellationToken);
+        int exitCode = await DramaturgeTool.RunAsync(args, output, error, this.Options, cancellationToken: TestContext.Current.CancellationToken);
         return new ToolResult(exitCode, output.ToString(), error.ToString());
     }
 }

@@ -12,7 +12,8 @@ using Dramaturge.Browsers;
 using WebDriverBiDi;
 
 /// <summary>
-/// The dramaturge tool: installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches.
+/// The dramaturge tool: installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches, and
+/// records the actions a user takes in a browser as C#.
 /// </summary>
 public static class DramaturgeTool
 {
@@ -28,11 +29,16 @@ public static class DramaturgeTool
     /// Creates the download options from the --path value, if given, and a progress reporter, or <see langword="null"/>
     /// for the options the environment variables configure.
     /// </param>
+    /// <param name="configureLauncher">
+    /// Gives the launcher of the browser codegen records in, from the one the command configures, or
+    /// <see langword="null"/> for that one.
+    /// </param>
     /// <param name="cancellationToken">A token that cancels the command.</param>
     /// <returns>A task whose result is the exit code: 0 on success, and 1 if anything failed.</returns>
-    public static Task<int> RunAsync(string[] args, TextWriter output, TextWriter error, Func<string?, IProgress<BrowserDownloadProgress>, BrowserDownloadOptions>? createDownloadOptions = null, CancellationToken cancellationToken = default)
+    public static Task<int> RunAsync(string[] args, TextWriter output, TextWriter error, Func<string?, IProgress<BrowserDownloadProgress>, BrowserDownloadOptions>? createDownloadOptions = null, Func<BrowserLauncherBuilder, BrowserLauncherBuilder>? configureLauncher = null, CancellationToken cancellationToken = default)
     {
         createDownloadOptions ??= CreateDefaultDownloadOptions;
+        configureLauncher ??= builder => builder;
         ProgressWriter progress = new(error);
         Option<string?> pathOption = new("--path")
         {
@@ -73,8 +79,29 @@ public static class DramaturgeTool
             error,
             token));
 
+        Argument<string?> codegenUrl = new("url") { Arity = ArgumentArity.ZeroOrOne, Description = "The address to open first." };
+        Option<CodeTarget> codegenTarget = new("--target") { Description = "The kind of file to write.", DefaultValueFactory = _ => CodeTarget.Program };
+        Option<BrowserKind> codegenBrowser = new("--browser") { Description = "The browser to record in.", DefaultValueFactory = _ => BrowserKind.Chrome };
+        Option<BrowserReleaseChannel?> codegenChannel = new("--channel") { Description = "The browser's release channel. Defaults to stable." };
+        Option<string?> codegenTestId = new("--test-id-attribute") { Description = "The attribute test IDs are read from. Defaults to data-testid." };
+        Option<string?> codegenOutput = new("--output", "-o") { Description = "A file to keep the whole code in as it is recorded." };
+        Command codegen = new("codegen", "Record the actions you take in a browser as C#, until you close the browser or press Ctrl+C.") { codegenUrl, codegenTarget, codegenBrowser, codegenChannel, codegenTestId, codegenOutput };
+        codegen.SetAction((parseResult, token) => Codegen.RunAsync(
+            new CodegenSettings(
+                parseResult.GetValue(codegenUrl),
+                parseResult.GetValue(codegenTarget),
+                parseResult.GetValue(codegenBrowser),
+                parseResult.GetValue(codegenChannel),
+                parseResult.GetValue(codegenTestId),
+                parseResult.GetValue(codegenOutput)),
+            createDownloadOptions(parseResult.GetValue(pathOption), progress),
+            configureLauncher,
+            output,
+            error,
+            token));
+
         // A RootCommand would name itself for the entry assembly, Dramaturge.Tool, rather than the command.
-        Command root = new(CommandName, "Installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches.") { install, list, clear };
+        Command root = new(CommandName, "Installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches, and records browser actions as C#.") { install, list, clear, codegen };
         root.Options.Add(pathOption);
         root.Options.Add(new HelpOption());
         root.Options.Add(new VersionOption());

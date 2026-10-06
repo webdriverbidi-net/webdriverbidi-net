@@ -39,6 +39,12 @@ public sealed class FakeBrowserServer : IAsyncDisposable
     }
 
     /// <summary>
+    /// Gets or sets an action run on each session as it connects, before it answers any command, such as adding the
+    /// contexts a browser starts with.
+    /// </summary>
+    public Action<FakeSession>? OnConnect { get; set; }
+
+    /// <summary>
     /// Starts a server.
     /// </summary>
     /// <returns>The started server.</returns>
@@ -132,6 +138,7 @@ public sealed class FakeBrowserServer : IAsyncDisposable
         FakeSession session = new(remoteEnd);
         AnswerScreenshots(session);
         AnswerScreencasts(session);
+        this.OnConnect?.Invoke(session);
         remoteEnd.OnDataReceived.AddObserver(e => this.server.SendWebSocketDataAsync(connectionId, Encoding.UTF8.GetString(e.Data.Span)));
         await remoteEnd.StartAsync("ws://fake.browser.server/session");
         this.sessionsByConnection[connectionId] = session;

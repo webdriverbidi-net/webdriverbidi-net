@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Dramaturge.Browsers/Dramaturge.Browsers.csproj" />
+    <ProjectReference Include="../Dramaturge/Dramaturge.csproj" />
   </ItemGroup>
 
   <ItemGroup>
