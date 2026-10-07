@@ -772,24 +772,24 @@ public class EmulationModuleSamples
     {
         #region ResponsiveTesting
         // Test at multiple viewport sizes
-        List<(int Width, int Height, string Name)> viewports = new()
+        Dictionary<string, Viewport> viewports = new()
         {
-            (320, 568, "Mobile Small"),
-            (375, 667, "Mobile Medium"),
-            (414, 896, "Mobile Large"),
-            (768, 1024, "Tablet"),
-            (1920, 1080, "Desktop")
+            { "Mobile Small", new Viewport { Width = 320, Height = 568 } },
+            { "Mobile Medium", new Viewport { Width = 375, Height = 667 } },
+            { "Mobile Large", new Viewport { Width = 414, Height = 896 } },
+            { "Tablet", new Viewport { Width = 768, Height = 1024 } },
+            { "Desktop", new Viewport { Width = 1920, Height = 1080 } }
         };
 
-        foreach ((int Width, int Height, string Name) viewport in viewports)
+        foreach (KeyValuePair<string, Viewport> viewport in viewports)
         {
-            Console.WriteLine($"\nTesting {viewport.Name} ({viewport.Width}x{viewport.Height})");
+            Console.WriteLine($"\nTesting {viewport.Key} ({viewport.Value.Width}x{viewport.Value.Height})");
 
             await driver.BrowsingContext.SetViewportAsync(
                 new SetViewportCommandParameters
                 {
                     BrowsingContextId = contextId,
-                    Viewport = new Viewport { Width = (ulong)viewport.Width, Height = (ulong)viewport.Height },
+                    Viewport = viewport.Value,
                     DevicePixelRatio = 1.0
                 });
 
@@ -800,7 +800,7 @@ public class EmulationModuleSamples
 
             byte[] imageBytes = Convert.FromBase64String(screenshot.Data);
             await File.WriteAllBytesAsync(
-                $"screenshot-{viewport.Name.Replace(" ", "-")}.png",
+                $"screenshot-{viewport.Key.Replace(" ", "-")}.png",
                 imageBytes);
         }
         #endregion
@@ -867,22 +867,22 @@ public class EmulationModuleSamples
     {
         #region Location-BasedTesting
         // Test application behavior in different locations
-        Dictionary<string, (double Lat, double Lng)> locations = new()
+        Dictionary<string, GeolocationCoordinates> locations = new()
         {
-            { "New York", (40.7128, -74.0060) },
-            { "London", (51.5074, -0.1278) },
-            { "Tokyo", (35.6762, 139.6503) },
-            { "Sydney", (-33.8688, 151.2093) }
+            { "New York", new GeolocationCoordinates(40.7128, -74.0060) { Accuracy = 100 } },
+            { "London", new GeolocationCoordinates(51.5074, -0.1278) { Accuracy = 100 } },
+            { "Tokyo", new GeolocationCoordinates(35.6762, 139.6503) { Accuracy = 100 } },
+            { "Sydney", new GeolocationCoordinates(-33.8688, 151.2093) { Accuracy = 100 } }
         };
 
-        foreach (KeyValuePair<string, (double Lat, double Lng)> location in locations)
+        foreach (KeyValuePair<string, GeolocationCoordinates> location in locations)
         {
             Console.WriteLine($"\nTesting from {location.Key}");
 
             await driver.Emulation.SetGeolocationOverrideAsync(
                 new SetGeolocationOverrideCoordinatesCommandParameters
                 {
-                    Coordinates = new GeolocationCoordinates(location.Value.Lat, location.Value.Lng) { Accuracy = 100 },
+                    Coordinates = location.Value,
                     Contexts = { contextId }
                 });
 

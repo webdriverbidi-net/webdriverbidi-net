@@ -158,7 +158,7 @@ public static class AnalyzerTestHelpers
     /// a method passed as a method group); the testing framework rejects such "non-local"
     /// diagnostics before the provider is ever invoked.
     /// </remarks>
-    internal static async Task<(IReadOnlyList<CodeAction> Actions, Document Document)> GetCodeActionsAsync<TAnalyzer, TCodeFix>(string source, bool referenceWebDriverBiDi = false, LanguageVersion languageVersion = LanguageVersion.Default, string? additionalSource = null)
+    internal static async Task<CodeActionsResult> GetCodeActionsAsync<TAnalyzer, TCodeFix>(string source, bool referenceWebDriverBiDi = false, LanguageVersion languageVersion = LanguageVersion.Default, string? additionalSource = null)
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TCodeFix : CodeFixProvider, new()
     {
@@ -195,7 +195,7 @@ public static class AnalyzerTestHelpers
             await provider.RegisterCodeFixesAsync(context);
         }
 
-        return (actions, document);
+        return new CodeActionsResult(actions, document);
     }
 
     /// <summary>
@@ -315,4 +315,11 @@ public static class AnalyzerTestHelpers
 
         return current ?? throw new InvalidOperationException("Could not locate the repository root from the test assembly location.");
     }
+
+    /// <summary>
+    /// The code actions a code fix provider registered, and the document they apply to.
+    /// </summary>
+    /// <param name="Actions">The registered code actions.</param>
+    /// <param name="Document">The analyzed document.</param>
+    internal sealed record CodeActionsResult(IReadOnlyList<CodeAction> Actions, Document Document);
 }

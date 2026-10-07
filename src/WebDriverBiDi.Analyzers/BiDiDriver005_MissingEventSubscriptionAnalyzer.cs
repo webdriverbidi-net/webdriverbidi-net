@@ -76,7 +76,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
         // Find all AddObserver calls on module events of a driver this body creates
-        System.Collections.Generic.List<(InvocationExpressionSyntax Invocation, string EventName, string MethodName)> subscriptionCalls = [];
+        System.Collections.Generic.List<SubscriptionCall> subscriptionCalls = [];
         System.Collections.Generic.HashSet<string>? escapedNames = null;
 
         // GetBodyDescendantNodes covers block bodies, expression bodies, and top-level programs alike.
@@ -130,7 +130,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
             escapedNames ??= FindDriversThatMayBeSubscribedElsewhere(context.Node, context.SemanticModel);
             if (IsDriverCreatedInBody(context.SemanticModel, driverExpression!, escapedNames))
             {
-                subscriptionCalls.Add((invocation, eventName!, methodName));
+                subscriptionCalls.Add(new SubscriptionCall(invocation, eventName!, methodName));
             }
         }
 
@@ -153,13 +153,13 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         ImmutableDictionary<string, string?> properties = CreateDiagnosticProperties(amendableEventsArgument);
 
         // Report diagnostics for local subscriptions without a matching remote one
-        foreach ((InvocationExpressionSyntax invocation, string eventName, string methodName) in subscriptionCalls)
+        foreach (SubscriptionCall call in subscriptionCalls)
         {
-            if (!IsEventSubscribed(eventName, subscribedEvents))
+            if (!IsEventSubscribed(call.EventName, subscribedEvents))
             {
-                Diagnostic diagnostic = methodName == "AddObserver"
-                    ? Diagnostic.Create(Rule, invocation.GetLocation(), properties, eventName)
-                    : Diagnostic.Create(OtherShapeRule, invocation.GetLocation(), properties, eventName, methodName);
+                Diagnostic diagnostic = call.MethodName == "AddObserver"
+                    ? Diagnostic.Create(Rule, call.Invocation.GetLocation(), properties, call.EventName)
+                    : Diagnostic.Create(OtherShapeRule, call.Invocation.GetLocation(), properties, call.EventName, call.MethodName);
                 context.ReportDiagnostic(diagnostic);
             }
         }
@@ -601,5 +601,24 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         // Require the type to be declared in the WebDriverBiDi namespace so a user's own type named
         // SessionModule in another namespace is not treated as the library's session module.
         return type.Name == "SessionModule" && AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(type);
+    }
+
+    /// <summary>
+    /// A local subscription call, with the event it subscribes to and the method it calls.
+    /// </summary>
+    private sealed class SubscriptionCall
+    {
+        public SubscriptionCall(InvocationExpressionSyntax invocation, string eventName, string methodName)
+        {
+            this.Invocation = invocation;
+            this.EventName = eventName;
+            this.MethodName = methodName;
+        }
+
+        public InvocationExpressionSyntax Invocation { get; }
+
+        public string EventName { get; }
+
+        public string MethodName { get; }
     }
 }

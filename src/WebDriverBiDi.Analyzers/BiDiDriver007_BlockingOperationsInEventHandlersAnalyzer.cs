@@ -172,9 +172,10 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         // before that await are still marked, because the code fix has to await first to move them.
         Func<SyntaxNode, bool> runsBeforeFirstYield = asyncHandler ? AnalyzerSymbolHelpers.GetRunsBeforeFirstYield(handlerBody) : static _ => true;
         DiagnosticDescriptor rule = collectorFilter ? CollectorFilterRule : !optionPresent ? Rule : asyncHandler ? BeforeFirstAwaitRule : SynchronousBodyRule;
-        IEnumerable<(SyntaxNode Node, string Name)> blockingOperations = FindBlockingOperations(semanticModel, handlerBody, includeSynchronizationPrimitives);
-        foreach ((SyntaxNode node, string operationName) in blockingOperations)
+        IEnumerable<HandlerOperation> blockingOperations = FindBlockingOperations(semanticModel, handlerBody, includeSynchronizationPrimitives);
+        foreach (HandlerOperation operation in blockingOperations)
         {
+            SyntaxNode node = operation.Node;
             bool beforeFirstYield = runsBeforeFirstYield(node);
             if (optionPresent && !beforeFirstYield)
             {
@@ -183,7 +184,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
 
             Location location = reportAtHandlerArgument ? handlerArgument.GetLocation() : node.GetLocation();
             ImmutableDictionary<string, string?>? properties = asyncHandler && beforeFirstYield ? AnalyzerSymbolHelpers.RunsBeforeFirstAwaitProperties : null;
-            Diagnostic diagnostic = Diagnostic.Create(rule, location, properties, operationName);
+            Diagnostic diagnostic = Diagnostic.Create(rule, location, properties, operation.Name);
             context.ReportDiagnostic(diagnostic);
         }
     }
@@ -203,18 +204,18 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
     /// those shapes and fails on the ones it does not know, which for an analyzer means an exception
     /// that suppresses the whole rule for the file.
     /// </remarks>
-    private static IEnumerable<(SyntaxNode Node, string Name)> FindBlockingOperations(
+    private static IEnumerable<HandlerOperation> FindBlockingOperations(
         SemanticModel semanticModel,
         SyntaxNode handlerBody,
         bool includeSynchronizationPrimitives)
     {
-        List<(SyntaxNode Node, string Name)> blockingOps = [];
+        List<HandlerOperation> blockingOps = [];
 
         if (includeSynchronizationPrimitives)
         {
             blockingOps.AddRange(handlerBody.DescendantNodesAndSelf(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
                 .OfType<LockStatementSyntax>()
-                .Select(lockStatement => ((SyntaxNode)lockStatement, "lock")));
+                .Select(lockStatement => new HandlerOperation(lockStatement, "lock")));
         }
 
         // Do not descend into a nested lambda, anonymous method or local function: its body runs only
@@ -236,7 +237,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             if (IsBlockingMethod(methodSymbol, includeSynchronizationPrimitives)
                 && (methodSymbol.Name == "Sleep" || !AnalyzerSymbolHelpers.HasZeroTimeoutArgument(semanticModel, invocation, methodSymbol)))
             {
-                blockingOps.Add((invocation, methodSymbol.Name + "()"));
+                blockingOps.Add(new HandlerOperation(invocation, methodSymbol.Name + "()"));
                 continue;
             }
 
@@ -247,7 +248,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 IMethodSymbol? getAwaiterSymbol = semanticModel.GetSymbolInfo(getAwaiterCall).Symbol as IMethodSymbol;
                 if (getAwaiterSymbol is { Name: "GetAwaiter" })
                 {
-                    blockingOps.Add((invocation, methodSymbol.Name + "()"));
+                    blockingOps.Add(new HandlerOperation(invocation, methodSymbol.Name + "()"));
                     continue;
                 }
             }
@@ -266,7 +267,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 if (expressionType is { Name: "Task" or "ValueTask" } awaitableType
                     && awaitableType.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks")
                 {
-                    blockingOps.Add((memberAccess, memberAccess.Name.Identifier.Text));
+                    blockingOps.Add(new HandlerOperation(memberAccess, memberAccess.Name.Identifier.Text));
                 }
             }
         }

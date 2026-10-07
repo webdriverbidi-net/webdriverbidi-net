@@ -1057,7 +1057,7 @@ internal static class AnalyzerSymbolHelpers
     /// <see cref="IObservable{T}"/> of a library event-args type can only have come from this
     /// library's <c>ToObservable</c>.
     /// </remarks>
-    internal static (string HandleTypeName, string MethodName)? GetEventSubscriptionHandle(SemanticModel semanticModel, InvocationExpressionSyntax invocation)
+    internal static EventSubscriptionHandle? GetEventSubscriptionHandle(SemanticModel semanticModel, InvocationExpressionSyntax invocation)
     {
         // Callers ask this of every invocation that initializes a local or is assigned to one, nearly none of which
         // name one of these methods; the syntactic check spares the semantic bind for all of them.
@@ -1069,16 +1069,16 @@ internal static class AnalyzerSymbolHelpers
 
         if (method.Name == "AddObserver" && IsLibraryTypeNamed(method.ReturnType, "EventObserver"))
         {
-            return ("EventObserver", method.Name);
+            return new EventSubscriptionHandle("EventObserver", method.Name);
         }
 
         if (method.Name == "AddDataCollector" && IsLibraryTypeNamed(method.ReturnType, "EventDataCollector"))
         {
-            return ("EventDataCollector", method.Name);
+            return new EventSubscriptionHandle("EventDataCollector", method.Name);
         }
 
         return method.Name == "Subscribe" && IsLibraryEventObservable(semanticModel, invocation)
-            ? ("ObservableEventSubscription", method.Name)
+            ? new EventSubscriptionHandle("ObservableEventSubscription", method.Name)
             : null;
     }
 

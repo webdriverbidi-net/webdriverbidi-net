@@ -87,7 +87,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
             // The driver comes from the call's own receiver rather than from a search for a local
             // declaration, so a driver held in a parameter, a field or a property is found just as
             // a local is — and the suggested replacement names whatever the call site actually used.
-            if (GetDriverFromReceiver(context, memberAccess.Expression) is not (string, ITypeSymbol) driverVariable)
+            if (GetDriverFromReceiver(context, memberAccess.Expression) is not { } driverVariable)
             {
                 continue;
             }
@@ -102,7 +102,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
     /// <param name="context">The analysis context.</param>
     /// <param name="receiver">The receiver of the SubscribeAsync call, for example <c>driver.Session</c>.</param>
     /// <returns>The driver's name and type, or <see langword="null"/> if the receiver does not root in one.</returns>
-    private static (string Name, ITypeSymbol Type)? GetDriverFromReceiver(SyntaxNodeAnalysisContext context, ExpressionSyntax receiver)
+    private static DriverReference? GetDriverFromReceiver(SyntaxNodeAnalysisContext context, ExpressionSyntax receiver)
     {
         // Unwrap the member access chain to the expression that names the driver itself. Both
         // `driver.Session` and `this.driver.Session` root in a driver, the first as a bare identifier
@@ -128,14 +128,14 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         // IsCommandExecutorType accepts a null type and answers false, so no separate null test is needed.
         ITypeSymbol? type = context.SemanticModel.GetTypeInfo(current).Type;
         return AnalyzerSymbolHelpers.IsCommandExecutorType(type)
-            ? (current.ToString(), type!)
+            ? new DriverReference(current.ToString(), type!)
             : null;
     }
 
     private static void AnalyzeSubscribeCall(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation,
-        (string Name, ITypeSymbol Type) driverVariable)
+        DriverReference driverVariable)
     {
         if (invocation.ArgumentList.Arguments.Count == 0)
         {
@@ -164,7 +164,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
     private static void AnalyzeEventsArray(
         SyntaxNodeAnalysisContext context,
         ExpressionSyntax expression,
-        (string Name, ITypeSymbol Type) driverVariable)
+        DriverReference driverVariable)
     {
         // Handle array creation: new[] { "event1", "event2" } or new string[] { "event1", "event2" }
         if (expression is ImplicitArrayCreationExpressionSyntax implicitArray)
@@ -202,7 +202,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
     private static void AnalyzeStringLiteral(
         SyntaxNodeAnalysisContext context,
         ExpressionSyntax expression,
-        (string Name, ITypeSymbol Type) driverVariable)
+        DriverReference driverVariable)
     {
         // Check if this is a string literal
         if (expression is not LiteralExpressionSyntax literal || !literal.IsKind(SyntaxKind.StringLiteralExpression))
@@ -234,7 +234,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
     private static string? FindObservableEventPath(
         SyntaxNodeAnalysisContext context,
-        (string Name, ITypeSymbol Type) driverVariable,
+        DriverReference driverVariable,
         string eventName)
     {
         // Search the driver's module properties, including those it inherits: a user's type deriving
@@ -317,5 +317,21 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
     private static bool IsObservableEventType(ITypeSymbol type)
     {
         return AnalyzerSymbolHelpers.IsLibraryTypeNamed(type, "ObservableEvent");
+    }
+
+    /// <summary>
+    /// The driver a Session.SubscribeAsync call was made through, as written at the call site.
+    /// </summary>
+    private sealed class DriverReference
+    {
+        public DriverReference(string name, ITypeSymbol type)
+        {
+            this.Name = name;
+            this.Type = type;
+        }
+
+        public string Name { get; }
+
+        public ITypeSymbol Type { get; }
     }
 }

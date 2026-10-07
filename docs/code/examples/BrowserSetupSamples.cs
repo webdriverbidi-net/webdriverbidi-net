@@ -37,7 +37,7 @@ public static class BrowserSetupSamples
     /// Creates a WebDriver session through a classic driver executable (chromedriver, msedgedriver,
     /// geckodriver) and returns the WebDriver BiDi WebSocket URL it advertises.
     /// </summary>
-    public static async Task<(string SessionId, string WebSocketUrl)> CreateBiDiSessionAsync(
+    public static async Task<DriverSession> CreateBiDiSessionAsync(
         string driverUrl = "http://localhost:9515",
         bool headless = false)
     {
@@ -73,8 +73,13 @@ public static class BrowserSetupSamples
                 "The driver did not return a webSocketUrl; the browser or driver may not support WebDriver BiDi.");
         }
 
-        return (sessionId, webSocketUrl);
+        return new DriverSession(sessionId, webSocketUrl);
     }
+
+    /// <summary>
+    /// A session created through a classic driver, and the WebDriver BiDi WebSocket URL it advertises.
+    /// </summary>
+    public sealed record DriverSession(string SessionId, string WebSocketUrl);
     #endregion
 
     /// <summary>

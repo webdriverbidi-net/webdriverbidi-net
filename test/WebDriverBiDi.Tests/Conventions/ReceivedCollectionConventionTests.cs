@@ -34,8 +34,9 @@ public class ReceivedCollectionConventionTests
     public void TestReceivedCollectionsRejectNullElements()
     {
         List<string> offenders = [];
-        foreach ((Type owner, PropertyInfo property) in GetDeserializableCollectionProperties())
+        foreach (PropertyInfo property in GetDeserializableCollectionProperties())
         {
+            Type owner = property.DeclaringType!;
             Type collectionType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
             Type[] typeArguments = collectionType.GetGenericArguments();
             Type elementType = typeArguments[^1];
@@ -64,7 +65,7 @@ public class ReceivedCollectionConventionTests
         // test above would pass vacuously. Assert that it still reaches a representative member of each
         // shape it is responsible for: a command result list, a list nested inside a received object, a
         // list on an event payload, a list on a type that is both sent and received, and the one map.
-        HashSet<string> found = [.. GetDeserializableCollectionProperties().Select(entry => $"{entry.Owner.FullName}.{entry.Property.Name}")];
+        HashSet<string> found = [.. GetDeserializableCollectionProperties().Select(property => $"{property.DeclaringType!.FullName}.{property.Name}")];
         string[] expected =
         [
             "WebDriverBiDi.Script.GetRealmsCommandResult.SerializableRealms",
@@ -97,12 +98,12 @@ public class ReceivedCollectionConventionTests
     /// Gets every property the serializer can populate, on any type reachable from a command result or a
     /// registered event payload, whose type is a list or string-keyed dictionary of a reference type.
     /// </summary>
-    /// <returns>The owning type and property for each such member.</returns>
-    private static IEnumerable<(Type Owner, PropertyInfo Property)> GetDeserializableCollectionProperties()
+    /// <returns>Each such property, declared on the type that owns it.</returns>
+    private static IEnumerable<PropertyInfo> GetDeserializableCollectionProperties()
     {
         const BindingFlags MemberFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         Assembly assembly = typeof(CommandResult).Assembly;
-        List<(Type, PropertyInfo)> results = [];
+        List<PropertyInfo> results = [];
         HashSet<Type> visited = [];
         Queue<Type> pending = new(GetReceivedPayloadTypes(assembly));
         while (pending.Count > 0)
@@ -148,7 +149,7 @@ public class ReceivedCollectionConventionTests
 
                 if (IsGuardedCollection(property, propertyType))
                 {
-                    results.Add((current, property));
+                    results.Add(property);
                 }
             }
         }

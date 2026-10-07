@@ -47,6 +47,13 @@ catch (GeneratorException ex)
 internal sealed record TocEntry(string Name, string? Href, List<TocEntry> Items);
 
 /// <summary>
+/// The contents of llms.txt and llms-full.txt.
+/// </summary>
+/// <param name="Index">The contents of llms.txt.</param>
+/// <param name="Full">The contents of llms-full.txt.</param>
+internal sealed record LlmsFiles(string Index, string Full);
+
+/// <summary>
 /// A problem with the documentation that stops the files from being written.
 /// </summary>
 /// <param name="message">The problem.</param>
@@ -75,7 +82,7 @@ internal sealed partial class Generator(string docsDirectory, string siteUrl)
     /// Builds both files.
     /// </summary>
     /// <returns>The contents of llms.txt and llms-full.txt.</returns>
-    public (string Index, string Full) Generate()
+    public LlmsFiles Generate()
     {
         string indexPath = Path.Combine(docsDirectory, "index.md");
         string indexMarkdown = ReadFile(indexPath);
@@ -122,7 +129,7 @@ internal sealed partial class Generator(string docsDirectory, string siteUrl)
             full.AppendLine(this.RenderPage(path, markdown, pageUrl).Trim()).AppendLine();
         }
 
-        return (index.ToString().TrimEnd() + "\n", full.ToString().TrimEnd() + "\n");
+        return new LlmsFiles(index.ToString().TrimEnd() + "\n", full.ToString().TrimEnd() + "\n");
     }
 
     private static string ReadFile(string path)

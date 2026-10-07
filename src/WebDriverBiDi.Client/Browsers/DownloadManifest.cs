@@ -80,7 +80,8 @@ internal sealed class DownloadManifest
     {
         ManifestProduct product = this.GetProduct(this.document.Browsers, settings.BrowserName);
         string version = this.ResolveBrowserVersion(product, settings);
-        (Uri downloadUrl, ManifestBuild build) = this.GetBuild(product, settings.BrowserName, version, settings.DownloadOptions.ResolvedPlatform);
+        ManifestBuild build = this.GetBuild(product, settings.BrowserName, version, settings.DownloadOptions.ResolvedPlatform);
+        Uri downloadUrl = new(this.url, build.Url);
         return new BrowserDownloadInfo()
         {
             BrowserName = settings.BrowserName,
@@ -117,7 +118,8 @@ internal sealed class DownloadManifest
             version = CompatibleVersion.FindClosest(version, product.Versions.Where(listed => listed.Value.ContainsKey(platformKey)).Select(listed => listed.Key)) ?? version;
         }
 
-        (Uri downloadUrl, ManifestBuild build) = this.GetBuild(product, driverName, version, settings.DownloadOptions.ResolvedPlatform);
+        ManifestBuild build = this.GetBuild(product, driverName, version, settings.DownloadOptions.ResolvedPlatform);
+        Uri downloadUrl = new(this.url, build.Url);
         string path = Uri.UnescapeDataString(downloadUrl.AbsolutePath);
         return new DriverDownloadInfo()
         {
@@ -149,10 +151,8 @@ internal sealed class DownloadManifest
         if (settings.Milestone is int milestone)
         {
             return product.Versions.Keys
-                .Select(version => (Version: version, Parsed: ParseNumericVersion(version)))
-                .Where(candidate => candidate.Parsed?.Major == milestone)
-                .OrderByDescending(candidate => candidate.Parsed)
-                .Select(candidate => candidate.Version)
+                .Where(version => ParseNumericVersion(version)?.Major == milestone)
+                .OrderByDescending(ParseNumericVersion)
                 .FirstOrDefault()
                 ?? throw new DownloadManifestException($"The download manifest {this.url} lists no {settings.BrowserName} version of milestone {milestone}.");
         }
@@ -167,7 +167,7 @@ internal sealed class DownloadManifest
         return settings.Version;
     }
 
-    private (Uri DownloadUrl, ManifestBuild Build) GetBuild(ManifestProduct product, string name, string version, BrowserPlatform platform)
+    private ManifestBuild GetBuild(ManifestProduct product, string name, string version, BrowserPlatform platform)
     {
         string platformKey = GetPlatformKey(platform);
         if (!product.Versions.TryGetValue(version, out Dictionary<string, ManifestBuild>? builds))
@@ -185,7 +185,7 @@ internal sealed class DownloadManifest
             throw new DownloadManifestException($"The download manifest {this.url} lists the {name} {version} build for {platformKey} without a URL and a 64-digit hexadecimal sha256.");
         }
 
-        return (new Uri(this.url, build.Url), build);
+        return build;
     }
 
     /// <summary>

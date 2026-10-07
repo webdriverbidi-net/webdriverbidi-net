@@ -160,23 +160,28 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         // MemberBindingExpression whose receiver is the enclosing ConditionalAccessExpression.
         foreach (InvocationExpressionSyntax invocation in scopeNodes.OfType<InvocationExpressionSyntax>())
         {
-            (ExpressionSyntax? receiver, SimpleNameSyntax? methodName) = invocation.Expression switch
+            bool isDisposal = invocation.Expression switch
             {
-                MemberAccessExpressionSyntax memberAccess => (memberAccess.Expression, memberAccess.Name),
+                MemberAccessExpressionSyntax memberAccess => IsDisposalOf(memberAccess.Expression, memberAccess.Name, variableName),
                 MemberBindingExpressionSyntax memberBinding when invocation.Parent is ConditionalAccessExpressionSyntax conditionalAccess
-                    => (conditionalAccess.Expression, memberBinding.Name),
-                _ => (null, null),
+                    => IsDisposalOf(conditionalAccess.Expression, memberBinding.Name, variableName),
+                _ => false,
             };
 
-            if (receiver is IdentifierNameSyntax identifier
-                && identifier.Identifier.ValueText == variableName
-                && methodName!.Identifier.ValueText is "Unobserve" or "Dispose" or "DisposeAsync")
+            if (isDisposal)
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool IsDisposalOf(ExpressionSyntax receiver, SimpleNameSyntax methodName, string variableName)
+    {
+        return receiver is IdentifierNameSyntax identifier
+            && identifier.Identifier.ValueText == variableName
+            && methodName.Identifier.ValueText is "Unobserve" or "Dispose" or "DisposeAsync";
     }
 
     private static bool IsDisposedByUsingStatement(IEnumerable<SyntaxNode> scopeNodes, string variableName)
