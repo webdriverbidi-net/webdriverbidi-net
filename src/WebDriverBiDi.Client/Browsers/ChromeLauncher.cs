@@ -333,18 +333,18 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     }
 
     [ExcludeFromCodeCoverage] // Takes only the branch for the operating system it runs on.
-    private static (string FileName, List<string> Arguments) GetPipeLaunchCommand(string browserExecutableLocation, List<string> arguments, string readHandle, string writeHandle)
+    private static LaunchCommand GetPipeLaunchCommand(string browserExecutableLocation, List<string> arguments, string readHandle, string writeHandle)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return (browserExecutableLocation, [.. arguments, $"--remote-debugging-io-pipes={readHandle},{writeHandle}"]);
+            return new LaunchCommand(browserExecutableLocation, [.. arguments, $"--remote-debugging-io-pipes={readHandle},{writeHandle}"]);
         }
 
         // Chrome reads commands from file descriptor 3 and writes responses to 4, so a shell
         // duplicates the inherited pipe descriptors onto those, closes the originals, and
         // then replaces itself with the browser.
         string browserCommand = string.Join(" ", new[] { browserExecutableLocation }.Concat(arguments).Select(CommandLine.QuotePosixShellArgument));
-        return (GetShellPath(), ["-c", $"exec 3<&{readHandle} 4>&{writeHandle} {readHandle}<&- {writeHandle}>&-; exec {browserCommand}"]);
+        return new LaunchCommand(GetShellPath(), ["-c", $"exec 3<&{readHandle} 4>&{writeHandle} {readHandle}<&- {writeHandle}>&-; exec {browserCommand}"]);
     }
 
     [ExcludeFromCodeCoverage] // Depends on where the machine has a shell.
@@ -367,17 +367,16 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
 
     private ProcessStartInfo CreateProcessStartInfo(string browserExecutableLocation)
     {
-        string fileName = browserExecutableLocation;
-        List<string> arguments = [.. this.CommandLineArguments];
+        LaunchCommand command = new(browserExecutableLocation, [.. this.CommandLineArguments]);
         if (this.connection is PipeConnection pipeConnection)
         {
-            (fileName, arguments) = GetPipeLaunchCommand(browserExecutableLocation, arguments, pipeConnection.ReadPipeHandle, pipeConnection.WritePipeHandle);
+            command = GetPipeLaunchCommand(browserExecutableLocation, command.Arguments, pipeConnection.ReadPipeHandle, pipeConnection.WritePipeHandle);
         }
 
         ProcessStartInfo startInfo = new()
         {
-            FileName = fileName,
-            Arguments = CommandLine.JoinArguments(arguments),
+            FileName = command.FileName,
+            Arguments = CommandLine.JoinArguments(command.Arguments),
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -431,4 +430,6 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             throw new OperationCanceledException(cancellationToken);
         }
     }
+
+    private readonly record struct LaunchCommand(string FileName, List<string> Arguments);
 }

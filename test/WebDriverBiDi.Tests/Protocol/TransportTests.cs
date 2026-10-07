@@ -3709,13 +3709,13 @@ public class TransportTests
     [Fact]
     public async Task TestRemoteDisconnectRaisesConnectionLostOnceTheSessionIsTornDown()
     {
-        List<(ConnectionLostEventArgs Args, TransportState State)> losses = [];
+        List<ObservedLoss> losses = [];
         TaskCompletionSource lost = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         await using Transport transport = new(connection);
         transport.OnConnectionLost.AddObserver(e =>
         {
-            losses.Add((e, transport.State));
+            losses.Add(new ObservedLoss(e, transport.State));
             lost.TrySetResult();
         });
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
@@ -6673,24 +6673,24 @@ public class TransportTests
         // A level is one remote value containing the next; the innermost value is the last level, and is
         // malformed when requested.
         string node = """{ "type": "node", "sharedId": "id", "value": { "nodeType": 1, "childNodeCount": 0""";
-        (string open, string close, string leaf, string malformedLeaf) = shape switch
+        NestingShape parts = shape switch
         {
-            "array" => ("""{ "type": "array", "value": [ """, " ] }", """{ "type": "null" }""", """{ "type": "bogus" }"""),
-            "object" => ("""{ "type": "object", "value": [ [ "key", """, " ] ] }", """{ "type": "null" }""", """{ "type": "bogus" }"""),
-            "node" => (node + """, "children": [ """, " ] } }", node + " } }", node + """, "mode": "bogus" } }"""),
-            _ => (node + """, "shadowRoot": """, " } }", node + " } }", node + """, "mode": "bogus" } }"""),
+            "array" => new("""{ "type": "array", "value": [ """, " ] }", """{ "type": "null" }""", """{ "type": "bogus" }"""),
+            "object" => new("""{ "type": "object", "value": [ [ "key", """, " ] ] }", """{ "type": "null" }""", """{ "type": "bogus" }"""),
+            "node" => new(node + """, "children": [ """, " ] } }", node + " } }", node + """, "mode": "bogus" } }"""),
+            _ => new(node + """, "shadowRoot": """, " } }", node + " } }", node + """, "mode": "bogus" } }"""),
         };
 
         StringBuilder builder = new();
         for (int i = 1; i < levels; i++)
         {
-            builder.Append(open);
+            builder.Append(parts.Open);
         }
 
-        builder.Append(isMalformed ? malformedLeaf : leaf);
+        builder.Append(isMalformed ? parts.MalformedLeaf : parts.Leaf);
         for (int i = 1; i < levels; i++)
         {
-            builder.Append(close);
+            builder.Append(parts.Close);
         }
 
         return builder.ToString();
@@ -6754,4 +6754,8 @@ public class TransportTests
         [JsonIgnore]
         public override Type ResponseType => typeof(CommandResponseMessage<TestCommandResult>);
     }
+
+    private sealed record ObservedLoss(ConnectionLostEventArgs Args, TransportState State);
+
+    private sealed record NestingShape(string Open, string Close, string Leaf, string MalformedLeaf);
 }

@@ -121,8 +121,7 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         // expression's annotation comes from the calling code's nullable context, which is off in a
         // nullable-oblivious project -- the one place the compiler warns about none of this itself.
         // The declaration's annotation is read from the library's metadata either way.
-        (bool isNullableList, ITypeSymbol? elementType) = GetNullableListElementType(propertySymbol.Type);
-        if (!isNullableList || elementType == null)
+        if (GetNullableListElementType(propertySymbol.Type) is not { } elementType)
         {
             return;
         }
@@ -168,21 +167,15 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(diagnostic);
     }
 
-    private static (bool isNullableList, ITypeSymbol? elementType) GetNullableListElementType(ITypeSymbol? type)
+    private static ITypeSymbol? GetNullableListElementType(ITypeSymbol? type)
     {
-        // Handle nullable reference types: List<T>?, IList<T>?, ICollection<T>?
-        ITypeSymbol? effectiveType = type;
-
-        // Check for List<T>, IList<T>, ICollection<T>
-        if (effectiveType is INamedTypeSymbol namedTypeSymbol)
-        {
-            if (CollectionTypeNames.Contains(namedTypeSymbol.OriginalDefinition.Name) && namedTypeSymbol.TypeArguments.Length == 1)
-            {
-                return (IsNullableType(namedTypeSymbol), namedTypeSymbol.TypeArguments[0]);
-            }
-        }
-
-        return (false, null);
+        // List<T>?, IList<T>? or ICollection<T>?
+        return type is INamedTypeSymbol namedTypeSymbol
+            && CollectionTypeNames.Contains(namedTypeSymbol.OriginalDefinition.Name)
+            && namedTypeSymbol.TypeArguments.Length == 1
+            && IsNullableType(namedTypeSymbol)
+            ? namedTypeSymbol.TypeArguments[0]
+            : null;
     }
 
     private static bool IsNullableType(ITypeSymbol type)

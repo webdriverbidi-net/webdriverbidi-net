@@ -165,9 +165,10 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         // because the code fix has to await first to move them.
         Func<SyntaxNode, bool> runsBeforeFirstYield = asyncHandler ? AnalyzerSymbolHelpers.GetRunsBeforeFirstYield(handlerBody) : static _ => true;
         DiagnosticDescriptor rule = collectorFilter ? CollectorFilterRule : !optionPresent ? Rule : asyncHandler ? BeforeFirstAwaitRule : SynchronousBodyRule;
-        IEnumerable<(InvocationExpressionSyntax Node, string MethodName)> moduleCommands = FindModuleCommandInvocations(semanticModel, handlerBody);
-        foreach ((InvocationExpressionSyntax node, string methodName) in moduleCommands)
+        IEnumerable<HandlerOperation> moduleCommands = FindModuleCommandInvocations(semanticModel, handlerBody);
+        foreach (HandlerOperation command in moduleCommands)
         {
+            SyntaxNode node = command.Node;
             bool beforeFirstYield = runsBeforeFirstYield(node);
             if (optionPresent && !beforeFirstYield)
             {
@@ -176,16 +177,16 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
 
             Location location = reportAtHandlerArgument ? handlerArgument.GetLocation() : node.GetLocation();
             ImmutableDictionary<string, string?>? properties = asyncHandler && beforeFirstYield ? AnalyzerSymbolHelpers.RunsBeforeFirstAwaitProperties : null;
-            Diagnostic diagnostic = Diagnostic.Create(rule, location, properties, methodName);
+            Diagnostic diagnostic = Diagnostic.Create(rule, location, properties, command.Name);
             context.ReportDiagnostic(diagnostic);
         }
     }
 
-    private static IEnumerable<(InvocationExpressionSyntax, string)> FindModuleCommandInvocations(
+    private static IEnumerable<HandlerOperation> FindModuleCommandInvocations(
         SemanticModel semanticModel,
         SyntaxNode handlerBody)
     {
-        List<(InvocationExpressionSyntax, string)> results = [];
+        List<HandlerOperation> results = [];
 
         // Do not descend into a nested lambda, anonymous method or local function: its body runs only
         // when that delegate is invoked, not at this point in the handler. Offloading work with
@@ -203,7 +204,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
                 continue;
             }
 
-            results.Add((innerInvocation, innerMethod.Name));
+            results.Add(new HandlerOperation(innerInvocation, innerMethod.Name));
         }
 
         return results;

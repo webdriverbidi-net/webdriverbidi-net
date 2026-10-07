@@ -226,7 +226,7 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
             intercept.Contexts.AddRange(starting.BrowsingContextIds);
             intercept.UrlPatterns.Add(new UrlPatternString(modification.UrlPattern));
             string interceptId = (await network.AddInterceptAsync(intercept, cancellationToken: cancellationToken).ConfigureAwait(false)).InterceptId;
-            starting.RequestIntercepts.Add((interceptId, modification));
+            starting.RequestIntercepts.Add(new RequestIntercept(interceptId, modification));
         }
 
         if (starting.Credentials.Length > 0)
@@ -450,7 +450,7 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
 
         public List<IDisposable> Observers { get; } = [];
 
-        public List<(string InterceptId, NetworkRequestModification Modification)> RequestIntercepts { get; } = [];
+        public List<RequestIntercept> RequestIntercepts { get; } = [];
 
         public string? CollectorId { get; set; }
 
@@ -458,4 +458,6 @@ public sealed class NetworkTrafficMonitor : IAsyncDisposable
 
         public string? SubscriptionId { get; set; }
     }
+
+    private sealed record RequestIntercept(string InterceptId, NetworkRequestModification Modification);
 }

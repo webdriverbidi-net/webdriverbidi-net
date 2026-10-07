@@ -30,14 +30,16 @@ internal static class CompatibleVersion
             return null;
         }
 
-        List<(string Version, Version Parsed)> sameMajor = [.. versions
-            .Select(version => (Version: version, Parsed: System.Version.TryParse(version, out Version? parsed) ? parsed : null))
-            .Where(candidate => candidate.Parsed?.Major == parsedRequest.Major)
-            .Select(candidate => (candidate.Version, candidate.Parsed!))
-            .OrderByDescending(candidate => candidate.Item2)];
+        List<CandidateVersion> sameMajor = [.. versions
+            .Select(version => System.Version.TryParse(version, out Version? parsed) ? new CandidateVersion(version, parsed) : null)
+            .OfType<CandidateVersion>()
+            .Where(candidate => candidate.Parsed.Major == parsedRequest.Major)
+            .OrderByDescending(candidate => candidate.Parsed)];
         return sameMajor.Where(candidate => candidate.Parsed.Minor == parsedRequest.Minor && candidate.Parsed.Build == parsedRequest.Build)
             .Concat(sameMajor)
-            .Select(candidate => candidate.Version)
+            .Select(candidate => candidate.Text)
             .FirstOrDefault();
     }
+
+    private sealed record CandidateVersion(string Text, Version Parsed);
 }

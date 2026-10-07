@@ -119,16 +119,16 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
         SyntaxNode handlerBody = AnalyzerSymbolHelpers.GetHandlerBody(context, handlerArgument.Expression)!;
 
         Func<SyntaxNode, bool> runsBeforeFirstYield = AnalyzerSymbolHelpers.GetRunsBeforeFirstYield(handlerBody);
-        IEnumerable<(SyntaxNode Node, string Pattern)> deadlockPatterns = FindDeadlockPronePatterns(context, handlerBody);
-        foreach ((SyntaxNode node, string pattern) in deadlockPatterns)
+        IEnumerable<HandlerOperation> deadlockPatterns = FindDeadlockPronePatterns(context, handlerBody);
+        foreach (HandlerOperation pattern in deadlockPatterns)
         {
-            bool beforeFirstYield = runsBeforeFirstYield(node);
+            bool beforeFirstYield = runsBeforeFirstYield(pattern.Node);
             if (optionPresent && !beforeFirstYield)
             {
                 continue;
             }
 
-            Diagnostic diagnostic = Diagnostic.Create(optionPresent ? BeforeFirstAwaitRule : Rule, node.GetLocation(), pattern);
+            Diagnostic diagnostic = Diagnostic.Create(optionPresent ? BeforeFirstAwaitRule : Rule, pattern.Node.GetLocation(), pattern.Name);
             context.ReportDiagnostic(diagnostic);
         }
     }
@@ -144,11 +144,11 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
         };
     }
 
-    private static IEnumerable<(SyntaxNode Node, string Pattern)> FindDeadlockPronePatterns(
+    private static IEnumerable<HandlerOperation> FindDeadlockPronePatterns(
         SyntaxNodeAnalysisContext context,
         SyntaxNode handlerBody)
     {
-        List<(SyntaxNode, string)> patterns = [];
+        List<HandlerOperation> patterns = [];
 
         // Do not descend into a nested lambda, anonymous method or local function: its body runs only
         // when that delegate is invoked, not on the dispatching thread that this rule is about.
@@ -157,7 +157,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
 
         foreach (LockStatementSyntax lockStmt in lockStatements)
         {
-            patterns.Add((lockStmt, "lock statement"));
+            patterns.Add(new HandlerOperation(lockStmt, "lock statement"));
         }
 
         IEnumerable<InvocationExpressionSyntax> invocations = handlerBody.DescendantNodes(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
@@ -176,7 +176,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             if (GetDeadlockPronePattern(methodSymbol) is { } pattern
                 && !AnalyzerSymbolHelpers.HasZeroTimeoutArgument(context.SemanticModel, invocation, methodSymbol))
             {
-                patterns.Add((invocation, pattern));
+                patterns.Add(new HandlerOperation(invocation, pattern));
             }
         }
 

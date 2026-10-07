@@ -42,9 +42,9 @@ public class AnalyzerConventionTests
     /// AD0001, so each stays in the corpus to keep that from recurring.
     /// </para>
     /// </remarks>
-    private static readonly (string Name, string Source)[] AnalyzerCorpus =
+    private static readonly CorpusEntry[] AnalyzerCorpus =
     [
-        ("unresolved types and members", """
+        new("unresolved types and members", """
             using WebDriverBiDi;
 
             class C
@@ -56,7 +56,7 @@ public class AnalyzerConventionTests
                 }
             }
             """),
-        ("half-written member access", """
+        new("half-written member access", """
             using WebDriverBiDi;
 
             class C
@@ -67,7 +67,7 @@ public class AnalyzerConventionTests
                 }
             }
             """),
-        ("constant of a type the property cannot hold", """
+        new("constant of a type the property cannot hold", """
             using WebDriverBiDi.BrowsingContext;
             using WebDriverBiDi.Script;
 
@@ -81,7 +81,7 @@ public class AnalyzerConventionTests
                 }
             }
             """),
-        ("driver rebound from a factory inside a branch", """
+        new("driver rebound from a factory inside a branch", """
             using System;
             using System.Threading.Tasks;
             using WebDriverBiDi;
@@ -122,7 +122,7 @@ public class AnalyzerConventionTests
                 }
             }
             """),
-        ("blocking calls in handlers, in several spellings", """
+        new("blocking calls in handlers, in several spellings", """
             using System;
             using System.Threading.Tasks;
             using WebDriverBiDi;
@@ -142,7 +142,7 @@ public class AnalyzerConventionTests
                 }
             }
             """),
-        ("receivers that do not root in a plain name", """
+        new("receivers that do not root in a plain name", """
             using System;
             using System.Threading.Tasks;
             using WebDriverBiDi;
@@ -161,7 +161,7 @@ public class AnalyzerConventionTests
                 }
             }
             """),
-        ("generic type parameter standing in for the driver", """
+        new("generic type parameter standing in for the driver", """
             using System.Threading.Tasks;
             using WebDriverBiDi;
             using WebDriverBiDi.Session;
@@ -175,7 +175,7 @@ public class AnalyzerConventionTests
                 }
             }
             """),
-        ("top-level statements", """
+        new("top-level statements", """
             using System;
             using System.Threading.Tasks;
             using WebDriverBiDi;
@@ -187,7 +187,7 @@ public class AnalyzerConventionTests
             await driver.Session.SubscribeAsync(new SubscribeCommandParameters("log.entryAdded"));
             await driver.DisposeAsync();
             """),
-        ("malformed SpecRange attribute applications", """
+        new("malformed SpecRange attribute applications", """
             using WebDriverBiDi;
 
             class Target
@@ -220,7 +220,7 @@ public class AnalyzerConventionTests
                 }
             }
             """),
-        ("nullable list add without an initializer", """
+        new("nullable list add without an initializer", """
             #nullable enable
             using WebDriverBiDi.Network;
 
@@ -458,4 +458,6 @@ public class AnalyzerConventionTests
             unlisted.Count == 0,
             $"BIDI022 and BIDI033 would skip these [JsonExtensionData] properties before binding them: {string.Join(", ", unlisted)}. Add them to AnalyzerSymbolHelpers.ExtensionDataPropertyNames.");
     }
+
+    private sealed record CorpusEntry(string Name, string Source);
 }

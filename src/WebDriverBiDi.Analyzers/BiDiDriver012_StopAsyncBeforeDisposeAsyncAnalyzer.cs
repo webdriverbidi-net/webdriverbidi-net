@@ -122,15 +122,15 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         // The `await using` forms dispose the driver implicitly at the end of the enclosing
         // scope, so there is no DisposeAsync() invocation to find. A StopAsync() anywhere later
         // in that scope runs before the implicit disposal and counts as "before".
-        foreach ((Location location, string driverVariableName, IEnumerable<StatementSyntax> scope) in GetAwaitUsingDrivers(context.Node, context.SemanticModel))
+        foreach (AwaitUsingDriver driver in GetAwaitUsingDrivers(context.Node, context.SemanticModel))
         {
-            if (!ContainsStopAsync(scope, driverVariableName))
+            if (!ContainsStopAsync(driver.Scope, driver.VariableName))
             {
                 hasCollectBehaviorAssignment ??= HasCollectBehaviorAssignment(context.Node, context.SemanticModel);
                 ImmutableDictionary<string, string?> properties = ImmutableDictionary<string, string?>.Empty.Add(FormPropertyName, AwaitUsingFormValue);
                 Diagnostic diagnostic = hasCollectBehaviorAssignment.Value
-                    ? Diagnostic.Create(CollectModeRule, location, DiagnosticSeverity.Warning, additionalLocations: null, properties: properties, driverVariableName)
-                    : Diagnostic.Create(Rule, location, properties, driverVariableName);
+                    ? Diagnostic.Create(CollectModeRule, driver.Location, DiagnosticSeverity.Warning, additionalLocations: null, properties: properties, driver.VariableName)
+                    : Diagnostic.Create(Rule, driver.Location, properties, driver.VariableName);
                 context.ReportDiagnostic(diagnostic);
             }
         }
@@ -145,7 +145,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     /// <param name="node">The executable body being analyzed.</param>
     /// <param name="semanticModel">The semantic model for the method.</param>
     /// <returns>The location to report, the driver variable name, and the statements in scope for each driver.</returns>
-    private static IEnumerable<(Location Location, string DriverVariableName, IEnumerable<StatementSyntax> Scope)> GetAwaitUsingDrivers(
+    private static IEnumerable<AwaitUsingDriver> GetAwaitUsingDrivers(
         SyntaxNode node,
         SemanticModel semanticModel)
     {
@@ -181,7 +181,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
             foreach (VariableDeclaratorSyntax declarator in declaration.Declaration.Variables)
             {
-                yield return (declarator.Identifier.GetLocation(), declarator.Identifier.ValueText, scope);
+                yield return new AwaitUsingDriver(declarator.Identifier.GetLocation(), declarator.Identifier.ValueText, scope);
             }
         }
 
@@ -198,7 +198,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
                 {
                     foreach (VariableDeclaratorSyntax declarator in usingStatement.Declaration.Variables)
                     {
-                        yield return (declarator.Identifier.GetLocation(), declarator.Identifier.ValueText, [usingStatement.Statement]);
+                        yield return new AwaitUsingDriver(declarator.Identifier.GetLocation(), declarator.Identifier.ValueText, [usingStatement.Statement]);
                     }
                 }
             }
@@ -206,7 +206,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
                 && GetReceiverName(expression) is string receiverName
                 && AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(expression).Type))
             {
-                yield return (expression.GetLocation(), receiverName, [usingStatement.Statement]);
+                yield return new AwaitUsingDriver(expression.GetLocation(), receiverName, [usingStatement.Statement]);
             }
         }
     }
@@ -409,5 +409,24 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
         // Look for StopAsync calls on the same variable in all statements before DisposeAsync.
         return ContainsStopAsync(statements.TakeWhile(s => s != disposeStatement), variableName);
+    }
+
+    /// <summary>
+    /// A driver disposed implicitly by an <c>await using</c>, with the statements that run before the disposal.
+    /// </summary>
+    private sealed class AwaitUsingDriver
+    {
+        public AwaitUsingDriver(Location location, string variableName, IEnumerable<StatementSyntax> scope)
+        {
+            this.Location = location;
+            this.VariableName = variableName;
+            this.Scope = scope;
+        }
+
+        public Location Location { get; }
+
+        public string VariableName { get; }
+
+        public IEnumerable<StatementSyntax> Scope { get; }
     }
 }

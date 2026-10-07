@@ -95,13 +95,10 @@ public class PerformanceSamples
         }
 
         // ✅ Fast: Parallel navigation in different contexts
-        List<Task<NavigateCommandResult>> navigationTasks = new();
-
-        foreach (var (url, context) in urls.Zip(contextIds))
-        {
-            navigationTasks.Add(driver.BrowsingContext.NavigateAsync(
-                new NavigateCommandParameters(context, url)));
-        }
+        List<Task<NavigateCommandResult>> navigationTasks = urls
+            .Zip(contextIds, (url, context) => driver.BrowsingContext.NavigateAsync(
+                new NavigateCommandParameters(context, url)))
+            .ToList();
 
         await Task.WhenAll(navigationTasks);
         #endregion

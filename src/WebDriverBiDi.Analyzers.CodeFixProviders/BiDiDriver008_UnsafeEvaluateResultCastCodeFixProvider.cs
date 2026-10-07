@@ -340,11 +340,19 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
         SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
-        (ExpressionSyntax operand, TypeSyntax targetType) = conversion switch
+        ExpressionSyntax operand;
+        TypeSyntax targetType;
+        if (conversion is CastExpressionSyntax cast)
         {
-            CastExpressionSyntax cast => (cast.Expression, cast.Type),
-            _ => (((BinaryExpressionSyntax)conversion).Left, (TypeSyntax)((BinaryExpressionSyntax)conversion).Right),
-        };
+            operand = cast.Expression;
+            targetType = cast.Type;
+        }
+        else
+        {
+            BinaryExpressionSyntax asExpression = (BinaryExpressionSyntax)conversion;
+            operand = asExpression.Left;
+            targetType = (TypeSyntax)asExpression.Right;
+        }
 
         StatementSyntax statement = conversion.FirstAncestorOrSelf<StatementSyntax>()!;
         LocalDeclarationStatementSyntax? directDeclaration = GetDirectlyInitializedDeclaration(conversion);

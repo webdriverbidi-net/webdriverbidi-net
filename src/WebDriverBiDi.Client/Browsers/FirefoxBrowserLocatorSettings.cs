@@ -249,17 +249,17 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings, IBrowserD
     }
 
     // The download service's "os" value, and the name of the archive's platform directory.
-    private (string ProductOs, string ArchiveDirectory) GetRequiredPlatformIdentifiers()
+    private PlatformIdentifiers GetRequiredPlatformIdentifiers()
     {
         return (this.Platform.OperatingSystem, this.Platform.Architecture) switch
         {
-            (OperatingSystemFamily.MacOS, Architecture.X64 or Architecture.Arm64) => ("osx", "mac"),
-            (OperatingSystemFamily.Windows, Architecture.X64) => ("win64", "win64"),
-            (OperatingSystemFamily.Windows, Architecture.X86) => ("win", "win32"),
-            (OperatingSystemFamily.Windows, Architecture.Arm64) => ("win64-aarch64", "win64-aarch64"),
-            (OperatingSystemFamily.Linux, Architecture.X64) => ("linux64", "linux-x86_64"),
-            (OperatingSystemFamily.Linux, Architecture.X86) => ("linux", "linux-i686"),
-            (OperatingSystemFamily.Linux, Architecture.Arm64) => ("linux64-aarch64", "linux-aarch64"),
+            (OperatingSystemFamily.MacOS, Architecture.X64 or Architecture.Arm64) => new("osx", "mac"),
+            (OperatingSystemFamily.Windows, Architecture.X64) => new("win64", "win64"),
+            (OperatingSystemFamily.Windows, Architecture.X86) => new("win", "win32"),
+            (OperatingSystemFamily.Windows, Architecture.Arm64) => new("win64-aarch64", "win64-aarch64"),
+            (OperatingSystemFamily.Linux, Architecture.X64) => new("linux64", "linux-x86_64"),
+            (OperatingSystemFamily.Linux, Architecture.X86) => new("linux", "linux-i686"),
+            (OperatingSystemFamily.Linux, Architecture.Arm64) => new("linux64-aarch64", "linux-aarch64"),
             _ => throw new PlatformNotSupportedException($"Firefox is not published for {this.Platform}."),
         };
     }
@@ -424,6 +424,8 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings, IBrowserD
         };
         return GetWindowsProgramFilesPath(Path.Combine(applicationSubdirectory, "firefox.exe"));
     }
+
+    private readonly record struct PlatformIdentifiers(string ProductOs, string ArchiveDirectory);
 
     /// <summary>
     /// Represents a geckodriver release from the GitHub API.

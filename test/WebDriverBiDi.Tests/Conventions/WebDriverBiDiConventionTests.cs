@@ -677,7 +677,7 @@ public class WebDriverBiDiConventionTests
         return onProperty || onField;
     }
 
-    private static IEnumerable<(Module Module, MethodInfo Method, ParameterInfo Parameter)> GetModuleCommandMethods()
+    private static IEnumerable<ModuleCommandMethod> GetModuleCommandMethods()
     {
         foreach (Module module in GetDriverModules())
         {
@@ -688,7 +688,7 @@ public class WebDriverBiDiConventionTests
                 ParameterInfo[] parameters = method.GetParameters();
                 if (parameters.Length > 0 && typeof(CommandParameters).IsAssignableFrom(parameters[0].ParameterType))
                 {
-                    yield return (module, method, parameters[0]);
+                    yield return new ModuleCommandMethod(module, method, parameters[0]);
                 }
             }
         }
@@ -956,7 +956,7 @@ public class WebDriverBiDiConventionTests
         }
     }
 
-    private static IEnumerable<(Module Module, PropertyInfo Property)> GetModuleObservableEventProperties()
+    private static IEnumerable<ModuleEventProperty> GetModuleObservableEventProperties()
     {
         foreach (Module module in GetDriverModules())
         {
@@ -984,7 +984,7 @@ public class WebDriverBiDiConventionTests
 
             foreach (PropertyInfo property in mostDerivedByName.Values.OrderBy(eventProperty => eventProperty.Name, StringComparer.Ordinal))
             {
-                yield return (module, property);
+                yield return new ModuleEventProperty(module, property);
             }
         }
     }
@@ -1255,4 +1255,8 @@ public class WebDriverBiDiConventionTests
             yield return candidate;
         }
     }
+
+    private sealed record ModuleCommandMethod(Module Module, MethodInfo Method, ParameterInfo Parameter);
+
+    private sealed record ModuleEventProperty(Module Module, PropertyInfo Property);
 }
