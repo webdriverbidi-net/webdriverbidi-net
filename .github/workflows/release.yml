@@ -1,6 +1,6 @@
 # Release workflow for WebDriverBiDi.NET.
 #
-# Triggered only by pushing a vX.Y.Z tag. Runs the full test suite (via
+# Triggered by pushing a vX.Y.Z tag. Runs the full test suite (via
 # _tests.yml), validates and publishes the DocFx documentation site, and
 # packs and pushes NuGet packages. The release and deployment steps are
 # gated via `needs:` on the reusable tests workflow — a test failure on
@@ -9,6 +9,10 @@
 # Documentation publishing lives here (rather than in ci.yml) so that the
 # published docs always correspond to a released NuGet version. Merges to
 # main between releases do not change what's visible at the docs URL.
+#
+# Run by hand (workflow_dispatch) on main or a release tag, it only validates,
+# builds, and publishes the documentation, for changes to the documentation
+# alone; it runs no tests and publishes no packages.
 #
 # Related:
 #   - ci.yml runs on PR and main push; does not run on tag push.
@@ -20,6 +24,7 @@ name: Release
 on:
   push:
     tags: ['v[0-9]+.[0-9]+.[0-9]+', 'v[0-9]+.[0-9]+.[0-9]+-*']
+  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}
@@ -31,6 +36,7 @@ permissions:
 jobs:
   tests:
     name: Tests
+    if: github.event_name == 'push'
     uses: ./.github/workflows/_tests.yml
 
   validate-docs:
@@ -50,11 +56,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Everything a tag publishes -- the NuGet packages and the documentation site -- is gated on
-      # this, so a tag pushed on a commit that never reached main changes nothing users can see.
+      # Everything a run publishes -- the NuGet packages and the documentation site -- is gated on
+      # this, so a commit that never reached main changes nothing users can see.
       # It is a job rather than a step of the release job because the Pages deployment does not go
       # through that job and would otherwise overwrite the published site for a tag main never had.
-      - name: Verify tag is on origin/main
+      - name: Verify the commit is on origin/main
         run: |
           git fetch --no-tags origin main
           git merge-base --is-ancestor "${GITHUB_SHA}" origin/main
@@ -62,6 +68,8 @@ jobs:
   build-docs:
     name: Build documentation
     needs: [tests, validate-docs, verify-tag]
+    # Runs after the tests, or without them when run by hand.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -110,9 +118,11 @@ jobs:
 
   deploy-docs:
     name: Deploy documentation
-    # Also needs the release: published docs must correspond to a released NuGet version, so a failed
-    # push leaves the docs unpublished rather than describing a version that is not on NuGet.
+    # Also needs the release: docs published with a tag must correspond to a released NuGet version,
+    # so a failed push leaves the docs unpublished rather than describing a version that is not on
+    # NuGet. A run by hand has no release.
     needs: [build-docs, release]
+    if: ${{ !failure() && !cancelled() && needs.build-docs.result == 'success' }}
     concurrency:
       group: pages
       cancel-in-progress: false
@@ -139,6 +149,7 @@ jobs:
     # as well as reached through build-docs, so the ancestry gate does not depend on the docs
     # pipeline keeping it.
     needs: [tests, build-docs, verify-tag]
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     # A job-level permissions block replaces the workflow-level map entirely, so

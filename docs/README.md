@@ -257,6 +257,10 @@ whose `build-docs` job builds the site exactly as described above and whose `dep
 GitHub Pages with `actions/deploy-pages`. The `_site/` directory is gitignored and must not be committed; merges
 to `main` between releases do not change the published site.
 
+To publish changes to the documentation alone, run the Release workflow by hand (Actions, Release, Run workflow)
+on `main`: it validates, builds, and publishes the site from that commit, without tests or packages, so do it only
+while `main` describes the released API.
+
 ## Troubleshooting
 
 ### "Command not found: docfx"
