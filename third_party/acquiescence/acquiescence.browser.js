@@ -2788,7 +2788,9 @@ var Acquiescence = (() => {
           Object.assign(node, { [state]: value });
         }
       }
-      if (element instanceof HTMLInputElement && !this.nonTextInputTypes.includes(element.type) || element instanceof HTMLTextAreaElement) {
+      if (element instanceof HTMLInputElement && element.type === "password") {
+        node.children.push("\u2022".repeat([...element.value].length));
+      } else if (element instanceof HTMLInputElement && !this.nonTextInputTypes.includes(element.type) || element instanceof HTMLTextAreaElement) {
         node.children.push(element.value);
       }
       return node;
@@ -3663,6 +3665,7 @@ ${" ".repeat(column)}^`);
         title: element.getAttribute("title"),
         testId: element.getAttribute(testIdAttribute),
         text: element instanceof HTMLElement ? this.normalize(this.getRenderedText(element)) : "",
+        headingName: this.getHeadingName(element),
         id: element.id || null,
         cssPath: this.getCssPath(element),
         inShadowRoot: element.getRootNode() instanceof ShadowRoot
@@ -3671,6 +3674,17 @@ ${" ".repeat(column)}^`);
     // jsdom does not render, so has no innerText; its text content stands in.
     getRenderedText(element) {
       return element.innerText ?? element.textContent ?? "";
+    }
+    getHeadingName(element) {
+      for (const heading of element.querySelectorAll("h1, h2, h3, h4, h5, h6, [role=heading]")) {
+        if (this.ariaUtilities.getAriaRole(heading) === "heading" && !this.ariaUtilities.isHiddenForAria(heading)) {
+          const name = this.normalize(this.nameCalculator.getAccessibleName(heading));
+          if (name) {
+            return name;
+          }
+        }
+      }
+      return null;
     }
     hasNameableRole(element) {
       const role = this.ariaUtilities.getAriaRole(element);
