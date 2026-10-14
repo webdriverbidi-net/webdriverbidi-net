@@ -1093,7 +1093,7 @@ var Acquiescence = (() => {
     }
   };
   var RequestAnimationFrameWaiter = class _RequestAnimationFrameWaiter {
-    static frameIntervalInMilliseconds = 16;
+    static noFrameIntervalInMilliseconds = 100;
     condition;
     timeout;
     rafId = null;
@@ -1140,7 +1140,7 @@ var Acquiescence = (() => {
             void checkCondition();
           };
           this.rafId = globalThis.requestAnimationFrame(checkNext);
-          this.timerId = setTimeout(checkNext, _RequestAnimationFrameWaiter.frameIntervalInMilliseconds);
+          this.timerId = setTimeout(checkNext, _RequestAnimationFrameWaiter.noFrameIntervalInMilliseconds);
         };
         void checkCondition();
       });
