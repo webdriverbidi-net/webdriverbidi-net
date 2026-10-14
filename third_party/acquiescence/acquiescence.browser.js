@@ -1092,10 +1092,12 @@ var Acquiescence = (() => {
       }
     }
   };
-  var RequestAnimationFrameWaiter = class {
+  var RequestAnimationFrameWaiter = class _RequestAnimationFrameWaiter {
+    static frameIntervalInMilliseconds = 16;
     condition;
     timeout;
     rafId = null;
+    timerId = null;
     cancelled = false;
     /**
      * Initializes a new instance of the RequestAnimationFrameWaiter class.
@@ -1133,7 +1135,12 @@ var Acquiescence = (() => {
             reject(new Error(`Timeout after ${this.timeout}ms`));
             return;
           }
-          this.rafId = globalThis.requestAnimationFrame(() => void checkCondition());
+          const checkNext = () => {
+            this.cleanup();
+            void checkCondition();
+          };
+          this.rafId = globalThis.requestAnimationFrame(checkNext);
+          this.timerId = setTimeout(checkNext, _RequestAnimationFrameWaiter.frameIntervalInMilliseconds);
         };
         void checkCondition();
       });
@@ -1152,6 +1159,10 @@ var Acquiescence = (() => {
       if (this.rafId !== null) {
         globalThis.cancelAnimationFrame(this.rafId);
         this.rafId = null;
+      }
+      if (this.timerId !== null) {
+        clearTimeout(this.timerId);
+        this.timerId = null;
       }
     }
   };
