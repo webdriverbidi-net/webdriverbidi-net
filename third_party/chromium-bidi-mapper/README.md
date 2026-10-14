@@ -23,7 +23,8 @@ On Windows:
 
 Either script downloads the latest published version of the mapper tab tarball from
 NPM, extracts it into a temporary directory, and copies the tab JavaScript file to the
-proper location in this repo. You can then commit the changes.
+proper location in this repo. It also writes `VERSION`, which records the npm version of
+chromium-bidi that `mapperTab.js` and `LICENSE` came from. You can then commit the changes.
 
 Both report the same exit codes: `0` on success, `1` if the download, extraction or
 copy failed, and `2` if a required tool is missing. Pass `--help` (or `-Help` for the

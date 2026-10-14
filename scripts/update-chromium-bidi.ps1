@@ -1,12 +1,13 @@
 #!/usr/bin/env pwsh
 # Downloads the latest published chromium-bidi package from the npm registry and refreshes the
-# vendored mapper tab source and its license in third_party/chromium-bidi-mapper.
+# vendored mapper tab source, its license, and the version they came from in
+# third_party/chromium-bidi-mapper.
 #
 # Usage:
 #   update-chromium-bidi.ps1 [-Help]
 #
 # Exit codes:
-#   0 — the vendored mapperTab.js and LICENSE were updated
+#   0 — the vendored mapperTab.js, LICENSE, and VERSION were updated
 #   1 — the download, extraction, or copy failed
 #   2 — a required tool is missing
 
@@ -20,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 # -Help prints the header block above, matching the -h/--help behaviour of update-chromium-bidi.sh.
 if ($Help) {
     Get-Content -LiteralPath $PSCommandPath |
-        Select-Object -Skip 1 -First 10 |
+        Select-Object -Skip 1 -First 11 |
         ForEach-Object { $_ -replace '^# ?', '' } |
         Write-Host
     exit 0
@@ -41,6 +42,7 @@ $repoRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
 $destinationDir = Join-Path $repoRoot 'third_party/chromium-bidi-mapper'
 $destination = Join-Path $destinationDir 'mapperTab.js'
 $licenseDestination = Join-Path $destinationDir 'LICENSE'
+$versionDestination = Join-Path $destinationDir 'VERSION'
 
 # Extract into a temporary directory that is removed however this script exits, rather than into a
 # fixed .chromium-bidi directory in the working directory that a failure would leave behind.
@@ -51,8 +53,9 @@ try {
     Write-Host 'Resolving the latest chromium-bidi release...'
     $release = Invoke-RestMethod -Uri 'https://registry.npmjs.org/chromium-bidi/latest'
     $tarballUrl = $release.dist.tarball
-    if ([string]::IsNullOrWhiteSpace($tarballUrl)) {
-        Write-Host 'ERROR: the registry response did not contain a tarball URL.' -ForegroundColor Red
+    $version = $release.version
+    if ([string]::IsNullOrWhiteSpace($tarballUrl) -or [string]::IsNullOrWhiteSpace($version)) {
+        Write-Host 'ERROR: the registry response did not contain a tarball URL and a version.' -ForegroundColor Red
         exit 1
     }
 
@@ -92,6 +95,10 @@ try {
     Write-Host "Updated $destination"
     Copy-Item -LiteralPath $licenseFile -Destination $licenseDestination -Force
     Write-Host "Updated $licenseDestination"
+
+    # A line feed, as the shell script writes, so the file does not change with the platform that updated it.
+    [System.IO.File]::WriteAllText($versionDestination, "$version`n")
+    Write-Host "Updated $versionDestination ($version)"
 }
 catch {
     # $ErrorActionPreference = 'Stop' turns a failed web request or copy into a terminating error;
