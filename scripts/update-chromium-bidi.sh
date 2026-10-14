@@ -1,12 +1,13 @@
 #!/bin/bash
 # Downloads the latest published chromium-bidi package from the npm registry and refreshes the
-# vendored mapper tab source and its license in third_party/chromium-bidi-mapper.
+# vendored mapper tab source, its license, and the version they came from in
+# third_party/chromium-bidi-mapper.
 #
 # Usage:
 #   update-chromium-bidi.sh [-h|--help]
 #
 # Exit codes:
-#   0 — the vendored mapperTab.js and LICENSE were updated
+#   0 — the vendored mapperTab.js, LICENSE, and VERSION were updated
 #   1 — the download, extraction, or copy failed
 #   2 — a required tool is missing
 
@@ -14,7 +15,7 @@ set -euo pipefail
 
 case "${1:-}" in
   -h|--help)
-    sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
     exit 0
     ;;
   "") ;;
@@ -37,6 +38,7 @@ repo_root=$(cd "$(dirname "$0")/.." && pwd)
 destination_dir="$repo_root/third_party/chromium-bidi-mapper"
 destination="$destination_dir/mapperTab.js"
 license_destination="$destination_dir/LICENSE"
+version_destination="$destination_dir/VERSION"
 
 # Extract into a temporary directory that is removed however this script exits, rather than into a
 # fixed .chromium-bidi directory in the working directory that a failure would leave behind.
@@ -44,9 +46,11 @@ work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT
 
 echo "Resolving the latest chromium-bidi release..."
-tarball_url=$(curl -fsSL "https://registry.npmjs.org/chromium-bidi/latest" | jq -r '.dist.tarball')
-if [ -z "$tarball_url" ] || [ "$tarball_url" = "null" ]; then
-  echo "ERROR: the registry response did not contain a tarball URL." >&2
+release=$(curl -fsSL "https://registry.npmjs.org/chromium-bidi/latest")
+tarball_url=$(jq -r '.dist.tarball' <<< "$release")
+version=$(jq -r '.version' <<< "$release")
+if [ -z "$tarball_url" ] || [ "$tarball_url" = "null" ] || [ -z "$version" ] || [ "$version" = "null" ]; then
+  echo "ERROR: the registry response did not contain a tarball URL and a version." >&2
   exit 1
 fi
 
@@ -76,3 +80,5 @@ cp "$source_file" "$destination"
 echo "Updated $destination"
 cp "$license_file" "$license_destination"
 echo "Updated $license_destination"
+printf '%s\n' "$version" > "$version_destination"
+echo "Updated $version_destination ($version)"
