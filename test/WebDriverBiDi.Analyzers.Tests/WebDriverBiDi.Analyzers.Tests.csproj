@@ -20,6 +20,8 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.4" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.4" />
     <PackageReference Include="coverlet.MTP" Version="10.1.0" />
+    <!-- Overrides the vulnerable transitive version from NuGet.Packaging (via Analyzer.Testing). -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
