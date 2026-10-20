@@ -32,23 +32,9 @@ public class ObservableEventInvocable<T> : ObservableEvent<T>
     {
     }
 
-    /// <summary>
-    /// Sets the reporter used to surface observer failures that occur after the handler has already
-    /// returned to the caller. This is intended for producers that need to handle asynchronous
-    /// observer errors outside the normal exception propagation path.
-    /// </summary>
-    /// <param name="reporter">The reporter callback.</param>
+    /// <inheritdoc cref="ObservableEvent{T}.SetObserverErrorReporter(Func{EventObserverErrorInfo, Task})"/>
     public void InvokeSetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter) => this.SetObserverErrorReporter(reporter);
 
-    /// <summary>
-    /// Asynchronously notifies observers when this observable event occurs. Each observer is
-    /// notified independently; an exception thrown by one observer does not prevent subsequent
-    /// observers from being notified. If exactly one observer throws, the original exception is
-    /// rethrown. If multiple observers throw, an <see cref="AggregateException"/> containing all
-    /// caught exceptions is thrown after all observers have been notified.
-    /// </summary>
-    /// <param name="notifyData">The data of the event.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="AggregateException">Thrown when multiple observer handlers throw an exception.</exception>
+    /// <inheritdoc cref="ObservableEvent{T}.NotifyObserversAsync(T)"/>
     public Task InvokeNotifyObserversAsync(T notifyData) => this.NotifyObserversAsync(notifyData);
 }

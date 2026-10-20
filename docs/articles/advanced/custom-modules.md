@@ -88,11 +88,11 @@ raises the `ObservableEventInvocable<T>` with the deserialized data as the event
 is not the event args type you expose, use the overload
 `RegisterObservableEvent<T, TEventArgs>(invocable, Func<T, TEventArgs> eventArgsConverter)`: it builds the event args
 through the AOT-safe `ToEventArgs` factory overload described below. Both overloads also connect the invocable to the
-driver's reporting of asynchronous observer failures, described below.
+driver's reporting of observer failures, described below.
 
 The invocable is also how a module raises an event it produces itself rather than one the remote end sends:
 `InvokeNotifyObserversAsync(args)` notifies its observers, and `InvokeSetObserverErrorReporter(reporter)` sets the
-callback that receives the failures of asynchronous observers, which the registration overloads set for you. Expose
+callback that receives the failures of its observers, which the registration overloads set for you. Expose
 the invocable to callers as its base type, `ObservableEvent<T>`, so that only your module can raise it.
 
 > **Why `IBiDiModuleHost`, not `IBiDiDriverConfiguration`?**
@@ -105,13 +105,14 @@ the invocable to callers as its base type, `ObservableEvent<T>`, so that only yo
 > receives a `BiDiDriver` in practice.
 
 > **Reporting observer failures from a custom executor.**
-> A handler registered with `ObservableEventHandlerOptions.RunHandlerAsynchronously` has its task
-> detached, so a failure in it cannot be thrown at the code that raised the event. `Module` routes such
-> a failure to the executor it was constructed with, if that executor implements
-> `IEventObserverErrorReporter`. `BiDiDriver` does, which is how the failure reaches
-> `EventHandlerExceptionBehavior` and `OnEventHandlerErrorOccurred`. If you write your own
-> `IBiDiModuleHost`, implement that interface too, or the failures of your modules' asynchronous
-> observers are observed and then discarded — never thrown, never reported:
+> `Module` routes every observer failure to the executor it was constructed with, if that executor
+> implements `IEventObserverErrorReporter`: a synchronously-run handler's failure as it happens, and
+> the failure of a handler registered with `ObservableEventHandlerOptions.RunHandlerAsynchronously`,
+> whose task is detached, after the handler has returned. `BiDiDriver` implements it, which is how a
+> failure reaches `EventHandlerExceptionBehavior` and `OnEventHandlerErrorOccurred`. If you write your
+> own `IBiDiModuleHost`, implement that interface too. Without it, a synchronously-run observer's
+> failure is thrown at the code that raised the event, and an asynchronously-run observer's failure is
+> observed and then discarded — never thrown, never reported:
 >
 > <!-- inline-csharp: a member sketch, not a callable method -->
 > ```csharp

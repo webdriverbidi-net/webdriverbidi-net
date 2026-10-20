@@ -6,8 +6,7 @@
 namespace WebDriverBiDi;
 
 /// <summary>
-/// Provides a sink for observer failures that happen after an event handler has already returned
-/// control to the caller.
+/// Provides a sink for the failures of observable event observers.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,12 +16,13 @@ namespace WebDriverBiDi;
 /// driver needs nothing here.
 /// </para>
 /// <para>
-/// A failure of this kind cannot be thrown at the code that raised the event, because the handler has
-/// already returned: it is the failure of a handler registered with
+/// Every observer failure is reported here rather than thrown at the code that raised the event: a
+/// synchronously-run handler's as it happens, and the failure of a handler registered with
 /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>, whose task the dispatcher does
-/// not await. <see cref="Module"/> installs the reporter of the executor it is constructed with on
-/// every event it registers, and where the executor does not implement this interface such a failure is
-/// observed — so it never surfaces as a
+/// not await, after the handler has returned. <see cref="Module"/> installs the reporter of the executor
+/// it is constructed with on every event it registers. Where the executor does not implement this
+/// interface, a synchronously-run handler's failure propagates to the code that raised the event, and an
+/// asynchronously-run handler's failure is observed — so it never surfaces as a
 /// <see cref="System.Threading.Tasks.TaskScheduler.UnobservedTaskException"/> — and then discarded.
 /// </para>
 /// <para>
