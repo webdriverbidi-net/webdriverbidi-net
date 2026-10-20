@@ -13,7 +13,7 @@ dotnet add package WebDriverBiDi.Analyzers
 The analyzer package is marked as a development dependency, so `dotnet add package` writes `PrivateAssets="all"` for you and the analyzer does not flow to consumers of your own package. A hand-written `<PackageReference>` gets neither that attribute nor the assets filter, so write both when pinning an exact version (see [Pinning an exact version](../getting-started.md#pinning-an-exact-version) for why to pin at all):
 
 ```xml
-<PackageReference Include="WebDriverBiDi.Analyzers" Version="0.0.61">
+<PackageReference Include="WebDriverBiDi.Analyzers" Version="0.0.63">
   <PrivateAssets>all</PrivateAssets>
   <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 </PackageReference>
