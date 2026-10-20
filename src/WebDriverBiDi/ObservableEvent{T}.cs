@@ -232,8 +232,9 @@ public class ObservableEvent<T>
     }
 
     /// <summary>
-    /// Sets the internal reporter used to surface observer failures that occur
-    /// after the handler has already returned to the caller.
+    /// Sets the reporter through which observer failures are reported instead of propagating to
+    /// the caller: a synchronously-run observer's failure as it happens, and an asynchronously-run
+    /// observer's failure after its handler has returned.
     /// </summary>
     /// <param name="reporter">The reporter callback.</param>
     protected void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
