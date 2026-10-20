@@ -356,9 +356,10 @@ A PowerShell version is available for Windows, and makes the same changes:
     ./scripts/prep-release.ps1 <version>
 
 It moves the pending entries in `AnalyzerReleases.Unshipped.md` into a `## Release <version>`
-section of `AnalyzerReleases.Shipped.md`, updates the pinned package version shown in
-`docs/articles/getting-started.md` (skipped for prerelease versions, which that page should not
-recommend), and then runs the local subset of the release gates: a Release build with
+section of `AnalyzerReleases.Shipped.md`, updates the pinned package versions shown in
+`docs/articles/getting-started.md` and `docs/articles/advanced/analyzers.md` (skipped for
+prerelease versions, which those pages should not recommend), and then runs the local subset of
+the release gates: a Release build with
 `-warnaserror`, the unit test projects, and the documentation region validation. Pass `--dry-run`
 to see the changes without writing them, or `--skip-verification` to stop after making them
 (`-DryRun` and `-SkipVerification` in the PowerShell version). The documentation region

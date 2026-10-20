@@ -14,10 +14,11 @@
 #      rule entries into a "## Release <version>" section of the shipped file and empties the
 #      unshipped file back to its header. The Roslyn release-tracking analyzers treat a rule as
 #      shipped only once it appears in the shipped file under a release heading.
-#   2. docs/articles/getting-started.md — updates the pinned <PackageReference> version the
-#      "Pinning an exact version" section shows to consumers. Skipped for prerelease versions:
-#      that page recommends the current stable release, and the docs site is republished from
-#      every tag, prerelease tags included.
+#   2. docs/articles/getting-started.md and docs/articles/advanced/analyzers.md — updates the
+#      pinned <PackageReference> versions their "Pinning an exact version" and installation
+#      sections show to consumers. Skipped for prerelease versions: those pages recommend the
+#      current stable release, and the docs site is republished from every tag, prerelease tags
+#      included.
 #
 # Nothing else in the tree carries the release version. AssemblyVersion, FileVersion,
 # InformationalVersion, and PackageVersion are all derived from the tag by release.yml at build
@@ -107,11 +108,13 @@ $repoRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
 $analyzerUnshipped = Join-Path $repoRoot 'src/WebDriverBiDi.Analyzers/AnalyzerReleases.Unshipped.md'
 $analyzerShipped = Join-Path $repoRoot 'src/WebDriverBiDi.Analyzers/AnalyzerReleases.Shipped.md'
 $gettingStarted = Join-Path $repoRoot 'docs/articles/getting-started.md'
+$analyzersGuide = Join-Path $repoRoot 'docs/articles/advanced/analyzers.md'
 
 # Paths as they read in output and in git's own reporting, rather than as absolute paths.
 $analyzerUnshippedName = 'src/WebDriverBiDi.Analyzers/AnalyzerReleases.Unshipped.md'
 $analyzerShippedName = 'src/WebDriverBiDi.Analyzers/AnalyzerReleases.Shipped.md'
 $gettingStartedName = 'docs/articles/getting-started.md'
+$analyzersGuideName = 'docs/articles/advanced/analyzers.md'
 
 # Collected as the run goes and printed at the end, so a reminder raised during the mutation phase
 # is not scrolled away by several minutes of build output.
@@ -210,7 +213,7 @@ if (-not $SkipVerification -and -not (Get-Command 'dotnet' -ErrorAction Silently
     exit 2
 }
 
-foreach ($file in @($analyzerUnshipped, $analyzerShipped, $gettingStarted)) {
+foreach ($file in @($analyzerUnshipped, $analyzerShipped, $gettingStarted, $analyzersGuide)) {
     if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
         Write-Host "ERROR: expected file not found: $file" -ForegroundColor Red
         exit 2
@@ -362,9 +365,14 @@ function Update-AnalyzerReleaseTracking {
     }
 }
 
+# Updates the <PackageReference Include="$Package" Version="..."> pin in documentation page $Path,
+# reported as $Name. The element is self-closing on one page and has child elements on the other,
+# so the pattern accepts both closings.
 function Update-DocumentationVersionPin {
-    $pattern = '(<PackageReference Include="WebDriverBiDi" Version=")([^"]*)(" */>)'
-    $lines = Get-FileLines $gettingStarted
+    param([string] $Path, [string] $Name, [string] $Package)
+
+    $pattern = '(<PackageReference Include="' + [regex]::Escape($Package) + '" Version=")([^"]*)(" */?>)'
+    $lines = Get-FileLines $Path
 
     $current = $null
     foreach ($line in $lines) {
@@ -375,18 +383,18 @@ function Update-DocumentationVersionPin {
     }
 
     if ($null -eq $current) {
-        Write-Host "ERROR: no pinned <PackageReference Include=`"WebDriverBiDi`" ...> found in $gettingStartedName." -ForegroundColor Red
+        Write-Host "ERROR: no pinned <PackageReference Include=`"$Package`" ...> found in $Name." -ForegroundColor Red
         Write-Host '       The page changed shape; update this script to match it.' -ForegroundColor Red
         exit 1
     }
 
     if ($qualifier) {
-        Write-Host "  - documentation version pin: left at $current (prerelease versions are not recommended there)"
+        Write-Host "  - $Name version pin: left at $current (prerelease versions are not recommended there)"
         return
     }
 
     if ($current -eq $version) {
-        Write-Host "  - documentation version pin: already $version"
+        Write-Host "  - $Name version pin: already $version"
         return
     }
 
@@ -396,18 +404,19 @@ function Update-DocumentationVersionPin {
     # Set-PreparedContent reporting no change means the replace matched nothing -- the page's
     # PackageReference has changed shape -- which must fail rather than print a checkmark for an edit
     # that never happened.
-    if (Set-PreparedContent $gettingStarted (ConvertTo-FileText $updated)) {
-        Write-Host "  v documentation version pin: $current -> $version"
+    if (Set-PreparedContent $Path (ConvertTo-FileText $updated)) {
+        Write-Host "  v $Name version pin: $current -> $version"
     }
     else {
-        Write-Host "ERROR: the version pin in $gettingStartedName did not change." -ForegroundColor Red
+        Write-Host "ERROR: the version pin in $Name did not change." -ForegroundColor Red
         Write-Host "       Its PackageReference no longer matches this script's pattern; update the script." -ForegroundColor Red
         exit 1
     }
 }
 
 Update-AnalyzerReleaseTracking
-Update-DocumentationVersionPin
+Update-DocumentationVersionPin $gettingStarted $gettingStartedName 'WebDriverBiDi'
+Update-DocumentationVersionPin $analyzersGuide $analyzersGuideName 'WebDriverBiDi.Analyzers'
 
 Write-Host ''
 

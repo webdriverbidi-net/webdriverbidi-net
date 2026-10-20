@@ -14,10 +14,11 @@
 #      rule entries into a "## Release <version>" section of the shipped file and empties the
 #      unshipped file back to its header. The Roslyn release-tracking analyzers treat a rule as
 #      shipped only once it appears in the shipped file under a release heading.
-#   2. docs/articles/getting-started.md — updates the pinned <PackageReference> version the
-#      "Pinning an exact version" section shows to consumers. Skipped for prerelease versions:
-#      that page recommends the current stable release, and the docs site is republished from
-#      every tag, prerelease tags included.
+#   2. docs/articles/getting-started.md and docs/articles/advanced/analyzers.md — updates the
+#      pinned <PackageReference> versions their "Pinning an exact version" and installation
+#      sections show to consumers. Skipped for prerelease versions: those pages recommend the
+#      current stable release, and the docs site is republished from every tag, prerelease tags
+#      included.
 #
 # Nothing else in the tree carries the release version. AssemblyVersion, FileVersion,
 # InformationalVersion, and PackageVersion are all derived from the tag by release.yml at build
@@ -92,6 +93,7 @@ cd "$repo_root"
 ANALYZER_UNSHIPPED="src/WebDriverBiDi.Analyzers/AnalyzerReleases.Unshipped.md"
 ANALYZER_SHIPPED="src/WebDriverBiDi.Analyzers/AnalyzerReleases.Shipped.md"
 GETTING_STARTED="docs/articles/getting-started.md"
+ANALYZERS_GUIDE="docs/articles/advanced/analyzers.md"
 
 # Collected as the run goes and printed at the end, so a reminder raised during the mutation phase
 # is not scrolled away by several minutes of build output.
@@ -117,7 +119,7 @@ if [ "$SKIP_VERIFICATION" -eq 0 ] && ! command -v dotnet > /dev/null 2>&1; then
   exit 2
 fi
 
-for file in "$ANALYZER_UNSHIPPED" "$ANALYZER_SHIPPED" "$GETTING_STARTED"; do
+for file in "$ANALYZER_UNSHIPPED" "$ANALYZER_SHIPPED" "$GETTING_STARTED" "$ANALYZERS_GUIDE"; do
   if [ ! -f "$file" ]; then
     echo "❌ ERROR: expected file not found: $file" >&2
     exit 2
@@ -268,43 +270,48 @@ prep_analyzer_release_tracking() {
   fi
 }
 
+# Updates the <PackageReference Include="$2" Version="..."> pin in documentation page $1. The
+# element is self-closing on one page and has child elements on the other, so the pattern accepts
+# both closings.
 prep_documentation_version_pin() {
-  local current pinned_new
+  local file="$1" package="$2" package_pattern current pinned_new
 
-  current=$(sed -n 's|.*<PackageReference Include="WebDriverBiDi" Version="\([^"]*\)".*|\1|p' "$GETTING_STARTED" | head -1)
+  package_pattern="${package//./\\.}"
+  current=$(sed -n 's|.*<PackageReference Include="'"$package_pattern"'" Version="\([^"]*\)".*|\1|p' "$file" | head -1)
   if [ -z "$current" ]; then
-    echo "❌ ERROR: no pinned <PackageReference Include=\"WebDriverBiDi\" ...> found in $GETTING_STARTED." >&2
+    echo "❌ ERROR: no pinned <PackageReference Include=\"$package\" ...> found in $file." >&2
     echo "         The page changed shape; update this script to match it." >&2
     exit 1
   fi
 
   if [ -n "$QUALIFIER" ]; then
-    echo "  • documentation version pin: left at $current (prerelease versions are not recommended there)"
+    echo "  • $file version pin: left at $current (prerelease versions are not recommended there)"
     return
   fi
 
   if [ "$current" = "$VERSION" ]; then
-    echo "  • documentation version pin: already $VERSION"
+    echo "  • $file version pin: already $VERSION"
     return
   fi
 
   pinned_new=$(mktemp)
-  sed 's|\(<PackageReference Include="WebDriverBiDi" Version="\)[^"]*\(" */>\)|\1'"$VERSION"'\2|g' "$GETTING_STARTED" > "$pinned_new"
+  sed 's|\(<PackageReference Include="'"$package_pattern"'" Version="\)[^"]*\(" */\{0,1\}>\)|\1'"$VERSION"'\2|g' "$file" > "$pinned_new"
 
   # Report the pin only once it is written. The version is known to differ from $current by here, so
   # apply_change reporting no change means the sed matched nothing -- the page's PackageReference has
   # changed shape -- which must fail rather than print a checkmark for an edit that never happened.
-  if apply_change "$GETTING_STARTED" "$pinned_new"; then
-    echo "  ✔ documentation version pin: $current → $VERSION"
+  if apply_change "$file" "$pinned_new"; then
+    echo "  ✔ $file version pin: $current → $VERSION"
   else
-    echo "❌ ERROR: the version pin in $GETTING_STARTED did not change." >&2
+    echo "❌ ERROR: the version pin in $file did not change." >&2
     echo "         Its PackageReference no longer matches this script's pattern; update the script." >&2
     exit 1
   fi
 }
 
 prep_analyzer_release_tracking
-prep_documentation_version_pin
+prep_documentation_version_pin "$GETTING_STARTED" "WebDriverBiDi"
+prep_documentation_version_pin "$ANALYZERS_GUIDE" "WebDriverBiDi.Analyzers"
 
 echo
 
