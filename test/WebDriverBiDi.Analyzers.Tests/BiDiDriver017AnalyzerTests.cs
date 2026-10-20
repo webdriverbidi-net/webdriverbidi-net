@@ -1566,4 +1566,38 @@ public class BiDiDriver017AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver017_NullableListAddAnalyzer>(testCode, expected);
     }
 
+    /// <summary>
+    /// Tests that Add on a nullable property of the non-generic System.Collections.IList type, whose
+    /// name matches a flagged collection type but which has no type argument, does not report a diagnostic.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddToNonGenericIListProperty_NoDiagnostic()
+    {
+        string test = """
+            #nullable enable
+            using System.Collections;
+
+            namespace WebDriverBiDi.TestApp
+            {
+                public class TestClass
+                {
+                    public IList? Items { get; set; }
+
+                    public void TestMethod()
+                    {
+                        Items.Add("item");
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }
