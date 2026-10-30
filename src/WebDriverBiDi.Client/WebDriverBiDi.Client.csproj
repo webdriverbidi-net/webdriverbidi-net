@@ -28,7 +28,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Text.Json" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.14" />
     <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="10.0.13" />
   </ItemGroup>
 

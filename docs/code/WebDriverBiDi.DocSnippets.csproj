@@ -50,7 +50,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="OpenTelemetry" Version="1.19.1" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.19.1" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup>
