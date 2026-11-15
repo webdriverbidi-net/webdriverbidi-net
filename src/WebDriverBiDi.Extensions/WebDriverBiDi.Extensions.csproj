@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net10.0;net11.0</TargetFrameworks>
-    <LangVersion>14</LangVersion>
+    <LangVersion>15</LangVersion>
     <RootNamespace>WebDriverBiDi</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
