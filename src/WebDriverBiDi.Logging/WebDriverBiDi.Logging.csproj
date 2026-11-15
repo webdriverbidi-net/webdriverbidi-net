@@ -51,7 +51,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="../../.stylecop.json" Link=".stylecop.json" />
     <AdditionalFiles Include="../../WebDriverBiDi.snk" />
     <None Include="README.md" Pack="true" PackagePath="/"/>
   </ItemGroup>
