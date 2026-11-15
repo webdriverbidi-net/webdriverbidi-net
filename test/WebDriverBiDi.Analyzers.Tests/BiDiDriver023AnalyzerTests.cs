@@ -1398,7 +1398,7 @@ public class BiDiDriver023AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

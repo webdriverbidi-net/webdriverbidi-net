@@ -509,7 +509,7 @@ public class BiDiDriver009AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -574,7 +574,7 @@ public class BiDiDriver009AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -639,7 +639,7 @@ public class BiDiDriver009AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -704,7 +704,7 @@ public class BiDiDriver009AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

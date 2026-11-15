@@ -594,7 +594,7 @@ public class BiDiDriver006AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -882,7 +882,7 @@ public class BiDiDriver006AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -986,7 +986,7 @@ public class BiDiDriver006AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1376,7 +1376,7 @@ public class BiDiDriver006AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

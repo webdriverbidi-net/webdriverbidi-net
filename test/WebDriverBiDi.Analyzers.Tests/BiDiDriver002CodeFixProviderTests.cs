@@ -235,7 +235,7 @@ public class BiDiDriver002CodeFixProviderTests
         {
             TestCode = testCode,
             FixedCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

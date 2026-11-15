@@ -63,7 +63,11 @@ public class BrowserDownloadOptions
     /// <exception cref="ArgumentException">Thrown when set to a null or empty value.</exception>
     public string CacheDirectory
     {
-        get => this.cacheDirectory;
+        get
+        {
+            return this.cacheDirectory;
+        }
+
         init => this.cacheDirectory = string.IsNullOrWhiteSpace(value)
             ? throw new ArgumentException("Cache directory cannot be null or empty.", nameof(this.CacheDirectory))
             : value;
@@ -100,7 +104,11 @@ public class BrowserDownloadOptions
     /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a value that is not positive or <see cref="Timeout.InfiniteTimeSpan"/>.</exception>
     public TimeSpan LockTimeout
     {
-        get => this.lockTimeout;
+        get
+        {
+            return this.lockTimeout;
+        }
+
         init => this.lockTimeout = value > TimeSpan.Zero || value == Timeout.InfiniteTimeSpan
             ? value
             : throw new ArgumentOutOfRangeException(nameof(this.LockTimeout), "Lock timeout must be positive or infinite.");
@@ -138,7 +146,11 @@ public class BrowserDownloadOptions
     /// <exception cref="ArgumentException">Thrown when set to a URL that is not an absolute http, https, or file URL.</exception>
     public Uri? ManifestUrl
     {
-        get => this.manifestUrl;
+        get
+        {
+            return this.manifestUrl;
+        }
+
         init => this.manifestUrl = value is null || (value.IsAbsoluteUri && (value.Scheme == Uri.UriSchemeHttp || value.Scheme == Uri.UriSchemeHttps || value.IsFile))
             ? value
             : throw new ArgumentException("Manifest URL must be an absolute http, https, or file URL.", nameof(this.ManifestUrl));

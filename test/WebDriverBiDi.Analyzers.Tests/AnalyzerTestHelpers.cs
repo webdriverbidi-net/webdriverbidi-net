@@ -112,7 +112,7 @@ public static class AnalyzerTestHelpers
         CSharpAnalyzerTest<TAnalyzer, DefaultVerifier> test = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(GetWebDriverBiDiAssemblyPath()));
@@ -133,7 +133,7 @@ public static class AnalyzerTestHelpers
         CSharpAnalyzerTest<TAnalyzer, DefaultVerifier> test = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(GetWebDriverBiDiAssemblyPath()));
@@ -162,7 +162,7 @@ public static class AnalyzerTestHelpers
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TCodeFix : CodeFixProvider, new()
     {
-        ImmutableArray<MetadataReference> references = await ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, CancellationToken.None);
+        ImmutableArray<MetadataReference> references = await ReferenceAssemblies.Net.Net100.ResolveAsync(LanguageNames.CSharp, CancellationToken.None);
         if (referenceWebDriverBiDi)
         {
             // Analyzed sources that use the library's real types rather than hand-written stubs need it
@@ -213,26 +213,22 @@ public static class AnalyzerTestHelpers
     }
 
     /// <summary>
-    /// Gets the path to the WebDriverBiDi assembly for use in code fix tests.
-    /// </summary>
-    /// <returns>The assembly path.</returns>
-    /// <summary>
     /// Gets the path to the <c>WebDriverBiDi</c> assembly the analyzer tests compile their sources against.
     /// </summary>
     /// <returns>The path to the assembly.</returns>
     /// <remarks>
     /// <para>
-    /// This deliberately resolves the library's <c>net8.0</c> artifact by path rather than using
+    /// This deliberately resolves the library's <c>net10.0</c> artifact by path rather than using
     /// <c>typeof(BiDiDriver).Assembly.Location</c>, which the project reference already supplies. The
     /// harnesses in this project compile their analyzed sources against
-    /// <see cref="ReferenceAssemblies.Net.Net80"/>, and handing those compilations the library's
-    /// <c>net10.0</c> build fails with <c>CS1705</c> — the assembly references a framework newer than the
-    /// reference set. Switching to the loaded assembly fails 203 tests for that reason.
+    /// <see cref="ReferenceAssemblies.Net.Net100"/>, and handing those compilations the library's
+    /// <c>net11.0</c> build fails with <c>CS1705</c> — the assembly references a framework newer than the
+    /// reference set.
     /// </para>
     /// <para>
     /// The cost of resolving by path is that this artifact is refreshed only by an explicit build of the
-    /// library project: a <c>net10.0</c> test project's project reference builds only the library's
-    /// <c>net10.0</c> output. A stale artifact used to bind silently, so a test referencing a
+    /// library project: a <c>net11.0</c> test project's project reference builds only the library's
+    /// <c>net11.0</c> output. A stale artifact used to bind silently, so a test referencing a
     /// newly-added library type failed with <c>CS0246</c> pointing at the test source rather than at the
     /// real cause. It is now detected and reported: the artifact is compared against the newest source
     /// file in the library project, which answers "was this rebuilt since the source last changed?"
@@ -244,34 +240,34 @@ public static class AnalyzerTestHelpers
     {
         string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
 
-        // Extract configuration (Debug/Release) from path: .../bin/{Configuration}/net10.0
+        // Extract configuration (Debug/Release) from path: .../bin/{Configuration}/net11.0
         string? configDir = Path.GetDirectoryName(testDirectory);
         string configuration = configDir != null ? Path.GetFileName(configDir) : "Debug";
 
         string repositoryRoot = FindRepositoryRoot();
         string librarySourceDirectory = Path.Combine(repositoryRoot, "src", "WebDriverBiDi");
-        string net80AssemblyPath = Path.Combine(librarySourceDirectory, "bin", configuration, "net8.0", "WebDriverBiDi.dll");
-        if (!File.Exists(net80AssemblyPath))
+        string net100AssemblyPath = Path.Combine(librarySourceDirectory, "bin", configuration, "net10.0", "WebDriverBiDi.dll");
+        if (!File.Exists(net100AssemblyPath))
         {
             // Nothing to go stale; the loaded assembly is the only thing available.
             return typeof(BiDiDriver).Assembly.Location;
         }
 
-        DateTime artifactWriteTime = File.GetLastWriteTimeUtc(net80AssemblyPath);
+        DateTime artifactWriteTime = File.GetLastWriteTimeUtc(net100AssemblyPath);
         DateTime newestSourceWriteTime = NewestSourceWriteTime(librarySourceDirectory);
         if (artifactWriteTime < newestSourceWriteTime)
         {
             throw new InvalidOperationException(
-                $"The WebDriverBiDi {configuration} net8.0 assembly is older than the library's sources, so these tests "
+                $"The WebDriverBiDi {configuration} net10.0 assembly is older than the library's sources, so these tests "
                 + $"would compile against an out-of-date library and fail in ways that point at the test source rather "
                 + $"than at the stale reference.{Environment.NewLine}"
-                + $"  assembly: {net80AssemblyPath} ({artifactWriteTime:u}){Environment.NewLine}"
+                + $"  assembly: {net100AssemblyPath} ({artifactWriteTime:u}){Environment.NewLine}"
                 + $"  newest source: {newestSourceWriteTime:u}{Environment.NewLine}"
                 + $"Build the library project for this configuration and re-run:{Environment.NewLine}"
                 + $"  dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj -c {configuration}");
         }
 
-        return net80AssemblyPath;
+        return net100AssemblyPath;
     }
 
     /// <summary>

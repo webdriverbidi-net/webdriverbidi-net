@@ -155,7 +155,7 @@ public class BiDiDriver003AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -567,7 +567,7 @@ public class BiDiDriver003AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

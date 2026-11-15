@@ -486,7 +486,7 @@ public class BiDiDriver037AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver037_UnsettableDeserializedPropertyAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

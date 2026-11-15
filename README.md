@@ -75,13 +75,11 @@ See [Using with Coding Agents](https://webdriverbidi-net.github.io/webdriverbidi
 ## Getting Started
 The library is built to support .NET Standard 2.0. This should allow the widest usage of the library across
 the largest number of framework versions, including .NET Framework, .NET Core, and .NET 5 and higher. For
-convenience, the library also builds assemblies targeting the current and immediately previous Long Term
-Support (LTS) versions of .NET, as well as the most recent Standard Term Support (STS) version of .NET.
-At present, that includes .NET 8 (previous LTS), .NET 9 (current STS), and .NET 10 (current LTS).
+convenience, the library also builds assemblies targeting each version of .NET that is in support under
+Microsoft's .NET support policy. At present, that includes .NET 10 (current LTS) and .NET 11 (current STS).
 
-Building the repository itself requires the .NET 10 SDK: the projects use C# 14
-(`<LangVersion>14</LangVersion>`) and the test projects target `net10.0`. `global.json` does not pin
-an SDK version, so any .NET 10 SDK will do. Consumers of the published package need only one of the
+Building the repository itself requires the .NET 11 SDK: the libraries and the test projects target
+`net11.0`. `global.json` does not pin an SDK version, so any .NET 11 SDK will do. Consumers of the published package need only one of the
 runtimes listed above; see the
 [Getting Started guide](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/getting-started.html)
 for consumer prerequisites.
@@ -311,7 +309,7 @@ To build the documentation, use the following commands. The first three steps ar
 `docfx metadata` reads the API surface from the Release `netstandard2.0` builds of the main library
 and of the `WebDriverBiDi.Logging` and `WebDriverBiDi.Extensions` packages
 (see `docs/docfx.json`), which
-the snippets project does not produce by itself (it builds only the `net10.0` flavour of each):
+the snippets project does not produce by itself (it builds only the `net11.0` flavour of each):
 
     dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
     dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release

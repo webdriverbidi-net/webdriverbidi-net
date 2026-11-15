@@ -21,7 +21,7 @@ The analyzer package is marked as a development dependency, so `dotnet add packa
 
 ### Minimum SDK
 
-The package ships builds of the analyzers for multiple Roslyn versions (under `analyzers/dotnet/roslyn<version>/cs`), and your compiler automatically loads the highest build at or below its own Roslyn version. The lowest build targets Roslyn 4.8, which ships with the .NET 8.0 SDK (and the corresponding Visual Studio 2022 17.8 / VS Code C# tooling). Any SDK from .NET 8.0 onward — including newer SDKs used to target `net8.0`, `net9.0`, or `net10.0` — loads a matching build and runs the analyzers. Toolchains older than the .NET 8.0 SDK match no build and silently skip the analyzers (`CS9057` if they see a newer-only build); upgrade the SDK to enable them.
+The package ships builds of the analyzers for multiple Roslyn versions (under `analyzers/dotnet/roslyn<version>/cs`), and your compiler automatically loads the highest build at or below its own Roslyn version. The lowest build targets Roslyn 5.0, which ships with the .NET 10.0 SDK (and the corresponding Visual Studio 2026 / VS Code C# tooling). Any SDK from .NET 10.0 onward — including newer SDKs used to target `net10.0` or `net11.0` — loads a matching build and runs the analyzers. Toolchains older than the .NET 10.0 SDK, including Visual Studio 2022, match no build and silently skip the analyzers (`CS9057` if they see a newer-only build); upgrade the SDK or IDE to enable them.
 
 ## Available Analyzers
 

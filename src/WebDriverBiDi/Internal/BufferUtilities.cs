@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Internal;
 
-#if !NET5_0_OR_GREATER
+#if NETSTANDARD2_0
 using System.Runtime.InteropServices;
 #endif
 using System.Text;
@@ -35,7 +35,7 @@ internal static class BufferUtilities
     /// <returns>The string the bytes encode.</returns>
     public static string GetUtf8String(ReadOnlyMemory<byte> buffer)
     {
-#if NET5_0_OR_GREATER
+#if !NETSTANDARD2_0
         return Encoding.UTF8.GetString(buffer.Span);
 #else
         if (MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> segment))

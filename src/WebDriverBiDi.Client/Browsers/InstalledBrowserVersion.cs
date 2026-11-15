@@ -84,7 +84,7 @@ internal static class InstalledBrowserVersion
         // Drained concurrently: a process blocked writing to a full stderr pipe never closes stdout.
         Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
         Task<string> errorTask = process.StandardError.ReadToEndAsync();
-#if NET8_0_OR_GREATER
+#if !NETSTANDARD2_0
         using CancellationTokenSource timeoutSource = new(VersionOutputTimeout, timeProvider);
 #else
         using CancellationTokenSource timeoutSource = timeProvider.CreateCancellationTokenSource(VersionOutputTimeout);

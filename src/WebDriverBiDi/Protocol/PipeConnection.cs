@@ -317,7 +317,7 @@ public class PipeConnection : Connection
     /// </remarks>
     protected virtual async Task WriteToPipeAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
     {
-#if NET5_0_OR_GREATER
+#if !NETSTANDARD2_0
         await this.pipeToProcess.WriteAsync(new ReadOnlyMemory<byte>(buffer, offset, count), cancellationToken).ConfigureAwait(false);
 #else
         await this.pipeToProcess.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);

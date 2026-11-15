@@ -220,7 +220,7 @@ public class BiDiDriver027AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver027_RegisterEventWithBuiltInNameAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

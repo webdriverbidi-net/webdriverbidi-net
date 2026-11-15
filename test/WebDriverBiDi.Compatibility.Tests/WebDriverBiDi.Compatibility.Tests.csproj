@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <LangVersion>latest</LangVersion>
     <RootNamespace>WebDriverBiDi.Compatibility.Tests</RootNamespace>
@@ -13,8 +13,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.2" />
-    <PackageReference Include="PinchHitter" Version="0.0.20" />
+    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.3" />
+    <PackageReference Include="PinchHitter" Version="0.0.21" />
   </ItemGroup>
 
   <!-- These tests build and run a separate consumer application out of process; they do not
@@ -43,11 +43,11 @@
 
     <!-- Copy the pipe-peer application next to this test assembly (see the None items in
          WebDriverBiDi.Tests.csproj for the same mechanism). -->
-    <None Include="..\WebDriverBiDi.NamedPipeTestApplication\bin\$(Configuration)\net10.0\WebDriverBiDi.NamedPipeTestApplication.dll">
+    <None Include="..\WebDriverBiDi.NamedPipeTestApplication\bin\$(Configuration)\net11.0\WebDriverBiDi.NamedPipeTestApplication.dll">
       <Link>TestApplications\WebDriverBiDi.NamedPipeTestApplication.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\WebDriverBiDi.NamedPipeTestApplication\bin\$(Configuration)\net10.0\WebDriverBiDi.NamedPipeTestApplication.runtimeconfig.json">
+    <None Include="..\WebDriverBiDi.NamedPipeTestApplication\bin\$(Configuration)\net11.0\WebDriverBiDi.NamedPipeTestApplication.runtimeconfig.json">
       <Link>TestApplications\WebDriverBiDi.NamedPipeTestApplication.runtimeconfig.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

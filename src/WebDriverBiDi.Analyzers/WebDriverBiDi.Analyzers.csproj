@@ -40,12 +40,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- The Roslyn version this build compiles against. Defaults to the compatibility floor (4.8.0,
-         shipped with the .NET 8 SDK) for normal builds and for the assembly consumed by the test
+    <!-- The Roslyn version this build compiles against. Defaults to the compatibility floor (5.0.0,
+         shipped with the .NET 10 SDK) for normal builds and for the assembly consumed by the test
          project; the packaging target below overrides it per shipped variant. An analyzer loads only
          on compilers at or above the Roslyn version it was built against (older compilers raise CS9057
          and silently skip it), so the floor determines the minimum supported SDK. -->
-    <RoslynVersion Condition="'$(RoslynVersion)' == ''">4.8.0</RoslynVersion>
+    <RoslynVersion Condition="'$(RoslynVersion)' == ''">5.0.0</RoslynVersion>
   </PropertyGroup>
 
 
@@ -54,7 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0">
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.12.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -67,15 +67,15 @@
 
   <!-- Roslyn variants to ship. The lowest is the compatibility floor; a consumer's compiler selects the
        highest analyzers/dotnet/roslyn<major.minor>/cs folder that is at or below its own Roslyn version.
-       Two variants suffice because the sources are Roslyn-4.8-clean: compilers between 4.8 and the latest
-       use the 4.8 build, the newest use the latest build. Bump the latest entry as new Roslyn ships; the
+       Two variants suffice because the sources are Roslyn-5.0-clean: compilers between 5.0 and the latest
+       use the 5.0 build, the newest use the latest build. Bump the latest entry as new Roslyn ships; the
        floor moves only when the library drops an older target framework. -->
   <ItemGroup>
-    <AnalyzerRoslynVariant Include="4.8.0">
-      <Folder>roslyn4.8</Folder>
+    <AnalyzerRoslynVariant Include="5.0.0">
+      <Folder>roslyn5.0</Folder>
     </AnalyzerRoslynVariant>
-    <AnalyzerRoslynVariant Include="5.9.0">
-      <Folder>roslyn5.9</Folder>
+    <AnalyzerRoslynVariant Include="5.12.0">
+      <Folder>roslyn5.12</Folder>
     </AnalyzerRoslynVariant>
   </ItemGroup>
 
@@ -125,14 +125,14 @@
        AnalyzerRoslynVariant) because per-item PackagePath cannot be batched from another item's metadata;
        keep them in sync with the AnalyzerRoslynVariant list above. -->
   <ItemGroup>
-    <None Include="$(_AnalyzerVariantStaging)roslyn4.8/WebDriverBiDi.Analyzers.dll"
-          Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs" Visible="false" />
-    <None Include="$(_AnalyzerVariantStaging)roslyn4.8/WebDriverBiDi.Analyzers.CodeFixProviders.dll"
-          Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs" Visible="false" />
-    <None Include="$(_AnalyzerVariantStaging)roslyn5.9/WebDriverBiDi.Analyzers.dll"
-          Pack="true" PackagePath="analyzers/dotnet/roslyn5.9/cs" Visible="false" />
-    <None Include="$(_AnalyzerVariantStaging)roslyn5.9/WebDriverBiDi.Analyzers.CodeFixProviders.dll"
-          Pack="true" PackagePath="analyzers/dotnet/roslyn5.9/cs" Visible="false" />
+    <None Include="$(_AnalyzerVariantStaging)roslyn5.0/WebDriverBiDi.Analyzers.dll"
+          Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs" Visible="false" />
+    <None Include="$(_AnalyzerVariantStaging)roslyn5.0/WebDriverBiDi.Analyzers.CodeFixProviders.dll"
+          Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs" Visible="false" />
+    <None Include="$(_AnalyzerVariantStaging)roslyn5.12/WebDriverBiDi.Analyzers.dll"
+          Pack="true" PackagePath="analyzers/dotnet/roslyn5.12/cs" Visible="false" />
+    <None Include="$(_AnalyzerVariantStaging)roslyn5.12/WebDriverBiDi.Analyzers.CodeFixProviders.dll"
+          Pack="true" PackagePath="analyzers/dotnet/roslyn5.12/cs" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>

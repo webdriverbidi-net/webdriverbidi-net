@@ -8,11 +8,11 @@
 
 namespace System.Runtime.CompilerServices;
 
-#if !NET5_0_OR_GREATER
+#if NETSTANDARD2_0
 using System.ComponentModel;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
 internal static class IsExternalInit
 {
 }
-#endif // !NET5_0_OR_GREATER
+#endif // NETSTANDARD2_0

@@ -62,8 +62,8 @@ public class WebSocketConnection : Connection
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
     // Which end's close this session is ending with, as a WebSocketCloseInitiator value. It is held as an int
-    // because Interlocked.CompareExchange accepts an enum only from .NET 9, and this library targets earlier
-    // frameworks. It is claimed at most once per session, by StopConnectionAsync before it begins the close
+    // because Interlocked.CompareExchange accepts an enum only from .NET 9, and this library also targets
+    // netstandard2.0. It is claimed at most once per session, by StopConnectionAsync before it begins the close
     // handshake or by the receive loop, which runs on its own task, before it answers a Close frame from the
     // remote end.
     private int closeInitiator = (int)WebSocketCloseInitiator.None;
@@ -517,7 +517,7 @@ public class WebSocketConnection : Connection
     /// <returns>A task representing the asynchronous operation.</returns>
     protected virtual async Task WriteWebSocketDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
-#if NET5_0_OR_GREATER
+#if !NETSTANDARD2_0
         await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, cancellationToken).ConfigureAwait(false);
 #else
         if (!MemoryMarshal.TryGetArray(messageBuffer, out ArraySegment<byte> segment))

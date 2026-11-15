@@ -13,7 +13,7 @@ namespace System.Diagnostics.CodeAnalysis;
 // This file provides polyfill attributes for code analysis features that are not
 // available in all target frameworks. This enables use of the `required` modifier
 // and related features while maintaining compatibility with older frameworks.
-#if !NET7_0_OR_GREATER
+#if NETSTANDARD2_0
 using System.ComponentModel;
 
 [Flags]
@@ -105,4 +105,4 @@ internal sealed class UnconditionalSuppressMessageAttribute : Attribute
     public string? Justification { get; set; }
 }
 
-#endif // !NET7_0_OR_GREATER
+#endif // NETSTANDARD2_0

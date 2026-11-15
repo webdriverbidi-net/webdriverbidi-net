@@ -119,8 +119,6 @@ public class BiDiDriver029AnalyzerTests
             }
             """;
 
-        // The .NET 10 reference set is required here: the sample names a System.Text.Json type, and the
-        // library's own reference to that assembly is newer than the .NET 8 set the default helper uses.
         RealAssemblyAnalyzerTest<BiDiDriver029_DriverUseAfterDisposalAnalyzer> testState = new()
         {
             TestCode = testCode,

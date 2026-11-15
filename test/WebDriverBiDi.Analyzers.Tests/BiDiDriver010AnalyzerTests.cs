@@ -463,9 +463,6 @@ public class BiDiDriver010AnalyzerTests
     [Fact]
     public async Task DriverLifecycleCalls_FireAndForget_ReportsError()
     {
-        // The real assembly is referenced against .NET 10 here because RegisterTypeInfoResolverAsync's
-        // parameter type comes from System.Text.Json, whose version in the .NET 8 reference set is
-        // older than the one the library binds to.
         string testCode = """
             using System.Text.Json.Serialization.Metadata;
             using WebDriverBiDi;
