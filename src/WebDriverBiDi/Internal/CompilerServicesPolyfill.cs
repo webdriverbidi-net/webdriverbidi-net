@@ -12,16 +12,14 @@ namespace System.Runtime.CompilerServices;
 // This file provides polyfill attributes for compiler features that are not available
 // in all target frameworks. This enables use of the `required` modifier and the `init`
 // accessor while maintaining compatibility with older frameworks.
-#if !NET5_0_OR_GREATER
+#if NETSTANDARD2_0
 using System.ComponentModel;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
 internal static class IsExternalInit
 {
 }
-#endif // !NET5_0_OR_GREATER
 
-#if !NET7_0_OR_GREATER
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
 internal sealed class RequiredMemberAttribute : Attribute
 {
@@ -43,4 +41,4 @@ internal sealed class CompilerFeatureRequiredAttribute : Attribute
 
     public bool IsOptional { get; init; }
 }
-#endif // !NET7_0_OR_GREATER
+#endif // NETSTANDARD2_0

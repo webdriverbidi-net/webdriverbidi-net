@@ -386,7 +386,7 @@ public class AnalyzerConventionTests
 
     private static async Task<ImmutableArray<MetadataReference>> GetCorpusReferencesAsync()
     {
-        ImmutableArray<MetadataReference> references = await ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, TestContext.Current.CancellationToken);
+        ImmutableArray<MetadataReference> references = await ReferenceAssemblies.Net.Net100.ResolveAsync(LanguageNames.CSharp, TestContext.Current.CancellationToken);
         return references.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
     }
 

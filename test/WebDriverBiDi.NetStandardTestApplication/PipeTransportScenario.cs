@@ -10,10 +10,10 @@ using WebDriverBiDi.Protocol;
 
 /// <summary>
 /// Exercises the netstandard2.0 build's <see cref="PipeConnection"/> code — specifically the
-/// <c>#else</c> (non-<c>NET5_0_OR_GREATER</c>) arms of its send path and its RECV trace — by running a
+/// <c>#else</c> (<c>NETSTANDARD2_0</c>) arms of its send path and its RECV trace — by running a
 /// single round trip against the NamedPipeTestApplication pipe peer. The provider here implements the
 /// netstandard2.0 <see cref="IPipeServerProcessProvider"/> directly rather than reusing the main test
-/// project's TestPipeServer, which is compiled against the net10.0 build of the library.
+/// project's TestPipeServer, which is compiled against the net11.0 build of the library.
 /// </summary>
 internal static class PipeTransportScenario
 {

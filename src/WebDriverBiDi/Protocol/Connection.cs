@@ -208,7 +208,11 @@ public abstract class Connection : IAsyncDisposable
     /// </exception>
     public TimeSpan StartupTimeout
     {
-        get => this.startupTimeout;
+        get
+        {
+            return this.startupTimeout;
+        }
+
         set
         {
             if (!TimeoutUtilities.IsValidTimeout(value, allowInfinite: false))
@@ -244,7 +248,11 @@ public abstract class Connection : IAsyncDisposable
     /// </exception>
     public TimeSpan ShutdownTimeout
     {
-        get => this.shutdownTimeout;
+        get
+        {
+            return this.shutdownTimeout;
+        }
+
         set
         {
             if (!TimeoutUtilities.IsValidTimeout(value))
@@ -266,7 +274,11 @@ public abstract class Connection : IAsyncDisposable
     /// </exception>
     public TimeSpan DataTimeout
     {
-        get => this.dataTimeout;
+        get
+        {
+            return this.dataTimeout;
+        }
+
         set
         {
             if (!TimeoutUtilities.IsValidTimeout(value))

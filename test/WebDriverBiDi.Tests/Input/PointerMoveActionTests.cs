@@ -87,13 +87,13 @@ public class PointerMoveActionTests
         JToken? x = serialized["x"];
         Assert.NotNull(x);
         Assert.Equal(JTokenType.Float, x.Type);
-        Assert.Equal(2.1m, x.Value<decimal>());
+        Assert.Equal(2.1, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
         Assert.Equal(JTokenType.Float, y.Type);
-        Assert.Equal(3.4m, y.Value<decimal>());
+        Assert.Equal(3.4, y.Value<double>());
     }
 
     [Fact]

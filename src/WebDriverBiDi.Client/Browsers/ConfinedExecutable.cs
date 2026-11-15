@@ -35,7 +35,7 @@ internal static class ConfinedExecutable
 
     private static string? ResolveLinkTarget(string path)
     {
-#if NET
+#if !NETSTANDARD2_0
         try
         {
             return new FileInfo(path).ResolveLinkTarget(returnFinalTarget: true)?.FullName;

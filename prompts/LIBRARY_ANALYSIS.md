@@ -221,13 +221,11 @@ intentional development affordance, allowing PRs to land before achieving
 100% coverage on new code. The project's target of 100% coverage is a goal
 maintained in practice, not a hard CI gate on every commit. Do not flag the
 95% CI threshold as a gap or recommend raising it.
-* The library multi-targets `netstandard2.0;net8.0;net9.0;net10.0`, while every test
-project targets `net10.0` alone. This is deliberate, and the fact that the shipped
-net8.0 and net9.0 assemblies are never loaded by a test must not be reported as a gap.
-Every preprocessor conditional in the library resolves identically for those three
-target frameworks — `NET5_0_OR_GREATER` and `NET8_0_OR_GREATER` are true for all of
-them, `NETSTANDARD2_0` and the `!NET5_0_OR_GREATER`/`!NET7_0_OR_GREATER` polyfill
-guards are false for all of them — so net8.0, net9.0, and net10.0 compile from
+* The library multi-targets `netstandard2.0;net10.0;net11.0`, while every test
+project targets `net11.0` alone. This is deliberate, and the fact that the shipped
+net10.0 assembly is never loaded by a test must not be reported as a gap.
+Every framework preprocessor conditional in the library is written as
+`#if NETSTANDARD2_0` or `#if !NETSTANDARD2_0`, so net10.0 and net11.0 compile from
 identical preprocessed source. Executing the suite once per target framework would run
 the same code against different base class libraries, which tests the platform's
 binaries rather than this library's. Behavioral differences between framework versions
@@ -237,9 +235,9 @@ library's obligation is to be correct against the documented contract of the API
 calls. The netstandard2.0 build is the one exception that *is* exercised at runtime,
 through the `SetTargetFramework` smoke-application mechanism, precisely because its
 source genuinely differs (the `#if NETSTANDARD2_0` branches). Do not recommend
-multi-targeting test projects, adding net8.0/net9.0 test legs, or citing a
-`#if NET8_0_OR_GREATER` branch as a framework-specific risk — such branches are
-compiled into the net10.0 assembly and are already covered.
+multi-targeting test projects, adding a net10.0 test leg, or citing a
+`#if !NETSTANDARD2_0` branch as a framework-specific risk — such branches are
+compiled into the net11.0 assembly and are already covered.
 * CI test matrices deliberately run `ubuntu-latest` and `windows-latest` with no macOS
 leg. The platform divergence that matters in .NET for this stack is Windows versus
 non-Windows; macOS and Linux take the same code paths. In particular, `PipeConnection`

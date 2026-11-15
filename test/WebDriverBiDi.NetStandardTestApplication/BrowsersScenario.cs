@@ -9,7 +9,7 @@ using WebDriverBiDi.Client.Browsers;
 
 /// <summary>
 /// Exercises the netstandard2.0-only code of the WebDriverBiDi.Client browser launcher, which the unit tests, running the
-/// net10.0 build, never reach: the process tree kill, the symbolic link check for confined executables,
+/// net11.0 build, never reach: the process tree kill, the symbolic link check for confined executables,
 /// the cache layout marker, the timeout on reading a browser's version, and adding a request header.
 /// </summary>
 internal static class BrowsersScenario

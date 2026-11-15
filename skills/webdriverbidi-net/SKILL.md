@@ -13,7 +13,7 @@ WebDriverBiDi.NET is a protocol-level .NET client for [WebDriver BiDi](https://w
 
 ## Packages
 
-- `WebDriverBiDi`: the client. Targets .NET Standard 2.0 and .NET 8, 9, and 10; AOT-compatible on .NET 8+.
+- `WebDriverBiDi`: the client. Targets .NET Standard 2.0 and .NET 10 and 11; AOT-compatible on .NET 10+.
 - `WebDriverBiDi.Analyzers`: Roslyn analyzers that catch the mistakes below at compile time. Always add it.
 - `WebDriverBiDi.Extensions`: one-call shortcuts, such as `NavigateAsync(contextId, url)`, and `InputBuilder` for input actions.
 - `WebDriverBiDi.Logging`: `ILogger` integration.

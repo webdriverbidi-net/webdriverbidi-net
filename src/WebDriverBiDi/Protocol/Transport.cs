@@ -372,7 +372,11 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// </exception>
     public TimeSpan ShutdownTimeout
     {
-        get => this.shutdownTimeout;
+        get
+        {
+            return this.shutdownTimeout;
+        }
+
         set
         {
             if (!TimeoutUtilities.IsValidTimeout(value))
@@ -431,7 +435,11 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// </exception>
     public TimeSpan ConnectionLockTimeout
     {
-        get => this.connectionLockTimeout;
+        get
+        {
+            return this.connectionLockTimeout;
+        }
+
         set
         {
             if (!TimeoutUtilities.IsValidTimeout(value))

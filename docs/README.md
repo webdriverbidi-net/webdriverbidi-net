@@ -106,7 +106,7 @@ dotnet run docs/tools/generate-llms.cs -- docs https://webdriverbidi-net.github.
 ```
 
 These steps:
-1. Build the library, the logging package, and the extensions package in Release (`docfx metadata` reads the API surface from their `bin/Release/netstandard2.0` builds; the snippets project builds only their `net10.0` flavour, so without these steps those namespaces are missing from the generated API reference)
+1. Build the library, the logging package, and the extensions package in Release (`docfx metadata` reads the API surface from their `bin/Release/netstandard2.0` builds; the snippets project builds only their `net11.0` flavour, so without these steps those namespaces are missing from the generated API reference)
 2. Compile the documentation code samples in `docs/code/` (every `[!code-csharp]` region must compile)
 3. Extract API documentation from XML comments (`docfx metadata`)
 4. Process markdown files and generate the complete documentation site in `docs/_site/` (`docfx build`)

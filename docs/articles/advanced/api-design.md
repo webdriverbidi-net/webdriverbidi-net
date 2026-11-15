@@ -188,12 +188,12 @@ Once the package reaches 1.0, the usual SemVer contract applies:
 
 ### Framework Support
 
-The main library multi-targets `netstandard2.0`, `net8.0`, `net9.0`, and `net10.0`. The .NET Standard 2.0 target ensures compatibility with:
+The main library multi-targets `netstandard2.0`, `net10.0`, and `net11.0`. The .NET Standard 2.0 target ensures compatibility with:
 
 - .NET Framework 4.6.2+
-- .NET 8, 9, 10
+- .NET 10, 11
 
-Projects targeting .NET 8 or later bind to the corresponding assembly, which is the build marked `IsAotCompatible` and therefore the one that supports trimming and native AOT publishing. The published API reference is generated from the `netstandard2.0` assembly.
+Projects targeting .NET 10 or later bind to the corresponding assembly, which is the build marked `IsAotCompatible` and therefore the one that supports trimming and native AOT publishing. The published API reference is generated from the `netstandard2.0` assembly.
 
 ### Protocol Compatibility
 

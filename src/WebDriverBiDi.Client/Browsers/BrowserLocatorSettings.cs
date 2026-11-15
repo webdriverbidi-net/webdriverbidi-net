@@ -92,11 +92,20 @@ internal abstract class BrowserLocatorSettings
     /// <summary>
     /// Gets the requested milestone, or <see langword="null"/> if a milestone was not requested.
     /// </summary>
-    public int? Milestone => this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload
-        && this.Version.StartsWith(MilestoneVersionPrefix, StringComparison.Ordinal)
-        && int.TryParse(this.Version.Substring(MilestoneVersionPrefix.Length), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int milestone)
-        ? milestone
-        : null;
+    public int? Milestone
+    {
+        get
+        {
+            if (this.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload
+                && this.Version.StartsWith(MilestoneVersionPrefix, StringComparison.Ordinal)
+                && int.TryParse(this.Version.Substring(MilestoneVersionPrefix.Length), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int milestone))
+            {
+                return milestone;
+            }
+
+            return null;
+        }
+    }
 
     /// <summary>
     /// Gets the version request whose resolved version is cached and periodically rechecked ("latest"

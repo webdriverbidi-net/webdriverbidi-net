@@ -78,10 +78,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 11.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -165,10 +162,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 11.0.x
 
       - name: Set version variables from tag
         run: |
@@ -205,8 +199,8 @@ jobs:
         # The version properties are repeated here even though the build step above already
         # passed them and this pack runs --no-build. MSBuild global properties do not carry
         # across invocations, and the analyzer package's shipped assemblies are not produced
-        # by that build step at all: the analyzer's pack target compiles the roslyn4.8 and
-        # roslyn5.9 variants in a child `dotnet build` during pack, forwarding whichever of
+        # by that build step at all: the analyzer's pack target compiles the roslyn5.0 and
+        # roslyn5.12 variants in a child `dotnet build` during pack, forwarding whichever of
         # these properties the pack invocation was given (see
         # BuildAnalyzerRoslynVariantsBeforePack in WebDriverBiDi.Analyzers.csproj). Without
         # them here that child build falls back to the SDK default, so the shipped analyzer

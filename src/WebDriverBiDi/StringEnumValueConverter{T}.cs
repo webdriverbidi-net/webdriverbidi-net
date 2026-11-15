@@ -48,7 +48,7 @@ public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAcc
         // method definition. Luckily, .NET Standard 2.0 also does not have concrete
         // AOT publishing path.
         T[] values =
-#if NET8_0_OR_GREATER
+#if !NETSTANDARD2_0
             Enum.GetValues<T>();
 #else
             (T[])Enum.GetValues(typeof(T));

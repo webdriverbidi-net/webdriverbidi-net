@@ -618,7 +618,7 @@ public class BiDiDriver028AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

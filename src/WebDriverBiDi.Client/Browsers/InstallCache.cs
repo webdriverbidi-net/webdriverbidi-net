@@ -108,14 +108,17 @@ internal sealed class InstallCache
     public IReadOnlyList<InstalledVersion> GetInstallations()
     {
         Dictionary<string, ResolvedVersion> resolvedVersions = this.LoadResolvedVersions();
-        return [.. Directory.GetDirectories(this.directory)
-            .Where(subdirectory => !Path.GetFileName(subdirectory).StartsWith(".", StringComparison.Ordinal) && File.Exists(Path.Combine(subdirectory, InstallationMarkerFileName)))
-            .Select(subdirectory =>
-            {
-                string version = Path.GetFileName(subdirectory);
-                DateTimeOffset? lastResolved = resolvedVersions.Values.Where(resolved => resolved.Version == version).Select(resolved => (DateTimeOffset?)resolved.ResolvedAt).Max();
-                return new InstalledVersion(version, subdirectory, lastResolved);
-            })];
+        return
+        [
+            .. Directory.GetDirectories(this.directory)
+                .Where(subdirectory => !Path.GetFileName(subdirectory).StartsWith(".", StringComparison.Ordinal) && File.Exists(Path.Combine(subdirectory, InstallationMarkerFileName)))
+                .Select(subdirectory =>
+                {
+                    string version = Path.GetFileName(subdirectory);
+                    DateTimeOffset? lastResolved = resolvedVersions.Values.Where(resolved => resolved.Version == version).Select(resolved => (DateTimeOffset?)resolved.ResolvedAt).Max();
+                    return new InstalledVersion(version, subdirectory, lastResolved);
+                }),
+        ];
     }
 
     /// <summary>

@@ -19,25 +19,25 @@ public class DiskImageFileExtractor : FileExtractor
     /// Extracts the contents from the downloaded DMG installer to the specified directory,
     /// and deletes the DMG file.
     /// </summary>
-    /// <param name="dmgPath">Path to the DMG file.</param>
+    /// <param name="installerPath">Path to the DMG file.</param>
     /// <param name="extractDirectory">Directory to extract the contents to.</param>
     /// <param name="cancellationToken">A token that cancels the extraction.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     /// <exception cref="InvalidOperationException">Thrown if no .app bundle is found in the DMG.</exception>
-    public override async Task ExtractFileContentsAsync(string dmgPath, string extractDirectory, CancellationToken cancellationToken = default)
+    public override async Task ExtractFileContentsAsync(string installerPath, string extractDirectory, CancellationToken cancellationToken = default)
     {
         string mountPoint = Path.Combine(extractDirectory, "dmg-mount");
         Directory.CreateDirectory(mountPoint);
 
         try
         {
-            await this.RunProcessAsync("hdiutil", $"attach \"{dmgPath}\" -mountpoint \"{mountPoint}\" -nobrowse -quiet", cancellationToken: cancellationToken).ConfigureAwait(false);
+            await this.RunProcessAsync("hdiutil", $"attach \"{installerPath}\" -mountpoint \"{mountPoint}\" -nobrowse -quiet", cancellationToken: cancellationToken).ConfigureAwait(false);
 
             // Find the .app bundle in the mounted DMG
             string? appBundle = Directory.GetDirectories(mountPoint, "*.app").FirstOrDefault();
             if (appBundle is null)
             {
-                throw new BrowserDownloadException($"No .app bundle found in DMG downloaded to {dmgPath}.");
+                throw new BrowserDownloadException($"No .app bundle found in DMG downloaded to {installerPath}.");
             }
 
             string destApp = Path.Combine(extractDirectory, Path.GetFileName(appBundle));
@@ -60,9 +60,9 @@ public class DiskImageFileExtractor : FileExtractor
                 // Best effort detach
             }
 
-            if (File.Exists(dmgPath))
+            if (File.Exists(installerPath))
             {
-                File.Delete(dmgPath);
+                File.Delete(installerPath);
             }
         }
     }

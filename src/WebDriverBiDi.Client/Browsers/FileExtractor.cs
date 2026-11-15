@@ -17,10 +17,10 @@ public abstract class FileExtractor
     /// and returns the path to the extracted browser executable.
     /// </summary>
     /// <param name="installerPath">The path to the downloaded installer.</param>
-    /// <param name="extractDir">The directory where the file should be extracted.</param>
+    /// <param name="extractDirectory">The directory where the file should be extracted.</param>
     /// <param name="cancellationToken">A token that cancels the extraction.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public abstract Task ExtractFileContentsAsync(string installerPath, string extractDir, CancellationToken cancellationToken = default);
+    public abstract Task ExtractFileContentsAsync(string installerPath, string extractDirectory, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Runs a process with the specified file name and arguments, and waits for it to complete.

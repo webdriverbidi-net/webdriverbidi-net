@@ -20,8 +20,8 @@
 
   <PropertyGroup>
     <!-- Built once per Roslyn variant by WebDriverBiDi.Analyzers.csproj's packaging target; defaults to
-         the compatibility floor (4.8.0, .NET 8 SDK). See the note in WebDriverBiDi.Analyzers.csproj. -->
-    <RoslynVersion Condition="'$(RoslynVersion)' == ''">4.8.0</RoslynVersion>
+         the compatibility floor (5.0.0, .NET 10 SDK). See the note in WebDriverBiDi.Analyzers.csproj. -->
+    <RoslynVersion Condition="'$(RoslynVersion)' == ''">5.0.0</RoslynVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,7 +31,7 @@
          code-fix authoring run identically over both projects. Without this reference the version comes
          in transitively from Microsoft.CodeAnalysis.Common, which is the Roslyn floor rather than the
          current release, and the two projects would be held to different rule sets. -->
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0">
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.12.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

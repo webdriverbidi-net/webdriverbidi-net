@@ -149,7 +149,7 @@ internal static class ProcessTermination
     /// <param name="process">The process.</param>
     public static void KillTree(Process process)
     {
-#if NET5_0_OR_GREATER
+#if !NETSTANDARD2_0
         // Killing a process that has already exited does nothing.
         process.Kill(entireProcessTree: true);
 #else

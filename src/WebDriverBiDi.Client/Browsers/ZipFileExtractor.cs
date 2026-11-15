@@ -17,21 +17,21 @@ public class ZipFileExtractor : FileExtractor
     /// Extracts the file from the downloaded zip file installer to the specified directory,
     /// and deletes the zip file after extraction.
     /// </summary>
-    /// <param name="zipFilePath">Path to the zip file.</param>
+    /// <param name="installerPath">Path to the zip file.</param>
     /// <param name="extractDirectory">Directory to extract the file to.</param>
     /// <param name="cancellationToken">A token that cancels the extraction.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public override Task ExtractFileContentsAsync(string zipFilePath, string extractDirectory, CancellationToken cancellationToken = default)
+    public override Task ExtractFileContentsAsync(string installerPath, string extractDirectory, CancellationToken cancellationToken = default)
     {
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ZipFile.ExtractToDirectory(zipFilePath, extractDirectory);
+            ZipFile.ExtractToDirectory(installerPath, extractDirectory);
         }
         finally
         {
             // Clean up the zip file after extraction, regardless of success or failure.
-            File.Delete(zipFilePath);
+            File.Delete(installerPath);
         }
 
         return Task.CompletedTask;

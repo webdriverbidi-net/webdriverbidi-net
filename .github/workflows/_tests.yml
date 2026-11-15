@@ -27,10 +27,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 11.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -52,10 +49,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 11.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -138,7 +132,7 @@ jobs:
           unzip -q "$package" -d test/package/extracted
 
           status=0
-          for variant in roslyn4.8 roslyn5.9; do
+          for variant in roslyn5.0 roslyn5.12; do
             directory="test/package/extracted/analyzers/dotnet/$variant/cs"
             # A roslyn<major.minor> folder must hold a build compiled against that Roslyn version.
             expected_roslyn="${variant#roslyn}.0.0"
@@ -163,7 +157,7 @@ jobs:
 
               # The same child build selects the Roslyn version from the RoslynVersion property the pack
               # target passes per variant. If that stopped arriving, every folder would hold the default
-              # 4.8 build, and a compiler picking the newest folder would get none of the newer build's
+              # 5.0 build, and a compiler picking the newest folder would get none of the newer build's
               # API use, with every check above still passing.
               if ! roslyn_reference=$(dotnet run scripts/print-assembly-reference-version.cs -- "$directory/$assembly" Microsoft.CodeAnalysis); then
                 echo "FAIL $variant/cs/$assembly does not reference Microsoft.CodeAnalysis"
@@ -217,10 +211,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 11.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -288,10 +279,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 11.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -340,10 +328,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 11.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -380,10 +365,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 11.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -452,10 +434,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 11.0.x
 
       - name: Restore dependencies
         run: dotnet restore

@@ -297,7 +297,7 @@ public class BiDiDriver025AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver025_AsyncVoidEventHandlerAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -337,7 +337,7 @@ public class BiDiDriver025AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver025_AsyncVoidEventHandlerAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

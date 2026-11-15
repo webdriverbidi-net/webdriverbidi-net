@@ -4,7 +4,7 @@ Conveniences for the [WebDriverBiDi](https://www.nuget.org/packages/WebDriverBiD
 
 - One-call extension methods for common commands, returning natural .NET types: a screenshot as `byte[]`, located nodes as a list of references, a script's result as the `RemoteValue` type you ask for.
 - `InputBuilder`, which builds `input.performActions` sequences tick by tick, with helpers for clicking, typing, key chords, drag-and-drop, and scrolling.
-- Works on .NET Standard 2.0, .NET 8 and later, and with native AOT.
+- Works on .NET Standard 2.0, .NET 10 and later, and with native AOT.
 
 Every type and extension method is in the namespace of the module it belongs with (`WebDriverBiDi.BrowsingContext`, `WebDriverBiDi.Input`, `WebDriverBiDi.Network`, `WebDriverBiDi.Script`, `WebDriverBiDi.Session`), so the `using` directives you already have bring them into scope. Each extension method sends one command, or a short fixed sequence, and takes the same timeout override and `CancellationToken` as the command it wraps.
 
