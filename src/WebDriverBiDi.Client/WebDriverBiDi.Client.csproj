@@ -33,7 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="../../.stylecop.json" Link=".stylecop.json" />
     <AdditionalFiles Include="../../WebDriverBiDi.snk" />
   </ItemGroup>
 

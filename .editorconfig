@@ -404,6 +404,12 @@ dotnet_naming_style.async_method_name.required_suffix = Async
 dotnet_naming_style.async_method_name.word_separator = 
 dotnet_naming_style.async_method_name.capitalization = pascal_case
 
+# StyleCop configuration
+stylecop.documentation.companyName = WebDriverBiDi.NET Committers
+stylecop.documentation.copyrightText = Copyright (c) {companyName}. All rights reserved.\nLicensed under the {licenseName} license. See {licenseFile} file in the project root for full license information.
+stylecop.documentation.variables.licenseName = MIT
+stylecop.documentation.variables.licenseFile = LICENSE
+
 #### Documented projects only ####
 
 # IDE0005 (unnecessary using directive) is only reported by the compiler when
