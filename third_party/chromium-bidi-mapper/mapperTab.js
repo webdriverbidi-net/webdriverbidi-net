@@ -259,6 +259,7 @@
     const ErrorCode = {
         InvalidArgument: 'invalid argument',
         InvalidSelector: 'invalid selector',
+        InvalidSessionId: 'invalid session id',
         InvalidWebExtension: 'invalid web extension',
         MoveTargetOutOfBounds: 'move target out of bounds',
         NoSuchAlert: 'no such alert',
@@ -274,6 +275,7 @@
         NoSuchScript: 'no such script',
         NoSuchUserContext: 'no such user context',
         NoSuchWebExtension: 'no such web extension',
+        SessionNotCreated: 'session not created',
         UnableToCaptureScreen: 'unable to capture screen',
         UnableToSetCookie: 'unable to set cookie',
         UnableToSetFileInput: 'unable to set file input',
@@ -409,6 +411,11 @@
             super(ErrorCode.InvalidSelector, message, stacktrace);
         }
     }
+    class InvalidSessionIdException extends Exception {
+        constructor(message, stacktrace) {
+            super(ErrorCode.InvalidSessionId, message, stacktrace);
+        }
+    }
     class MoveTargetOutOfBoundsException extends Exception {
         constructor(message, stacktrace) {
             super(ErrorCode.MoveTargetOutOfBounds, message, stacktrace);
@@ -462,6 +469,11 @@
     class NoSuchUserContextException extends Exception {
         constructor(message, stacktrace) {
             super(ErrorCode.NoSuchUserContext, message, stacktrace);
+        }
+    }
+    class SessionNotCreatedException extends Exception {
+        constructor(message, stacktrace) {
+            super(ErrorCode.SessionNotCreated, message, stacktrace);
         }
     }
     class UnknownCommandException extends Exception {
@@ -593,6 +605,53 @@
     })(DigitalCredentials$2 || (DigitalCredentials$2 = {}));
 
     /**
+     * Copyright 2026 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    var Autofill$2;
+    (function (Autofill) {
+        Autofill.FieldName = {
+            Name: 'name',
+            HonorificPrefix: 'honorific-prefix',
+            GivenName: 'given-name',
+            AdditionalName: 'additional-name',
+            FamilyName: 'family-name',
+            HonorificSuffix: 'honorific-suffix',
+            Nickname: 'nickname',
+            Organization: 'organization',
+            StreetAddress: 'street-address',
+            AddressLine1: 'address-line1',
+            AddressLine2: 'address-line2',
+            AddressLine3: 'address-line3',
+            AddressLevel4: 'address-level4',
+            AddressLevel3: 'address-level3',
+            AddressLevel2: 'address-level2',
+            AddressLevel1: 'address-level1',
+            Country: 'country',
+            CountryName: 'country-name',
+            PostalCode: 'postal-code',
+            Tel: 'tel',
+            TelCountryCode: 'tel-country-code',
+            TelNational: 'tel-national',
+            TelAreaCode: 'tel-area-code',
+            TelLocal: 'tel-local',
+            Email: 'email',
+        };
+    })(Autofill$2 || (Autofill$2 = {}));
+
+    /**
      * Copyright 2023 Google LLC.
      * Copyright (c) Microsoft Corporation.
      *
@@ -609,6 +668,9 @@
      * limitations under the License.
      */
     class BidiNoOpParser {
+        parseAutofillTriggerParams(params) {
+            return params;
+        }
         parseDisableSimulationParameters(params) {
             return params;
         }
@@ -637,6 +699,9 @@
             return params;
         }
         parseSimulateGattDisconnectionParameters(params) {
+            return params;
+        }
+        parseSimulateGattMtuChangeParameters(params) {
             return params;
         }
         parseSimulatePreconnectedPeripheralParameters(params) {
@@ -709,6 +774,9 @@
             return params;
         }
         parseSendCommandParams(params) {
+            return params;
+        }
+        parseGetAccessibilityTreeParams(params) {
             return params;
         }
         parseSetClientHintsOverrideParams(params) {
@@ -825,6 +893,9 @@
         parseSetPermissionsParams(params) {
             return params;
         }
+        parseSetAclParams(params) {
+            return params;
+        }
         parseSubscribeParams(params) {
             return params;
         }
@@ -848,6 +919,189 @@
         }
         parseSetVirtualWalletBehaviorParams(params) {
             return params;
+        }
+    }
+
+    /**
+     * Copyright 2023 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    function assert(predicate, message) {
+        if (!predicate) {
+            throw new Error(message ?? 'Internal assertion failed.');
+        }
+    }
+
+    /*
+     * Copyright 2023 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    const SHARED_ID_DIVIDER = '_element_';
+    function getSharedId(frameId, documentId, backendNodeId) {
+        return `f.${frameId}.d.${documentId}.e.${backendNodeId}`;
+    }
+    function parseLegacySharedId(sharedId) {
+        const match = sharedId.match(new RegExp(`(.*)${SHARED_ID_DIVIDER}(.*)`));
+        if (!match) {
+            return null;
+        }
+        const documentId = match[1];
+        const elementId = match[2];
+        if (documentId === undefined || elementId === undefined) {
+            return null;
+        }
+        const backendNodeId = parseInt(elementId ?? '');
+        if (isNaN(backendNodeId)) {
+            return null;
+        }
+        return {
+            documentId,
+            backendNodeId,
+        };
+    }
+    function parseSharedId(sharedId) {
+        const legacyFormattedSharedId = parseLegacySharedId(sharedId);
+        if (legacyFormattedSharedId !== null) {
+            return { ...legacyFormattedSharedId, frameId: undefined };
+        }
+        const match = sharedId.match(/f\.(.*)\.d\.(.*)\.e\.([0-9]*)/);
+        if (!match) {
+            return null;
+        }
+        const frameId = match[1];
+        const documentId = match[2];
+        const elementId = match[3];
+        if (frameId === undefined ||
+            documentId === undefined ||
+            elementId === undefined) {
+            return null;
+        }
+        const backendNodeId = parseInt(elementId ?? '');
+        if (isNaN(backendNodeId)) {
+            return null;
+        }
+        return {
+            frameId,
+            documentId,
+            backendNodeId,
+        };
+    }
+
+    const CDP_FIELD_TYPES = {
+        [Autofill$2.FieldName.Name]: 'NAME_FULL',
+        [Autofill$2.FieldName.HonorificPrefix]: 'NAME_HONORIFIC_PREFIX',
+        [Autofill$2.FieldName.GivenName]: 'NAME_FIRST',
+        [Autofill$2.FieldName.AdditionalName]: 'NAME_MIDDLE',
+        [Autofill$2.FieldName.FamilyName]: 'NAME_LAST',
+        [Autofill$2.FieldName.HonorificSuffix]: null,
+        [Autofill$2.FieldName.Nickname]: null,
+        [Autofill$2.FieldName.Organization]: 'COMPANY_NAME',
+        [Autofill$2.FieldName.StreetAddress]: 'ADDRESS_HOME_STREET_ADDRESS',
+        [Autofill$2.FieldName.AddressLine1]: 'ADDRESS_HOME_LINE1',
+        [Autofill$2.FieldName.AddressLine2]: 'ADDRESS_HOME_LINE2',
+        [Autofill$2.FieldName.AddressLine3]: 'ADDRESS_HOME_LINE3',
+        [Autofill$2.FieldName.AddressLevel4]: null,
+        [Autofill$2.FieldName.AddressLevel3]: 'ADDRESS_HOME_DEPENDENT_LOCALITY',
+        [Autofill$2.FieldName.AddressLevel2]: 'ADDRESS_HOME_CITY',
+        [Autofill$2.FieldName.AddressLevel1]: 'ADDRESS_HOME_STATE',
+        [Autofill$2.FieldName.Country]: 'ADDRESS_HOME_COUNTRY',
+        [Autofill$2.FieldName.CountryName]: null,
+        [Autofill$2.FieldName.PostalCode]: 'ADDRESS_HOME_ZIP',
+        [Autofill$2.FieldName.Tel]: 'PHONE_HOME_WHOLE_NUMBER',
+        [Autofill$2.FieldName.TelCountryCode]: 'PHONE_HOME_COUNTRY_CODE',
+        [Autofill$2.FieldName.TelNational]: 'PHONE_HOME_CITY_AND_NUMBER',
+        [Autofill$2.FieldName.TelAreaCode]: 'PHONE_HOME_CITY_CODE',
+        [Autofill$2.FieldName.TelLocal]: 'PHONE_HOME_NUMBER',
+        [Autofill$2.FieldName.Email]: 'EMAIL_ADDRESS',
+    };
+    class AutofillProcessor {
+        #browsingContextStorage;
+        constructor(browsingContextStorage) {
+            this.#browsingContextStorage = browsingContextStorage;
+        }
+        async trigger(params) {
+            const context = this.#browsingContextStorage.getContext(params.context);
+            await this.#assertIsFormControlWithFormOwner(context, params.element);
+            if (params.card !== undefined && params.address !== undefined) {
+                throw new InvalidArgumentException('Card and address cannot both be provided');
+            }
+            if (params.card === undefined && params.address === undefined) {
+                throw new InvalidArgumentException('Either card or address must be provided');
+            }
+            const address = params.address === undefined
+                ? undefined
+                : AutofillProcessor.#toCdpAddress(params.address);
+            const parsedSharedId = parseSharedId(params.element.sharedId);
+            assert(parsedSharedId !== null);
+            try {
+                await context.cdpTarget.cdpClient.sendCommand('Autofill.trigger', {
+                    fieldId: parsedSharedId.backendNodeId,
+                    frameId: context.id,
+                    card: params.card,
+                    address,
+                });
+            }
+            catch (error) {
+                const cdpError = error;
+                if (cdpError?.code === -32601 ) {
+                    throw new UnsupportedOperationException('Autofill is not supported by this browser');
+                }
+                if (cdpError?.code === -32600  &&
+                    cdpError.message === 'Field not found') {
+                    throw new InvalidArgumentException(`Element "${params.element.sharedId}" cannot be autofilled`);
+                }
+                throw error;
+            }
+            return {};
+        }
+        async #assertIsFormControlWithFormOwner(context, element) {
+            const hiddenSandboxRealm = await context.getOrCreateHiddenSandbox();
+            const result = await hiddenSandboxRealm.callFunction(String(function isFormControlWithFormOwner() {
+                return ((this instanceof HTMLInputElement ||
+                    this instanceof HTMLSelectElement ||
+                    this instanceof HTMLTextAreaElement) &&
+                    this.form !== null);
+            }), false, element);
+            assert(result.type === 'success');
+            assert(result.result.type === 'boolean');
+            if (!result.result.value) {
+                throw new InvalidArgumentException(`Element "${element.sharedId}" is not a form control with a form owner`);
+            }
+        }
+        static #toCdpAddress(address) {
+            return {
+                fields: address.fields.map(({ name, value }) => {
+                    const cdpFieldType = CDP_FIELD_TYPES[name];
+                    if (!cdpFieldType) {
+                        throw new UnsupportedOperationException(`Autofill field "${name}" is not supported`);
+                    }
+                    return { name: cdpFieldType, value };
+                }),
+            };
         }
     }
 
@@ -912,10 +1166,10 @@
             }
             const context = await this.#browserCdpClient.sendCommand('Target.createBrowserContext', request);
             await this.#applyDownloadBehavior(globalConfig.downloadBehavior ?? null, context.browserContextId);
-            this.#configStorage.updateUserContextConfig(context.browserContextId, {
+            await this.#configStorage.updateConfig({
                 acceptInsecureCerts: params['acceptInsecureCerts'],
                 userPromptHandler: params['unhandledPromptBehavior'],
-            });
+            }, undefined, [context.browserContextId]);
             return {
                 userContext: context.browserContextId,
             };
@@ -1063,23 +1317,12 @@
             });
         }
         async setDownloadBehavior(params) {
-            let userContexts;
-            if (params.userContexts === undefined) {
-                userContexts = (await this.#userContextStorage.getUserContexts()).map((c) => c.userContext);
-            }
-            else {
-                userContexts = Array.from(await this.#userContextStorage.verifyUserContextIdList(params.userContexts));
-            }
-            if (params.userContexts === undefined) {
-                this.#configStorage.updateGlobalConfig({
-                    downloadBehavior: params.downloadBehavior,
-                });
-            }
-            else {
-                params.userContexts.map((userContext) => this.#configStorage.updateUserContextConfig(userContext, {
-                    downloadBehavior: params.downloadBehavior,
-                }));
-            }
+            await this.#configStorage.updateConfig({
+                downloadBehavior: params.downloadBehavior,
+            }, undefined, params.userContexts);
+            const userContexts = params.userContexts === undefined
+                ? (await this.#userContextStorage.getUserContexts()).map((c) => c.userContext)
+                : Array.from(new Set(params.userContexts));
             await Promise.all(userContexts.map(async (userContext) => {
                 const downloadBehavior = this.#configStorage.getActiveConfig(undefined, userContext)
                     .downloadBehavior ?? null;
@@ -1189,10 +1432,8 @@
         #browsingContextStorage;
         #contextConfigStorage;
         #eventManager;
-        #userContextStorage;
-        constructor(browserCdpClient, browsingContextStorage, userContextStorage, contextConfigStorage, eventManager) {
+        constructor(browserCdpClient, browsingContextStorage, contextConfigStorage, eventManager) {
             this.#contextConfigStorage = contextConfigStorage;
-            this.#userContextStorage = userContextStorage;
             this.#browserCdpClient = browserCdpClient;
             this.#browsingContextStorage = browsingContextStorage;
             this.#eventManager = eventManager;
@@ -1282,55 +1523,31 @@
             const context = this.#browsingContextStorage.getContext(params.context);
             return await context.print(params);
         }
+        async setBypassCSP(params) {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                bypassCSP: params.bypass,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
+                const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
+                await context.setBypassCSP(config.bypassCSP ?? null);
+            }));
+            return {};
+        }
         async setViewport(params) {
             const maxDimensionSize = 10_000_000;
             if ((params.viewport?.height ?? 0) > maxDimensionSize ||
                 (params.viewport?.width ?? 0) > maxDimensionSize) {
                 throw new UnsupportedOperationException(`Viewport dimension over ${maxDimensionSize} are not supported`);
             }
-            const config = {};
-            if (params.devicePixelRatio !== undefined) {
-                config.devicePixelRatio = params.devicePixelRatio;
-            }
-            if (params.viewport !== undefined) {
-                config.viewport = params.viewport;
-            }
-            const impactedTopLevelContexts = await this.#getRelatedTopLevelBrowsingContexts(params.context, params.userContexts);
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, config);
-            }
-            if (params.context !== undefined) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(params.context, config);
-            }
-            await Promise.all(impactedTopLevelContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                devicePixelRatio: params.devicePixelRatio,
+                viewport: params.viewport,
+            }, params.context === undefined ? undefined : [params.context], params.userContexts, false);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setViewport(config.viewport ?? null, config.devicePixelRatio ?? null, config.screenOrientation ?? null);
             }));
             return {};
-        }
-        async #getRelatedTopLevelBrowsingContexts(browsingContextId, userContextIds) {
-            if (browsingContextId === undefined && userContextIds === undefined) {
-                throw new InvalidArgumentException('Either userContexts or context must be provided');
-            }
-            if (browsingContextId !== undefined && userContextIds !== undefined) {
-                throw new InvalidArgumentException('userContexts and context are mutually exclusive');
-            }
-            if (browsingContextId !== undefined) {
-                const context = this.#browsingContextStorage.getContext(browsingContextId);
-                if (!context.isTopLevelContext()) {
-                    throw new InvalidArgumentException('Emulating viewport is only supported on the top-level context');
-                }
-                return [context];
-            }
-            await this.#userContextStorage.verifyUserContextIdList(userContextIds);
-            const result = [];
-            for (const userContextId of userContextIds) {
-                const topLevelBrowsingContexts = this.#browsingContextStorage
-                    .getTopLevelContexts()
-                    .filter((browsingContext) => browsingContext.userContext === userContextId);
-                result.push(...topLevelBrowsingContexts);
-            }
-            return [...new Set(result).values()];
         }
         async traverseHistory(params) {
             const context = this.#browsingContextStorage.getContext(params.context);
@@ -1401,6 +1618,13 @@
             const context = this.#browsingContextStorage.getContext(params.context);
             return await context.locateNodes(params);
         }
+        async getAccessibilityTree(params) {
+            const context = this.#browsingContextStorage.getContext(params.context);
+            if (!context.isTopLevelContext()) {
+                throw new InvalidArgumentException(`Non-top-level 'context' (${params.context}) is not supported`);
+            }
+            return await context.getAccessibilityTree();
+        }
         #onContextCreatedSubscribeHook(contextId) {
             const context = this.#browsingContextStorage.getContext(contextId);
             const contextsToReport = [
@@ -1444,13 +1668,19 @@
         'prefers-reduced-transparency',
     ]);
     class EmulationProcessor {
-        #userContextStorage;
-        #browsingContextStorage;
         #contextConfigStorage;
-        constructor(browsingContextStorage, userContextStorage, contextConfigStorage) {
-            this.#userContextStorage = userContextStorage;
-            this.#browsingContextStorage = browsingContextStorage;
+        constructor(contextConfigStorage) {
             this.#contextConfigStorage = contextConfigStorage;
+        }
+        async setForcedColorsModeThemeOverride(params) {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                forcedColorsModeTheme: params.theme,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
+                const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
+                await context.setEmulatedMedia(config.mediaFeatures ?? null, config.forcedColorsModeTheme ?? null);
+            }));
+            return {};
         }
         async setGeolocationOverride(params) {
             if ('coordinates' in params && 'error' in params) {
@@ -1473,18 +1703,10 @@
             else {
                 throw new InvalidArgumentException(`Coordinates or error should be set`);
             }
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    geolocation,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    geolocation,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                geolocation,
+            }, params.contexts, params.userContexts, false);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setGeolocationOverride(config.geolocation ?? null);
             }));
@@ -1495,18 +1717,10 @@
             if (locale !== null && !isValidLocale(locale)) {
                 throw new InvalidArgumentException(`Invalid locale "${locale}"`);
             }
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    locale,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    locale,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                locale,
+            }, params.contexts, params.userContexts, false);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await Promise.all([
                     context.setLocaleOverride(config.locale ?? null),
@@ -1520,142 +1734,61 @@
             if (unsupportedFeatures.length > 0) {
                 throw new UnsupportedOperationException(`Media feature(s) not supported: ${unsupportedFeatures.map((f) => `"${f}"`).join(', ')}`);
             }
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts, true);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    mediaFeatures: params.features,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    mediaFeatures: params.features,
-                });
-            }
-            if (params.contexts === undefined && params.userContexts === undefined) {
-                this.#contextConfigStorage.updateGlobalConfig({
-                    mediaFeatures: params.features,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                mediaFeatures: params.features,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
-                await context.setMediaFeaturesOverride(config.mediaFeatures ?? null);
+                await context.setEmulatedMedia(config.mediaFeatures ?? null, config.forcedColorsModeTheme ?? null);
             }));
             return {};
         }
         async setScriptingEnabled(params) {
-            const scriptingEnabled = params.enabled;
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    scriptingEnabled,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    scriptingEnabled,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                scriptingEnabled: params.enabled,
+            }, params.contexts, params.userContexts, false);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setScriptingEnabled(config.scriptingEnabled ?? null);
             }));
             return {};
         }
         async setScrollbarTypeOverride(params) {
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts, true);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    scrollbarType: params.scrollbarType,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    scrollbarType: params.scrollbarType,
-                });
-            }
-            if (params.contexts === undefined && params.userContexts === undefined) {
-                this.#contextConfigStorage.updateGlobalConfig({
-                    scrollbarType: params.scrollbarType,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                scrollbarType: params.scrollbarType,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setScrollbarTypeOverride(config.scrollbarType ?? null);
             }));
             return {};
         }
         async setScreenOrientationOverride(params) {
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    screenOrientation: params.screenOrientation,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    screenOrientation: params.screenOrientation,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                screenOrientation: params.screenOrientation,
+            }, params.contexts, params.userContexts, false);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setViewport(config.viewport ?? null, config.devicePixelRatio ?? null, config.screenOrientation ?? null);
             }));
             return {};
         }
         async setScreenSettingsOverride(params) {
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    screenArea: params.screenArea,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    screenArea: params.screenArea,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const maxDimensionSize = 10_000_000;
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                screenArea: params.screenArea,
+            }, params.contexts, params.userContexts, false, () => {
+                if (params.screenArea !== null &&
+                    (params.screenArea.width > maxDimensionSize ||
+                        params.screenArea.height > maxDimensionSize)) {
+                    throw new UnsupportedOperationException(`Screen dimension over ${maxDimensionSize} is not supported`);
+                }
+            });
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setViewport(config.viewport ?? null, config.devicePixelRatio ?? null, config.screenOrientation ?? null);
             }));
             return {};
-        }
-        async #getRelatedTopLevelBrowsingContexts(browsingContextIds, userContextIds, allowGlobal = false) {
-            if (browsingContextIds === undefined && userContextIds === undefined) {
-                if (allowGlobal) {
-                    return this.#browsingContextStorage.getTopLevelContexts();
-                }
-                throw new InvalidArgumentException('Either user contexts or browsing contexts must be provided');
-            }
-            if (browsingContextIds !== undefined && userContextIds !== undefined) {
-                throw new InvalidArgumentException('User contexts and browsing contexts are mutually exclusive');
-            }
-            const result = [];
-            if (browsingContextIds === undefined) {
-                if (userContextIds.length === 0) {
-                    throw new InvalidArgumentException('user context should be provided');
-                }
-                await this.#userContextStorage.verifyUserContextIdList(userContextIds);
-                for (const userContextId of userContextIds) {
-                    const topLevelBrowsingContexts = this.#browsingContextStorage
-                        .getTopLevelContexts()
-                        .filter((browsingContext) => browsingContext.userContext === userContextId);
-                    result.push(...topLevelBrowsingContexts);
-                }
-            }
-            else {
-                if (browsingContextIds.length === 0) {
-                    throw new InvalidArgumentException('browsing context should be provided');
-                }
-                for (const browsingContextId of browsingContextIds) {
-                    const browsingContext = this.#browsingContextStorage.getContext(browsingContextId);
-                    if (!browsingContext.isTopLevelContext()) {
-                        throw new InvalidArgumentException('The command is only supported on the top-level context');
-                    }
-                    result.push(browsingContext);
-                }
-            }
-            return [...new Set(result).values()];
         }
         async setTimezoneOverride(params) {
             let timezone = params.timezone ?? null;
@@ -1665,42 +1798,20 @@
             if (timezone !== null && isTimeZoneOffsetString(timezone)) {
                 timezone = `GMT${timezone}`;
             }
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    timezone,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    timezone,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                timezone,
+            }, params.contexts, params.userContexts, false);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setTimezoneOverride(config.timezone ?? null);
             }));
             return {};
         }
         async setTouchOverride(params) {
-            const maxTouchPoints = params.maxTouchPoints;
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts, true);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    maxTouchPoints,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    maxTouchPoints,
-                });
-            }
-            if (params.contexts === undefined && params.userContexts === undefined) {
-                this.#contextConfigStorage.updateGlobalConfig({
-                    maxTouchPoints,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                maxTouchPoints: params.maxTouchPoints,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setTouchOverride(config.maxTouchPoints ?? null);
             }));
@@ -1710,120 +1821,54 @@
             if (params.userAgent === '') {
                 throw new UnsupportedOperationException('empty user agent string is not supported');
             }
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts, true);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    userAgent: params.userAgent,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    userAgent: params.userAgent,
-                });
-            }
-            if (params.contexts === undefined && params.userContexts === undefined) {
-                this.#contextConfigStorage.updateGlobalConfig({
-                    userAgent: params.userAgent,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                userAgent: params.userAgent,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setUserAgentAndAcceptLanguage(config.userAgent, config.locale, config.clientHints);
             }));
             return {};
         }
         async setClientHintsOverride(params) {
-            const clientHints = params.clientHints ?? null;
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts, true);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    clientHints,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    clientHints,
-                });
-            }
-            if (params.contexts === undefined && params.userContexts === undefined) {
-                this.#contextConfigStorage.updateGlobalConfig({
-                    clientHints,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                clientHints: params.clientHints ?? null,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setUserAgentAndAcceptLanguage(config.userAgent, config.locale, config.clientHints);
             }));
             return {};
         }
         async setNetworkConditions(params) {
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts, true);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    emulatedNetworkConditions: params.networkConditions,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    emulatedNetworkConditions: params.networkConditions,
-                });
-            }
-            if (params.contexts === undefined && params.userContexts === undefined) {
-                this.#contextConfigStorage.updateGlobalConfig({
-                    emulatedNetworkConditions: params.networkConditions,
-                });
-            }
             if (params.networkConditions !== null &&
                 params.networkConditions.type !== 'offline') {
                 throw new UnsupportedOperationException(`Unsupported network conditions ${params.networkConditions.type}`);
             }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                emulatedNetworkConditions: params.networkConditions,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setEmulatedNetworkConditions(config.emulatedNetworkConditions ?? null);
             }));
             return {};
         }
         async setViewportMetaOverride(params) {
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts, true);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    viewportMeta: params.viewportMeta,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    viewportMeta: params.viewportMeta,
-                });
-            }
-            if (params.contexts === undefined && params.userContexts === undefined) {
-                this.#contextConfigStorage.updateGlobalConfig({
-                    viewportMeta: params.viewportMeta,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                viewportMeta: params.viewportMeta,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setViewportMetaOverride(config.viewportMeta ?? null);
             }));
             return {};
         }
         async setTextLayoutModeOverride(params) {
-            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts, true);
-            for (const browsingContextId of params.contexts ?? []) {
-                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
-                    textLayoutMode: params.textLayoutMode,
-                });
-            }
-            for (const userContextId of params.userContexts ?? []) {
-                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
-                    textLayoutMode: params.textLayoutMode,
-                });
-            }
-            if (params.contexts === undefined && params.userContexts === undefined) {
-                this.#contextConfigStorage.updateGlobalConfig({
-                    textLayoutMode: params.textLayoutMode,
-                });
-            }
-            await Promise.all(browsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                textLayoutMode: params.textLayoutMode,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setTextLayoutModeOverride(config.textLayoutMode ?? null);
             }));
@@ -1856,28 +1901,6 @@
     }
     function isTimeZoneOffsetString(timezone) {
         return /^[+-](?:2[0-3]|[01]\d)(?::[0-5]\d)?$/.test(timezone);
-    }
-
-    /**
-     * Copyright 2023 Google LLC.
-     * Copyright (c) Microsoft Corporation.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-    function assert(predicate, message) {
-        if (!predicate) {
-            throw new Error(message ?? 'Internal assertion failed.');
-        }
     }
 
     /*
@@ -2816,6 +2839,26 @@
     const IS_MAC_DECL = (() => {
         return navigator.platform.toLowerCase().includes('mac');
     }).toString();
+    const WAIT_FOR_ANIMATION_FRAME_DECL = (() => {
+        return new Promise((resolve) => {
+            if (document.visibilityState !== 'visible') {
+                resolve();
+                return;
+            }
+            const onVisibilityChange = () => {
+                if (document.visibilityState !== 'visible') {
+                    document.removeEventListener('visibilitychange', onVisibilityChange);
+                    cancelAnimationFrame(rafId);
+                    resolve();
+                }
+            };
+            const rafId = requestAnimationFrame(() => {
+                document.removeEventListener('visibilitychange', onVisibilityChange);
+                resolve();
+            });
+            document.addEventListener('visibilitychange', onVisibilityChange);
+        });
+    }).toString();
     async function getElementCenter(context, element) {
         const hiddenSandboxRealm = await context.getOrCreateHiddenSandbox();
         const result = await hiddenSandboxRealm.callFunction(CALCULATE_IN_VIEW_CENTER_PT_DECL, false, { type: 'undefined' }, [element]);
@@ -2845,9 +2888,13 @@
         #browsingContextStorage;
         #tickStart = 0;
         #tickDuration = 0;
+        #simulatedTime = 0;
         #inputState;
         #contextId;
         #pendingMovePromises = [];
+        #hasPendingRafAlignedInput = false;
+        #pendingRafFlush;
+        #inFlightHiddenSandboxWarmup;
         constructor(inputState, browsingContextStorage, contextId) {
             this.#browsingContextStorage = browsingContextStorage;
             this.#inputState = inputState;
@@ -2864,14 +2911,61 @@
             this.#pendingMovePromises = [];
             await Promise.allSettled(promises);
         }
+        async #flushPendingRafAlignedInput() {
+            if (this.#hasPendingRafAlignedInput) {
+                this.#hasPendingRafAlignedInput = false;
+                const flush = this.#waitForRafAlignedInput();
+                this.#pendingRafFlush = flush;
+                try {
+                    await flush;
+                }
+                finally {
+                    if (this.#pendingRafFlush === flush) {
+                        this.#pendingRafFlush = undefined;
+                    }
+                }
+                return;
+            }
+            if (this.#pendingRafFlush) {
+                await this.#pendingRafFlush;
+            }
+        }
+        async #flushPendingInput() {
+            await Promise.all([
+                this.#flushPendingMovePromises(),
+                this.#flushPendingRafAlignedInput(),
+            ]);
+        }
+        #warmUpLocalRootHiddenSandbox() {
+            if (this.#hasPendingRafAlignedInput || this.#inFlightHiddenSandboxWarmup) {
+                return;
+            }
+            try {
+                const localRootContext = this.#browsingContextStorage.getContext(this.#context.cdpTarget.id);
+                const warmup = localRootContext
+                    .getOrCreateHiddenSandbox()
+                    .catch(() => undefined)
+                    .finally(() => {
+                    if (this.#inFlightHiddenSandboxWarmup === warmup) {
+                        this.#inFlightHiddenSandboxWarmup = undefined;
+                    }
+                });
+                this.#inFlightHiddenSandboxWarmup = warmup;
+            }
+            catch {
+            }
+        }
         async dispatchActions(optionsByTick) {
+            this.#hasPendingRafAlignedInput = false;
+            this.#inFlightHiddenSandboxWarmup = undefined;
             try {
                 for (const options of optionsByTick) {
                     await this.dispatchTickActions(options);
                 }
             }
             finally {
-                await this.#flushPendingMovePromises();
+                await this.#flushPendingInput();
+                this.#inFlightHiddenSandboxWarmup = undefined;
             }
         }
         async dispatchTickActions(options) {
@@ -2882,7 +2976,7 @@
                 }
             }
             if (this.#tickDuration > 0) {
-                await this.#flushPendingMovePromises();
+                await this.#flushPendingInput();
             }
             this.#tickStart = performance.now();
             const promises = [];
@@ -2896,6 +2990,17 @@
                 promises.push(this.#flushPendingMovePromises());
             }
             await Promise.all(promises);
+            this.#simulatedTime += this.#tickDuration;
+        }
+        async #waitForRafAlignedInput() {
+            try {
+                await this.#inFlightHiddenSandboxWarmup;
+                const localRootContext = this.#browsingContextStorage.getContext(this.#context.cdpTarget.id);
+                const hiddenSandboxRealm = await localRootContext.getOrCreateHiddenSandbox();
+                await hiddenSandboxRealm.callFunction(WAIT_FOR_ANIMATION_FRAME_DECL, true);
+            }
+            catch {
+            }
         }
         async #dispatchAction({ id, action }) {
             const source = this.#inputState.get(id);
@@ -2965,7 +3070,8 @@
                         modifiers,
                         button: getCdpButton(button),
                         buttons: source.buttons,
-                        clickCount: source.setClickCount(button, new ClickContext(x, y, performance.now())),
+                        clickCount: source.setClickCount(button,
+                        new ClickContext(x, y, this.#simulatedTime)),
                         pointerType,
                         tangentialPressure,
                         tiltX,
@@ -3124,6 +3230,7 @@
                         case Input$2.PointerType.Touch:
                             if (source.pressed.size !== 0) {
                                 await this.#flushPendingMovePromises();
+                                this.#warmUpLocalRootHiddenSandbox();
                                 await this.#context.cdpTarget.cdpClient.sendCommand('Input.dispatchTouchEvent', {
                                     type: 'touchMove',
                                     touchPoints: [
@@ -3142,6 +3249,7 @@
                                     ],
                                     modifiers,
                                 });
+                                this.#hasPendingRafAlignedInput = true;
                             }
                             break;
                     }
@@ -3157,7 +3265,7 @@
             if (this.#context.id === this.#context.cdpTarget.id) {
                 return { x: 0, y: 0 };
             }
-            await this.#flushPendingMovePromises();
+            await this.#flushPendingInput();
             const { backendNodeId } = await this.#context.cdpTarget.cdpClient.sendCommand('DOM.getFrameOwner', { frameId: this.#context.id });
             const { model: frameBoxModel } = await this.#context.cdpTarget.cdpClient.sendCommand('DOM.getBoxModel', {
                 backendNodeId,
@@ -3178,7 +3286,7 @@
                     targetY = startY + offsetY + frameOffset.y;
                     break;
                 default: {
-                    await this.#flushPendingMovePromises();
+                    await this.#flushPendingInput();
                     const { x: posX, y: posY } = await getElementCenter(this.#context, origin.element);
                     targetX = posX + offsetX + frameOffset.x;
                     targetY = posY + offsetY + frameOffset.y;
@@ -3214,6 +3322,7 @@
                 }
                 if (deltaX !== 0 || deltaY !== 0) {
                     const { modifiers } = keyState;
+                    this.#warmUpLocalRootHiddenSandbox();
                     await this.#context.cdpTarget.cdpClient.sendCommand('Input.dispatchMouseEvent', {
                         type: 'mouseWheel',
                         deltaX,
@@ -3222,6 +3331,7 @@
                         y: targetY,
                         modifiers,
                     });
+                    this.#hasPendingRafAlignedInput = true;
                     currentDeltaX += deltaX;
                     currentDeltaY += deltaY;
                 }
@@ -4486,61 +4596,12 @@
             this.#networkStorage.disownData(params);
             return {};
         }
-        async #getRelatedTopLevelBrowsingContexts(browsingContextIds, userContextIds) {
-            if (browsingContextIds === undefined && userContextIds === undefined) {
-                return this.#browsingContextStorage.getTopLevelContexts();
-            }
-            if (browsingContextIds !== undefined && userContextIds !== undefined) {
-                throw new InvalidArgumentException('User contexts and browsing contexts are mutually exclusive');
-            }
-            const result = [];
-            if (userContextIds !== undefined) {
-                if (userContextIds.length === 0) {
-                    throw new InvalidArgumentException('user context should be provided');
-                }
-                await this.#userContextStorage.verifyUserContextIdList(userContextIds);
-                for (const userContextId of userContextIds) {
-                    const topLevelBrowsingContexts = this.#browsingContextStorage
-                        .getTopLevelContexts()
-                        .filter((browsingContext) => browsingContext.userContext === userContextId);
-                    result.push(...topLevelBrowsingContexts);
-                }
-            }
-            if (browsingContextIds !== undefined) {
-                if (browsingContextIds.length === 0) {
-                    throw new InvalidArgumentException('browsing context should be provided');
-                }
-                for (const browsingContextId of browsingContextIds) {
-                    const browsingContext = this.#browsingContextStorage.getContext(browsingContextId);
-                    if (!browsingContext.isTopLevelContext()) {
-                        throw new InvalidArgumentException('The command is only supported on the top-level context');
-                    }
-                    result.push(browsingContext);
-                }
-            }
-            return [...new Set(result).values()];
-        }
         async setExtraHeaders(params) {
-            const affectedBrowsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts);
             const cdpExtraHeaders = parseBiDiHeaders(params.headers);
-            if (params.userContexts === undefined && params.contexts === undefined) {
-                this.#contextConfigStorage.updateGlobalConfig({
-                    extraHeaders: cdpExtraHeaders,
-                });
-            }
-            if (params.userContexts !== undefined) {
-                params.userContexts.forEach((userContext) => {
-                    this.#contextConfigStorage.updateUserContextConfig(userContext, {
-                        extraHeaders: cdpExtraHeaders,
-                    });
-                });
-            }
-            if (params.contexts !== undefined) {
-                params.contexts.forEach((browsingContextId) => {
-                    this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, { extraHeaders: cdpExtraHeaders });
-                });
-            }
-            await Promise.all(affectedBrowsingContexts.map(async (context) => {
+            const relatedBrowsingContexts = await this.#contextConfigStorage.updateConfig({
+                extraHeaders: cdpExtraHeaders,
+            }, params.contexts, params.userContexts);
+            await Promise.all(relatedBrowsingContexts.map(async (context) => {
                 const extraHeaders = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext).extraHeaders ?? {};
                 await context.setExtraHeaders(extraHeaders);
             }));
@@ -5134,18 +5195,40 @@
      * See the License for the specific language governing permissions and
      * limitations under the License.
      */
+    const RESTRICTED_CAPABILITY_RULES = {
+        acceptInsecureCerts(value) {
+            return value !== true;
+        },
+        unhandledPromptBehavior(value) {
+            return value === undefined || value === null;
+        },
+        'goog:prerenderingDisabled'(value) {
+            return value !== true;
+        },
+        'goog:disableNetworkDurableMessages'(value) {
+            return value !== true;
+        },
+    };
     class SessionProcessor {
         #eventManager;
         #browserCdpClient;
         #initConnection;
+        #aclManager;
+        #restrictedMode;
+        #creating = false;
         #created = false;
-        constructor(eventManager, browserCdpClient, initConnection) {
+        constructor(eventManager, browserCdpClient, initConnection, aclManager, restrictedMode = false) {
             this.#eventManager = eventManager;
             this.#browserCdpClient = browserCdpClient;
             this.#initConnection = initConnection;
+            this.#aclManager = aclManager;
+            this.#restrictedMode = restrictedMode;
         }
         status() {
             return { ready: false, message: 'already connected' };
+        }
+        isCreated() {
+            return this.#created;
         }
         #mergeCapabilities(capabilitiesRequest) {
             const mergedCapabilities = [];
@@ -5161,10 +5244,17 @@
                 }
                 mergedCapabilities.push(result);
             }
-            const match = mergedCapabilities.find((c) => c.browserName === 'chrome') ??
+            const candidates = this.#restrictedMode
+                ? mergedCapabilities.filter((c) => c['goog:sessionType'] === 'restricted')
+                : mergedCapabilities;
+            const match = candidates.find((c) => c.browserName === 'chrome') ??
+                candidates[0] ??
                 mergedCapabilities[0] ??
                 {};
             match.unhandledPromptBehavior = this.#getUnhandledPromptBehavior(match.unhandledPromptBehavior);
+            if (match['goog:sessionType'] !== 'restricted') {
+                delete match['goog:sessionType'];
+            }
             return match;
         }
         #getUnhandledPromptBehavior(capabilityValue) {
@@ -5200,18 +5290,33 @@
             }
         }
         async new(params) {
-            if (this.#created) {
-                throw new Error('Session has been already created.');
+            if (this.#created || this.#creating) {
+                throw new SessionNotCreatedException('Session has been already created.');
             }
-            this.#created = true;
-            const matchedCapabitlites = this.#mergeCapabilities(params.capabilities);
-            await this.#initConnection(matchedCapabitlites);
+            const matchedCapabilities = this.#mergeCapabilities(params.capabilities);
+            const isRestricted = matchedCapabilities['goog:sessionType'] === 'restricted';
+            if (this.#restrictedMode && !isRestricted) {
+                throw new SessionNotCreatedException('Only restricted sessions are allowed. Request capability "goog:sessionType": "restricted".');
+            }
+            if (isRestricted) {
+                for (const [name, isAllowedInRestrictedMode] of Object.entries(RESTRICTED_CAPABILITY_RULES)) {
+                    if (!isAllowedInRestrictedMode(matchedCapabilities[name])) {
+                        throw new SessionNotCreatedException(`Capability '${name}' is not allowed in restricted sessions.`);
+                    }
+                }
+            }
+            this.#creating = true;
+            if (isRestricted) {
+                this.#aclManager.enable();
+            }
+            await this.#initConnection(isRestricted ? {} : matchedCapabilities);
             const version = await this.#browserCdpClient.sendCommand('Browser.getVersion');
+            this.#created = true;
             return {
                 sessionId: 'unknown',
                 capabilities: {
-                    ...matchedCapabitlites,
-                    acceptInsecureCerts: matchedCapabitlites.acceptInsecureCerts ?? false,
+                    ...matchedCapabilities,
+                    acceptInsecureCerts: matchedCapabilities.acceptInsecureCerts ?? false,
                     browserName: version.product,
                     browserVersion: version.revision,
                     platformName: '',
@@ -5220,6 +5325,12 @@
                     userAgent: version.userAgent,
                 },
             };
+        }
+        async setAcl(params) {
+            if (!this.#aclManager.isEnabled()) {
+                throw new UnsupportedOperationException(`Command 'goog:session.setAcl' requires a restricted session. Request capability "goog:sessionType": "restricted" in session.new.`);
+            }
+            return await this.#aclManager.updateAcl(params.acl, params.reason);
         }
         async subscribe(params, googChannel = null) {
             const subscription = await this.#eventManager.subscribe(params.events, params.contexts ?? [], params.userContexts ?? [], googChannel);
@@ -5544,7 +5655,13 @@
     (function (CommandProcessorEvents) {
         CommandProcessorEvents["Response"] = "response";
     })(CommandProcessorEvents || (CommandProcessorEvents = {}));
+    const STATIC_COMMANDS = new Set([
+        'session.new',
+        'session.status',
+    ]);
     class CommandProcessor extends EventEmitter {
+        #aclManager;
+        #autofillProcessor;
         #bluetoothProcessor;
         #browserCdpClient;
         #browserProcessor;
@@ -5561,27 +5678,36 @@
         #webExtensionProcessor;
         #parser;
         #logger;
-        constructor(cdpConnection, browserCdpClient, eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, networkStorage, contextConfigStorage, bluetoothProcessor, digitalCredentialsProcessor, userContextStorage, parser = new BidiNoOpParser(), initConnection, logger) {
+        constructor(cdpConnection, browserCdpClient, eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, networkStorage, contextConfigStorage, bluetoothProcessor, digitalCredentialsProcessor, userContextStorage, aclManager, parser = new BidiNoOpParser(), initConnection, restrictedMode, logger) {
             super();
             this.#browserCdpClient = browserCdpClient;
+            this.#aclManager = aclManager;
             this.#parser = parser;
             this.#logger = logger;
             this.#bluetoothProcessor = bluetoothProcessor;
             this.#digitalCredentialsProcessor = digitalCredentialsProcessor;
+            this.#autofillProcessor = new AutofillProcessor(browsingContextStorage);
             this.#browserProcessor = new BrowserProcessor(browserCdpClient, browsingContextStorage, contextConfigStorage, userContextStorage);
-            this.#browsingContextProcessor = new BrowsingContextProcessor(browserCdpClient, browsingContextStorage, userContextStorage, contextConfigStorage, eventManager);
+            this.#browsingContextProcessor = new BrowsingContextProcessor(browserCdpClient, browsingContextStorage, contextConfigStorage, eventManager);
             this.#cdpProcessor = new CdpProcessor(browsingContextStorage, realmStorage, cdpConnection, browserCdpClient);
-            this.#emulationProcessor = new EmulationProcessor(browsingContextStorage, userContextStorage, contextConfigStorage);
+            this.#emulationProcessor = new EmulationProcessor(contextConfigStorage);
             this.#inputProcessor = new InputProcessor(browsingContextStorage);
             this.#networkProcessor = new NetworkProcessor(browsingContextStorage, networkStorage, userContextStorage, contextConfigStorage);
             this.#permissionsProcessor = new PermissionsProcessor(browserCdpClient);
             this.#scriptProcessor = new ScriptProcessor(eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, userContextStorage, logger);
-            this.#sessionProcessor = new SessionProcessor(eventManager, browserCdpClient, initConnection);
+            this.#sessionProcessor = new SessionProcessor(eventManager, browserCdpClient, initConnection, this.#aclManager, restrictedMode);
             this.#storageProcessor = new StorageProcessor(browserCdpClient, browsingContextStorage, logger);
             this.#webExtensionProcessor = new WebExtensionProcessor(browserCdpClient);
         }
         async #processCommand(command) {
+            if (!STATIC_COMMANDS.has(command.method) &&
+                !this.#sessionProcessor.isCreated()) {
+                throw new InvalidSessionIdException(`Command '${command.method}' requires a session. Call 'session.new' first.`);
+            }
+            this.#aclManager.assertCommandAllowed(command.method, command.params);
             switch (command.method) {
+                case 'autofill.trigger':
+                    return await this.#autofillProcessor.trigger(this.#parser.parseAutofillTriggerParams(command.params));
                 case 'bluetooth.disableSimulation':
                     return await this.#bluetoothProcessor.disableSimulation(this.#parser.parseDisableSimulationParameters(command.params));
                 case 'bluetooth.handleRequestDevicePrompt':
@@ -5602,6 +5728,8 @@
                     return await this.#bluetoothProcessor.simulateGattConnectionResponse(this.#parser.parseSimulateGattConnectionResponseParameters(command.params));
                 case 'bluetooth.simulateGattDisconnection':
                     return await this.#bluetoothProcessor.simulateGattDisconnection(this.#parser.parseSimulateGattDisconnectionParameters(command.params));
+                case 'bluetooth.simulateGattMtuChange':
+                    return await this.#bluetoothProcessor.simulateGattMtuChange(this.#parser.parseSimulateGattMtuChangeParameters(command.params));
                 case 'bluetooth.simulatePreconnectedPeripheral':
                     return await this.#bluetoothProcessor.simulatePreconnectedPeripheral(this.#parser.parseSimulatePreconnectedPeripheralParameters(command.params));
                 case 'bluetooth.simulateService':
@@ -5641,8 +5769,7 @@
                 case 'browsingContext.reload':
                     return await this.#browsingContextProcessor.reload(this.#parser.parseReloadParams(command.params));
                 case 'browsingContext.setBypassCSP':
-                    this.#parser.parseSetBypassCspParams(command.params);
-                    throw new UnsupportedOperationException(`Method ${command.method} is not implemented.`);
+                    return await this.#browsingContextProcessor.setBypassCSP(this.#parser.parseSetBypassCspParams(command.params));
                 case 'browsingContext.setViewport':
                     return await this.#browsingContextProcessor.setViewport(this.#parser.parseSetViewportParams(command.params));
                 case 'browsingContext.startScreencast':
@@ -5659,11 +5786,12 @@
                     return this.#cdpProcessor.resolveRealm(this.#parser.parseResolveRealmParams(command.params));
                 case 'goog:cdp.sendCommand':
                     return await this.#cdpProcessor.sendCommand(this.#parser.parseSendCommandParams(command.params));
+                case 'goog:browsingContext.getAccessibilityTree':
+                    return await this.#browsingContextProcessor.getAccessibilityTree(this.#parser.parseGetAccessibilityTreeParams(command.params));
                 case 'digitalCredentials.setVirtualWalletBehavior':
                     return await this.#digitalCredentialsProcessor.setVirtualWalletBehavior(this.#parser.parseSetVirtualWalletBehaviorParams(command.params));
                 case 'emulation.setForcedColorsModeThemeOverride':
-                    this.#parser.parseSetForcedColorsModeThemeOverrideParams(command.params);
-                    throw new UnsupportedOperationException(`Method ${command.method} is not implemented.`);
+                    return await this.#emulationProcessor.setForcedColorsModeThemeOverride(this.#parser.parseSetForcedColorsModeThemeOverrideParams(command.params));
                 case 'emulation.setGeolocationOverride':
                     return await this.#emulationProcessor.setGeolocationOverride(this.#parser.parseSetGeolocationOverrideParams(command.params));
                 case 'emulation.setLocaleOverride':
@@ -5738,6 +5866,8 @@
                     return this.#scriptProcessor.getRealms(this.#parser.parseGetRealmsParams(command.params));
                 case 'script.removePreloadScript':
                     return await this.#scriptProcessor.removePreloadScript(this.#parser.parseRemovePreloadScriptParams(command.params));
+                case 'goog:session.setAcl':
+                    return await this.#sessionProcessor.setAcl(this.#parser.parseSetAclParams(command.params));
                 case 'session.end':
                     throw new UnsupportedOperationException(`Method ${command.method} is not implemented.`);
                 case 'session.new':
@@ -6060,6 +6190,14 @@
             });
             return {};
         }
+        async simulateGattMtuChange(params) {
+            const context = this.#browsingContextStorage.getContext(params.context);
+            await context.cdpTarget.browserCdpClient.sendCommand('BluetoothEmulation.simulateGATTMtuChange', {
+                address: params.address,
+                mtu: params.mtu,
+            });
+            return {};
+        }
         async simulateService(params) {
             const device = this.#getDevice(params.address);
             const context = this.#browsingContextStorage.getContext(params.context);
@@ -6206,6 +6344,7 @@
      */
     class ContextConfig {
         acceptInsecureCerts;
+        bypassCSP;
         clientHints;
         devicePixelRatio;
         digitalCredentialsBehavior;
@@ -6213,6 +6352,7 @@
         downloadBehavior;
         emulatedNetworkConditions;
         extraHeaders;
+        forcedColorsModeTheme;
         geolocation;
         locale;
         maxTouchPoints;
@@ -6265,16 +6405,22 @@
      * limitations under the License.
      */
     class ContextConfigStorage {
+        #browsingContextStorage;
+        #userContextStorage;
         #global = new ContextConfig();
         #userContextConfigs = new Map();
         #browsingContextConfigs = new Map();
-        updateGlobalConfig(config) {
+        constructor(browsingContextStorage, userContextStorage) {
+            this.#browsingContextStorage = browsingContextStorage;
+            this.#userContextStorage = userContextStorage;
+        }
+        #updateGlobalConfig(config) {
             this.#global = ContextConfig.merge(this.#global, config);
         }
-        updateBrowsingContextConfig(browsingContextId, config) {
+        #updateBrowsingContextConfig(browsingContextId, config) {
             this.#browsingContextConfigs.set(browsingContextId, ContextConfig.merge(this.#browsingContextConfigs.get(browsingContextId), config));
         }
-        updateUserContextConfig(userContext, config) {
+        #updateUserContextConfig(userContext, config) {
             this.#userContextConfigs.set(userContext, ContextConfig.merge(this.#userContextConfigs.get(userContext), config));
         }
         getGlobalConfig() {
@@ -6298,6 +6444,59 @@
             result.extraHeaders =
                 Object.keys(extraHeaders).length > 0 ? extraHeaders : undefined;
             return result;
+        }
+        async updateConfig(config, browsingContextIds, userContextIds, allowGlobal = true, validateConfig) {
+            const relatedBrowsingContexts = await this.#getRelatedTopLevelBrowsingContexts(browsingContextIds, userContextIds, allowGlobal);
+            validateConfig?.();
+            for (const browsingContextId of browsingContextIds ?? []) {
+                this.#updateBrowsingContextConfig(browsingContextId, config);
+            }
+            for (const userContextId of userContextIds ?? []) {
+                this.#updateUserContextConfig(userContextId, config);
+            }
+            if (browsingContextIds === undefined && userContextIds === undefined) {
+                this.#updateGlobalConfig(config);
+            }
+            return relatedBrowsingContexts;
+        }
+        async #getRelatedTopLevelBrowsingContexts(browsingContextIds, userContextIds, allowGlobal = true) {
+            if (browsingContextIds === undefined && userContextIds === undefined) {
+                if (allowGlobal) {
+                    return this.#browsingContextStorage.getTopLevelContexts();
+                }
+                throw new InvalidArgumentException('Either user contexts or browsing contexts must be provided');
+            }
+            if (browsingContextIds !== undefined && userContextIds !== undefined) {
+                throw new InvalidArgumentException('User contexts and browsing contexts are mutually exclusive');
+            }
+            const result = new Set();
+            if (browsingContextIds === undefined) {
+                if (userContextIds.length === 0) {
+                    throw new InvalidArgumentException('user context should be provided');
+                }
+                await this.#userContextStorage.verifyUserContextIdList(userContextIds);
+                for (const userContextId of userContextIds) {
+                    const topLevelBrowsingContexts = this.#browsingContextStorage
+                        .getTopLevelContexts()
+                        .filter((browsingContext) => browsingContext.userContext === userContextId);
+                    for (const browsingContext of topLevelBrowsingContexts) {
+                        result.add(browsingContext);
+                    }
+                }
+            }
+            else {
+                if (browsingContextIds.length === 0) {
+                    throw new InvalidArgumentException('browsing context should be provided');
+                }
+                for (const browsingContextId of browsingContextIds) {
+                    const browsingContext = this.#browsingContextStorage.getContext(browsingContextId);
+                    if (!browsingContext.isTopLevelContext()) {
+                        throw new InvalidArgumentException('The command is only supported on the top-level context');
+                    }
+                    result.add(browsingContext);
+                }
+            }
+            return Array.from(result);
         }
     }
 
@@ -6492,73 +6691,6 @@
             }
             throw err;
         }
-    }
-
-    /*
-     * Copyright 2023 Google LLC.
-     * Copyright (c) Microsoft Corporation.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-    const SHARED_ID_DIVIDER = '_element_';
-    function getSharedId(frameId, documentId, backendNodeId) {
-        return `f.${frameId}.d.${documentId}.e.${backendNodeId}`;
-    }
-    function parseLegacySharedId(sharedId) {
-        const match = sharedId.match(new RegExp(`(.*)${SHARED_ID_DIVIDER}(.*)`));
-        if (!match) {
-            return null;
-        }
-        const documentId = match[1];
-        const elementId = match[2];
-        if (documentId === undefined || elementId === undefined) {
-            return null;
-        }
-        const backendNodeId = parseInt(elementId ?? '');
-        if (isNaN(backendNodeId)) {
-            return null;
-        }
-        return {
-            documentId,
-            backendNodeId,
-        };
-    }
-    function parseSharedId(sharedId) {
-        const legacyFormattedSharedId = parseLegacySharedId(sharedId);
-        if (legacyFormattedSharedId !== null) {
-            return { ...legacyFormattedSharedId, frameId: undefined };
-        }
-        const match = sharedId.match(/f\.(.*)\.d\.(.*)\.e\.([0-9]*)/);
-        if (!match) {
-            return null;
-        }
-        const frameId = match[1];
-        const documentId = match[2];
-        const elementId = match[3];
-        if (frameId === undefined ||
-            documentId === undefined ||
-            elementId === undefined) {
-            return null;
-        }
-        const backendNodeId = parseInt(elementId ?? '');
-        if (isNaN(backendNodeId)) {
-            return null;
-        }
-        return {
-            frameId,
-            documentId,
-            backendNodeId,
-        };
     }
 
     class Realm {
@@ -7259,6 +7391,10 @@
             }
             return this.#lastCommittedNavigation.navigationId;
         }
+        navigationIdForLoaderId(loaderId) {
+            return (this.#loaderIdToNavigationsMap.get(loaderId)?.navigationId ??
+                this.#lastCommittedNavigation.navigationId);
+        }
         get isInitialNavigation() {
             return this.#isInitialNavigation;
         }
@@ -7422,12 +7558,12 @@
      * limitations under the License.
      */
     var _a$8;
+    const HIDDEN_SANDBOX = uuidv4();
     class BrowsingContextImpl {
         static LOGGER_PREFIX = `${LogType.debug}:browsingContext`;
         #children = new Set();
         #id;
         userContext;
-        #hiddenSandbox = uuidv4();
         #downloadIdToInfoMap = new Map();
         #loaderId;
         #parentId = null;
@@ -7444,6 +7580,7 @@
         #navigationTracker;
         #realmStorage;
         #configStorage;
+        #cdpListeners = new DisposableStack();
         #lastUserPromptType;
         constructor(id, parentId, userContext, cdpTarget, eventManager, browsingContextStorage, realmStorage, configStorage, url, originalOpener, logger) {
             this.#cdpTarget = cdpTarget;
@@ -7456,7 +7593,7 @@
             this.#configStorage = configStorage;
             this.#logger = logger;
             this.#originalOpener = originalOpener;
-            this.#realmStorage.hiddenSandboxes.add(this.#hiddenSandbox);
+            this.#realmStorage.hiddenSandboxes.add(HIDDEN_SANDBOX);
             this.#navigationTracker = new NavigationTracker(url, id, eventManager, logger, this.userContext);
         }
         static create(id, parentId, userContext, cdpTarget, eventManager, browsingContextStorage, realmStorage, configStorage, url, originalOpener, logger) {
@@ -7464,7 +7601,13 @@
             context.#initListeners();
             browsingContextStorage.addContext(context);
             if (!context.isTopLevelContext()) {
-                context.parent.addChild(context.id);
+                context.parent?.addChild(context.id);
+            }
+            for (const existingContext of browsingContextStorage.getAllContexts()) {
+                if (existingContext.parentId === context.id) {
+                    context.addChild(existingContext.id);
+                    existingContext.#initListeners();
+                }
             }
             eventManager.registerPromiseEvent(context.targetUnblockedOrThrow().then(() => {
                 return {
@@ -7493,16 +7636,18 @@
             return this.#navigationTracker.currentNavigationId;
         }
         dispose(emitContextDestroyed) {
+            this.#cdpListeners.dispose();
             this.#navigationTracker.dispose();
             this.#defaultRealmDeferred.reject(new NoSuchFrameException(`Context ${this.id} was destroyed`));
             this.#realmStorage.deleteRealms({
                 browsingContextId: this.id,
             });
-            if (!this.isTopLevelContext()) {
-                this.parent.#children.delete(this.id);
+            const parent = this.parent;
+            if (parent !== null) {
+                parent.#children.delete(this.id);
             }
             this.#failLifecycleIfNotFinished();
-            if (emitContextDestroyed) {
+            if (emitContextDestroyed && this.top.isTopLevelContext()) {
                 this.#eventManager.registerEvent({
                     type: 'event',
                     method: BrowsingContext$3.EventNames.ContextDestroyed,
@@ -7524,16 +7669,29 @@
                 this.#logger?.(LogType.debugError)?.('Parent context already set');
                 return;
             }
-            this.#parentId = parentId;
-            if (!this.isTopLevelContext()) {
-                this.parent.addChild(this.id);
+            if (parentId === null) {
+                return;
             }
+            const parent = this.#browsingContextStorage.findContext(parentId);
+            if (parent === undefined) {
+                this.#logger?.(LogType.debugError)?.(`Parent context ${parentId} not found`);
+                return;
+            }
+            for (let ancestor = parent; ancestor !== null; ancestor = ancestor.parent) {
+                if (ancestor === this) {
+                    this.#logger?.(LogType.debugError)?.(`Parent context ${parentId} would create a cycle for ${this.id}`);
+                    return;
+                }
+            }
+            this.#parentId = parentId;
+            parent.addChild(this.id);
+            this.#initListeners();
         }
         get parent() {
             if (this.parentId === null) {
                 return null;
             }
-            return this.#browsingContextStorage.getContext(this.parentId);
+            return this.#browsingContextStorage.findContext(this.parentId) ?? null;
         }
         get directChildren() {
             return [...this.#children].map((id) => this.#browsingContextStorage.getContext(id));
@@ -7558,7 +7716,11 @@
             this.#children.add(childId);
         }
         #deleteAllChildren(emitContextDestroyed = false) {
-            this.directChildren.map((child) => child.dispose(emitContextDestroyed));
+            for (const child of this.directChildren) {
+                if (child.cdpTarget.id !== child.id) {
+                    child.dispose(emitContextDestroyed);
+                }
+            }
         }
         get cdpTarget() {
             return this.#cdpTarget;
@@ -7583,7 +7745,7 @@
             }
         }
         async getOrCreateHiddenSandbox() {
-            return await this.#getOrCreateSandboxInternal(this.#hiddenSandbox);
+            return await this.#getOrCreateSandboxInternal(HIDDEN_SANDBOX);
         }
         async getOrCreateUserSandbox(sandbox) {
             const realm = await this.#getOrCreateSandboxInternal(sandbox);
@@ -7630,11 +7792,24 @@
         onTargetInfoChanged(params) {
             this.#navigationTracker.onTargetInfoChanged(params.targetInfo.url);
         }
+        #subscriberFor(cdpClient) {
+            return {
+                on: (event, handler) => {
+                    cdpClient.on(event, handler);
+                    this.#cdpListeners.defer(() => cdpClient.off(event, handler));
+                },
+            };
+        }
         #initListeners() {
-            this.#cdpTarget.cdpClient.on('Network.loadingFailed', (params) => {
+            this.#cdpListeners.dispose();
+            this.#cdpListeners = new DisposableStack();
+            const cdpTargetClientSubscriber = this.#subscriberFor(this.#cdpTarget.cdpClient);
+            const cdpTargetBrowserClientSubscriber = this.#subscriberFor(this.#cdpTarget.browserCdpClient);
+            const dialogCdpClientSubscriber = this.#subscriberFor(this.top.#cdpTarget.cdpClient);
+            cdpTargetClientSubscriber.on('Network.loadingFailed', (params) => {
                 this.#navigationTracker.networkLoadingFailed(params.requestId, params.errorText);
             });
-            this.#cdpTarget.cdpClient.on('Page.fileChooserOpened', (params) => {
+            cdpTargetClientSubscriber.on('Page.fileChooserOpened', (params) => {
                 if (this.id !== params.frameId) {
                     return;
                 }
@@ -7658,7 +7833,7 @@
                     },
                 }, this.id);
             });
-            this.#cdpTarget.cdpClient.on('Page.frameNavigated', (params) => {
+            cdpTargetClientSubscriber.on('Page.frameNavigated', (params) => {
                 if (this.id !== params.frame.id) {
                     return;
                 }
@@ -7680,7 +7855,7 @@
                     this.#lifecycle.load.resolve();
                 }
             });
-            this.#cdpTarget.cdpClient.on('Page.frameStartedNavigating', (params) => {
+            cdpTargetClientSubscriber.on('Page.frameStartedNavigating', (params) => {
                 if (this.id !== params.frameId) {
                     return;
                 }
@@ -7692,7 +7867,7 @@
                 }
                 this.#navigationTracker.frameStartedNavigating(params.url, params.loaderId, params.navigationType);
             });
-            this.#cdpTarget.cdpClient.on('Page.navigatedWithinDocument', (params) => {
+            cdpTargetClientSubscriber.on('Page.navigatedWithinDocument', (params) => {
                 if (this.id !== params.frameId) {
                     return;
                 }
@@ -7711,7 +7886,7 @@
                     return;
                 }
             });
-            this.#cdpTarget.cdpClient.on('Page.lifecycleEvent', (params) => {
+            cdpTargetClientSubscriber.on('Page.lifecycleEvent', (params) => {
                 if (this.id !== params.frameId) {
                     return;
                 }
@@ -7737,7 +7912,7 @@
                                 method: BrowsingContext$3.EventNames.DomContentLoaded,
                                 params: {
                                     context: this.id,
-                                    navigation: this.#navigationTracker.currentNavigationId,
+                                    navigation: this.#navigationTracker.navigationIdForLoaderId(params.loaderId),
                                     timestamp: getTimestamp(),
                                     url: this.#navigationTracker.url,
                                     userContext: this.userContext,
@@ -7753,7 +7928,7 @@
                                 method: BrowsingContext$3.EventNames.Load,
                                 params: {
                                     context: this.id,
-                                    navigation: this.#navigationTracker.currentNavigationId,
+                                    navigation: this.#navigationTracker.navigationIdForLoaderId(params.loaderId),
                                     timestamp: getTimestamp(),
                                     url: this.#navigationTracker.url,
                                     userContext: this.userContext,
@@ -7765,7 +7940,7 @@
                         break;
                 }
             });
-            this.#cdpTarget.cdpClient.on('Runtime.executionContextCreated', (params) => {
+            cdpTargetClientSubscriber.on('Runtime.executionContextCreated', (params) => {
                 const { auxData, name, uniqueId, id } = params.context;
                 if (!auxData || auxData.frameId !== this.id) {
                     return;
@@ -7803,7 +7978,7 @@
                     .getChannels(sandbox)
                     .map((channel) => channel.startListenerFromWindow(realm, this.#eventManager)));
             });
-            this.#cdpTarget.cdpClient.on('Runtime.executionContextDestroyed', (params) => {
+            cdpTargetClientSubscriber.on('Runtime.executionContextDestroyed', (params) => {
                 if (this.#defaultRealmDeferred.isFinished &&
                     this.#defaultRealmDeferred.result.executionContextId ===
                         params.executionContextId) {
@@ -7814,7 +7989,7 @@
                     executionContextId: params.executionContextId,
                 });
             });
-            this.#cdpTarget.cdpClient.on('Runtime.executionContextsCleared', () => {
+            cdpTargetClientSubscriber.on('Runtime.executionContextsCleared', () => {
                 if (this.#defaultRealmDeferred.isFinished) {
                     this.#defaultRealmDeferred = new Deferred();
                 }
@@ -7822,15 +7997,13 @@
                     cdpSessionId: this.#cdpTarget.cdpSessionId,
                 });
             });
-            this.#cdpTarget.cdpClient.on('Page.javascriptDialogClosed', (params) => {
+            dialogCdpClientSubscriber.on('Page.javascriptDialogClosed', (params) => {
                 if (params.frameId && this.id !== params.frameId) {
                     return;
                 }
                 if (!params.frameId &&
                     this.#parentId &&
-                    this.#cdpTarget.cdpClient !==
-                        this.#browsingContextStorage.getContext(this.#parentId)?.cdpTarget
-                            .cdpClient) {
+                    this.#cdpTarget.cdpClient !== this.parent?.cdpTarget.cdpClient) {
                     return;
                 }
                 const accepted = params.result;
@@ -7851,15 +8024,13 @@
                 }, this.id);
                 this.#lastUserPromptType = undefined;
             });
-            this.#cdpTarget.cdpClient.on('Page.javascriptDialogOpening', (params) => {
+            dialogCdpClientSubscriber.on('Page.javascriptDialogOpening', (params) => {
                 if (params.frameId && this.id !== params.frameId) {
                     return;
                 }
                 if (!params.frameId &&
                     this.#parentId &&
-                    this.#cdpTarget.cdpClient !==
-                        this.#browsingContextStorage.getContext(this.#parentId)?.cdpTarget
-                            .cdpClient) {
+                    this.#cdpTarget.cdpClient !== this.parent?.cdpTarget.cdpClient) {
                     return;
                 }
                 const promptType = _a$8.#getPromptType(params.type);
@@ -7879,18 +8050,26 @@
                             : {}),
                     },
                 }, this.id);
+                const handlePromptAutomatically = (accept) => {
+                    void this.handleUserPrompt(accept).catch((error) => {
+                        if (!this.#cdpTarget.cdpClient.isCloseError(error) &&
+                            !error?.message?.includes('No dialog is showing')) {
+                            this.#logger?.(LogType.debugError)?.(error);
+                        }
+                    });
+                };
                 switch (promptHandler) {
                     case Session$2.UserPromptHandlerType.Accept:
-                        void this.handleUserPrompt(true);
+                        handlePromptAutomatically(true);
                         break;
                     case Session$2.UserPromptHandlerType.Dismiss:
-                        void this.handleUserPrompt(false);
+                        handlePromptAutomatically(false);
                         break;
                     case Session$2.UserPromptHandlerType.Ignore:
                         break;
                 }
             });
-            this.#cdpTarget.browserCdpClient.on('Browser.downloadWillBegin', (params) => {
+            cdpTargetBrowserClientSubscriber.on('Browser.downloadWillBegin', (params) => {
                 if (this.id !== params.frameId) {
                     return;
                 }
@@ -7932,7 +8111,7 @@
                     },
                 }, targetContext.id);
             });
-            this.#cdpTarget.browserCdpClient.on('Browser.downloadProgress', (params) => {
+            cdpTargetBrowserClientSubscriber.on('Browser.downloadProgress', (params) => {
                 if (!this.#downloadIdToInfoMap.has(params.guid)) {
                     return;
                 }
@@ -8184,9 +8363,20 @@
             if (rect.width === 0 || rect.height === 0) {
                 throw new UnableToCaptureScreenException(`Unable to capture screenshot with zero dimensions: width=${rect.width}, height=${rect.height}`);
             }
+            let scale = 1.0;
+            if (params.imageSize) {
+                if (params.imageSize.maxWidth !== undefined &&
+                    params.imageSize.maxWidth / rect.width < scale) {
+                    scale = params.imageSize.maxWidth / rect.width;
+                }
+                if (params.imageSize.maxHeight !== undefined &&
+                    params.imageSize.maxHeight / rect.height < scale) {
+                    scale = params.imageSize.maxHeight / rect.height;
+                }
+            }
             return await this.#cdpTarget.cdpClient.sendCommand('Page.captureScreenshot', {
                 ...params['goog:params'],
-                clip: { ...rect, scale: 1.0 },
+                clip: { ...rect, scale },
                 ...formatParameters,
                 captureBeyondViewport,
             });
@@ -8528,6 +8718,9 @@
             if (!parent) {
                 throw new InvalidArgumentException('This context has no container');
             }
+            if (parent.id !== this.id) {
+                throw new InvalidArgumentException(`Context ${contextId} is not a child of context ${this.id}`);
+            }
             try {
                 const { backendNodeId } = await parent.#cdpTarget.cdpClient.sendCommand('DOM.getFrameOwner', {
                     frameId: contextId,
@@ -8620,6 +8813,99 @@
                 nodes: resultNodes.filter((result) => result.type === 'node'),
             };
         }
+        async getAccessibilityTree() {
+            await this.#cdpTarget.cdpClient.sendCommand('Accessibility.enable');
+            const documentId = this.#loaderId;
+            if (documentId === undefined) {
+                throw new UnsupportedOperationException(`Context ${this.id} has no document`);
+            }
+            const { nodes: axNodes } = await this.#cdpTarget.cdpClient.sendCommand('Accessibility.getFullAXTree', { frameId: this.id });
+            if (documentId !== this.#loaderId) {
+                throw new UnsupportedOperationException(`Context ${this.id} navigated during the command`);
+            }
+            return { root: this.#buildAccessibilityTree(axNodes, documentId) };
+        }
+        #isChildDocumentAxNode(axNode) {
+            return axNode.frameId !== undefined && axNode.frameId !== this.id;
+        }
+        #buildAccessibilityTree(axNodes, documentId) {
+            const axNodesById = new Map();
+            for (const axNode of axNodes) {
+                axNodesById.set(axNode.nodeId, axNode);
+            }
+            const axRoot = axNodes.find((axNode) => axNode.parentId === undefined && !this.#isChildDocumentAxNode(axNode));
+            if (axRoot === undefined) {
+                throw new UnsupportedOperationException(`Context ${this.id} has no accessibility tree`);
+            }
+            const nodesById = new Map();
+            for (const axNode of axNodes) {
+                if (this.#isChildDocumentAxNode(axNode) ||
+                    (axNode.ignored && axNode !== axRoot)) {
+                    continue;
+                }
+                nodesById.set(axNode.nodeId, this.#toAccessibilityNode(axNode, documentId));
+            }
+            for (const [nodeId, node] of nodesById) {
+                node.children.push(...this.#getAccessibilityNodeChildren(axNodesById.get(nodeId), axNodesById, nodesById));
+            }
+            return nodesById.get(axRoot.nodeId);
+        }
+        #getAccessibilityNodeChildren(axNode, axNodesById, nodesById) {
+            const children = [];
+            const pendingIds = [...(axNode.childIds ?? [])].reverse();
+            while (pendingIds.length > 0) {
+                const axChild = axNodesById.get(pendingIds.pop());
+                if (axChild === undefined || this.#isChildDocumentAxNode(axChild)) {
+                    continue;
+                }
+                const child = nodesById.get(axChild.nodeId);
+                if (child !== undefined) {
+                    children.push(child);
+                    continue;
+                }
+                pendingIds.push(...[...(axChild.childIds ?? [])].reverse());
+            }
+            return children;
+        }
+        #toAccessibilityNode(axNode, documentId) {
+            const toText = (value) => typeof value === 'string' ? value : JSON.stringify(value);
+            const node = {
+                accessibilityId: axNode.nodeId,
+                children: [],
+            };
+            const properties = {};
+            for (const property of axNode.properties ?? []) {
+                const { value, relatedNodes } = property.value;
+                if (relatedNodes !== undefined) {
+                    properties[property.name] = relatedNodes
+                        .map((related) => getSharedId(this.id, documentId, related.backendDOMNodeId))
+                        .join(' ');
+                }
+                else if (value !== undefined) {
+                    properties[property.name] = toText(value);
+                }
+            }
+            if (axNode.description?.value !== undefined &&
+                axNode.description.value !== '') {
+                properties['description'] = toText(axNode.description.value);
+            }
+            if (axNode.value?.value !== undefined) {
+                properties['value'] = toText(axNode.value.value);
+            }
+            if (axNode.name?.value !== undefined && axNode.name.value !== '') {
+                node.name = toText(axNode.name.value);
+            }
+            if (Object.keys(properties).length > 0) {
+                node.properties = properties;
+            }
+            if (axNode.role?.value !== undefined) {
+                node.role = toText(axNode.role.value);
+            }
+            if (axNode.backendDOMNodeId !== undefined) {
+                node.sharedId = getSharedId(this.id, documentId, axNode.backendDOMNodeId);
+            }
+            return node;
+        }
         #getAllRelatedCdpTargets() {
             const targets = new Set();
             targets.add(this.cdpTarget);
@@ -8635,6 +8921,9 @@
         async setGeolocationOverride(geolocation) {
             await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setGeolocationOverride(geolocation)));
         }
+        async setBypassCSP(bypassCSP) {
+            await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setBypassCSP(bypassCSP)));
+        }
         async setScriptingEnabled(scriptingEnabled) {
             await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setScriptingEnabled(scriptingEnabled)));
         }
@@ -8647,8 +8936,8 @@
         async setTouchOverride(maxTouchPoints) {
             await Promise.allSettled(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setTouchOverride(maxTouchPoints)));
         }
-        async setMediaFeaturesOverride(mediaFeatures) {
-            await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setMediaFeaturesOverride(mediaFeatures)));
+        async setEmulatedMedia(mediaFeatures, forcedColorsModeTheme) {
+            await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setEmulatedMedia(mediaFeatures, forcedColorsModeTheme)));
         }
         async setExtraHeaders(cdpExtraHeaders) {
             await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setExtraHeaders(cdpExtraHeaders)));
@@ -9168,6 +9457,9 @@
             this.#collectors.set(collectorId, params);
             return collectorId;
         }
+        hasCollectors() {
+            return this.#collectors.size > 0;
+        }
         isCollected(requestId, dataType, collectorId) {
             if (collectorId !== undefined && !this.#collectors.has(collectorId)) {
                 throw new NoSuchNetworkCollectorException(`Unknown collector ${collectorId}`);
@@ -9329,13 +9621,14 @@
         static unknownParameter = 'UNKNOWN';
         #id;
         #fetchId;
-        #isFinished = false;
-        get isFinished() {
-            return this.#isFinished;
-        }
         #interceptPhase;
         #servedFromCache = false;
         #redirectCount;
+        #redirected = false;
+        #previousHop;
+        #nextHop;
+        #extraInfoWaitCanceled = false;
+        #lateRedirectResponseExtraInfos = [];
         #bodySize = 0;
         #responseBytesReceived = 0;
         #encodedResponseBodySize = null;
@@ -9356,13 +9649,32 @@
             [Network$3.EventNames.ResponseStarted]: false,
         };
         waitNextPhase = new Deferred();
-        constructor(id, eventManager, networkStorage, cdpTarget, redirectCount = 0, logger) {
+        #finished = new Deferred();
+        constructor(id, eventManager, networkStorage, cdpTarget, redirectCount = 0, logger, previousHop) {
             this.#id = id;
             this.#eventManager = eventManager;
             this.#networkStorage = networkStorage;
             this.#cdpTarget = cdpTarget;
             this.#redirectCount = redirectCount;
             this.#logger = logger;
+            if (previousHop) {
+                this.#lateRedirectResponseExtraInfos =
+                    previousHop.#lateRedirectResponseExtraInfos;
+                previousHop.#lateRedirectResponseExtraInfos = [];
+            }
+            if (previousHop?.delaysNextHop) {
+                this.#previousHop = previousHop;
+                previousHop.#nextHop = this;
+            }
+        }
+        get isFinished() {
+            return this.#finished.isFinished;
+        }
+        get finishedPromise() {
+            return this.#finished;
+        }
+        get hasResponse() {
+            return Boolean(this.#response.info || this.#response.paused);
         }
         get id() {
             return this.#id;
@@ -9374,15 +9686,16 @@
             return this.#interceptPhase;
         }
         get url() {
-            const fragment = this.#request.info?.request.urlFragment ??
-                this.#request.paused?.request.urlFragment ??
-                '';
+            const fragment = (this.#response.paused ??
+                this.#request.auth ??
+                this.#request.paused ??
+                this.#request.info)?.request.urlFragment ?? '';
             const url = this.#response.paused?.request.url ??
                 this.#requestOverrides?.url ??
-                this.#response.info?.url ??
                 this.#request.auth?.request.url ??
-                this.#request.info?.request.url ??
                 this.#request.paused?.request.url ??
+                this.#response.info?.url ??
+                this.#request.info?.request.url ??
                 _a$6.unknownParameter;
             return `${url}${fragment}`;
         }
@@ -9404,6 +9717,76 @@
         isRedirecting() {
             return Boolean(this.#request.info);
         }
+        get delaysNextHop() {
+            return (this.#previousHop !== undefined ||
+                this.#waitsForExtraInfo('request') ||
+                this.#waitsForExtraInfo('response'));
+        }
+        getHopForExtraInfo(kind) {
+            const previousHop = this.#previousHop;
+            return (previousHop && previousHop.#getOldestHopWaitingFor(kind)) ?? this;
+        }
+        #getOldestHopWaitingFor(kind) {
+            const previousHop = this.#previousHop;
+            return ((previousHop && previousHop.#getOldestHopWaitingFor(kind)) ??
+                (this.#waitsForExtraInfo(kind) ? this : undefined));
+        }
+        #waitsForExtraInfo(kind) {
+            if (!this.#redirected ||
+                this.#extraInfoWaitCanceled ||
+                !this.#response.hasExtraInfo ||
+                this.#isDataUrl() ||
+                this.#servedFromCache) {
+                return false;
+            }
+            return kind === 'request'
+                ? !this.#request.extraInfo
+                : !this.#response.extraInfo;
+        }
+        #stopWaitingForPreviousHops() {
+            const lateExtraInfos = this.#cancelPreviousHops();
+            if (lateExtraInfos.length === 0) {
+                return;
+            }
+            this.#getLatestHop().#lateRedirectResponseExtraInfos.push(...lateExtraInfos);
+        }
+        #getLatestHop() {
+            const nextHop = this.#nextHop;
+            return nextHop ? nextHop.#getLatestHop() : this;
+        }
+        #cancelPreviousHops() {
+            const previousHop = this.#previousHop;
+            if (!previousHop) {
+                return [];
+            }
+            const lateExtraInfos = previousHop.#cancelPreviousHops();
+            if (previousHop.#waitsForExtraInfo('response') && this.#request.info) {
+                lateExtraInfos.push(this.#request.info);
+            }
+            previousHop.#extraInfoWaitCanceled = true;
+            previousHop.#emitEventsIfReady();
+            return lateExtraInfos;
+        }
+        skipsLateRedirectResponseExtraInfo(event) {
+            const expected = this.#lateRedirectResponseExtraInfos[0];
+            if (!expected ||
+                event.statusCode < 300 ||
+                event.statusCode > 399 ||
+                !this.#isRedirectTo(event.headers, expected)) {
+                return false;
+            }
+            this.#lateRedirectResponseExtraInfos.shift();
+            return true;
+        }
+        #releaseNextHopIfReady() {
+            const nextHop = this.#nextHop;
+            if (!nextHop || this.delaysNextHop) {
+                return;
+            }
+            this.#nextHop = undefined;
+            nextHop.#previousHop = undefined;
+            nextHop.#emitEventsIfReady();
+        }
         #isDataUrl() {
             return this.url.startsWith('data:');
         }
@@ -9413,11 +9796,11 @@
                 this.#servedFromCache);
         }
         get #method() {
-            return (this.#requestOverrides?.method ??
-                this.#request.info?.request.method ??
-                this.#request.paused?.request.method ??
+            return (this.#response.paused?.request.method ??
+                this.#requestOverrides?.method ??
                 this.#request.auth?.request.method ??
-                this.#response.paused?.request.method);
+                this.#request.paused?.request.method ??
+                this.#request.info?.request.method);
         }
         get #navigationId() {
             if (!this.#request.info ||
@@ -9470,9 +9853,9 @@
         }
         get #context() {
             const result = this.#response.paused?.frameId ??
-                this.#request.info?.frameId ??
+                this.#request.auth?.frameId ??
                 this.#request.paused?.frameId ??
-                this.#request.auth?.frameId;
+                this.#request.info?.frameId;
             if (result !== undefined) {
                 return result;
             }
@@ -9480,7 +9863,7 @@
                 this.#request?.info?.initiator.requestId !== undefined) {
                 const maybeInitiator = this.#networkStorage.getRequestById(this.#request?.info?.initiator.requestId);
                 if (maybeInitiator !== undefined) {
-                    return maybeInitiator.#request.info?.frameId ?? null;
+                    return maybeInitiator.#context;
                 }
             }
             return null;
@@ -9509,9 +9892,12 @@
                 }
             }
             else {
+                const requestHeaders = this.#response.paused?.request.headers ??
+                    this.#request.auth?.request.headers ??
+                    this.#request.paused?.request.headers ??
+                    this.#request.info?.request.headers;
                 headers = bidiNetworkHeadersFromCdpNetworkHeaders({
-                    ...this.#request.info?.request.headers,
-                    ...this.#request.paused?.request.headers,
+                    ...requestHeaders,
                     ...this.#request.extraInfo?.headers,
                 });
             }
@@ -9570,22 +9956,24 @@
             return this.#interceptsInPhase(phase).size > 0;
         }
         handleRedirect(event) {
-            this.#isFinished = true;
-            this.#response.hasExtraInfo = false;
+            this.#finished.resolve();
+            this.#redirected = true;
+            this.#response.hasExtraInfo = event.redirectHasExtraInfo;
             this.#decodedResponseBodySize = 0;
             this.#encodedResponseBodySize = 0;
             this.#responseBytesReceived = event.redirectResponse.encodedDataLength;
             this.#response.info = event.redirectResponse;
-            this.#emitEventsIfReady({
-                wasRedirected: true,
-            });
+            this.#emitEventsIfReady();
         }
-        #emitEventsIfReady(options = {}) {
-            const requestExtraInfoCompleted =
-            options.wasRedirected ||
-                Boolean(this.#response.loadingFailed) ||
+        #emitEventsIfReady() {
+            if (this.#previousHop) {
+                return;
+            }
+            const requestExtraInfoCompleted = Boolean(this.#response.loadingFailed) ||
+                Boolean(this.#response.paused) ||
                 this.#isDataUrl() ||
                 Boolean(this.#request.extraInfo) ||
+                this.#extraInfoWaitCanceled ||
                 this.#isBlockedInPhase(Network$2.InterceptPhase.AuthRequired) ||
                 this.#servedFromCache ||
                 Boolean(this.#response.info && !this.#response.hasExtraInfo);
@@ -9594,18 +9982,24 @@
                 this.#isBlockedInPhase(Network$2.InterceptPhase.BeforeRequestSent);
             const requestInterceptionCompleted = !requestInterceptionExpected ||
                 (requestInterceptionExpected && Boolean(this.#request.paused));
-            if (Boolean(this.#request.info) &&
+            const beforeRequestSentReady = Boolean(this.#request.info) &&
                 (requestInterceptionExpected
                     ? requestInterceptionCompleted
-                    : requestExtraInfoCompleted)) {
+                    : requestExtraInfoCompleted);
+            if (beforeRequestSentReady) {
                 this.#emitEvent(this.#getBeforeRequestEvent.bind(this));
             }
+            const requestPhaseCompleted = beforeRequestSentReady ||
+                this.#emittedEvents[Network$3.EventNames.BeforeRequestSent] ||
+                !this.#request.info;
             const responseExtraInfoCompleted = Boolean(this.#response.extraInfo) ||
+                this.#isDataUrl() ||
+                this.#extraInfoWaitCanceled ||
                 this.#servedFromCache ||
                 Boolean(this.#response.info && !this.#response.hasExtraInfo);
             const responseInterceptionExpected = !noInterceptionExpected &&
                 this.#isBlockedInPhase(Network$2.InterceptPhase.ResponseStarted);
-            if (this.#response.info ||
+            if ((this.#response.info && requestPhaseCompleted) ||
                 (responseInterceptionExpected && Boolean(this.#response.paused))) {
                 this.#emitEvent(this.#getResponseStartedEvent.bind(this));
             }
@@ -9614,12 +10008,22 @@
             const loadingFinished = Boolean(this.#response.loadingFailed) ||
                 Boolean(this.#response.loadingFinished);
             if (Boolean(this.#response.info) &&
+                requestPhaseCompleted &&
                 responseExtraInfoCompleted &&
                 responseInterceptionCompleted &&
-                (loadingFinished || options.wasRedirected)) {
+                (loadingFinished || this.#redirected)) {
                 this.#emitEvent(this.#getResponseReceivedEvent.bind(this));
-                this.#networkStorage.disposeRequest(this.id);
+                if (!this.#response.loadingFailed) {
+                    if (this.#response.loadingFinished) {
+                        this.#networkStorage.collectIfNeeded(this, Network$2.DataType.Response);
+                    }
+                    this.#finished.resolve();
+                    if (!this.#redirected) {
+                        this.#networkStorage.disposeRequest(this.id);
+                    }
+                }
             }
+            this.#releaseNextHopIfReady();
         }
         onRequestWillBeSentEvent(event) {
             this.#request.info = event;
@@ -9633,20 +10037,31 @@
             this.#emitEventsIfReady();
         }
         onResponseReceivedExtraInfoEvent(event) {
-            if (event.statusCode >= 300 &&
-                event.statusCode <= 399 &&
-                this.#request.info &&
-                event.headers['location'] === this.#request.info.request.url) {
-                return;
-            }
             this.#response.extraInfo = event;
             this.#emitEventsIfReady();
+        }
+        #isRedirectTo(headers, info) {
+            const location = Object.entries(headers).find(([name]) => name.toLowerCase() === 'location')?.[1];
+            if (location === undefined) {
+                return false;
+            }
+            if (location === info.request.url) {
+                return true;
+            }
+            try {
+                const base = info.redirectResponse?.url ?? info.request.url;
+                const target = new URL(location, base);
+                target.hash = '';
+                return target.href === info.request.url;
+            }
+            catch {
+                return false;
+            }
         }
         onResponseReceivedEvent(event) {
             this.#response.hasExtraInfo = event.hasExtraInfo;
             this.#response.info = event.response;
             this.#responseBytesReceived = event.response.encodedDataLength;
-            this.#networkStorage.collectIfNeeded(this, Network$2.DataType.Response);
             this.#emitEventsIfReady();
         }
         onServedFromCache() {
@@ -9654,11 +10069,10 @@
             this.#emitEventsIfReady();
         }
         onLoadingFinishedEvent(event) {
-            this.#isFinished = true;
             this.#response.loadingFinished = event;
             this.#responseBytesReceived = event.encodedDataLength;
             this.#encodedResponseBodySize = event.encodedBodyLength ?? null;
-            this.#networkStorage.collectIfNeeded(this, Network$2.DataType.Response);
+            this.#stopWaitingForPreviousHops();
             this.#emitEventsIfReady();
         }
         onDataReceivedEvent(event) {
@@ -9666,8 +10080,8 @@
             this.#responseBytesReceived += event.encodedDataLength;
         }
         onLoadingFailedEvent(event) {
-            this.#isFinished = true;
             this.#response.loadingFailed = event;
+            this.#stopWaitingForPreviousHops();
             this.#emitEventsIfReady();
             this.#emitEvent(() => {
                 return {
@@ -9678,7 +10092,8 @@
                     },
                 };
             });
-            this.disposeData();
+            this.#finished.resolve();
+            this.#networkStorage.disposeRequest(this.id);
         }
         async failRequest(errorReason) {
             assert(this.#fetchId, 'Network Interception not set-up.');
@@ -9696,9 +10111,12 @@
                     !this.#emittedEvents[Network$3.EventNames.ResponseStarted] &&
                     this.#fetchId !== this.id) {
                     this.#interceptPhase = Network$2.InterceptPhase.ResponseStarted;
+                    this.#stopWaitingForPreviousHops();
                 }
                 else {
-                    void this.#continueResponse();
+                    void this.#continueResponse().catch((error) => {
+                        this.#logger?.(LogType.debugError)?.(error);
+                    });
                 }
             }
             else {
@@ -9707,9 +10125,12 @@
                     !this.#emittedEvents[Network$3.EventNames.BeforeRequestSent] &&
                     this.#fetchId !== this.id) {
                     this.#interceptPhase = Network$2.InterceptPhase.BeforeRequestSent;
+                    this.#stopWaitingForPreviousHops();
                 }
                 else {
-                    void this.#continueRequest();
+                    void this.#continueRequest().catch((error) => {
+                        this.#logger?.(LogType.debugError)?.(error);
+                    });
                 }
             }
             this.#emitEventsIfReady();
@@ -9717,6 +10138,7 @@
         onAuthRequired(event) {
             this.#fetchId = event.requestId;
             this.#request.auth = event;
+            this.#stopWaitingForPreviousHops();
             if (this.#isBlockedInPhase(Network$2.InterceptPhase.AuthRequired) &&
                 this.#fetchId !== this.id) {
                 this.#interceptPhase = Network$2.InterceptPhase.AuthRequired;
@@ -9725,6 +10147,8 @@
             else {
                 void this.#continueWithAuth({
                     response: 'Default',
+                }).catch((error) => {
+                    this.#logger?.(LogType.debugError)?.(error);
                 });
             }
             this.#emitEvent(() => {
@@ -9843,6 +10267,7 @@
             this.#interceptPhase = undefined;
         }
         dispose() {
+            this.#finished.resolve();
             this.waitNextPhase.reject(new Error('waitNextPhase disposed'));
         }
         disposeData() {
@@ -9883,8 +10308,10 @@
             }
         }
         async #resolveEvent(event) {
-            if (!this.#request.extraInfo && this.#request.paused) {
-                event.params.request.cookies = await this.#fetchPausedRequestCookies(this.#request.paused);
+            const paused = this.#request.paused ?? this.#response.paused;
+            if (!this.#request.extraInfo && paused) {
+                event.params.request.cookies =
+                    await this.#fetchPausedRequestCookies(paused);
             }
             return {
                 kind: 'success',
@@ -10153,14 +10580,17 @@
             });
             this.#logger = logger;
         }
-        #getOrCreateNetworkRequest(id, cdpTarget, redirectCount) {
+        #getOrCreateNetworkRequest(id, cdpTarget, redirectCount, previousHop) {
             let request = this.getRequestById(id);
             if (redirectCount === undefined && request) {
                 return request;
             }
-            request = new NetworkRequest(id, this.#eventManager, this, cdpTarget, redirectCount, this.#logger);
+            request = new NetworkRequest(id, this.#eventManager, this, cdpTarget, redirectCount, this.#logger, previousHop);
             this.addRequest(request);
             return request;
+        }
+        #getHopForExtraInfo(id, cdpTarget, kind) {
+            return this.#getOrCreateNetworkRequest(id, cdpTarget).getHopForExtraInfo(kind);
         }
         onCdpTargetCreated(cdpTarget) {
             const cdpClient = cdpTarget.cdpClient;
@@ -10172,8 +10602,10 @@
                         request?.updateCdpTarget(cdpTarget);
                         if (request && request.isRedirecting()) {
                             request.handleRedirect(params);
-                            this.disposeRequest(params.requestId);
-                            this.#getOrCreateNetworkRequest(params.requestId, cdpTarget, request.redirectCount + 1).onRequestWillBeSentEvent(params);
+                            if (!request.delaysNextHop) {
+                                this.disposeRequest(params.requestId);
+                            }
+                            this.#getOrCreateNetworkRequest(params.requestId, cdpTarget, request.redirectCount + 1, request).onRequestWillBeSentEvent(params);
                         }
                         else {
                             this.#getOrCreateNetworkRequest(params.requestId, cdpTarget).onRequestWillBeSentEvent(params);
@@ -10183,7 +10615,7 @@
                 [
                     'Network.requestWillBeSentExtraInfo',
                     (params) => {
-                        const request = this.#getOrCreateNetworkRequest(params.requestId, cdpTarget);
+                        const request = this.#getHopForExtraInfo(params.requestId, cdpTarget, 'request');
                         request.updateCdpTarget(cdpTarget);
                         request.onRequestWillBeSentExtraInfoEvent(params);
                     },
@@ -10199,7 +10631,11 @@
                 [
                     'Network.responseReceivedExtraInfo',
                     (params) => {
-                        const request = this.#getOrCreateNetworkRequest(params.requestId, cdpTarget);
+                        const latestHop = this.#getOrCreateNetworkRequest(params.requestId, cdpTarget);
+                        if (latestHop.skipsLateRedirectResponseExtraInfo(params)) {
+                            return;
+                        }
+                        const request = latestHop.getHopForExtraInfo('response');
                         request.updateCdpTarget(cdpTarget);
                         request.onResponseReceivedExtraInfoEvent(params);
                     },
@@ -10262,13 +10698,18 @@
             }
         }
         async getCollectedData(params) {
+            if (params.disown && params.collector === undefined) {
+                throw new InvalidArgumentException('Cannot disown collected data without collector ID');
+            }
+            if (params.dataType === Network$2.DataType.Response &&
+                !this.#collectorsStorage.isCollected(params.request, params.dataType, params.collector) &&
+                this.#collectorsStorage.hasCollectors()) {
+                await this.#waitForRequestFinished(params.request);
+            }
             if (!this.#collectorsStorage.isCollected(params.request, params.dataType, params.collector)) {
                 throw new NoSuchNetworkDataException(params.collector === undefined
                     ? `No collected ${params.dataType} data`
                     : `Collector ${params.collector} didn't collect ${params.dataType} data`);
-            }
-            if (params.disown && params.collector === undefined) {
-                throw new InvalidArgumentException('Cannot disown collected data without collector ID');
             }
             const request = this.getRequestById(params.request);
             if (request === undefined) {
@@ -10291,6 +10732,18 @@
             }
             return result;
         }
+        async #waitForRequestFinished(id) {
+            while (true) {
+                const request = this.getRequestById(id);
+                if (!request ||
+                    request.isFinished ||
+                    request.interceptPhase ||
+                    (!request.hasResponse && request.redirectCount === 0)) {
+                    return;
+                }
+                await Promise.race([request.finishedPromise, request.waitNextPhase]);
+            }
+        }
         async #getCollectedResponseData(request) {
             try {
                 const responseBody = await request.cdpClient.sendCommand('Network.getResponseBody', { requestId: request.id });
@@ -10306,7 +10759,8 @@
                     error.message === 'No resource with given identifier found') {
                     throw new NoSuchNetworkDataException(`Response data was disposed`);
                 }
-                if (error.code === -32001 ) {
+                if (error.code === -32001  ||
+                    request.cdpClient.isCloseError(error)) {
                     throw new NoSuchNetworkDataException(`Response data is disposed after the related page`);
                 }
                 throw error;
@@ -10412,11 +10866,11 @@
             if (!request) {
                 return;
             }
-            if (this.#collectorsStorage.isCollected(id)) {
-                request.disposeData();
+            if (!request.isFinished) {
                 return;
             }
-            if (!request.isFinished) {
+            if (this.#collectorsStorage.isCollected(id)) {
+                request.disposeData();
                 return;
             }
             this.#requests.delete(id);
@@ -10460,6 +10914,7 @@
     class CdpTarget {
         #id;
         #targetType;
+        #parentFrameId;
         userContext;
         #cdpClient;
         #browserCdpClient;
@@ -10482,18 +10937,19 @@
             response: false,
             auth: false,
         };
-        static create(targetId, cdpClient, browserCdpClient, parentCdpClient, realmStorage, eventManager, preloadScriptStorage, browsingContextStorage, networkStorage, configStorage, userContext, defaultUserAgent, targetType, logger) {
-            const cdpTarget = new _a$5(targetId, cdpClient, browserCdpClient, parentCdpClient, eventManager, realmStorage, preloadScriptStorage, browsingContextStorage, configStorage, networkStorage, userContext, defaultUserAgent, targetType, logger);
+        static create(targetId, cdpClient, browserCdpClient, parentCdpClient, realmStorage, eventManager, preloadScriptStorage, browsingContextStorage, networkStorage, configStorage, userContext, defaultUserAgent, targetType, logger, parentFrameId) {
+            const cdpTarget = new _a$5(targetId, cdpClient, browserCdpClient, parentCdpClient, eventManager, realmStorage, preloadScriptStorage, browsingContextStorage, configStorage, networkStorage, userContext, defaultUserAgent, targetType, logger, parentFrameId);
             LogManager.create(cdpTarget, realmStorage, eventManager, logger);
             cdpTarget.#setEventListeners();
             void cdpTarget.#unblock();
             return cdpTarget;
         }
-        constructor(targetId, cdpClient, browserCdpClient, parentCdpClient, eventManager, realmStorage, preloadScriptStorage, browsingContextStorage, configStorage, networkStorage, userContext, defaultUserAgent, targetType, logger) {
+        constructor(targetId, cdpClient, browserCdpClient, parentCdpClient, eventManager, realmStorage, preloadScriptStorage, browsingContextStorage, configStorage, networkStorage, userContext, defaultUserAgent, targetType, logger, parentFrameId) {
             this.#defaultUserAgent = defaultUserAgent;
             this.userContext = userContext;
             this.#id = targetId;
             this.#targetType = targetType;
+            this.#parentFrameId = parentFrameId;
             this.#cdpClient = cdpClient;
             this.#browserCdpClient = browserCdpClient;
             this.#parentCdpClient = parentCdpClient;
@@ -10584,21 +11040,63 @@
                 value: undefined,
             });
         }
-        #restoreFrameTreeState(frameTree) {
+        async #restoreFrameTreeState(frameTree) {
             const frame = frameTree.frame;
-            const maybeContext = this.#browsingContextStorage.findContext(frame.id);
-            if (maybeContext !== undefined) {
-                if (maybeContext.parentId === null &&
-                    frame.parentId !== null &&
-                    frame.parentId !== undefined) {
-                    maybeContext.parentId = frame.parentId;
+            if (frame.id !== this.#id) {
+                this.#logger?.(LogType.debugError)?.(`Ignoring getFrameTree root ${frame.id} for target ${this.#id}`);
+                return;
+            }
+            const rootContext = this.#browsingContextStorage.findContext(frame.id);
+            if (rootContext?.cdpTarget !== this) {
+                this.#logger?.(LogType.debugError)?.(`Ignoring getFrameTree for ${frame.id}: context is not hosted by target ${this.#id}`);
+                return;
+            }
+            const parentFrameId = this.#parentFrameId ?? frame.parentId;
+            if (this.#targetType === 'iframe' &&
+                rootContext.parentId === null &&
+                parentFrameId !== null &&
+                parentFrameId !== undefined) {
+                let parentBrowsingContext = this.#browsingContextStorage.findContext(parentFrameId);
+                if (parentBrowsingContext === undefined &&
+                    this.#parentCdpClient.sessionId !== undefined) {
+                    await this.#browsingContextStorage.findContextBySession(this.#parentCdpClient.sessionId)?.cdpTarget.unblocked;
+                    if (this.#browsingContextStorage.findContext(frame.id) !== rootContext ||
+                        rootContext.cdpTarget !== this) {
+                        return;
+                    }
+                    parentBrowsingContext =
+                        this.#browsingContextStorage.findContext(parentFrameId);
+                }
+                if (rootContext.parentId === null &&
+                    parentBrowsingContext !== undefined &&
+                    parentBrowsingContext.cdpTarget !== this &&
+                    parentBrowsingContext.cdpTarget.cdpClient === this.#parentCdpClient) {
+                    rootContext.parentId = parentFrameId;
+                }
+                else if (rootContext.parentId === null &&
+                    parentBrowsingContext !== undefined) {
+                    this.#logger?.(LogType.debugError)?.(`Ignoring getFrameTree parent ${parentFrameId} for ${frame.id}: parent session does not host ${parentFrameId}`);
                 }
             }
-            if (maybeContext === undefined && frame.parentId !== undefined) {
-                const parentBrowsingContext = this.#browsingContextStorage.getContext(frame.parentId);
-                BrowsingContextImpl.create(frame.id, frame.parentId, this.userContext, parentBrowsingContext.cdpTarget, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.contextConfigStorage, frame.url, undefined, this.#logger);
+            frameTree.childFrames?.map((childFrameTree) => this.#restoreChildFrameTreeState(childFrameTree, rootContext));
+        }
+        #restoreChildFrameTreeState(frameTree, parentBrowsingContext) {
+            const frame = frameTree.frame;
+            if (frame.parentId !== parentBrowsingContext.id) {
+                this.#logger?.(LogType.debugError)?.(`Ignoring getFrameTree child ${frame.id}: parentId ${frame.parentId} does not match enclosing frame ${parentBrowsingContext.id}`);
+                return;
             }
-            frameTree.childFrames?.map((frameTree) => this.#restoreFrameTreeState(frameTree));
+            let context = this.#browsingContextStorage.findContext(frame.id);
+            if (context === undefined) {
+                context = BrowsingContextImpl.create(frame.id, parentBrowsingContext.id, this.userContext, this, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.contextConfigStorage, frame.url, undefined, this.#logger);
+            }
+            else if (
+            context.cdpTarget !== this ||
+                context.parentId !== parentBrowsingContext.id) {
+                this.#logger?.(LogType.debugError)?.(`Ignoring getFrameTree child ${frame.id}: context is already bound to target ${context.cdpTarget.id} and parent ${context.parentId}`);
+                return;
+            }
+            frameTree.childFrames?.map((childFrameTree) => this.#restoreChildFrameTreeState(childFrameTree, context));
         }
         async toggleFetchIfNeeded() {
             if (!this.#isFetchSupported) {
@@ -10888,6 +11386,9 @@
                 }
             }
             if (_a$5.isFrameTarget(this.#targetType)) {
+                if (config.bypassCSP !== undefined) {
+                    promises.push(this.setBypassCSP(config.bypassCSP));
+                }
                 if (config.geolocation !== undefined && config.geolocation !== null) {
                     promises.push(this.setGeolocationOverride(config.geolocation));
                 }
@@ -10902,8 +11403,9 @@
                 if (config.maxTouchPoints !== undefined) {
                     promises.push(this.setTouchOverride(config.maxTouchPoints));
                 }
-                if (config.mediaFeatures !== undefined) {
-                    promises.push(this.setMediaFeaturesOverride(config.mediaFeatures));
+                if (config.mediaFeatures !== undefined ||
+                    config.forcedColorsModeTheme !== undefined) {
+                    promises.push(this.setEmulatedMedia(config.mediaFeatures ?? null, config.forcedColorsModeTheme ?? null));
                 }
             }
             if (config.locale !== undefined) {
@@ -11046,6 +11548,14 @@
                 });
             }
         }
+        async setBypassCSP(bypassCSP) {
+            if (!_a$5.isFrameTarget(this.#targetType)) {
+                return;
+            }
+            await this.cdpClient.sendCommand('Page.setBypassCSP', {
+                enabled: bypassCSP === true,
+            });
+        }
         async setScriptingEnabled(scriptingEnabled) {
             if (!_a$5.isFrameTarget(this.#targetType)) {
                 return;
@@ -11120,19 +11630,21 @@
                 }),
             ]);
         }
-        async setMediaFeaturesOverride(mediaFeatures) {
+        async setEmulatedMedia(mediaFeatures, forcedColorsModeTheme) {
             if (!_a$5.isFrameTarget(this.#targetType)) {
                 return;
             }
-            const features = [];
+            const featuresMap = new Map();
+            if (forcedColorsModeTheme !== null) {
+                featuresMap.set('forced-colors', 'active');
+                featuresMap.set('prefers-color-scheme', forcedColorsModeTheme);
+            }
             for (const [name, value] of Object.entries(mediaFeatures ?? {})) {
                 if (value !== null && value !== undefined) {
-                    features.push({
-                        name,
-                        value: String(value),
-                    });
+                    featuresMap.set(name, String(value));
                 }
             }
+            const features = Array.from(featuresMap, ([name, value]) => ({ name, value }));
             await this.cdpClient.sendCommand('Emulation.setEmulatedMedia', {
                 features,
             });
@@ -11148,7 +11660,9 @@
     class CdpTargetManager {
         #browserCdpClient;
         #cdpConnection;
-        #targetKeysToBeIgnoredByAutoAttach = new Set();
+        #browserOnlyTargetKeys = new Set();
+        #rendererTargetKeys = new Set();
+        #tabSessionIds = new Set();
         #selfTargetId;
         #eventManager;
         #browsingContextStorage;
@@ -11164,7 +11678,7 @@
         constructor(cdpConnection, browserCdpClient, selfTargetId, eventManager, browsingContextStorage, realmStorage, networkStorage, configStorage, bluetoothProcessor, speculationProcessor, preloadScriptStorage, defaultUserContextId, defaultUserAgent, logger) {
             this.#cdpConnection = cdpConnection;
             this.#browserCdpClient = browserCdpClient;
-            this.#targetKeysToBeIgnoredByAutoAttach.add(selfTargetId);
+            this.#browserOnlyTargetKeys.add(selfTargetId);
             this.#selfTargetId = selfTargetId;
             this.#eventManager = eventManager;
             this.#browsingContextStorage = browsingContextStorage;
@@ -11179,6 +11693,11 @@
             this.#logger = logger;
             this.#setEventListeners(browserCdpClient);
             this.#setCdpEventListeners(browserCdpClient);
+        }
+        #isBrowserOnlySession(cdpClient) {
+            return (cdpClient === this.#browserCdpClient ||
+                (cdpClient.sessionId !== undefined &&
+                    this.#tabSessionIds.has(cdpClient.sessionId)));
         }
         #setCdpEventListeners(cdpClient) {
             cdpClient.on('*', (event, params) => {
@@ -11197,26 +11716,44 @@
             });
         }
         #setEventListeners(cdpClient) {
+            if (cdpClient === this.#browserCdpClient) {
+                cdpClient.on('Target.targetInfoChanged', this.#handleTargetInfoChangedEvent.bind(this));
+            }
             cdpClient.on('Target.attachedToTarget', (params) => {
                 this.#handleAttachedToTargetEvent(params, cdpClient);
             });
             cdpClient.on('Target.detachedFromTarget', this.#handleDetachedFromTargetEvent.bind(this));
-            cdpClient.on('Target.targetInfoChanged', this.#handleTargetInfoChangedEvent.bind(this));
             cdpClient.on('Inspector.targetCrashed', () => {
                 this.#handleTargetCrashedEvent(cdpClient);
             });
-            cdpClient.on('Page.frameAttached', this.#handleFrameAttachedEvent.bind(this));
-            cdpClient.on('Page.frameSubtreeWillBeDetached', this.#handleFrameSubtreeWillBeDetached.bind(this));
+            cdpClient.on('Page.frameAttached', (params) => {
+                this.#handleFrameAttachedEvent(params, cdpClient);
+            });
+            cdpClient.on('Page.frameSubtreeWillBeDetached', (params) => {
+                this.#handleFrameSubtreeWillBeDetached(params, cdpClient);
+            });
         }
-        #handleFrameAttachedEvent(params) {
+        #handleFrameAttachedEvent(params, cdpClient) {
             const parentBrowsingContext = this.#browsingContextStorage.findContext(params.parentFrameId);
-            if (parentBrowsingContext !== undefined) {
-                BrowsingContextImpl.create(params.frameId, params.parentFrameId, parentBrowsingContext.userContext, parentBrowsingContext.cdpTarget, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.#configStorage,
-                'about:blank', undefined, this.#logger);
+            if (parentBrowsingContext === undefined) {
+                return;
             }
+            if (parentBrowsingContext.cdpTarget.cdpClient !== cdpClient) {
+                this.#logger?.(LogType.debugError)?.(`Ignoring frameAttached for ${params.frameId}: the session does not host parent ${params.parentFrameId}`);
+                return;
+            }
+            if (this.#browsingContextStorage.hasContext(params.frameId)) {
+                return;
+            }
+            BrowsingContextImpl.create(params.frameId, params.parentFrameId, parentBrowsingContext.userContext, parentBrowsingContext.cdpTarget, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.#configStorage,
+            'about:blank', undefined, this.#logger);
         }
-        #handleFrameSubtreeWillBeDetached(params) {
-            this.#browsingContextStorage.findContext(params.frameId)?.dispose(true);
+        #handleFrameSubtreeWillBeDetached(params, cdpClient) {
+            const context = this.#browsingContextStorage.findContext(params.frameId);
+            if (context?.cdpTarget.cdpClient !== cdpClient) {
+                return;
+            }
+            context.dispose(true);
         }
         #handleAttachedToTargetEvent(params, parentSessionCdpClient) {
             const { sessionId, targetInfo } = params;
@@ -11224,41 +11761,69 @@
             const detach = async () => {
                 await Promise.allSettled([
                     targetCdpClient.sendCommand('Runtime.runIfWaitingForDebugger'),
-                    ...(parentSessionCdpClient === this.#browserCdpClient
-                        ? []
-                        : [
+                    ...(parentSessionCdpClient.sessionId !== undefined &&
+                        this.#tabSessionIds.has(parentSessionCdpClient.sessionId)
+                        ? [
                             parentSessionCdpClient.sendCommand('Runtime.runIfWaitingForDebugger'),
-                        ]),
+                        ]
+                        : []),
                 ])
                     .then(() => parentSessionCdpClient.sendCommand('Target.detachFromTarget', params))
                     .catch((error) => this.#logger?.(LogType.debugError)?.(error));
             };
+            const fromBrowserOnlySession = this.#isBrowserOnlySession(parentSessionCdpClient);
             if (this.#selfTargetId === targetInfo.targetId) {
-                void detach();
+                if (fromBrowserOnlySession) {
+                    void detach();
+                }
                 return;
             }
-            const targetKey = targetInfo.type === 'service_worker'
-                ? `${parentSessionCdpClient.sessionId}_${targetInfo.targetId}`
+            if (((targetInfo.type === 'tab' || targetInfo.type === 'shared_worker') &&
+                parentSessionCdpClient !== this.#browserCdpClient) ||
+                ((targetInfo.type === 'page' || targetInfo.type === 'other') &&
+                    !fromBrowserOnlySession)) {
+                this.#logger?.(LogType.debugError)?.(`Ignoring ${targetInfo.type} attach for ${targetInfo.targetId} on non-browser session ${parentSessionCdpClient.sessionId}`);
+                return;
+            }
+            const targetKey = targetInfo.type === 'service_worker' || targetInfo.type === 'worker'
+                ? `${targetInfo.type}_${parentSessionCdpClient.sessionId}_${targetInfo.targetId}`
                 : targetInfo.targetId;
-            if (this.#targetKeysToBeIgnoredByAutoAttach.has(targetKey)) {
-                this.#setCdpEventListeners(targetCdpClient);
-                return;
+            if (fromBrowserOnlySession) {
+                if (this.#browserOnlyTargetKeys.has(targetKey) ||
+                    (targetInfo.type === 'iframe' &&
+                        this.#rendererTargetKeys.has(targetKey))) {
+                    this.#setCdpEventListeners(targetCdpClient);
+                    return;
+                }
+                this.#rendererTargetKeys.delete(targetKey);
+                this.#browserOnlyTargetKeys.add(targetKey);
             }
-            this.#targetKeysToBeIgnoredByAutoAttach.add(targetKey);
+            else {
+                if (this.#browserOnlyTargetKeys.has(targetKey) ||
+                    this.#rendererTargetKeys.has(targetKey)) {
+                    return;
+                }
+                this.#rendererTargetKeys.add(targetKey);
+            }
             const userContext = targetInfo.browserContextId &&
                 targetInfo.browserContextId !== this.#defaultUserContextId
                 ? targetInfo.browserContextId
                 : 'default';
             switch (targetInfo.type) {
                 case 'tab': {
+                    this.#tabSessionIds.add(sessionId);
                     this.#setEventListeners(targetCdpClient);
-                    void (async () => {
-                        await targetCdpClient.sendCommand('Target.setAutoAttach', {
-                            autoAttach: true,
-                            waitForDebuggerOnStart: true,
-                            flatten: true,
-                        });
-                    })();
+                    void targetCdpClient
+                        .sendCommand('Target.setAutoAttach', {
+                        autoAttach: true,
+                        waitForDebuggerOnStart: true,
+                        flatten: true,
+                    })
+                        .catch((error) => {
+                        if (!targetCdpClient.isCloseError(error)) {
+                            this.#logger?.(LogType.debugError)?.(error);
+                        }
+                    });
                     return;
                 }
                 case 'page':
@@ -11269,20 +11834,47 @@
                         void detach();
                         return;
                     }
-                    const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo, userContext);
                     const maybeContext = this.#browsingContextStorage.findContext(targetInfo.targetId);
-                    if (maybeContext && targetInfo.type === 'iframe') {
-                        maybeContext.updateCdpTarget(cdpTarget);
+                    if (maybeContext !== undefined) {
+                        if (targetInfo.type === 'iframe') {
+                            if (!fromBrowserOnlySession &&
+                                maybeContext.cdpTarget.cdpClient !== parentSessionCdpClient &&
+                                maybeContext.parent?.cdpTarget.cdpClient !==
+                                    parentSessionCdpClient) {
+                                this.#rendererTargetKeys.delete(targetKey);
+                                void detach();
+                                return;
+                            }
+                            const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo, userContext);
+                            maybeContext.updateCdpTarget(cdpTarget);
+                            return;
+                        }
+                        maybeContext.dispose(true);
                     }
-                    else {
-                        const parentId = this.#findFrameParentId(targetInfo, parentSessionCdpClient.sessionId);
-                        BrowsingContextImpl.create(targetInfo.targetId, parentId, userContext, cdpTarget, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.#configStorage,
-                        targetInfo.url === '' ? 'about:blank' : targetInfo.url, targetInfo.openerFrameId ?? targetInfo.openerId, this.#logger);
-                    }
+                    const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo, userContext);
+                    const parentId = this.#findFrameParentId(targetInfo, parentSessionCdpClient.sessionId);
+                    BrowsingContextImpl.create(targetInfo.targetId, parentId, userContext, cdpTarget, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.#configStorage,
+                    targetInfo.url === '' ? 'about:blank' : targetInfo.url, targetInfo.openerFrameId ?? targetInfo.openerId, this.#logger);
                     return;
                 }
-                case 'service_worker':
                 case 'worker': {
+                    let browsingContext;
+                    if (parentSessionCdpClient.sessionId) {
+                        browsingContext = this.#browsingContextStorage.findContextBySession(parentSessionCdpClient.sessionId);
+                    }
+                    const realm = this.#realmStorage.findRealm({
+                        cdpSessionId: parentSessionCdpClient.sessionId,
+                        sandbox: null,
+                    });
+                    if (!realm && !browsingContext) {
+                        void detach();
+                        return;
+                    }
+                    const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo, userContext);
+                    this.#handleWorkerTarget(cdpToBidiTargetTypes[targetInfo.type], cdpTarget, realm, browsingContext);
+                    return;
+                }
+                case 'service_worker': {
                     const realm = this.#realmStorage.findRealm({
                         cdpSessionId: parentSessionCdpClient.sessionId,
                         sandbox: null,
@@ -11304,16 +11896,14 @@
             void detach();
         }
         #findFrameParentId(targetInfo, parentSessionId) {
-            if (targetInfo.type !== 'iframe') {
+            if (targetInfo.type !== 'iframe' ||
+                targetInfo.parentFrameId === undefined) {
                 return null;
             }
-            const parentId = targetInfo.openerFrameId ?? targetInfo.openerId;
-            if (parentId !== undefined) {
-                return parentId;
-            }
-            if (parentSessionId !== undefined) {
-                return (this.#browsingContextStorage.findContextBySession(parentSessionId)
-                    ?.id ?? null);
+            const parentContext = this.#browsingContextStorage.findContext(targetInfo.parentFrameId);
+            if (parentContext !== undefined &&
+                parentContext.cdpTarget.cdpSessionId === parentSessionId) {
+                return targetInfo.parentFrameId;
             }
             return null;
         }
@@ -11324,7 +11914,7 @@
                 this.#preloadScriptStorage.onCdpTargetCreated(targetInfo.targetId, userContext);
             }
             const target = CdpTarget.create(targetInfo.targetId, targetCdpClient, this.#browserCdpClient, parentCdpClient, this.#realmStorage, this.#eventManager, this.#preloadScriptStorage, this.#browsingContextStorage, this.#networkStorage, this.#configStorage, userContext,
-            this.#defaultUserAgent, targetInfo.type, this.#logger);
+            this.#defaultUserAgent, targetInfo.type, this.#logger, targetInfo.parentFrameId);
             this.#networkStorage.onCdpTargetCreated(target);
             if (isFrameTarget) {
                 this.#bluetoothProcessor.onCdpTargetCreated(target);
@@ -11333,14 +11923,44 @@
             return target;
         }
         #workers = new Map();
-        #handleWorkerTarget(realmType, cdpTarget, ownerRealm) {
-            cdpTarget.cdpClient.on('Runtime.executionContextCreated', (params) => {
+        #handleWorkerTarget(realmType, cdpTarget, ownerRealm, browsingContext) {
+            cdpTarget.cdpClient.on('Runtime.executionContextCreated', async (params) => {
                 const { uniqueId, id, origin } = params.context;
-                const workerRealm = new WorkerRealm(cdpTarget.cdpClient, this.#eventManager, id, this.#logger, serializeOrigin(origin), ownerRealm ? [ownerRealm] : [], uniqueId, this.#realmStorage, realmType);
+                let resolvedOwnerRealm = browsingContext
+                    ? this.#realmStorage.findRealm({
+                        cdpSessionId: cdpTarget.parentCdpClient.sessionId,
+                        sandbox: null,
+                    })
+                    : ownerRealm;
+                if (!resolvedOwnerRealm && browsingContext) {
+                    let detached = false;
+                    const onDetached = (params) => {
+                        if (params.sessionId === cdpTarget.cdpSessionId) {
+                            detached = true;
+                        }
+                    };
+                    cdpTarget.parentCdpClient.on('Target.detachedFromTarget', onDetached);
+                    try {
+                        resolvedOwnerRealm =
+                            await browsingContext.getOrCreateUserSandbox(undefined);
+                    }
+                    catch (error) {
+                        this.#logger?.(LogType.debugError)?.(error);
+                        return;
+                    }
+                    finally {
+                        cdpTarget.parentCdpClient.off('Target.detachedFromTarget', onDetached);
+                    }
+                    if (detached) {
+                        return;
+                    }
+                }
+                const workerRealm = new WorkerRealm(cdpTarget.cdpClient, this.#eventManager, id, this.#logger, serializeOrigin(origin), resolvedOwnerRealm ? [resolvedOwnerRealm] : [], uniqueId, this.#realmStorage, realmType);
                 this.#workers.set(cdpTarget.cdpSessionId, workerRealm);
             });
         }
         #handleDetachedFromTargetEvent({ sessionId, targetId, }) {
+            this.#tabSessionIds.delete(sessionId);
             if (targetId) {
                 this.#preloadScriptStorage.find({ targetId }).map((preloadScript) => {
                     preloadScript.dispose(targetId);
@@ -11348,6 +11968,8 @@
             }
             const context = this.#browsingContextStorage.findContextBySession(sessionId);
             if (context) {
+                this.#rendererTargetKeys.delete(context.id);
+                this.#browserOnlyTargetKeys.delete(context.id);
                 context.dispose(true);
                 return;
             }
@@ -11616,6 +12238,255 @@
                     .filter(([, r]) => r === realm.realmId)
                     .map(([handle]) => this.knownHandlesToRealmMap.delete(handle));
             });
+        }
+    }
+
+    /**
+     * Copyright 2026 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    const allowAllUpdateAclHandler = (requestedAcl) => {
+        return Promise.resolve({ acl: requestedAcl });
+    };
+    const CONTEXT_TARGET_RULE = {
+        getTargetContext(params) {
+            if ('context' in params && typeof params.context === 'string') {
+                return params.context;
+            }
+            return undefined;
+        },
+    };
+    const NO_TARGET_RULE = {
+        getTargetContext() {
+            return undefined;
+        },
+    };
+    const SANDBOXED_SCRIPT_TARGET_RULE = {
+        getTargetContext(params) {
+            const context = params.target?.context;
+            if (typeof context === 'string') {
+                return context;
+            }
+            return undefined;
+        },
+        assertParamsAllowed(params) {
+            const target = params?.target;
+            if (typeof target?.context !== 'string' ||
+                typeof target?.sandbox !== 'string' ||
+                target.sandbox === '') {
+                throw new UnsupportedOperationException("Restricted sessions require a browsing context target with a non-empty 'sandbox'.");
+            }
+        },
+    };
+    const SUPPORTED_ACL_COMMAND_RULES = new Map([
+        ['browsingContext.captureScreenshot', CONTEXT_TARGET_RULE],
+        ['browsingContext.close', CONTEXT_TARGET_RULE],
+        ['browsingContext.create', NO_TARGET_RULE],
+        ['browsingContext.getTree', NO_TARGET_RULE],
+        ['browsingContext.handleUserPrompt', CONTEXT_TARGET_RULE],
+        ['browsingContext.locateNodes', CONTEXT_TARGET_RULE],
+        ['browsingContext.navigate', CONTEXT_TARGET_RULE],
+        ['browsingContext.reload', CONTEXT_TARGET_RULE],
+        ['browsingContext.traverseHistory', CONTEXT_TARGET_RULE],
+        ['input.performActions', CONTEXT_TARGET_RULE],
+        ['input.releaseActions', CONTEXT_TARGET_RULE],
+        ['script.callFunction', SANDBOXED_SCRIPT_TARGET_RULE],
+        ['script.evaluate', SANDBOXED_SCRIPT_TARGET_RULE],
+    ]);
+    const SUPPORTED_ACL_COMMANDS = new Set(SUPPORTED_ACL_COMMAND_RULES.keys());
+    const ACL_EXEMPT_COMMANDS = new Set([
+        'goog:session.setAcl',
+        'session.end',
+        'session.new',
+        'session.status',
+        'session.subscribe',
+        'session.unsubscribe',
+    ]);
+    const SUPPORTED_ACL_EVENTS = new Set([
+        BrowsingContext$3.EventNames.ContextCreated,
+        BrowsingContext$3.EventNames.ContextDestroyed,
+        BrowsingContext$3.EventNames.FragmentNavigated,
+        BrowsingContext$3.EventNames.HistoryUpdated,
+        BrowsingContext$3.EventNames.NavigationCommitted,
+        BrowsingContext$3.EventNames.UserPromptClosed,
+        BrowsingContext$3.EventNames.UserPromptOpened,
+        Log$2.EventNames.LogEntryAdded,
+    ]);
+    class AclManager {
+        #browsingContextStorage;
+        #updateAclHandler;
+        #updateAclMutex = new Mutex();
+        #enabled = false;
+        #defaultCommands = new Set();
+        #navigableCommands = new WeakMap();
+        #defaultEvents = new Set();
+        #navigableEvents = new WeakMap();
+        constructor(browsingContextStorage,
+        updateAclHandler = allowAllUpdateAclHandler) {
+            this.#browsingContextStorage = browsingContextStorage;
+            this.#updateAclHandler = updateAclHandler;
+        }
+        async updateAcl(requestedAcl, reason) {
+            return await this.#updateAclMutex.run(async () => {
+                const decision = await this.#updateAclHandler(this.#normalizeAcl(requestedAcl), reason);
+                return { ...decision, acl: this.#setAcl(decision.acl) };
+            });
+        }
+        isEnabled() {
+            return this.#enabled;
+        }
+        enable() {
+            this.#enabled = true;
+        }
+        #setAcl(acl) {
+            const normalizedAcl = this.#normalizeAcl(acl);
+            this.#defaultCommands = new Set(normalizedAcl.default?.commands);
+            this.#navigableCommands = new WeakMap();
+            this.#defaultEvents = new Set(normalizedAcl.default?.events);
+            this.#navigableEvents = new WeakMap();
+            for (const [contextId, entry] of Object.entries(normalizedAcl.perNavigable ?? {})) {
+                const context = this.#browsingContextStorage.getContext(contextId);
+                this.#navigableCommands.set(context, new Set(entry.commands));
+                this.#navigableEvents.set(context, new Set(entry.events));
+            }
+            return this.getAcl();
+        }
+        #normalizeAcl(acl) {
+            const aclConfig = acl;
+            const perNavigable = {};
+            for (const [contextId, entry] of Object.entries(aclConfig?.perNavigable ?? {})) {
+                const context = this.#browsingContextStorage.findContext(contextId);
+                if (context?.isTopLevelContext()) {
+                    perNavigable[contextId] = {
+                        commands: Array.from(this.#extractSupportedCommands(entry)),
+                        events: Array.from(this.#extractSupportedEvents(entry)),
+                    };
+                }
+            }
+            return {
+                default: {
+                    commands: Array.from(this.#extractSupportedCommands(aclConfig?.default)),
+                    events: Array.from(this.#extractSupportedEvents(aclConfig?.default)),
+                },
+                perNavigable,
+            };
+        }
+        #extractSupportedCommands(entry) {
+            const commands = new Set();
+            if (Array.isArray(entry?.commands)) {
+                for (const command of entry.commands) {
+                    if (SUPPORTED_ACL_COMMANDS.has(command)) {
+                        commands.add(command);
+                    }
+                }
+            }
+            return commands;
+        }
+        #extractSupportedEvents(entry) {
+            const events = new Set();
+            if (Array.isArray(entry?.events)) {
+                for (const event of entry.events) {
+                    if (SUPPORTED_ACL_EVENTS.has(event)) {
+                        events.add(event);
+                    }
+                }
+            }
+            return events;
+        }
+        getAcl() {
+            const entries = [];
+            for (const context of this.#browsingContextStorage.getTopLevelContexts()) {
+                const commands = this.#navigableCommands.get(context);
+                const events = this.#navigableEvents.get(context);
+                if (commands !== undefined || events !== undefined) {
+                    entries.push([
+                        context.id,
+                        {
+                            commands: Array.from(commands ?? []),
+                            events: Array.from(events ?? []),
+                        },
+                    ]);
+                }
+            }
+            return {
+                default: {
+                    commands: Array.from(this.#defaultCommands),
+                    events: Array.from(this.#defaultEvents),
+                },
+                perNavigable: Object.fromEntries(entries),
+            };
+        }
+        isCommandAllowed(command, contextId) {
+            if (!this.#enabled) {
+                return true;
+            }
+            if (this.#defaultCommands.has(command)) {
+                return true;
+            }
+            if (contextId !== undefined) {
+                const topLevelContextId = this.#browsingContextStorage.findTopLevelContextId(contextId);
+                if (topLevelContextId !== null) {
+                    const topLevelContext = this.#browsingContextStorage.findContext(topLevelContextId);
+                    if (topLevelContext !== undefined) {
+                        return (this.#navigableCommands.get(topLevelContext)?.has(command) ?? false);
+                    }
+                }
+            }
+            return false;
+        }
+        isEventAllowed(eventName, contextId) {
+            if (!this.#enabled) {
+                return true;
+            }
+            if (this.#defaultEvents.has(eventName)) {
+                return true;
+            }
+            if (contextId === null) {
+                return false;
+            }
+            const topLevelContextId = this.#browsingContextStorage.findTopLevelContextId(contextId);
+            if (topLevelContextId === null) {
+                return false;
+            }
+            const topLevelContext = this.#browsingContextStorage.findContext(topLevelContextId);
+            if (topLevelContext === undefined) {
+                return false;
+            }
+            return this.#navigableEvents.get(topLevelContext)?.has(eventName) ?? false;
+        }
+        assertCommandAllowed(command, params) {
+            if (!this.#enabled || ACL_EXEMPT_COMMANDS.has(command)) {
+                return;
+            }
+            const rule = SUPPORTED_ACL_COMMAND_RULES.get(command);
+            if (rule === undefined) {
+                throw new UnsupportedOperationException(`Command '${command}' is not supported in restricted sessions.`);
+            }
+            if (!this.isCommandAllowed(command)) {
+                let contextId;
+                if (typeof params === 'object' && params !== null) {
+                    contextId = rule.getTargetContext(params);
+                }
+                if (contextId === undefined) {
+                    throw new UnsupportedOperationException(`Command '${command}' is not allowed by the session ACL.`);
+                }
+                if (!this.isCommandAllowed(command, contextId)) {
+                    throw new UnsupportedOperationException(`Command '${command}' is not allowed by the session ACL for browsing context '${contextId}'.`);
+                }
+            }
+            rule.assertParamsAllowed?.(params);
         }
     }
 
@@ -11983,10 +12854,12 @@
         #browsingContextStorage;
         #subscribeHooks;
         #userContextStorage;
-        constructor(browsingContextStorage, userContextStorage) {
+        #aclManager;
+        constructor(browsingContextStorage, userContextStorage, aclManager) {
             super();
             this.#browsingContextStorage = browsingContextStorage;
             this.#userContextStorage = userContextStorage;
+            this.#aclManager = aclManager;
             this.#subscriptionManager = new SubscriptionManager(browsingContextStorage);
             this.#subscribeHooks = new DefaultMap(() => []);
         }
@@ -12016,11 +12889,7 @@
             const sortedGoogChannels = this.#subscriptionManager.getGoogChannelsSubscribedToEvent(eventName, contextId);
             this.#bufferEvent(eventWrapper, eventName);
             for (const googChannel of sortedGoogChannels) {
-                this.emit("event" , {
-                    message: OutgoingMessage.createFromPromise(eventWrapper.event, googChannel),
-                    event: eventName,
-                });
-                this.#markEventSent(eventWrapper, googChannel, eventName);
+                this.#sendEvent(eventWrapper, eventName, googChannel);
             }
         }
         registerGlobalPromiseEvent(event, eventName, userContext) {
@@ -12028,11 +12897,7 @@
             const sortedGoogChannels = this.#subscriptionManager.getGoogChannelsSubscribedToEventGlobally(eventName, userContext);
             this.#bufferEvent(eventWrapper, eventName);
             for (const googChannel of sortedGoogChannels) {
-                this.emit("event" , {
-                    message: OutgoingMessage.createFromPromise(eventWrapper.event, googChannel),
-                    event: eventName,
-                });
-                this.#markEventSent(eventWrapper, googChannel, eventName);
+                this.#sendEvent(eventWrapper, eventName, googChannel);
             }
         }
         async subscribe(eventNames, contextIds, userContextIds, googChannel) {
@@ -12068,11 +12933,7 @@
             for (const eventName of subscription.eventNames) {
                 for (const contextId of subscriptionNavigableIds) {
                     for (const eventWrapper of this.#getBufferedEvents(eventName, contextId, googChannel)) {
-                        this.emit("event" , {
-                            message: OutgoingMessage.createFromPromise(eventWrapper.event, googChannel),
-                            event: eventName,
-                        });
-                        this.#markEventSent(eventWrapper, googChannel, eventName);
+                        this.#sendEvent(eventWrapper, eventName, googChannel);
                     }
                 }
             }
@@ -12106,8 +12967,17 @@
                 this.#eventBuffers.delete(bufferMapKey);
             }
         }
+        #sendEvent(eventWrapper, eventName, googChannel) {
+            if (this.#aclManager.isEventAllowed(eventName, eventWrapper.contextId)) {
+                this.emit("event" , {
+                    message: OutgoingMessage.createFromPromise(eventWrapper.event, googChannel),
+                    event: eventName,
+                });
+            }
+            this.#markEventSent(eventWrapper, googChannel, eventName);
+        }
         #bufferEvent(eventWrapper, eventName) {
-            if (!eventBufferLength.has(eventName)) {
+            if (this.#aclManager.isEnabled() || !eventBufferLength.has(eventName)) {
                 return;
             }
             const bufferMapKey = _a$4.#getMapKey(eventName, eventWrapper.contextId);
@@ -12242,34 +13112,17 @@
                     throw new InvalidArgumentException("Protocol and response are only allowed when action is 'respond'");
                 }
             }
-            if (context === undefined) {
-                if (action === DigitalCredentials$2.VirtualWalletAction.Clear) {
-                    this.#contextConfigStorage.updateGlobalConfig({
-                        digitalCredentialsBehavior: null,
-                    });
-                }
-                else {
-                    this.#contextConfigStorage.updateGlobalConfig({
-                        digitalCredentialsBehavior: { action, protocol, response },
-                    });
-                }
-            }
-            else {
+            if (context !== undefined) {
                 const browsingContext = this.#browsingContextStorage.getContext(context);
                 if (browsingContext.parentId !== null) {
                     throw new UnsupportedOperationException('Only top-level contexts are supported');
                 }
-                if (action === DigitalCredentials$2.VirtualWalletAction.Clear) {
-                    this.#contextConfigStorage.updateBrowsingContextConfig(context, {
-                        digitalCredentialsBehavior: null,
-                    });
-                }
-                else {
-                    this.#contextConfigStorage.updateBrowsingContextConfig(context, {
-                        digitalCredentialsBehavior: { action, protocol, response },
-                    });
-                }
             }
+            await this.#contextConfigStorage.updateConfig({
+                digitalCredentialsBehavior: action === DigitalCredentials$2.VirtualWalletAction.Clear
+                    ? null
+                    : { action, protocol, response },
+            }, context === undefined ? undefined : [context]);
             await this.#applyToAllTargets();
             return {};
         }
@@ -12332,36 +13185,47 @@
         #speculationProcessor;
         #digitalCredentialsProcessor;
         #logger;
+        #isClosed = false;
         #handleIncomingMessage = (message) => {
+            if (this.#isClosed) {
+                return;
+            }
             void this.#commandProcessor.processCommand(message).catch((error) => {
                 this.#logger?.(LogType.debugError)?.(error);
             });
         };
         #processOutgoingMessage = async (messageEntry) => {
+            if (this.#isClosed) {
+                return;
+            }
             const message = messageEntry.message;
             if (messageEntry.googChannel !== null) {
                 message['goog:channel'] = messageEntry.googChannel;
             }
             await this.#transport.sendMessage(message);
         };
-        constructor(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, defaultUserContextId, defaultUserAgent, parser, logger) {
+        constructor(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, defaultUserContextId, defaultUserAgent, parser, logger, restrictedMode = false) {
             super();
             this.#logger = logger;
             this.#messageQueue = new ProcessingQueue(this.#processOutgoingMessage, this.#logger);
             this.#transport = bidiTransport;
             this.#transport.setOnMessage(this.#handleIncomingMessage);
-            const contextConfigStorage = new ContextConfigStorage();
             const userContextStorage = new UserContextStorage(browserCdpClient);
-            this.#eventManager = new EventManager(this.#browsingContextStorage, userContextStorage);
+            const contextConfigStorage = new ContextConfigStorage(this.#browsingContextStorage, userContextStorage);
+            const aclManager = new AclManager(this.#browsingContextStorage);
+            if (restrictedMode) {
+                aclManager.enable();
+            }
+            this.#eventManager = new EventManager(this.#browsingContextStorage, userContextStorage, aclManager);
             const networkStorage = new NetworkStorage(this.#eventManager, this.#browsingContextStorage, browserCdpClient, logger);
             this.#bluetoothProcessor = new BluetoothProcessor(this.#eventManager, this.#browsingContextStorage);
             this.#speculationProcessor = new SpeculationProcessor(this.#eventManager, this.#logger);
             this.#digitalCredentialsProcessor = new DigitalCredentialsProcessor(this.#browsingContextStorage, contextConfigStorage);
-            this.#commandProcessor = new CommandProcessor(cdpConnection, browserCdpClient, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.#preloadScriptStorage, networkStorage, contextConfigStorage, this.#bluetoothProcessor, this.#digitalCredentialsProcessor, userContextStorage, parser, async (options) => {
+            this.#commandProcessor = new CommandProcessor(cdpConnection, browserCdpClient, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.#preloadScriptStorage, networkStorage, contextConfigStorage, this.#bluetoothProcessor, this.#digitalCredentialsProcessor, userContextStorage, aclManager, parser, async (options) => {
                 await browserCdpClient.sendCommand('Security.setIgnoreCertificateErrors', {
                     ignore: options.acceptInsecureCerts ?? false,
                 });
-                contextConfigStorage.updateGlobalConfig({
+                await contextConfigStorage.updateConfig({
                     acceptInsecureCerts: options.acceptInsecureCerts ?? false,
                     userPromptHandler: options.unhandledPromptBehavior,
                     prerenderingDisabled: options?.['goog:prerenderingDisabled'] ?? false,
@@ -12388,7 +13252,7 @@
                     ],
                 });
                 await this.#topLevelContextsLoaded();
-            }, this.#logger);
+            }, restrictedMode, this.#logger);
             this.#eventManager.on("event" , ({ message, event }) => {
                 this.emitOutgoingMessage(message, event);
             });
@@ -12396,7 +13260,7 @@
                 this.emitOutgoingMessage(message, event);
             });
         }
-        static async createAndStart(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, parser, logger) {
+        static async createAndStart(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, parser, logger, restrictedMode = false) {
             const [defaultUserContextId, version] = await Promise.all([
                 this.#getDefaultUserContextId(browserCdpClient),
                 browserCdpClient.sendCommand('Browser.getVersion'),
@@ -12405,7 +13269,7 @@
                     eventsEnabled: true,
                 }),
             ]);
-            const server = new BidiServer(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, defaultUserContextId, version.userAgent, parser, logger);
+            const server = new BidiServer(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, defaultUserContextId, version.userAgent, parser, logger, restrictedMode);
             return server;
         }
         static async #getDefaultUserContextId(browserCdpClient) {
@@ -12425,10 +13289,22 @@
             return 'default';
         }
         emitOutgoingMessage(messageEntry, event) {
+            if (this.#isClosed) {
+                return;
+            }
             this.#messageQueue.add(messageEntry, event);
         }
         close() {
-            this.#transport.close();
+            if (this.#isClosed) {
+                return;
+            }
+            this.#isClosed = true;
+            try {
+                this.#transport.close();
+            }
+            finally {
+                this.emit('close', undefined);
+            }
         }
         async #topLevelContextsLoaded() {
             await Promise.all(this.#browsingContextStorage
@@ -12481,9 +13357,12 @@
         #mainBrowserCdpClient;
         #transport;
         #sessionCdpClients = new Map();
+        #parentSessionIds = new Map();
+        #detachingBrowserSessions = new Set();
         #commandCallbacks = new Map();
         #logger;
         #nextId = 0;
+        #isClosed = false;
         constructor(transport, logger) {
             this.#transport = transport;
             this.#logger = logger;
@@ -12491,16 +13370,41 @@
             this.#mainBrowserCdpClient = this.#createCdpClient(undefined);
         }
         close() {
+            if (this.#isClosed) {
+                return;
+            }
+            this.#isClosed = true;
             this.#transport.close();
             for (const [, { reject, error }] of this.#commandCallbacks) {
                 reject(error);
             }
             this.#commandCallbacks.clear();
+            for (const client of this.#sessionCdpClients.values()) {
+                client.removeAllListeners();
+            }
             this.#sessionCdpClients.clear();
+            this.#parentSessionIds.clear();
+            this.#detachingBrowserSessions.clear();
         }
         async createBrowserSession() {
             const { sessionId } = await this.#mainBrowserCdpClient.sendCommand('Target.attachToBrowserTarget');
-            return this.#createCdpClient(sessionId);
+            if (this.#isClosed) {
+                throw new CloseError('Browser session creation rejected because the connection has been closed.');
+            }
+            this.#parentSessionIds.set(sessionId, undefined);
+            return (this.#sessionCdpClients.get(sessionId) ?? this.#createCdpClient(sessionId));
+        }
+        async closeBrowserSession(sessionId) {
+            this.#detachingBrowserSessions.add(sessionId);
+            this.#detachSession(sessionId);
+            try {
+                await this.#mainBrowserCdpClient.sendCommand('Target.detachFromTarget', {
+                    sessionId,
+                });
+            }
+            finally {
+                this.#detachingBrowserSessions.delete(sessionId);
+            }
         }
         getCdpClient(sessionId) {
             const cdpClient = this.#sessionCdpClients.get(sessionId);
@@ -12511,12 +13415,17 @@
         }
         sendCommand(method, params, sessionId) {
             return new Promise((resolve, reject) => {
+                const error = new CloseError(`${method} ${JSON.stringify(params)} ${sessionId ?? ''} call rejected because the connection has been closed.`);
+                if (!this.#sessionCdpClients.has(sessionId)) {
+                    reject(error);
+                    return;
+                }
                 const id = this.#nextId++;
                 this.#commandCallbacks.set(id, {
                     sessionId,
                     resolve,
                     reject,
-                    error: new CloseError(`${method} ${JSON.stringify(params)} ${sessionId ?? ''} call rejected because the connection has been closed.`),
+                    error,
                 });
                 const cdpMessage = { id, method, params };
                 if (sessionId) {
@@ -12532,11 +13441,36 @@
             });
         }
         #onMessage = (json) => {
+            if (this.#isClosed) {
+                return;
+            }
             const message = JSON.parse(json);
             this.#logger?.(_a$3.LOGGER_PREFIX_RECV)?.(message);
+            const emittingSessionId = message.sessionId ?? undefined;
             if (message.method === 'Target.attachedToTarget') {
                 const { sessionId } = message.params;
+                if (!this.#sessionCdpClients.has(emittingSessionId)) {
+                    this.#logger?.(LogType.debugError)?.(`Ignoring Target.attachedToTarget for session ${sessionId} from unknown parent ${emittingSessionId}`);
+                    return;
+                }
+                if (this.#sessionCdpClients.has(sessionId)) {
+                    this.#logger?.(LogType.debugError)?.(`Ignoring Target.attachedToTarget for known session ${sessionId}`);
+                    return;
+                }
                 this.#createCdpClient(sessionId);
+                this.#parentSessionIds.set(sessionId, emittingSessionId);
+            }
+            if (message.method === 'Target.detachedFromTarget') {
+                const { sessionId } = message.params;
+                if (emittingSessionId === undefined &&
+                    this.#detachingBrowserSessions.delete(sessionId)) {
+                    return;
+                }
+                if (!this.#parentSessionIds.has(sessionId) ||
+                    this.#parentSessionIds.get(sessionId) !== emittingSessionId) {
+                    this.#logger?.(LogType.debugError)?.(`Ignoring Target.detachedFromTarget for session ${sessionId} not owned by ${emittingSessionId}`);
+                    return;
+                }
             }
             if (message.id !== undefined) {
                 const callbacks = this.#commandCallbacks.get(message.id);
@@ -12551,23 +13485,35 @@
                 }
             }
             else if (message.method) {
-                const client = this.#sessionCdpClients.get(message.sessionId ?? undefined);
+                const client = this.#sessionCdpClients.get(emittingSessionId);
                 client?.emit(message.method, message.params || {});
                 if (message.method === 'Target.detachedFromTarget') {
                     const { sessionId } = message.params;
-                    const client = this.#sessionCdpClients.get(sessionId);
-                    if (client) {
-                        this.#sessionCdpClients.delete(sessionId);
-                        client.removeAllListeners();
-                    }
-                    for (const callback of this.#commandCallbacks.values()) {
-                        if (callback.sessionId === sessionId) {
-                            callback.reject(callback.error);
-                        }
-                    }
+                    this.#detachSession(sessionId);
                 }
             }
         };
+        #detachSession(sessionId) {
+            for (const [childSessionId, parentSessionId] of [
+                ...this.#parentSessionIds,
+            ]) {
+                if (parentSessionId === sessionId) {
+                    this.#detachSession(childSessionId);
+                }
+            }
+            this.#parentSessionIds.delete(sessionId);
+            const client = this.#sessionCdpClients.get(sessionId);
+            if (client) {
+                this.#sessionCdpClients.delete(sessionId);
+                client.removeAllListeners();
+            }
+            for (const [id, callback] of this.#commandCallbacks.entries()) {
+                if (callback.sessionId === sessionId) {
+                    this.#commandCallbacks.delete(id);
+                    callback.reject(callback.error);
+                }
+            }
+        }
         #createCdpClient(sessionId) {
             const cdpClient = new MapperCdpClient(this, sessionId);
             this.#sessionCdpClients.set(sessionId, cdpClient);
@@ -20014,442 +20960,6 @@
      * See the License for the specific language governing permissions and
      * limitations under the License.
      */
-    var Bluetooth$1;
-    (function (Bluetooth) {
-        Bluetooth.BluetoothUuidSchema = lazy(() => string());
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.BluetoothManufacturerDataSchema = lazy(() => object({
-            key: number().int().nonnegative(),
-            data: string(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.CharacteristicPropertiesSchema = lazy(() => object({
-            broadcast: boolean().optional(),
-            read: boolean().optional(),
-            writeWithoutResponse: boolean().optional(),
-            write: boolean().optional(),
-            notify: boolean().optional(),
-            indicate: boolean().optional(),
-            authenticatedSignedWrites: boolean().optional(),
-            extendedProperties: boolean().optional(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.RequestDeviceSchema = lazy(() => string());
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.RequestDeviceInfoSchema = lazy(() => object({
-            id: Bluetooth.RequestDeviceSchema,
-            name: union([string(), _null()]),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.RequestDevicePromptSchema = lazy(() => string());
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.ScanRecordSchema = lazy(() => object({
-            name: string().optional(),
-            uuids: array(Bluetooth.BluetoothUuidSchema).optional(),
-            appearance: number().optional(),
-            manufacturerData: array(Bluetooth.BluetoothManufacturerDataSchema)
-                .optional(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    lazy(() => union([
-        Bluetooth$1.HandleRequestDevicePromptSchema,
-        Bluetooth$1.SimulateAdapterSchema,
-        Bluetooth$1.DisableSimulationSchema,
-        Bluetooth$1.SimulatePreconnectedPeripheralSchema,
-        Bluetooth$1.SimulateAdvertisementSchema,
-        Bluetooth$1.SimulateGattConnectionResponseSchema,
-        Bluetooth$1.SimulateGattDisconnectionSchema,
-        Bluetooth$1.SimulateServiceSchema,
-        Bluetooth$1.SimulateCharacteristicSchema,
-        Bluetooth$1.SimulateCharacteristicResponseSchema,
-        Bluetooth$1.SimulateDescriptorSchema,
-        Bluetooth$1.SimulateDescriptorResponseSchema,
-    ]));
-    (function (Bluetooth) {
-        Bluetooth.HandleRequestDevicePromptSchema = lazy(() => object({
-            method: literal('bluetooth.handleRequestDevicePrompt'),
-            params: Bluetooth.HandleRequestDevicePromptParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.HandleRequestDevicePromptParametersSchema = lazy(() => object({
-            context: string(),
-            prompt: Bluetooth.RequestDevicePromptSchema,
-        })
-            .and(union([
-            Bluetooth.HandleRequestDevicePromptAcceptParametersSchema,
-            Bluetooth.HandleRequestDevicePromptCancelParametersSchema,
-        ])));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.HandleRequestDevicePromptAcceptParametersSchema = lazy(() => object({
-            accept: literal(true),
-            device: Bluetooth.RequestDeviceSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.HandleRequestDevicePromptCancelParametersSchema = lazy(() => object({
-            accept: literal(false),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateAdapterSchema = lazy(() => object({
-            method: literal('bluetooth.simulateAdapter'),
-            params: Bluetooth.SimulateAdapterParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateAdapterParametersSchema = lazy(() => object({
-            context: string(),
-            leSupported: boolean().optional(),
-            state: _enum(['absent', 'powered-off', 'powered-on']),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.DisableSimulationSchema = lazy(() => object({
-            method: literal('bluetooth.disableSimulation'),
-            params: Bluetooth.DisableSimulationParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.DisableSimulationParametersSchema = lazy(() => object({
-            context: string(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulatePreconnectedPeripheralSchema = lazy(() => object({
-            method: literal('bluetooth.simulatePreconnectedPeripheral'),
-            params: Bluetooth.SimulatePreconnectedPeripheralParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulatePreconnectedPeripheralParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-            name: string(),
-            manufacturerData: array(Bluetooth.BluetoothManufacturerDataSchema),
-            knownServiceUuids: array(Bluetooth.BluetoothUuidSchema),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateAdvertisementSchema = lazy(() => object({
-            method: literal('bluetooth.simulateAdvertisement'),
-            params: Bluetooth.SimulateAdvertisementParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateAdvertisementParametersSchema = lazy(() => object({
-            context: string(),
-            scanEntry: Bluetooth.SimulateAdvertisementScanEntryParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateAdvertisementScanEntryParametersSchema = lazy(() => object({
-            deviceAddress: string(),
-            rssi: number(),
-            scanRecord: Bluetooth.ScanRecordSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateGattConnectionResponseSchema = lazy(() => object({
-            method: literal('bluetooth.simulateGattConnectionResponse'),
-            params: Bluetooth.SimulateGattConnectionResponseParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateGattConnectionResponseParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-            code: number().int().nonnegative(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateGattDisconnectionSchema = lazy(() => object({
-            method: literal('bluetooth.simulateGattDisconnection'),
-            params: Bluetooth.SimulateGattDisconnectionParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateGattDisconnectionParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateServiceSchema = lazy(() => object({
-            method: literal('bluetooth.simulateService'),
-            params: Bluetooth.SimulateServiceParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateServiceParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-            uuid: Bluetooth.BluetoothUuidSchema,
-            type: _enum(['add', 'remove']),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateCharacteristicSchema = lazy(() => object({
-            method: literal('bluetooth.simulateCharacteristic'),
-            params: Bluetooth.SimulateCharacteristicParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateCharacteristicParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-            serviceUuid: Bluetooth.BluetoothUuidSchema,
-            characteristicUuid: Bluetooth.BluetoothUuidSchema,
-            characteristicProperties: Bluetooth.CharacteristicPropertiesSchema.optional(),
-            type: _enum(['add', 'remove']),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateCharacteristicResponseSchema = lazy(() => object({
-            method: literal('bluetooth.simulateCharacteristicResponse'),
-            params: Bluetooth.SimulateCharacteristicResponseParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateCharacteristicResponseParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-            serviceUuid: Bluetooth.BluetoothUuidSchema,
-            characteristicUuid: Bluetooth.BluetoothUuidSchema,
-            type: _enum([
-                'read',
-                'write',
-                'subscribe-to-notifications',
-                'unsubscribe-from-notifications',
-            ]),
-            code: number().int().nonnegative(),
-            data: array(number().int().nonnegative()).optional(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateDescriptorSchema = lazy(() => object({
-            method: literal('bluetooth.simulateDescriptor'),
-            params: Bluetooth.SimulateDescriptorParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateDescriptorParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-            serviceUuid: Bluetooth.BluetoothUuidSchema,
-            characteristicUuid: Bluetooth.BluetoothUuidSchema,
-            descriptorUuid: Bluetooth.BluetoothUuidSchema,
-            type: _enum(['add', 'remove']),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateDescriptorResponseSchema = lazy(() => object({
-            method: literal('bluetooth.simulateDescriptorResponse'),
-            params: Bluetooth.SimulateDescriptorResponseParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.SimulateDescriptorResponseParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-            serviceUuid: Bluetooth.BluetoothUuidSchema,
-            characteristicUuid: Bluetooth.BluetoothUuidSchema,
-            descriptorUuid: Bluetooth.BluetoothUuidSchema,
-            type: _enum(['read', 'write']),
-            code: number().int().nonnegative(),
-            data: array(number().int().nonnegative()).optional(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    lazy(() => union([
-        Bluetooth$1.RequestDevicePromptUpdatedSchema,
-        Bluetooth$1.GattConnectionAttemptedSchema,
-    ]));
-    (function (Bluetooth) {
-        Bluetooth.RequestDevicePromptUpdatedSchema = lazy(() => object({
-            method: literal('bluetooth.requestDevicePromptUpdated'),
-            params: Bluetooth.RequestDevicePromptUpdatedParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.RequestDevicePromptUpdatedParametersSchema = lazy(() => object({
-            context: string(),
-            prompt: Bluetooth.RequestDevicePromptSchema,
-            devices: array(Bluetooth.RequestDeviceInfoSchema),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.GattConnectionAttemptedSchema = lazy(() => object({
-            method: literal('bluetooth.gattConnectionAttempted'),
-            params: Bluetooth.GattConnectionAttemptedParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.GattConnectionAttemptedParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.CharacteristicEventGeneratedSchema = lazy(() => object({
-            method: literal('bluetooth.characteristicEventGenerated'),
-            params: Bluetooth.CharacteristicEventGeneratedParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.CharacteristicEventGeneratedParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-            serviceUuid: Bluetooth.BluetoothUuidSchema,
-            characteristicUuid: Bluetooth.BluetoothUuidSchema,
-            type: _enum([
-                'read',
-                'write-with-response',
-                'write-without-response',
-                'subscribe-to-notifications',
-                'unsubscribe-from-notifications',
-            ]),
-            data: array(number().int().nonnegative()).optional(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.DescriptorEventGeneratedSchema = lazy(() => object({
-            method: literal('bluetooth.descriptorEventGenerated'),
-            params: Bluetooth.DescriptorEventGeneratedParametersSchema,
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-    (function (Bluetooth) {
-        Bluetooth.DescriptorEventGeneratedParametersSchema = lazy(() => object({
-            context: string(),
-            address: string(),
-            serviceUuid: Bluetooth.BluetoothUuidSchema,
-            characteristicUuid: Bluetooth.BluetoothUuidSchema,
-            descriptorUuid: Bluetooth.BluetoothUuidSchema,
-            type: _enum(['read', 'write']),
-            data: array(number().int().nonnegative()).optional(),
-        }));
-    })(Bluetooth$1 || (Bluetooth$1 = {}));
-
-    /**
-     * Copyright 2026 Google LLC.
-     * Copyright (c) Microsoft Corporation.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-    lazy(() => Permissions$1.SetPermissionSchema);
-    var Permissions$1;
-    (function (Permissions) {
-        Permissions.PermissionDescriptorSchema = lazy(() => object({
-            name: string(),
-        }));
-    })(Permissions$1 || (Permissions$1 = {}));
-    (function (Permissions) {
-        Permissions.PermissionStateSchema = lazy(() => _enum(['granted', 'denied', 'prompt']));
-    })(Permissions$1 || (Permissions$1 = {}));
-    (function (Permissions) {
-        Permissions.SetPermissionSchema = lazy(() => object({
-            method: literal('permissions.setPermission'),
-            params: Permissions.SetPermissionParametersSchema,
-        }));
-    })(Permissions$1 || (Permissions$1 = {}));
-    (function (Permissions) {
-        Permissions.SetPermissionParametersSchema = lazy(() => object({
-            descriptor: Permissions.PermissionDescriptorSchema,
-            state: Permissions.PermissionStateSchema,
-            origin: string(),
-            embeddedOrigin: string().optional(),
-            userContext: string().optional(),
-        }));
-    })(Permissions$1 || (Permissions$1 = {}));
-
-    /**
-     * Copyright 2026 Google LLC.
-     * Copyright (c) Microsoft Corporation.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-    lazy(() => UserAgentClientHints.SetClientHintsOverrideCommandSchema);
-    var UserAgentClientHints;
-    (function (UserAgentClientHints) {
-        UserAgentClientHints.SetClientHintsOverrideCommandSchema = lazy(() => object({
-            method: literal('userAgentClientHints.setClientHintsOverride'),
-            params: object({
-                clientHints: union([
-                    UserAgentClientHints.ClientHintsMetadataSchema,
-                    _null(),
-                ]),
-                contexts: array(string()).nonempty().optional(),
-                userContexts: array(string()).nonempty().optional(),
-            }),
-        }));
-    })(UserAgentClientHints || (UserAgentClientHints = {}));
-    (function (UserAgentClientHints) {
-        UserAgentClientHints.ClientHintsMetadataSchema = lazy(() => object({
-            brands: array(UserAgentClientHints.BrandVersionSchema).optional(),
-            fullVersionList: array(UserAgentClientHints.BrandVersionSchema)
-                .optional(),
-            platform: string().optional(),
-            platformVersion: string().optional(),
-            architecture: string().optional(),
-            model: string().optional(),
-            mobile: boolean().optional(),
-            bitness: string().optional(),
-            wow64: boolean().optional(),
-            formFactors: array(string()).optional(),
-        }));
-    })(UserAgentClientHints || (UserAgentClientHints = {}));
-    (function (UserAgentClientHints) {
-        UserAgentClientHints.BrandVersionSchema = lazy(() => object({
-            brand: string(),
-            version: string(),
-        }));
-    })(UserAgentClientHints || (UserAgentClientHints = {}));
-    (function (UserAgentClientHints) {
-        UserAgentClientHints.SetClientHintsOverrideResultSchema = lazy(() => object({}));
-    })(UserAgentClientHints || (UserAgentClientHints = {}));
-
-    /**
-     * Copyright 2026 Google LLC.
-     * Copyright (c) Microsoft Corporation.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
     lazy(() => object({
         id: JsUintSchema,
     })
@@ -23629,6 +24139,701 @@
      * See the License for the specific language governing permissions and
      * limitations under the License.
      */
+    lazy(() => union([
+        GoogBrowsingContext$1.GetAccessibilityTreeSchema,
+        GoogCdp$1.GetSessionSchema,
+        GoogCdp$1.ResolveRealmSchema,
+        GoogCdp$1.SendCommandSchema,
+        GoogSession$1.SetAclSchema,
+    ]));
+    lazy(() => union([
+        GoogBrowsingContext$1.GetAccessibilityTreeResultSchema,
+        GoogCdp$1.GetSessionResultSchema,
+        GoogCdp$1.ResolveRealmResultSchema,
+        GoogCdp$1.SendCommandResultSchema,
+        GoogSession$1.SetAclResultSchema,
+    ]));
+    lazy(() => GoogCdp$1.EventSchema);
+    var GoogBrowsingContext$1;
+    (function (GoogBrowsingContext) {
+        GoogBrowsingContext.AccessibilityNodeSchema = lazy(() => object({
+            accessibilityId: string(),
+            children: array(GoogBrowsingContext.AccessibilityNodeSchema),
+            name: string().optional(),
+            properties: record(string(), string()).optional(),
+            role: string().optional(),
+            sharedId: Script$1.SharedIdSchema.optional(),
+        }));
+    })(GoogBrowsingContext$1 || (GoogBrowsingContext$1 = {}));
+    (function (GoogBrowsingContext) {
+        GoogBrowsingContext.GetAccessibilityTreeSchema = lazy(() => object({
+            method: literal('goog:browsingContext.getAccessibilityTree'),
+            params: GoogBrowsingContext.GetAccessibilityTreeParametersSchema,
+        }));
+    })(GoogBrowsingContext$1 || (GoogBrowsingContext$1 = {}));
+    (function (GoogBrowsingContext) {
+        GoogBrowsingContext.GetAccessibilityTreeParametersSchema = lazy(() => object({
+            context: BrowsingContext$1.BrowsingContextSchema,
+        }));
+    })(GoogBrowsingContext$1 || (GoogBrowsingContext$1 = {}));
+    (function (GoogBrowsingContext) {
+        GoogBrowsingContext.GetAccessibilityTreeResultSchema = lazy(() => object({
+            root: GoogBrowsingContext.AccessibilityNodeSchema,
+        }));
+    })(GoogBrowsingContext$1 || (GoogBrowsingContext$1 = {}));
+    var GoogCdp$1;
+    (function (GoogCdp) {
+        GoogCdp.SessionIdSchema = lazy(() => string());
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.GetSessionSchema = lazy(() => object({
+            method: literal('goog:cdp.getSession'),
+            params: GoogCdp.GetSessionParametersSchema,
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.GetSessionParametersSchema = lazy(() => object({
+            context: BrowsingContext$1.BrowsingContextSchema,
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.GetSessionResultSchema = lazy(() => object({
+            session: GoogCdp.SessionIdSchema.optional(),
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.ResolveRealmSchema = lazy(() => object({
+            method: literal('goog:cdp.resolveRealm'),
+            params: GoogCdp.ResolveRealmParametersSchema,
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.ResolveRealmParametersSchema = lazy(() => object({
+            realm: Script$1.RealmSchema,
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.ResolveRealmResultSchema = lazy(() => object({
+            executionContextId: number().int(),
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.SendCommandSchema = lazy(() => object({
+            method: literal('goog:cdp.sendCommand'),
+            params: GoogCdp.SendCommandParametersSchema,
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.SendCommandParametersSchema = lazy(() => object({
+            method: string(),
+            params: record(string(), any()).optional(),
+            session: GoogCdp.SessionIdSchema.optional(),
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.SendCommandResultSchema = lazy(() => object({
+            result: any(),
+            session: GoogCdp.SessionIdSchema.optional(),
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.EventSchema = lazy(() => object({
+            method: string(),
+            params: GoogCdp.EventParametersSchema,
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    (function (GoogCdp) {
+        GoogCdp.EventParametersSchema = lazy(() => object({
+            event: string(),
+            params: any(),
+            session: GoogCdp.SessionIdSchema.optional(),
+        }));
+    })(GoogCdp$1 || (GoogCdp$1 = {}));
+    var GoogSession$1;
+    (function (GoogSession) {
+        GoogSession.AclEntrySchema = lazy(() => object({
+            commands: array(string()).optional(),
+            events: array(string()).optional(),
+        }));
+    })(GoogSession$1 || (GoogSession$1 = {}));
+    (function (GoogSession) {
+        GoogSession.AclSchema = lazy(() => object({
+            default: GoogSession.AclEntrySchema.optional(),
+            perNavigable: record(BrowsingContext$1.BrowsingContextSchema, GoogSession.AclEntrySchema)
+                .optional(),
+        }));
+    })(GoogSession$1 || (GoogSession$1 = {}));
+    (function (GoogSession) {
+        GoogSession.SetAclSchema = lazy(() => object({
+            method: literal('goog:session.setAcl'),
+            params: GoogSession.SetAclParametersSchema,
+        }));
+    })(GoogSession$1 || (GoogSession$1 = {}));
+    (function (GoogSession) {
+        GoogSession.SetAclParametersSchema = lazy(() => object({
+            acl: GoogSession.AclSchema,
+            reason: string().optional(),
+        }));
+    })(GoogSession$1 || (GoogSession$1 = {}));
+    (function (GoogSession) {
+        GoogSession.SetAclResultSchema = lazy(() => object({
+            acl: GoogSession.AclSchema,
+            denied: object({
+                acl: GoogSession.AclSchema,
+                reason: string().optional(),
+            })
+                .optional(),
+        }));
+    })(GoogSession$1 || (GoogSession$1 = {}));
+
+    /**
+     * Copyright 2026 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    lazy(() => Autofill$1.TriggerSchema);
+    var Autofill$1;
+    (function (Autofill) {
+        Autofill.TriggerSchema = lazy(() => object({
+            method: literal('autofill.trigger'),
+            params: Autofill.TriggerParametersSchema,
+        }));
+    })(Autofill$1 || (Autofill$1 = {}));
+    (function (Autofill) {
+        Autofill.TriggerParametersSchema = lazy(() => object({
+            context: BrowsingContext$1.BrowsingContextSchema,
+            element: Script$1.SharedReferenceSchema,
+            card: Autofill.CardSchema.optional(),
+            address: Autofill.AddressSchema.optional(),
+        }));
+    })(Autofill$1 || (Autofill$1 = {}));
+    (function (Autofill) {
+        Autofill.CardSchema = lazy(() => object({
+            number: string(),
+            name: string(),
+            expiryMonth: string(),
+            expiryYear: string(),
+            cvc: string(),
+        }));
+    })(Autofill$1 || (Autofill$1 = {}));
+    (function (Autofill) {
+        Autofill.AddressSchema = lazy(() => object({
+            fields: array(Autofill.FieldSchema),
+        }));
+    })(Autofill$1 || (Autofill$1 = {}));
+    (function (Autofill) {
+        Autofill.FieldSchema = lazy(() => object({
+            name: Autofill.FieldNameSchema,
+            value: string(),
+        }));
+    })(Autofill$1 || (Autofill$1 = {}));
+    (function (Autofill) {
+        Autofill.FieldNameSchema = lazy(() => _enum([
+            'name',
+            'honorific-prefix',
+            'given-name',
+            'additional-name',
+            'family-name',
+            'honorific-suffix',
+            'nickname',
+            'organization',
+            'street-address',
+            'address-line1',
+            'address-line2',
+            'address-line3',
+            'address-level4',
+            'address-level3',
+            'address-level2',
+            'address-level1',
+            'country',
+            'country-name',
+            'postal-code',
+            'tel',
+            'tel-country-code',
+            'tel-national',
+            'tel-area-code',
+            'tel-local',
+            'email',
+        ]));
+    })(Autofill$1 || (Autofill$1 = {}));
+
+    /**
+     * Copyright 2026 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    var Bluetooth$1;
+    (function (Bluetooth) {
+        Bluetooth.BluetoothUuidSchema = lazy(() => string());
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.BluetoothManufacturerDataSchema = lazy(() => object({
+            key: number().int().nonnegative(),
+            data: string(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.CharacteristicPropertiesSchema = lazy(() => object({
+            broadcast: boolean().optional(),
+            read: boolean().optional(),
+            writeWithoutResponse: boolean().optional(),
+            write: boolean().optional(),
+            notify: boolean().optional(),
+            indicate: boolean().optional(),
+            authenticatedSignedWrites: boolean().optional(),
+            extendedProperties: boolean().optional(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.RequestDeviceSchema = lazy(() => string());
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.RequestDeviceInfoSchema = lazy(() => object({
+            id: Bluetooth.RequestDeviceSchema,
+            name: union([string(), _null()]),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.RequestDevicePromptSchema = lazy(() => string());
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.ScanRecordSchema = lazy(() => object({
+            name: string().optional(),
+            uuids: array(Bluetooth.BluetoothUuidSchema).optional(),
+            appearance: number().optional(),
+            manufacturerData: array(Bluetooth.BluetoothManufacturerDataSchema)
+                .optional(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    lazy(() => union([
+        Bluetooth$1.HandleRequestDevicePromptSchema,
+        Bluetooth$1.SimulateAdapterSchema,
+        Bluetooth$1.DisableSimulationSchema,
+        Bluetooth$1.SimulatePreconnectedPeripheralSchema,
+        Bluetooth$1.SimulateAdvertisementSchema,
+        Bluetooth$1.SimulateGattConnectionResponseSchema,
+        Bluetooth$1.SimulateGattDisconnectionSchema,
+        Bluetooth$1.SimulateGattMtuChangeSchema,
+        Bluetooth$1.SimulateServiceSchema,
+        Bluetooth$1.SimulateCharacteristicSchema,
+        Bluetooth$1.SimulateCharacteristicResponseSchema,
+        Bluetooth$1.SimulateDescriptorSchema,
+        Bluetooth$1.SimulateDescriptorResponseSchema,
+    ]));
+    (function (Bluetooth) {
+        Bluetooth.HandleRequestDevicePromptSchema = lazy(() => object({
+            method: literal('bluetooth.handleRequestDevicePrompt'),
+            params: Bluetooth.HandleRequestDevicePromptParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.HandleRequestDevicePromptParametersSchema = lazy(() => object({
+            context: string(),
+            prompt: Bluetooth.RequestDevicePromptSchema,
+        })
+            .and(union([
+            Bluetooth.HandleRequestDevicePromptAcceptParametersSchema,
+            Bluetooth.HandleRequestDevicePromptCancelParametersSchema,
+        ])));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.HandleRequestDevicePromptAcceptParametersSchema = lazy(() => object({
+            accept: literal(true),
+            device: Bluetooth.RequestDeviceSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.HandleRequestDevicePromptCancelParametersSchema = lazy(() => object({
+            accept: literal(false),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateAdapterSchema = lazy(() => object({
+            method: literal('bluetooth.simulateAdapter'),
+            params: Bluetooth.SimulateAdapterParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateAdapterParametersSchema = lazy(() => object({
+            context: string(),
+            leSupported: boolean().optional(),
+            state: _enum(['absent', 'powered-off', 'powered-on']),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.DisableSimulationSchema = lazy(() => object({
+            method: literal('bluetooth.disableSimulation'),
+            params: Bluetooth.DisableSimulationParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.DisableSimulationParametersSchema = lazy(() => object({
+            context: string(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulatePreconnectedPeripheralSchema = lazy(() => object({
+            method: literal('bluetooth.simulatePreconnectedPeripheral'),
+            params: Bluetooth.SimulatePreconnectedPeripheralParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulatePreconnectedPeripheralParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            name: string(),
+            manufacturerData: array(Bluetooth.BluetoothManufacturerDataSchema),
+            knownServiceUuids: array(Bluetooth.BluetoothUuidSchema),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateAdvertisementSchema = lazy(() => object({
+            method: literal('bluetooth.simulateAdvertisement'),
+            params: Bluetooth.SimulateAdvertisementParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateAdvertisementParametersSchema = lazy(() => object({
+            context: string(),
+            scanEntry: Bluetooth.SimulateAdvertisementScanEntryParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateAdvertisementScanEntryParametersSchema = lazy(() => object({
+            deviceAddress: string(),
+            rssi: number(),
+            scanRecord: Bluetooth.ScanRecordSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateGattConnectionResponseSchema = lazy(() => object({
+            method: literal('bluetooth.simulateGattConnectionResponse'),
+            params: Bluetooth.SimulateGattConnectionResponseParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateGattConnectionResponseParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            code: number().int().nonnegative(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateGattDisconnectionSchema = lazy(() => object({
+            method: literal('bluetooth.simulateGattDisconnection'),
+            params: Bluetooth.SimulateGattDisconnectionParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateGattDisconnectionParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateGattMtuChangeSchema = lazy(() => object({
+            method: literal('bluetooth.simulateGattMtuChange'),
+            params: Bluetooth.SimulateGattMtuChangeParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateGattMtuChangeParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            mtu: number().int().nonnegative(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateServiceSchema = lazy(() => object({
+            method: literal('bluetooth.simulateService'),
+            params: Bluetooth.SimulateServiceParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateServiceParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            uuid: Bluetooth.BluetoothUuidSchema,
+            type: _enum(['add', 'remove']),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateCharacteristicSchema = lazy(() => object({
+            method: literal('bluetooth.simulateCharacteristic'),
+            params: Bluetooth.SimulateCharacteristicParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateCharacteristicParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            serviceUuid: Bluetooth.BluetoothUuidSchema,
+            characteristicUuid: Bluetooth.BluetoothUuidSchema,
+            characteristicProperties: Bluetooth.CharacteristicPropertiesSchema.optional(),
+            type: _enum(['add', 'remove']),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateCharacteristicResponseSchema = lazy(() => object({
+            method: literal('bluetooth.simulateCharacteristicResponse'),
+            params: Bluetooth.SimulateCharacteristicResponseParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateCharacteristicResponseParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            serviceUuid: Bluetooth.BluetoothUuidSchema,
+            characteristicUuid: Bluetooth.BluetoothUuidSchema,
+            type: _enum([
+                'read',
+                'write',
+                'subscribe-to-notifications',
+                'unsubscribe-from-notifications',
+            ]),
+            code: number().int().nonnegative(),
+            data: array(number().int().nonnegative()).optional(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateDescriptorSchema = lazy(() => object({
+            method: literal('bluetooth.simulateDescriptor'),
+            params: Bluetooth.SimulateDescriptorParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateDescriptorParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            serviceUuid: Bluetooth.BluetoothUuidSchema,
+            characteristicUuid: Bluetooth.BluetoothUuidSchema,
+            descriptorUuid: Bluetooth.BluetoothUuidSchema,
+            type: _enum(['add', 'remove']),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateDescriptorResponseSchema = lazy(() => object({
+            method: literal('bluetooth.simulateDescriptorResponse'),
+            params: Bluetooth.SimulateDescriptorResponseParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.SimulateDescriptorResponseParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            serviceUuid: Bluetooth.BluetoothUuidSchema,
+            characteristicUuid: Bluetooth.BluetoothUuidSchema,
+            descriptorUuid: Bluetooth.BluetoothUuidSchema,
+            type: _enum(['read', 'write']),
+            code: number().int().nonnegative(),
+            data: array(number().int().nonnegative()).optional(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    lazy(() => union([
+        Bluetooth$1.RequestDevicePromptUpdatedSchema,
+        Bluetooth$1.GattConnectionAttemptedSchema,
+    ]));
+    (function (Bluetooth) {
+        Bluetooth.RequestDevicePromptUpdatedSchema = lazy(() => object({
+            method: literal('bluetooth.requestDevicePromptUpdated'),
+            params: Bluetooth.RequestDevicePromptUpdatedParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.RequestDevicePromptUpdatedParametersSchema = lazy(() => object({
+            context: string(),
+            prompt: Bluetooth.RequestDevicePromptSchema,
+            devices: array(Bluetooth.RequestDeviceInfoSchema),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.GattConnectionAttemptedSchema = lazy(() => object({
+            method: literal('bluetooth.gattConnectionAttempted'),
+            params: Bluetooth.GattConnectionAttemptedParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.GattConnectionAttemptedParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.CharacteristicEventGeneratedSchema = lazy(() => object({
+            method: literal('bluetooth.characteristicEventGenerated'),
+            params: Bluetooth.CharacteristicEventGeneratedParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.CharacteristicEventGeneratedParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            serviceUuid: Bluetooth.BluetoothUuidSchema,
+            characteristicUuid: Bluetooth.BluetoothUuidSchema,
+            type: _enum([
+                'read',
+                'write-with-response',
+                'write-without-response',
+                'subscribe-to-notifications',
+                'unsubscribe-from-notifications',
+            ]),
+            data: array(number().int().nonnegative()).optional(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.DescriptorEventGeneratedSchema = lazy(() => object({
+            method: literal('bluetooth.descriptorEventGenerated'),
+            params: Bluetooth.DescriptorEventGeneratedParametersSchema,
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+    (function (Bluetooth) {
+        Bluetooth.DescriptorEventGeneratedParametersSchema = lazy(() => object({
+            context: string(),
+            address: string(),
+            serviceUuid: Bluetooth.BluetoothUuidSchema,
+            characteristicUuid: Bluetooth.BluetoothUuidSchema,
+            descriptorUuid: Bluetooth.BluetoothUuidSchema,
+            type: _enum(['read', 'write']),
+            data: array(number().int().nonnegative()).optional(),
+        }));
+    })(Bluetooth$1 || (Bluetooth$1 = {}));
+
+    /**
+     * Copyright 2026 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    lazy(() => Permissions$1.SetPermissionSchema);
+    var Permissions$1;
+    (function (Permissions) {
+        Permissions.PermissionDescriptorSchema = lazy(() => object({
+            name: string(),
+        }));
+    })(Permissions$1 || (Permissions$1 = {}));
+    (function (Permissions) {
+        Permissions.PermissionStateSchema = lazy(() => _enum(['granted', 'denied', 'prompt']));
+    })(Permissions$1 || (Permissions$1 = {}));
+    (function (Permissions) {
+        Permissions.SetPermissionSchema = lazy(() => object({
+            method: literal('permissions.setPermission'),
+            params: Permissions.SetPermissionParametersSchema,
+        }));
+    })(Permissions$1 || (Permissions$1 = {}));
+    (function (Permissions) {
+        Permissions.SetPermissionParametersSchema = lazy(() => object({
+            descriptor: Permissions.PermissionDescriptorSchema,
+            state: Permissions.PermissionStateSchema,
+            origin: string(),
+            embeddedOrigin: string().optional(),
+            userContext: string().optional(),
+        }));
+    })(Permissions$1 || (Permissions$1 = {}));
+
+    /**
+     * Copyright 2026 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    lazy(() => UserAgentClientHints.SetClientHintsOverrideCommandSchema);
+    var UserAgentClientHints;
+    (function (UserAgentClientHints) {
+        UserAgentClientHints.SetClientHintsOverrideCommandSchema = lazy(() => object({
+            method: literal('userAgentClientHints.setClientHintsOverride'),
+            params: object({
+                clientHints: union([
+                    UserAgentClientHints.ClientHintsMetadataSchema,
+                    _null(),
+                ]),
+                contexts: array(string()).nonempty().optional(),
+                userContexts: array(string()).nonempty().optional(),
+            }),
+        }));
+    })(UserAgentClientHints || (UserAgentClientHints = {}));
+    (function (UserAgentClientHints) {
+        UserAgentClientHints.ClientHintsMetadataSchema = lazy(() => object({
+            brands: array(UserAgentClientHints.BrandVersionSchema).optional(),
+            fullVersionList: array(UserAgentClientHints.BrandVersionSchema)
+                .optional(),
+            platform: string().optional(),
+            platformVersion: string().optional(),
+            architecture: string().optional(),
+            model: string().optional(),
+            mobile: boolean().optional(),
+            bitness: string().optional(),
+            wow64: boolean().optional(),
+            formFactors: array(string()).optional(),
+        }));
+    })(UserAgentClientHints || (UserAgentClientHints = {}));
+    (function (UserAgentClientHints) {
+        UserAgentClientHints.BrandVersionSchema = lazy(() => object({
+            brand: string(),
+            version: string(),
+        }));
+    })(UserAgentClientHints || (UserAgentClientHints = {}));
+    (function (UserAgentClientHints) {
+        UserAgentClientHints.SetClientHintsOverrideResultSchema = lazy(() => object({}));
+    })(UserAgentClientHints || (UserAgentClientHints = {}));
+
+    /**
+     * Copyright 2026 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
     var DigitalCredentials$1;
     (function (DigitalCredentials) {
         DigitalCredentials.VirtualWalletActionSchema = lazy(() => _enum(['decline', 'respond', 'wait', 'clear']));
@@ -23969,32 +25174,36 @@
         }
         Storage.parseSetCookieParams = parseSetCookieParams;
     })(Storage || (Storage = {}));
-    var Cdp;
-    (function (Cdp) {
-        const GetSessionRequestSchema = object({
-            context: BrowsingContext$1.BrowsingContextSchema,
-        });
-        const ResolveRealmRequestSchema = object({
-            realm: Script$1.RealmSchema,
-        });
-        const SendCommandRequestSchema = object({
-            method: string(),
-            params: object({}).passthrough().optional(),
-            session: string().optional(),
-        });
+    var GoogCdp;
+    (function (GoogCdp) {
         function parseGetSessionRequest(params) {
-            return parseObject(params, GetSessionRequestSchema);
+            return parseObject(params, GoogCdp$1.GetSessionParametersSchema);
         }
-        Cdp.parseGetSessionRequest = parseGetSessionRequest;
+        GoogCdp.parseGetSessionRequest = parseGetSessionRequest;
         function parseResolveRealmRequest(params) {
-            return parseObject(params, ResolveRealmRequestSchema);
+            return parseObject(params, GoogCdp$1.ResolveRealmParametersSchema);
         }
-        Cdp.parseResolveRealmRequest = parseResolveRealmRequest;
+        GoogCdp.parseResolveRealmRequest = parseResolveRealmRequest;
         function parseSendCommandRequest(params) {
-            return parseObject(params, SendCommandRequestSchema);
+            return parseObject(params, GoogCdp$1.SendCommandParametersSchema);
         }
-        Cdp.parseSendCommandRequest = parseSendCommandRequest;
-    })(Cdp || (Cdp = {}));
+        GoogCdp.parseSendCommandRequest = parseSendCommandRequest;
+    })(GoogCdp || (GoogCdp = {}));
+    var GoogBrowsingContext;
+    (function (GoogBrowsingContext) {
+        function parseGetAccessibilityTreeParams(params) {
+            return parseObject(params, GoogBrowsingContext$1
+                .GetAccessibilityTreeParametersSchema);
+        }
+        GoogBrowsingContext.parseGetAccessibilityTreeParams = parseGetAccessibilityTreeParams;
+    })(GoogBrowsingContext || (GoogBrowsingContext = {}));
+    var GoogSession;
+    (function (GoogSession) {
+        function parseSetAclRequest(params) {
+            return parseObject(params, GoogSession$1.SetAclParametersSchema);
+        }
+        GoogSession.parseSetAclRequest = parseSetAclRequest;
+    })(GoogSession || (GoogSession = {}));
     var Permissions;
     (function (Permissions) {
         function parseSetPermissionsParams(params) {
@@ -24052,6 +25261,10 @@
                 .SimulateGattDisconnectionParametersSchema);
         }
         Bluetooth.parseSimulateGattDisconnectionParams = parseSimulateGattDisconnectionParams;
+        function parseSimulateGattMtuChangeParams(params) {
+            return parseObject(params, Bluetooth$1.SimulateGattMtuChangeParametersSchema);
+        }
+        Bluetooth.parseSimulateGattMtuChangeParams = parseSimulateGattMtuChangeParams;
         function parseSimulatePreconnectedPeripheralParams(params) {
             return parseObject(params, Bluetooth$1
                 .SimulatePreconnectedPeripheralParametersSchema);
@@ -24070,6 +25283,13 @@
         }
         DigitalCredentials.parseSetVirtualWalletBehaviorParams = parseSetVirtualWalletBehaviorParams;
     })(DigitalCredentials || (DigitalCredentials = {}));
+    var Autofill;
+    (function (Autofill) {
+        function parseTriggerParams(params) {
+            return parseObject(params, Autofill$1.TriggerParametersSchema);
+        }
+        Autofill.parseTriggerParams = parseTriggerParams;
+    })(Autofill || (Autofill = {}));
     var WebModule;
     (function (WebModule) {
         function parseInstallParams(params) {
@@ -24083,6 +25303,9 @@
     })(WebModule || (WebModule = {}));
 
     class BidiParser {
+        parseAutofillTriggerParams(params) {
+            return Autofill.parseTriggerParams(params);
+        }
         parseDisableSimulationParameters(params) {
             return Bluetooth.parseDisableSimulationParameters(params);
         }
@@ -24112,6 +25335,9 @@
         }
         parseSimulateGattDisconnectionParameters(params) {
             return Bluetooth.parseSimulateGattDisconnectionParams(params);
+        }
+        parseSimulateGattMtuChangeParameters(params) {
+            return Bluetooth.parseSimulateGattMtuChangeParams(params);
         }
         parseSimulatePreconnectedPeripheralParameters(params) {
             return Bluetooth.parseSimulatePreconnectedPeripheralParams(params);
@@ -24178,13 +25404,16 @@
             return BrowsingContext.parseTraverseHistoryParams(params);
         }
         parseGetSessionParams(params) {
-            return Cdp.parseGetSessionRequest(params);
+            return GoogCdp.parseGetSessionRequest(params);
         }
         parseResolveRealmParams(params) {
-            return Cdp.parseResolveRealmRequest(params);
+            return GoogCdp.parseResolveRealmRequest(params);
         }
         parseSendCommandParams(params) {
-            return Cdp.parseSendCommandRequest(params);
+            return GoogCdp.parseSendCommandRequest(params);
+        }
+        parseGetAccessibilityTreeParams(params) {
+            return GoogBrowsingContext.parseGetAccessibilityTreeParams(params);
         }
         parseSetClientHintsOverrideParams(params) {
             return Emulation.parseSetClientHintsOverrideParams(params);
@@ -24300,6 +25529,9 @@
         parseRemovePreloadScriptParams(params) {
             return Script.parseRemovePreloadScriptParams(params);
         }
+        parseSetAclParams(params) {
+            return GoogSession.parseSetAclRequest(params);
+        }
         parseSubscribeParams(params) {
             return Session.parseSubscribeParams(params);
         }
@@ -24342,53 +25574,21 @@
      * See the License for the specific language governing permissions and
      * limitations under the License.
      */
-    const mapperPageSource = '<!DOCTYPE html><title>BiDi-CDP Mapper</title><style>body{font-family: Roboto,serif;font-size:13px;color:#202124;}.log{padding: 10px;font-family:Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;font-size:11px;line-height:180%;background: #f1f3f4;border-radius:4px;}.pre{overflow-wrap: break-word; margin:10px;}.card{margin:60px auto;padding:2px 0;max-width:900px;box-shadow:0 1px 4px rgba(0,0,0,0.15),0 1px 6px rgba(0,0,0,0.2);border-radius:8px;}.divider{height:1px;background:#f0f0f0;}.item{padding:16px 20px;}</style><div class="card"><div class="item"><h1>BiDi-CDP Mapper is controlling this tab</h1><p>Closing or reloading it will stop the BiDi process. <a target="_blank" title="BiDi-CDP Mapper GitHub Repository" href="https://github.com/GoogleChromeLabs/chromium-bidi">Details.</a></p></div><div class="item"><div id="logs" class="log"></div></div></div></div>';
-    function generatePage() {
-        if (!globalThis.document.documentElement) {
-            return;
-        }
-        globalThis.document.documentElement.innerHTML = mapperPageSource;
-        globalThis.window.onbeforeunload = () => 'Closing or reloading this tab will stop the BiDi process. Are you sure you want to leave?';
-    }
-    function stringify(message) {
-        if (typeof message === 'object') {
-            return JSON.stringify(message, null, 2);
-        }
-        return message;
-    }
     function log(logPrefix) {
-        if (!globalThis.document.documentElement) {
-            return;
-        }
-        if (!logPrefix.startsWith(LogType.bidi)) {
-            return (...messages) => {
-                globalThis.window?.sendDebugMessage?.(JSON.stringify({ logType: logPrefix, messages }, null, 2));
-            };
-        }
-        const debugContainer = document.getElementById('logs');
-        if (!debugContainer) {
+        if (!globalThis.window?.sendDebugMessage ||
+            logPrefix.startsWith(LogType.bidi)) {
             return;
         }
         return (...messages) => {
-            const lineElement = document.createElement('div');
-            lineElement.className = 'pre';
-            lineElement.textContent = [logPrefix, ...messages].map(stringify).join(' ');
-            debugContainer.appendChild(lineElement);
-            if (debugContainer.childNodes.length > 400) {
-                debugContainer.removeChild(debugContainer.childNodes[0]);
-            }
+            globalThis.window?.sendDebugMessage?.(JSON.stringify({ logType: logPrefix, messages }, null, 2));
         };
     }
 
     var _a;
     class WindowBidiTransport {
-        static LOGGER_PREFIX_RECV = `${LogType.bidi}:RECV ◂`;
-        static LOGGER_PREFIX_SEND = `${LogType.bidi}:SEND ▸`;
-        static LOGGER_PREFIX_WARN = LogType.debugWarn;
         #onMessage = null;
         constructor() {
             window.onBidiMessage = (message) => {
-                log(_a.LOGGER_PREFIX_RECV)?.(message);
                 try {
                     const command = _a.#parseBidiMessage(message);
                     this.#onMessage?.call(null, command);
@@ -24403,7 +25603,6 @@
             this.#onMessage = onMessage;
         }
         sendMessage(message) {
-            log(_a.LOGGER_PREFIX_SEND)?.(message);
             const json = JSON.stringify(message);
             window.sendBidiResponse(json);
         }
@@ -24533,19 +25732,60 @@
      *
      * @license
      */
-    generatePage();
-    const mapperTabToServerTransport = new WindowBidiTransport();
-    const cdpTransport = new WindowCdpTransport();
-    const cdpConnection = new MapperCdpConnection(cdpTransport, log);
-    async function runMapperInstance(selfTargetId) {
+    const windowBidiTransport = new WindowBidiTransport();
+    const windowCdpTransport = new WindowCdpTransport();
+    let windowCdpConnection = null;
+    let isWindowBidiTransportUsed = false;
+    function getWindowCdpConnection() {
+        windowCdpConnection ??= new MapperCdpConnection(windowCdpTransport, log);
+        return windowCdpConnection;
+    }
+    async function runMapperInstance(selfTargetId, bidiTransport = windowBidiTransport, cdpTransport = windowCdpTransport, restrictedMode = false) {
+        const usesWindowBidi = bidiTransport === windowBidiTransport;
+        if (usesWindowBidi) {
+            if (isWindowBidiTransportUsed) {
+                throw new Error('Default WindowBidiTransport is already in use; pass a custom bidiTransport.');
+            }
+            isWindowBidiTransportUsed = true;
+        }
         console.log('Launching Mapper instance with selfTargetId:', selfTargetId);
-        const bidiServer = await BidiServer.createAndStart(mapperTabToServerTransport, cdpConnection,
-        await cdpConnection.createBrowserSession(), selfTargetId, new BidiParser(), log);
+        const usesWindowCdp = cdpTransport === windowCdpTransport;
+        const cdpConnection = usesWindowCdp
+            ? getWindowCdpConnection()
+            : new MapperCdpConnection(cdpTransport, log);
+        let browserCdpClient;
+        const cleanupCdp = () => {
+            if (browserCdpClient?.sessionId !== undefined) {
+                void cdpConnection
+                    .closeBrowserSession(browserCdpClient.sessionId)
+                    .catch((error) => {
+                    if (!(error instanceof CloseError)) {
+                        log(LogType.debugError)?.(error);
+                    }
+                });
+            }
+            if (!usesWindowCdp) {
+                cdpConnection.close();
+            }
+        };
+        let bidiServer;
+        try {
+            browserCdpClient = await cdpConnection.createBrowserSession();
+            bidiServer = await BidiServer.createAndStart(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, new BidiParser(), log, restrictedMode === true);
+        }
+        catch (error) {
+            if (usesWindowBidi) {
+                isWindowBidiTransportUsed = false;
+            }
+            cleanupCdp();
+            throw error;
+        }
+        bidiServer.once('close', cleanupCdp);
         log(LogType.debugInfo)?.('Mapper instance has been launched');
         return bidiServer;
     }
-    window.runMapperInstance = async (selfTargetId) => {
-        await runMapperInstance(selfTargetId);
+    window.runMapperInstance = async (selfTargetId, bidiTransport, cdpTransport, restrictedMode) => {
+        return await runMapperInstance(selfTargetId, bidiTransport, cdpTransport, restrictedMode);
     };
 
 })();
